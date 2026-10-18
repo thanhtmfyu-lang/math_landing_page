@@ -14,6 +14,7 @@ const KINDS=[['btvn-tuan','BTVN tuần này'],['btvn-thang','BTVN tháng này'],
 const fmt=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:2});
 const look=(row:Row):StudentAppearance=>({avatar:row.avatar??DEFAULT_APPEARANCE.avatar,photo:row.photo??''});
 const place=(row:Row)=>[row.schoolClass&&'Lớp '+row.schoolClass,row.school].filter(Boolean).join(' · ');
+const Badges=({row}:{row:Row})=><>{row.score>=10&&<span className="ar-badge ar-badge-10" title="Đạt điểm 10 tuyệt đối">⭐ 10</span>}{row.total>=2&&row.submitted===row.total&&<span className="ar-badge" title="Nộp đủ mọi bài trong kỳ">✅ Nộp đủ</span>}</>;
 const shortClass=(cohort:string,label:string)=>label.startsWith(cohort+' ')?label.slice(cohort.length+1):label;
 
 /** Mốc chốt bảng theo giờ Việt Nam: tuần chốt 24:00 Chủ nhật, tháng chốt 24:00 ngày cuối tháng. */
@@ -30,6 +31,7 @@ function Podium({rows,small=false}:{rows:Row[];small?:boolean}){
    {row.rank===1&&<span className="ar-crown" aria-hidden="true">👑</span>}
    <div className="ar-step-avatar"><StudentAvatar appearance={look(row)} size={small?(row.rank===1?46:38):row.rank===1?64:52}/><b className="ar-medal" aria-label={'Hạng '+row.rank}>{row.rank}</b></div>
    <strong className="ar-step-name">{row.fullName||'Học sinh MTM'}</strong>
+   <span className="ar-badges"><Badges row={row}/></span>
    <span className="ar-chip">{row.className}</span>
    {place(row)&&<small className="ar-step-school">{place(row)}</small>}
    <span className="ar-step-score">{fmt(row.score)}<small>/10</small></span>
@@ -41,7 +43,7 @@ function Chasers({rows}:{rows:Row[]}){
  if(!rows.length)return null;
  return <ol className="ar-list" start={rows[0].rank}>{rows.map(row=><li key={row.rank}>
   <b className="ar-list-rank">{row.rank}</b><StudentAvatar appearance={look(row)} size={28}/>
-  <div className="ar-list-who"><strong>{row.fullName||'Học sinh MTM'}</strong><small>{[row.className,place(row)].filter(Boolean).join(' · ')}</small></div>
+  <div className="ar-list-who"><strong>{row.fullName||'Học sinh MTM'} <Badges row={row}/></strong><small>{[row.className,place(row)].filter(Boolean).join(' · ')}</small></div>
   <div className="ar-list-score"><span>{fmt(row.score)}</span><i style={{width:Math.max(4,row.score*10)+'%'}}/><small>Nộp {row.submitted}/{row.total}</small></div>
  </li>)}</ol>;
 }
@@ -52,6 +54,8 @@ export default function RankArena({compact=false}:{compact?:boolean}){
  const snapshot=useRef(''),latest=useRef(kind);latest.current=kind;
  useEffect(()=>subscribeLeaderboardRefresh(()=>setRetry(n=>n+1)),[]);
  useEffect(()=>{const t=setInterval(()=>setTick(n=>n+1),30_000);return()=>clearInterval(t);},[]);
+ const [spot,setSpot]=useState(0);
+ useEffect(()=>{if(typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;const t=setInterval(()=>setSpot(n=>n+1),3800);return()=>clearInterval(t);},[]);
  useEffect(()=>{snapshot.current='';setStatus('loading');},[kind]);
  useEffect(()=>{let live=true;
   requestLeaderboard<{enabled:boolean;cohorts:Cohort[]}>('/api/xep-hang?dau-truong=1&loai='+kind,{credentials:'omit'}).then(r=>{
@@ -68,11 +72,20 @@ export default function RankArena({compact=false}:{compact?:boolean}){
  },[kind,retry]);
  const ranked=data.reduce((n,c)=>n+c.ranked,0),perfect=data.reduce((n,c)=>n+c.perfect,0);
  void tick;
+ // Sân khấu: lần lượt chiếu nhà vô địch từng lớp rồi quán quân từng khối.
+ const stars=[...data.flatMap(c=>c.classes.filter(k=>k.top[0]).map(k=>({title:'Vô địch lớp '+k.className,row:k.top[0] as Row}))),...data.filter(c=>c.top[0]).map(c=>({title:'Quán quân khối '+c.cohort,row:c.top[0]}))];
+ const star=stars.length?stars[spot%stars.length]:null;
  return <section id="bang-xep-hang" className={'mtm-arena'+(flash?(flash%2?' ar-flash-a':' ar-flash-b'):'')} aria-labelledby="ar-title">
   <header className="ar-head">
    <div className="ar-head-text"><p className="ar-eyebrow"><span className="ar-live" aria-hidden="true"/>Cập nhật trực tiếp</p>
     <h2 id="ar-title">Đấu trường <span>MTM</span></h2>
-    <p>Bảng vàng của mọi lớp. Làm BTVN đúng hạn, điểm lần nộp đầu tiên quyết định thứ hạng.</p></div>
+    <p>Bảng vàng của mọi lớp. Lên bảng là được cả trung tâm biết tên!</p></div>
+   {star&&<a className="ar-spot" key={spot%stars.length} href={'#ar-lop-'+encodeURIComponent(star.row.className)} aria-live="off">
+    <span className="ar-spot-glow" aria-hidden="true"/>
+    <span className="ar-spot-avatar"><StudentAvatar appearance={look(star.row)} size={72}/><b aria-hidden="true">👑</b></span>
+    <span className="ar-spot-text"><small>{star.title}{kind==='btvn-tuan'?' · tuần này':kind==='btvn-thang'?' · tháng này':''}</small><strong>{star.row.fullName||'Học sinh MTM'}</strong><em>{fmt(star.row.score)}<i>/10</i> <Badges row={star.row}/></em>{place(star.row)&&<span>{place(star.row)}</span>}</span>
+    <span className="ar-spot-dots" aria-hidden="true">{stars.slice(0,14).map((_,i)=><i key={i} className={i===spot%stars.length?'on':''}/>)}</span>
+   </a>}
    <div className="ar-head-side">
     <div className="ar-kinds" role="group" aria-label="Chọn kỳ xếp hạng">{KINDS.map(([id,label])=><button type="button" key={id} aria-pressed={kind===id} onClick={()=>setKind(id)}>{label}</button>)}</div>
     {kind!=='kiem-tra-thang'&&<p className="ar-countdown">⏳ Chốt bảng {kind==='btvn-tuan'?'tuần':'tháng'} sau <b>{closesIn(kind)}</b></p>}

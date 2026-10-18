@@ -99,3 +99,22 @@
 @media(max-width:760px){.ar-podium-sm .ar-step-avatar .r104-avatar{width:38px!important;height:38px!important}.ar-podium-sm .ar-step-1 .ar-step-avatar .r104-avatar{width:46px!important;height:46px!important}
  .ar-step-avatar .r104-avatar{width:46px!important;height:46px!important}.ar-step-1 .ar-step-avatar .r104-avatar{width:56px!important;height:56px!important}.ar-step-score{font-size:16px}.ar-step-1 .ar-step-score{font-size:19px}
  .ar-section{margin:12px 12px 2px}.ar-own{margin:10px 10px 0}}
+/* Sân khấu nhà vô địch + huy hiệu (18/10 anh: gọn mà vẫn tự hào, thích lên bảng). */
+.ar-head{align-items:center}
+.ar-spot{position:relative;display:grid;grid-template-columns:auto minmax(0,1fr);align-items:center;gap:14px;min-width:300px;max-width:420px;flex:1;padding:12px 16px 18px 12px;border-radius:20px;
+ background:linear-gradient(135deg,#ffffff1a,#ffffff08);border:1px solid #ffd96666;color:#fff;text-decoration:none;overflow:hidden;animation:ar-spot-in .6s ease}
+@keyframes ar-spot-in{from{opacity:0;transform:translateY(8px) scale(.97)}}
+.ar-spot-glow{position:absolute;inset:-40%;background:conic-gradient(from 0deg,transparent,#ffd96633,transparent 30%);animation:ar-spin 6s linear infinite;pointer-events:none}
+@keyframes ar-spin{to{transform:rotate(1turn)}}
+.ar-spot-avatar{position:relative}.ar-spot-avatar .r104-avatar{border:3px solid #ffd966;box-shadow:0 0 0 4px #f5b81b40,0 0 26px #f5b81b99}
+.ar-spot-avatar b{position:absolute;top:-16px;left:50%;transform:translateX(-50%);font-size:22px}
+.ar-spot-text{position:relative;display:grid;gap:1px;min-width:0}.ar-spot-text small{color:#ffd966;font-weight:800;font-size:11px;letter-spacing:.06em;text-transform:uppercase}
+.ar-spot-text strong{font-size:20px;line-height:1.2;overflow-wrap:anywhere}.ar-spot-text em{font-style:normal;font-weight:900;font-size:22px;color:#ffd966}.ar-spot-text em i{font-style:normal;font-size:12px;color:#dbe4ff}
+.ar-spot-text>span{font-size:12px;color:#dbe4ff}
+.ar-spot-dots{position:absolute;left:0;right:0;bottom:6px;display:flex;justify-content:center;gap:4px}.ar-spot-dots i{width:5px;height:5px;border-radius:50%;background:#ffffff55}.ar-spot-dots i.on{background:#ffd966;width:14px;border-radius:9px}
+.ar-badges{display:flex;gap:3px;flex-wrap:wrap;justify-content:center}
+.ar-badge{display:inline-block;font-size:9.5px;font-weight:800;padding:1px 5px;border-radius:999px;background:#e8f7ee;color:#137a3d;vertical-align:middle;white-space:nowrap}
+.ar-badge-10{background:linear-gradient(135deg,#fff3c4,#ffd966);color:#7a5200}
+.ar-spot .ar-badge{font-size:10px}
+@media(max-width:760px){.ar-spot{min-width:0;max-width:none;width:100%}.ar-spot-text strong{font-size:17px}}
+@media(prefers-reduced-motion:reduce){.ar-spot,.ar-spot-glow{animation:none}}

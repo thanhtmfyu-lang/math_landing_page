@@ -14,7 +14,9 @@ export function createRankApi(getEnv=()=>process.env,transport:typeof fetch=fetc
    const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error('HTTPS required');
    const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_arena',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_kind:kind}),signal:AbortSignal.timeout(12000)});
    if(!response.ok)throw Error('RPC failed');
-   const arena=publicArena(await response.json());
+   let arena=publicArena(await response.json());
+   // gon=1 (dải vinh danh đầu mọi trang): chỉ nhà vô địch, không ảnh, tải rất nhẹ.
+   if(req.query?.gon==='1')arena={...arena,cohorts:arena.cohorts.map(c=>({...c,top:c.top.slice(0,10).filter((r,i)=>i<3||r.score>=10).map(r=>({...r,photo:null})),classes:c.classes.map(k=>({...k,top:k.top.slice(0,1).map(r=>({...r,photo:null}))}))}))};
    // Bộ đệm CDN 5 giây: đông người xem chỉ gọi kho tối đa 1 lần/5 giây; hạng của em (POST) không đệm.
    res.setHeader('Cache-Control','public, s-maxage=5, stale-while-revalidate=10');
    return res.status(200).json({enabled:true,...arena});
