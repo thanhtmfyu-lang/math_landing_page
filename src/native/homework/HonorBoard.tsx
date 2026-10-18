@@ -3,7 +3,7 @@ import './rank-arena.css';
 import './honor-board.css';
 import {StudentAvatar} from '../../components/StudentAppearance';
 import {requestLeaderboard,subscribeLeaderboardRefresh} from './leaderboard-refresh';
-import {closesIn,fmt,look,place,type Row} from './RankArena';
+import {closesIn,fmt,look,place,tier,type Row} from './RankArena';
 
 /** 18/10 anh Thành: trang chủ phải thấy "Hiểu bản chất" trước; bảng xếp hạng gọn nhưng vẫn to, tự hào:
  * top 3 mỗi khối có ảnh mặt + trường, học sinh đã đăng nhập thấy hạng của mình. Bảng từng lớp ở /xep-hang. */
@@ -21,7 +21,9 @@ export default function HonorBoard(){
  if(!shown.length)return null;
  const face=(row:Row,big:boolean)=><figure key={row.rank} className={'hs-face hs-face-'+row.rank}>
   <span className="hs-pic">{row.rank===1&&<b className="hs-crown" aria-hidden="true">👑</b>}<StudentAvatar appearance={look(row)} size={big?84:64}/><i aria-label={'Hạng '+row.rank}>{row.rank}</i></span>
-  <figcaption><strong>{row.fullName||'Học sinh MTM'}</strong>{place(row)&&<small>{place(row)}</small>}<em>{fmt(row.score)}</em></figcaption>
+  <figcaption><strong>{row.fullName||'Học sinh MTM'}</strong>{place(row)&&<small>{place(row)}</small>}<em>{fmt(row.score)}</em>
+   <span className={'hs-title hs-title-'+row.rank}>{row.rank===1?'Vô địch':row.rank===2?'Á quân':'Hạng ba'}</span>
+   {(()=>{const t=tier(row.score);return t&&<span className={'hs-tier '+t[2]}>{t[0]} {t[1]}{row.score>=10?' ⭐':''}</span>;})()}</figcaption>
  </figure>;
  return <section id="bang-xep-hang" className="mtm-arena mtm-honorstrip" aria-labelledby="hb-title">
   <div className="hs-side">
