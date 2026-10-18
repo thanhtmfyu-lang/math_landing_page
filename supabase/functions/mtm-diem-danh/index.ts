@@ -1,5 +1,5 @@
 // API kho điểm danh chung cho Javis (bot Zalo) và máy quét Zoom: POST JSON {action,...}, header x-mtm-token = MTM_DD_TOKEN.
-// action: find | move | cancel_move | mark | raw | session | moves | ... | pin_reset | pin_status | profile_update | missing_profile. Xem migration 033-054.
+// action: find | move | cancel_move | mark | raw | session | moves | ... | pin_reset | pin_status | profile_update | missing_profile | phone_add. Xem migration 033-056.
 const URL_DB = Deno.env.get("SUPABASE_URL") ?? "";
 const KHOA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MA = Deno.env.get("MTM_DD_TOKEN") ?? "";
@@ -36,7 +36,7 @@ Deno.serve(async (req) => {
   let p: unknown;
   try { p = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
   try { await taiAnhPhanHoi(p); } catch (e) { return Response.json({ error: String((e as Error).message) }, { status: 400 }); }
-  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_dd_api11`, {
+  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_dd_api12`, {
     method: "POST",
     headers: { apikey: KHOA, Authorization: `Bearer ${KHOA}`, "Content-Type": "application/json" },
     body: JSON.stringify({ p }),

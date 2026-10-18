@@ -77,3 +77,25 @@
 @media(max-width:760px){.ar-class-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:86%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;overscroll-behavior-x:contain}
  .ar-class-grid>.ar-class-card{scroll-snap-align:start}.ar-cohort-label::after{content:'  · vuốt ngang xem các lớp →';font-weight:500;color:#dbe4ff;font-size:12px}
  .ar-section a{display:block;margin:4px 0 0}}
+/* 18/10 13:20 anh chê "to quá": thu gọn toàn bộ. */
+.mtm-arena{margin:16px auto 24px;border-radius:22px}
+.ar-head{padding:18px 24px 16px;gap:12px 24px}.ar-head h2{font-size:clamp(24px,2.8vw,36px);margin:2px 0 4px}.ar-head-text>p:last-child{font-size:14px}
+.ar-eyebrow{font-size:11px}.ar-kinds button{padding:6px 12px;font-size:13px}.ar-countdown,.ar-stats{font-size:13px}.ar-countdown b,.ar-stats b{font-size:14px}
+.ar-section{font-size:clamp(17px,1.8vw,21px);margin:14px 24px 2px}.ar-cohort-label{font-size:13px;padding:3px 12px;margin:6px 0 6px}
+.ar-class-grid{grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:10px}
+.ar-card{padding:10px 10px 12px;gap:8px;border-radius:16px}.ar-card-head h3{font-size:19px}.ar-class-card .ar-card-head h3{font-size:15px}.ar-card-head span{font-size:12px}
+.ar-podium{padding-top:10px;gap:4px}.ar-step{gap:2px}.ar-step-avatar .r104-avatar{border-width:3px}
+.ar-step-name{font-size:13px}.ar-step-1 .ar-step-name{font-size:14px}.ar-chip{font-size:10px;padding:1px 6px}.ar-step-school{font-size:11px}
+.ar-step-score{font-size:18px}.ar-step-1 .ar-step-score{font-size:22px}.ar-crown{font-size:20px;top:-17px}.ar-medal{width:20px;height:20px;font-size:11px;right:-3px;bottom:-3px}
+.ar-step-1 .ar-plinth{height:40px}.ar-step-2 .ar-plinth{height:30px}.ar-step-3 .ar-plinth{height:22px}.ar-plinth{font-size:11px;border-radius:8px 8px 3px 3px}
+.ar-podium-sm .ar-step-name{font-size:12px}.ar-podium-sm .ar-step-1 .ar-step-name{font-size:12.5px}.ar-podium-sm .ar-step-score{font-size:15px}.ar-podium-sm .ar-step-1 .ar-step-score{font-size:18px}
+.ar-podium-sm .ar-crown{font-size:16px;top:-14px}.ar-podium-sm .ar-step-1 .ar-plinth{height:28px}.ar-podium-sm .ar-step-2 .ar-plinth{height:20px}.ar-podium-sm .ar-step-3 .ar-plinth{height:14px}.ar-podium-sm .ar-plinth span{font-size:10px}
+.ar-podium-sm .ar-step-school{display:none}
+.ar-list{gap:3px}.ar-list li{gap:7px;padding:4px 8px;border-radius:10px}.ar-list-rank{width:18px;font-size:13px}
+.ar-list-who strong{font-size:13px}.ar-list-who small{font-size:11px}.ar-list-score{width:58px}.ar-list-score span{font-size:14px}.ar-list-score small{font-size:10px}
+.ar-race h4{font-size:14px}.ar-race-row{padding:5px 8px;border-radius:10px;grid-template-columns:24px minmax(0,1.3fr) minmax(40px,1fr) 38px}.ar-race-pos{font-size:15px}
+.ar-own{margin:12px 24px 0;padding:8px 12px}.ar-own strong{font-size:15px}.ar-own span{font-size:13px}
+.ar-foot{font-size:12px}.ar-more{font-size:12px;padding:4px}
+@media(max-width:760px){.ar-podium-sm .ar-step-avatar .r104-avatar{width:38px!important;height:38px!important}.ar-podium-sm .ar-step-1 .ar-step-avatar .r104-avatar{width:46px!important;height:46px!important}
+ .ar-step-avatar .r104-avatar{width:46px!important;height:46px!important}.ar-step-1 .ar-step-avatar .r104-avatar{width:56px!important;height:56px!important}.ar-step-score{font-size:16px}.ar-step-1 .ar-step-score{font-size:19px}
+ .ar-section{margin:12px 12px 2px}.ar-own{margin:10px 10px 0}}

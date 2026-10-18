@@ -53,7 +53,7 @@ export default function HomeworkGate({studentCode,identity,busy,classNames=[],cl
         {pinField('btvn-new-pin','Mã PIN mới (6 số)','new-password',true)}
         {pinField('btvn-new-pin-2','Nhập lại mã PIN','new-password',true)}
       </div>}
-      {pinMode==='enter'&&pinField('btvn-pin','Mã PIN (6 số)','current-password',false,'Lần đầu vào bằng cách này: để trống ô PIN, bấm Vào bài để tạo PIN. Quên PIN: nhắn Zalo trợ lý lớp.')}
+      {pinMode==='enter'&&pinField('btvn-pin','Mã PIN (6 số)','current-password',false,'Lần đầu: gõ 6 số em muốn đặt làm PIN rồi bấm Vào bài, lần sau nhập lại đúng số này. Quên PIN: nhắn Zalo trợ lý lớp.')}
       {classesError&&<p role="status">Chưa tải được danh sách lớp. <button type="button" disabled={busy||classesLoading} onClick={onReloadClasses}>Thử tải lại</button></p>}
       {!classesLoading&&!classesError&&!classNames.length&&<p role="status">Chưa có lớp để chọn. Em liên hệ MTM.</p>}
       <button type="submit" className="ep-primary" disabled={busy||classesLoading||!classNames.length}>{busy?'Đang kiểm tra…':'Vào bài'}</button>

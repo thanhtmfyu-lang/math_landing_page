@@ -28,7 +28,7 @@ function Podium({rows,small=false}:{rows:Row[];small?:boolean}){
  return <div className={'ar-podium'+(small?' ar-podium-sm':'')}>{[1,0,2].map(i=>{const row=rows[i];if(!row)return <div key={i} className="ar-step ar-step-empty" aria-hidden="true"/>;
   return <article key={row.rank} className={'ar-step ar-step-'+row.rank}>
    {row.rank===1&&<span className="ar-crown" aria-hidden="true">👑</span>}
-   <div className="ar-step-avatar"><StudentAvatar appearance={look(row)} size={small?(row.rank===1?60:50):row.rank===1?84:68}/><b className="ar-medal" aria-label={'Hạng '+row.rank}>{row.rank}</b></div>
+   <div className="ar-step-avatar"><StudentAvatar appearance={look(row)} size={small?(row.rank===1?46:38):row.rank===1?64:52}/><b className="ar-medal" aria-label={'Hạng '+row.rank}>{row.rank}</b></div>
    <strong className="ar-step-name">{row.fullName||'Học sinh MTM'}</strong>
    <span className="ar-chip">{row.className}</span>
    {place(row)&&<small className="ar-step-school">{place(row)}</small>}
@@ -40,7 +40,7 @@ function Podium({rows,small=false}:{rows:Row[];small?:boolean}){
 function Chasers({rows}:{rows:Row[]}){
  if(!rows.length)return null;
  return <ol className="ar-list" start={rows[0].rank}>{rows.map(row=><li key={row.rank}>
-  <b className="ar-list-rank">{row.rank}</b><StudentAvatar appearance={look(row)} size={38}/>
+  <b className="ar-list-rank">{row.rank}</b><StudentAvatar appearance={look(row)} size={28}/>
   <div className="ar-list-who"><strong>{row.fullName||'Học sinh MTM'}</strong><small>{[row.className,place(row)].filter(Boolean).join(' · ')}</small></div>
   <div className="ar-list-score"><span>{fmt(row.score)}</span><i style={{width:Math.max(4,row.score*10)+'%'}}/><small>Nộp {row.submitted}/{row.total}</small></div>
  </li>)}</ol>;
