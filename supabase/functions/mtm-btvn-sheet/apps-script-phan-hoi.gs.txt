@@ -1,0 +1,80 @@
+/**
+ * MTM - Phản hồi PH, HS (bằng chứng) - Apps Script gắn vào Sheet tổng "Cơ sở dữ liệu học vụ".
+ * 18/10/2026 anh Thành: ảnh bằng chứng lưu Drive riêng + Sheet có chữ trong ô và ẢNH NẰM TRONG Ô.
+ * Xác thực bằng danh tính Google của chủ Sheet (ScriptApp.getIdentityToken), không có mã bí mật nào trong script hay ô.
+ * appsscript.json: oauthScopes = spreadsheets.currentonly, drive, script.external_request, script.scriptapp, openid, userinfo.email.
+ * Đã cài 18/10/2026 (dự án Apps Script gắn Sheet tổng, id 1JYYfE0pRIH-kWMW13I9PnJHJ2Yw7HBJ5fD-vDQfw-D75gsxlLJye6PS8).
+ * Chạy: thiet_lap() một lần (tạo tab, thư mục Drive, lịch 15 phút); sau đó dong_bo() tự chạy.
+ */
+var KHO = 'https://egljwujhgdapaxyrjskj.supabase.co/functions/v1/mtm-btvn-sheet';
+var TAB = 'Phản hồi PH, HS';
+var THU_MUC = 'MTM - Phản hồi PH, HS (bằng chứng)';
+var COT = ['Mã', 'Ngày', 'Vai', 'Học sinh', 'Lớp', 'Loại', 'Nhận xét', 'Ảnh bằng chứng', 'Dùng quảng bá', 'Cần xử lý', 'Tệp Drive'];
+
+function thiet_lap() {
+  var p = PropertiesService.getScriptProperties();
+  var ss = SpreadsheetApp.getActive();
+  var sh = ss.getSheetByName(TAB) || ss.insertSheet(TAB);
+  sh.clear();
+  sh.getRange(1, 1, 1, COT.length).setValues([COT]).setFontWeight('bold').setBackground('#14245a').setFontColor('#ffd966');
+  sh.setFrozenRows(1);
+  sh.setColumnWidth(7, 380); sh.setColumnWidth(8, 300); sh.setColumnWidth(1, 150);
+  sh.getRange('G:G').setWrap(true);
+  thu_muc_();
+  p.setProperty('LAST_ID', '0');
+  ScriptApp.getProjectTriggers().forEach(function (t) { if (t.getHandlerFunction() === 'dong_bo') ScriptApp.deleteTrigger(t); });
+  ScriptApp.newTrigger('dong_bo').timeBased().everyMinutes(15).create();
+  dong_bo();
+}
+
+function thu_muc_() {
+  var p = PropertiesService.getScriptProperties(), id = p.getProperty('FOLDER_ID');
+  if (id) { try { return DriveApp.getFolderById(id); } catch (e) {} }
+  var it = DriveApp.getFoldersByName(THU_MUC);
+  var f = it.hasNext() ? it.next() : DriveApp.createFolder(THU_MUC); // tạo mới mặc định riêng tư, không chia sẻ
+  p.setProperty('FOLDER_ID', f.getId());
+  return f;
+}
+
+function dong_bo() {
+  var lock = LockService.getScriptLock();
+  if (!lock.tryLock(1000)) return;
+  try {
+    var p = PropertiesService.getScriptProperties(), token = ScriptApp.getIdentityToken();
+    if (!token) throw new Error('Chưa có danh tính Google (thiếu quyền openid trong appsscript.json)');
+    var sh = SpreadsheetApp.getActive().getSheetByName(TAB), folder = thu_muc_();
+    var after = Number(p.getProperty('LAST_ID') || '0'), vong = 0;
+    while (vong++ < 20) {
+      var res = UrlFetchApp.fetch(KHO, { method: 'post', contentType: 'application/json', muteHttpExceptions: true,
+        headers: { Authorization: 'Bearer ' + token }, payload: JSON.stringify({ op: 'feedback', after: after }) });
+      if (res.getResponseCode() !== 200) throw new Error('Kho trả ' + res.getResponseCode());
+      var rows = JSON.parse(res.getContentText()).rows || [];
+      if (!rows.length) break;
+      rows.forEach(function (r) {
+        var ten = '', anh = null;
+        if (r.imagePng) {
+          ten = String(r.sourceMsg || ('phan-hoi-' + r.id)).replace(/[^\w.-]+/g, '_') + '.png';
+          var blob = Utilities.newBlob(Utilities.base64Decode(r.imagePng), 'image/png', ten);
+          if (!folder.getFilesByName(ten).hasNext()) folder.createFile(blob);
+          anh = r.imagePng;
+        }
+        sh.appendRow([r.sourceMsg || r.id, r.at || '', r.role || '', r.student || '', r.className || '', r.type || '',
+          r.text || '', '', r.promo ? 'Có' : '', r.needAction || '', ten]);
+        var hang = sh.getLastRow();
+        if (anh) {
+          try {
+            var cell = SpreadsheetApp.newCellImage().setSourceUrl('data:image/png;base64,' + anh)
+              .setAltTextTitle('Bằng chứng ' + (r.sourceMsg || '')).build();
+            sh.getRange(hang, 8).setValue(cell);
+          } catch (e) {
+            // Dự phòng: ảnh đặt đè lên đúng ô nếu Google từ chối ảnh-trong-ô.
+            sh.insertImage(Utilities.newBlob(Utilities.base64Decode(anh), 'image/png', ten), 8, hang);
+          }
+          sh.setRowHeight(hang, 220);
+        }
+        after = Math.max(after, Number(r.id));
+        p.setProperty('LAST_ID', String(after));
+      });
+    }
+  } finally { lock.releaseLock(); }
+}

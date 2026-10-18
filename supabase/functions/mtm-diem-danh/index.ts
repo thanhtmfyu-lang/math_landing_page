@@ -11,7 +11,8 @@ function bang(a: string, b: string): boolean {
   return d === 0;
 }
 
-// 053: feedback_add kèm imagePng (base64 PNG <= 2 MB, thẻ phản hồi ẩn danh do Javis vẽ) -> tải vào bucket công khai mtm-feedback-cards, thay bằng imageUrl.
+// 059: feedback_add kèm imagePng (base64 PNG <= 2 MB, ảnh BẰNG CHỨNG từ tin thật, SĐT đã che) -> tải vào bucket RIÊNG TƯ mtm-feedback-proof, thay bằng imagePath.
+// (053 cũ dùng bucket công khai mtm-feedback-cards: đã thôi dùng vì ảnh là tin nhắn thật của PH/HS.)
 async function taiAnhPhanHoi(p: unknown) {
   const o = p as Record<string, unknown>;
   if (!o || o.action !== "feedback_add") return;
@@ -23,11 +24,12 @@ async function taiAnhPhanHoi(p: unknown) {
     const bytes = Uint8Array.from(atob(b64.replace(/^data:image\/png;base64,/, "")), (c) => c.charCodeAt(0));
     if (bytes.length > 2097152 || bytes[0] !== 0x89 || bytes[1] !== 0x50 || bytes[2] !== 0x4e || bytes[3] !== 0x47) throw Error("imagePng must be PNG <= 2MB");
     const ten = `${new Date().toISOString().slice(0, 7)}/${crypto.randomUUID()}.png`;
-    const up = await fetch(`${URL_DB}/storage/v1/object/mtm-feedback-cards/${ten}`, {
+    const up = await fetch(`${URL_DB}/storage/v1/object/mtm-feedback-proof/${ten}`, {
       method: "POST", headers: { apikey: KHOA, Authorization: `Bearer ${KHOA}`, "Content-Type": "image/png" }, body: bytes,
     });
     if (!up.ok) throw Error("upload failed");
-    row.imageUrl = `${URL_DB}/storage/v1/object/public/mtm-feedback-cards/${ten}`;
+    row.imagePath = ten;
+    delete row.imageUrl;
   }
 }
 
@@ -36,7 +38,7 @@ Deno.serve(async (req) => {
   let p: unknown;
   try { p = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
   try { await taiAnhPhanHoi(p); } catch (e) { return Response.json({ error: String((e as Error).message) }, { status: 400 }); }
-  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_dd_api12`, {
+  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_dd_api13`, {
     method: "POST",
     headers: { apikey: KHOA, Authorization: `Bearer ${KHOA}`, "Content-Type": "application/json" },
     body: JSON.stringify({ p }),
