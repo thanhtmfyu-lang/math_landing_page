@@ -35,6 +35,7 @@ export class SupabaseHomeworkRepository {
     // 18/10 mã PIN 6 số: lần đầu phải đặt PIN; sai 5 lần khoá 15 phút.
     if(result?.pin==='setup')throw new HomeworkError(428,PIN_SETUP);
     if(result?.pin==='required')throw new HomeworkError(428,PIN_REQUIRED);
+    if(result?.pin==='phone')throw new HomeworkError(422,'Số điện thoại chưa khớp hồ sơ lớp nên chưa tạo được mã PIN. Em nhập đúng số đã đăng ký, hoặc nhắn trợ lý lớp qua Zalo 0967365413 để cập nhật số.');
     if(result?.pin==='weak')throw new HomeworkError(422,'Mã PIN quá dễ đoán. Em chọn 6 số khác, không dùng 123456 hay 6 số giống nhau.');
     if(result?.pin==='wrong')throw new HomeworkError(422,'Sai mã PIN. Em còn '+Number(result.remaining??0)+' lần thử trước khi bị khoá 15 phút.');
     if(result?.pin==='locked')throw new HomeworkError(423,'Sai mã PIN quá 5 lần. Em chờ 15 phút, hoặc nhắn trợ lý lớp qua Zalo 0967365413 để đặt lại PIN.');
