@@ -317,18 +317,22 @@
   .ep-root.btvn-session .btvn-gate > button[type="submit"] { align-self: stretch; }
 }
 
-/* Trang vào bài: "Không có mã" (cách chính) bên trái rộng hơn; bên phải là "Có mã" + câu hỏi thường gặp. */
-.ep-root.btvn-session .btvn-gates.btvn-gates-main-first { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
-.ep-root.btvn-session .btvn-gate-main { height: auto; }
-.ep-root.btvn-session .btvn-gate-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
-.ep-root.btvn-session .btvn-gate-side .btvn-gate { height: auto; }
-.ep-root.btvn-session .btvn-gate-side .btvn-gate > button[type="submit"] { margin-top: 8px; }
-.ep-root.btvn-session .btvn-gate-faq { box-sizing: border-box; padding: 12px 20px; border-radius: 16px; background: #f7f9fd; border: 1px solid #dce2ed; }
-.ep-root.btvn-session .btvn-gate-faq summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
-.ep-root.btvn-session .btvn-gate-faq p { margin: 4px 0 12px; line-height: 1.6; }
-@media (max-width: 700px) {
-  .ep-root.btvn-session .btvn-gates.btvn-gates-main-first { grid-template-columns: minmax(0, 1fr); }
+/* Trang vào bài: giữ thứ tự mã nguồn (ô Có mã trước) nhưng hiển thị "Không có mã" (cách chính) bên trái, rộng hơn. */
+.ep-root.btvn-session .btvn-gates { grid-template-columns: minmax(0, 2fr) minmax(0, 3fr); align-items: start; }
+.ep-root.btvn-session .btvn-gates > .btvn-gate:last-child { order: -1; }
+.ep-root.btvn-session .btvn-gates { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); }
+.ep-root.btvn-session .btvn-gate { height: auto; }
+.ep-root.btvn-session .btvn-gate > button[type="submit"] { margin-top: 8px; }
+@media (max-width: 700px) { .ep-root.btvn-session .btvn-gates { grid-template-columns: minmax(0, 1fr); } }
+
+/* Công cụ học tập ở trang BTVN: cùng khuôn với các khối khác (trước đây hẹp lệch giữa). */
+.ep-root.btvn-session > :is(.btvn-time-plan, .btvn-self-check) {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--btvn-page-gutter));
+  max-width: calc(var(--btvn-page-width) - 2 * var(--btvn-page-gutter));
+  margin: 16px auto 0;
 }
+@media (max-width: 700px) { .ep-root.btvn-session > :is(.btvn-time-plan, .btvn-self-check) { width: auto; margin-inline: 16px; } }
 
 /* Sau khi đăng nhập: thanh trên cùng và dòng "Gặp lỗi khi làm bài trong Zalo?" nằm trong cùng khuôn với nội dung (trước đây trôi ra mép trái). */
 .ep-root.btvn-session > .btvn-top {
@@ -350,21 +354,4 @@
 .ep-root.btvn-session > details.btvn-entry-help:not(.mig-panel) summary { font-size: 15px; font-weight: 600; }
 @media (max-width: 700px) {
   .ep-root.btvn-session > :is(.btvn-top, details.btvn-entry-help:not(.mig-panel)) { width: auto; margin-inline: 16px; }
-}
-
-/* Công cụ học tập (chia chặng, nhịp tự học, khởi động, tự kiểm, sân chơi): lưới 2 cột cùng khuôn trang thay vì một cột hẹp dài. */
-.ep-root.btvn-session > .btvn-tools {
-  box-sizing: border-box;
-  width: calc(100% - 2 * var(--btvn-page-gutter));
-  max-width: calc(var(--btvn-page-width) - 2 * var(--btvn-page-gutter));
-  margin: 24px auto 0;
-  display: grid;
-  grid-template-columns: repeat(2, minmax(0, 1fr));
-  gap: 16px;
-  align-items: stretch;
-}
-.ep-root.btvn-session > .btvn-tools > * { width: auto; max-width: none; margin: 0; box-sizing: border-box; min-width: 0; }
-.ep-root.btvn-session > .btvn-tools > .btvn-time-plan { grid-column: 1 / -1; }
-@media (max-width: 700px) {
-  .ep-root.btvn-session > .btvn-tools { width: auto; margin-inline: 16px; grid-template-columns: minmax(0, 1fr); }
 }

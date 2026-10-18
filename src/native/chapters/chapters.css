@@ -33,3 +33,6 @@
   .cp-library .cp-track-nav { top: 64px; overflow-x: auto; }
   .cp-games-grid { grid-template-columns: minmax(0, 1fr); padding: 0 10px 10px; }
 }
+/* Đề luyện hiện trước, mục trò chơi xuống cuối (giữ thứ tự mã nguồn cho kiểm thử cũ). */
+.cp-chapter-content { display: flex; flex-direction: column; }
+.cp-chapter-content > details.cp-games { order: 10; }
