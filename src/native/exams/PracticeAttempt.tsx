@@ -32,14 +32,14 @@ function exportDraft(draft: Draft): boolean {
 }
 
 /** kind: 'exam' cho Thi thử (/thi-thu), 'practice' (mặc định) cho Luyện tập; chỉ đổi chữ hiển thị. */
-export default function PracticeAttempt({exam,previousExam,catalogUrl,storeOverride,questionReader,renderText,renderSolutionExtra,contextLabel,audienceLabel,displayTitle,kind='practice',isHomework=false,homeworkSelfCheck,deadlineAt,clockOffsetMs,newAttemptsClosed,storageNotice,saveStatus,savePending,onRetrySave,onAcceptClosed,onRetake}: PracticeAttemptProps) {
-  const props = {exam,previousExam,catalogUrl,storeOverride,questionReader,renderText,renderSolutionExtra,contextLabel,audienceLabel,displayTitle,kind,isHomework,homeworkSelfCheck,deadlineAt,clockOffsetMs,newAttemptsClosed,storageNotice,saveStatus,savePending,onRetrySave,onAcceptClosed,onRetake};
+export default function PracticeAttempt({onServerStart,onServerSubmit,serverScore,exam,previousExam,catalogUrl,storeOverride,questionReader,renderText,renderSolutionExtra,contextLabel,audienceLabel,displayTitle,kind='practice',isHomework=false,homeworkSelfCheck,deadlineAt,clockOffsetMs,newAttemptsClosed,storageNotice,saveStatus,savePending,onRetrySave,onAcceptClosed,onRetake}: PracticeAttemptProps) {
+  const props = {onServerStart,onServerSubmit,serverScore,exam,previousExam,catalogUrl,storeOverride,questionReader,renderText,renderSolutionExtra,contextLabel,audienceLabel,displayTitle,kind,isHomework,homeworkSelfCheck,deadlineAt,clockOffsetMs,newAttemptsClosed,storageNotice,saveStatus,savePending,onRetrySave,onAcceptClosed,onRetake};
   const state = usePracticeAttempt(props);
   const {sourceIssue,erratum,acceptedErratum,setAcceptedErratum,legacy,persisted,conflict,draft,notice,setNotice,unsaved,exportNotice,setExportNotice,pdfReady,setPdfReady,confirmation,setConfirmation,desktopLayout,setDesktopLayout,setActiveQuestion,setQuestionFocus,mobilePane,setMobilePane,leaveConfirmation,persist,finish,begin,submitted,sections,answered,invalidCount,seconds,startDisabled,startLabel,retake} = state;
   const [exitedAttempt,setExitedAttempt]=useState<string|null>(null);
   const focused=phongThiV2&&!!draft&&!submitted&&exitedAttempt!==draft.attemptId;
   if(isHomework&&submitted)return <section className="r106-assessment r106-submit-feedback" aria-label="Xác nhận nộp BTVN"><p role={onRetrySave||onAcceptClosed?"alert":"status"}>{onRetrySave||onAcceptClosed?saveStatus:"Đang chờ máy chủ MTM xác nhận bài nộp của em…"}</p>{onRetrySave&&<button type="button" onClick={onRetrySave}>Gửi lại bài đang giữ</button>}{onAcceptClosed&&<button type="button" onClick={onAcceptClosed}>Chấp nhận bản máy chủ đã chấm</button>}</section>;
-  return <section className="ep-attempt r106-assessment">{leaveConfirmation}
+  return <section className="ep-attempt r106-assessment">{leaveConfirmation}{state.serverBusy&&<p role="status">?ang ch? m?y ch? x?c nh?n l??t thi?</p>}
     {focused?<FocusRoom key={draft.attemptId} props={props} state={state} onExit={()=>setExitedAttempt(draft.attemptId)}/>:<>
     {phongThiV2&&draft&&!submitted&&<button type="button" className="ep-primary" onClick={()=>setExitedAttempt(null)}>Vào lại phòng tập trung</button>}
     {phongThiV2&&!draft&&<section className="ep-card ep-room-intake"><strong className="r106-intake-title">{isHomework?'Phòng làm BTVN MTM':kind==='exam'?'Phòng thi thử MTM':'Phòng tự luyện MTM'}</strong><RoomNotice isHomework={isHomework}/><details><summary>Nguồn và cách chấm</summary><p>MTM sưu tầm và biên soạn</p><p>Thang 10 điểm. Điểm mỗi câu hiện ở phiếu; câu trống hoặc sai định dạng được 0 điểm.</p>{exam.questions.find(q=>q.kind==='tf')?.kind==='tf'&&<p>Đúng/sai: {exam.questions.filter(q=>q.kind==='tf').slice(0,1).map(q=>q.kind==='tf'?q.pointsByCorrectCount.map((v,i)=>i+' ý đúng: '+(v/1000).toLocaleString('vi-VN')+' điểm').join(' · '):'')}</p>}<p>Hết giờ tự nộp. Toàn màn hình giúp tập trung, không xác thực kỳ thi hay chống gian lận.</p></details></section>}
@@ -64,7 +64,7 @@ export default function PracticeAttempt({exam,previousExam,catalogUrl,storeOverr
         {submitted&&!questionReader&&exam.sourcePdf&&<h2 className="ep-pdf-after">Đề bài đã làm</h2>}
         {submitted&&questionReader?<details className="ep-read-again"><summary>Đọc lại toàn bộ đề bài</summary>{questionReader}</details>:questionReader}
         {exam.sourcePdf&&<Suspense fallback={<p role="status">Đang mở bản câu hỏi…</p>}><QuestionPdf file={exam.sourcePdf} title={titleText(exam.title)} onReady={setPdfReady}/></Suspense>}
-        {exam.sourcePdf&&!pdfReady&&<p><a href={exam.sourceUrl} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Xem nguồn để đối chiếu</a> · Nguồn gốc có thể chứa đáp án hoặc mã đề khác; chưa mở làm bài khi không xem được bản câu hỏi.</p>}
+        {exam.sourcePdf&&!pdfReady&&exam.sourceUrl&&<p><a href={exam.sourceUrl} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Xem nguồn để đối chiếu</a> · Nguồn gốc có thể chứa đáp án hoặc mã đề khác; chưa mở làm bài khi không xem được bản câu hỏi.</p>}
       </div>
       <div className="ep-answer-pane" aria-label={submitted?'Kết quả bài làm':'Phiếu trả lời'}>
         {isHomework&&draft&&!submitted&&homeworkSelfCheck}

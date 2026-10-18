@@ -1,0 +1,64 @@
+/**
+ * H3, 18/10/2026: thêm tệp này vào dự án Apps Script đang gắn với Sheet học vụ.
+ * Script Properties: MTM_SHEET_SCRIPT_TOKEN phải khớp secret Edge cùng tên.
+ * Không đặt mã trong ô, URL hay mã nguồn. Không tạo thêm lịch hoặc đổi chia sẻ.
+ * Công thức: =MTM_SHEET_CSV("diem";1). Đối số thứ hai là số lần làm mới.
+ */
+var MTM_CSV_ENDPOINT_ = 'https://egljwujhgdapaxyrjskj.supabase.co/functions/v1/mtm-btvn-sheet';
+var MTM_CSV_TABS_ = ['diem', 'xephang', 'diemdanh', 'zoom', 'vantay', 'chuyenbuoi', 'cahomnay', 'cachitiet', 'tongquan', 'hocsinh', 'phanhoi'];
+
+/**
+ * Đọc bảng CSV riêng tư qua header, không đưa mã vào URL.
+ * @param {string} tab Tên dữ liệu, ví dụ diem hoặc hocsinh.
+ * @param {number} lanCapNhat Đổi số này để nạp lại bảng.
+ * @return {string[][]} Bảng dữ liệu.
+ * @customfunction
+ */
+function MTM_SHEET_CSV(tab, lanCapNhat) {
+  tab = String(tab || '');
+  if (MTM_CSV_TABS_.indexOf(tab) < 0) throw new Error('Tab không hợp lệ');
+  var token = PropertiesService.getScriptProperties().getProperty('MTM_SHEET_SCRIPT_TOKEN');
+  if (!token) throw new Error('Chưa cấu hình Script Properties cho đồng bộ MTM');
+  var res = UrlFetchApp.fetch(MTM_CSV_ENDPOINT_ + '?tab=' + encodeURIComponent(tab), {
+    method: 'get', headers: { 'x-mtm-sheet-token': token }, muteHttpExceptions: true, followRedirects: false
+  });
+  if (res.getResponseCode() !== 200) throw new Error('Đồng bộ MTM thất bại, mã HTTP ' + res.getResponseCode());
+  return Utilities.parseCsv(res.getContentText('UTF-8'));
+}
+
+/** Chỉ đọc công thức, trả đúng tên tab và ô cần thay. Không log URL/mã/giá trị học sinh. */
+function mtm_kiem_ke_csv() {
+  var result = [];
+  SpreadsheetApp.getActive().getSheets().forEach(function (sheet) {
+    var formulas = sheet.getDataRange().getFormulas();
+    formulas.forEach(function (row, r) {
+      row.forEach(function (formula, c) {
+        if (!/^=\s*IMPORTDATA\s*\(/i.test(formula) || formula.indexOf(MTM_CSV_ENDPOINT_) < 0) return;
+        var match = /[?&]tab=([a-z]+)/i.exec(formula);
+        if (!match || MTM_CSV_TABS_.indexOf(match[1]) < 0) return;
+        result.push({ sheet: sheet.getName(), cell: sheet.getRange(r + 1, c + 1).getA1Notation(), tab: match[1],
+          formula: '=MTM_SHEET_CSV("' + match[1] + '";1)' });
+      });
+    });
+  });
+  console.log(JSON.stringify(result));
+  return result;
+}
+
+/**
+ * Dùng lịch dong_bo 15 phút đã có; chỉ đổi đối số các công thức đã chuyển sang MTM_SHEET_CSV.
+ * Không tạo lịch. Không sửa IMPORTDATA cũ thay cho người phụ trách Sheet.
+ */
+function mtm_lam_moi_csv() {
+  var revision = String(Date.now());
+  SpreadsheetApp.getActive().getSheets().forEach(function (sheet) {
+    sheet.getDataRange().getFormulas().forEach(function (row, r) {
+      row.forEach(function (formula, c) {
+        if (!/^=\s*MTM_SHEET_CSV\s*\(\s*"[a-z]+"\s*[;,]\s*\d+\s*\)\s*$/i.test(formula)) return;
+        sheet.getRange(r + 1, c + 1).setFormula(formula.replace(/([;,]\s*)\d+(\s*\)\s*)$/, function (_, separator, end) {
+          return separator + revision + end;
+        }));
+      });
+    });
+  });
+}

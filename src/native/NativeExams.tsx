@@ -3,6 +3,7 @@ import {useEffect, useMemo, useRef, useState} from 'react';
 import {Link, navigate} from '../migration/navigation';
 import {filterSearch, GRADES, PERIODS, PERIOD_LABELS, PRACTICE_EXAMS, readFilters, readyExams, titleTerm, type Filters, type PracticeExam} from './exams/data';
 import PracticeAttempt, {localStore} from './exams/PracticeAttempt';
+import ServerExamAttempt from './exams/ServerExamAttempt';
 import {STORAGE_PREFIX} from './exams/store';
 import {resultFor} from './exams/result';
 import {SEO} from '../components/SEO';
@@ -82,7 +83,7 @@ export default function NativeExams({pathname, search, catalog = PRACTICE_EXAMS,
 
   return <div className="ep-root">
     <SEO {...examRouteMetadata(exam,id!==null)}/>
-    {id !== null ? exam ? <PracticeAttempt key={exam.id + ':' + exam.versionHash + ':' + exam.rubricVersion} kind="exam" exam={practiceVersion(exam)} previousExam={practiceVersion(exam)===exam?undefined:exam} catalogUrl={catalogUrl}/> : <section className="ep-card"><h1>Chưa mở được đề này</h1><p>Đề trong đường dẫn chưa có trong danh sách đã kiểm tra hoặc đường dẫn không đúng.</p><p>Đề đang được kiểm tra nguồn và đáp án trước khi mở làm bài.</p><Link className="ep-link" href={catalogUrl}>Về danh sách đề</Link></section> : <>
+    {id !== null ? exam ? exam.serverGraded ? <ServerExamAttempt key={exam.id} exam={practiceVersion(exam)} previousExam={practiceVersion(exam)===exam?undefined:exam} catalogUrl={catalogUrl}/> : <PracticeAttempt key={exam.id + ':' + exam.versionHash + ':' + exam.rubricVersion} kind="exam" exam={practiceVersion(exam)} previousExam={practiceVersion(exam)===exam?undefined:exam} catalogUrl={catalogUrl}/> : <section className="ep-card"><h1>Chưa mở được đề này</h1><p>Đề trong đường dẫn chưa có trong danh sách đã kiểm tra hoặc đường dẫn không đúng.</p><p>Đề đang được kiểm tra nguồn và đáp án trước khi mở làm bài.</p><Link className="ep-link" href={catalogUrl}>Về danh sách đề</Link></section> : <>
       <R106PageIntro className="ep-intro" eyebrow="Minh Thành Math · Tự luyện" title="Thi thử Toán" description={<><p>Đọc đề, làm bài có thời gian và xem đáp án, lời giải sau khi nộp.</p><p><Link className="ep-link" href="/btvn">BTVN theo mã học sinh · lịch sử và bảng tháng</Link></p></>}><p className="ep-total"><strong>{ready.filter(e=>!SOURCE_HOLDS[e.id]).length}</strong> đề mở làm bài · điều kiện đính chính được ghi rõ trước khi bắt đầu</p></R106PageIntro>
       <div className="ep-filters" role="search" aria-label="Lọc đề thi">
         <label>Lớp<select value={filters.lop} onChange={event => changeFilters({lop: event.target.value as Filters['lop']})}><option value="all">Tất cả lớp</option>{GRADES.map(grade => <option key={grade} value={grade}>Lớp {grade}</option>)}</select></label>

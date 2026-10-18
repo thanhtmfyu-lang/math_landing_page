@@ -1,5 +1,6 @@
 import {publicSitemapPlugin} from './scripts/public-sitemap.mjs';
 import {generatePracticeBank} from './scripts/generate-practice-bank.mjs';
+import {publicExamCatalogPlugin} from './scripts/public-exam-catalog.mjs';
 generatePracticeBank();
 
   import { defineConfig } from 'vite';
@@ -12,7 +13,7 @@ generatePracticeBank();
     return {
     // Cache riêng trong worktree: build/ bị middleware chặn, node_modules dùng chung.
     cacheDir: process.env.MTM_BTVN_DEMO==='1'?'.qa-temp/btvn-vite-cache':undefined,
-    plugins: [react(),...(command==='serve'&&process.env.VERCEL!=='1'?[btvnDevPlugin()]:[]),publicSitemapPlugin()],
+    plugins: [publicExamCatalogPlugin(),react(),...(command==='serve'&&process.env.VERCEL!=='1'?[btvnDevPlugin()]:[]),publicSitemapPlugin()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {

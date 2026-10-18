@@ -76,5 +76,9 @@ function dong_bo() {
         p.setProperty('LAST_ID', String(after));
       });
     }
-  } finally { lock.releaseLock(); }
+  } finally {
+    // H3: tái dùng lịch hiện có, kể cả khi lần đồng bộ phản hồi bị lỗi.
+    try { if (typeof mtm_lam_moi_csv === 'function') mtm_lam_moi_csv(); }
+    finally { lock.releaseLock(); }
+  }
 }

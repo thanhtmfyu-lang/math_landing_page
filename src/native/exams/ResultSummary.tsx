@@ -2,6 +2,7 @@ import React,{useEffect,useState} from 'react';
 import {useReducedMotion} from 'motion/react';
 import type {PracticeExam} from './data';
 import type {Draft} from './store';
+import type {ScoreResult} from './assessment';
 import {examSections} from './flexible-profile';
 import {reviewRows,formatPoints,STATUS_LABELS,type ReviewStatus} from './review';
 import {resultFor} from './result';
@@ -9,10 +10,10 @@ import {MTM_SCORING_VERSION} from './mtm-scoring';
 import MtmScoreBreakdown,{formatMtmDisplay} from './MtmScoreBreakdown';
 import './result-summary.css';
 
-export default function ResultSummary({exam,draft}:{exam:PracticeExam;draft:Draft}){
+export default function ResultSummary({exam,draft,serverScore}:{exam:PracticeExam;draft:Draft;serverScore?:ScoreResult}){
  const rows=reviewRows(exam,draft),mtm=exam.rubricVersion===MTM_SCORING_VERSION?resultFor(exam,draft)?.mtm:undefined;
  const unscored=mtm?mtm.officialTotal===null||mtm.officialDisplayTotal===null||mtm.pending.length>0:rows.some(r=>r.status==='unscored');
- const rawTotal=rows.reduce((sum,r)=>sum+r.earned,0),rawMaximum=rows.reduce((sum,r)=>sum+r.q.maxMillipoints,0);
+ const rawTotal=(serverScore?.ok?serverScore.earnedMillipoints:rows.reduce((sum,r)=>sum+r.earned,0)),rawMaximum=rows.reduce((sum,r)=>sum+r.q.maxMillipoints,0);
  const btvn=exam.rubricVersion==='MTM-BTVN-10-v1',total=mtm?Number(mtm.officialDisplayTotal??0)*1000:btvn?Math.round(rawTotal/rawMaximum*10000):rawTotal,maximum=mtm||btvn?10000:rawMaximum;
  const reduced=useReducedMotion(),[animated,setAnimated]=useState(total);
  useEffect(()=>{if(reduced){setAnimated(total);return;}let frame=0;const start=performance.now();setAnimated(0);const tick=(time:number)=>{const t=Math.min(1,Math.max(0,(time-start)/700));setAnimated(Math.round(total*(1-(1-t)**3)));if(t<1)frame=requestAnimationFrame(tick);};frame=requestAnimationFrame(tick);return()=>cancelAnimationFrame(frame);},[total,reduced]);

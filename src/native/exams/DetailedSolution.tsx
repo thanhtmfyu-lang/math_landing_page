@@ -15,8 +15,8 @@ export function Formula({latex,inline=false}:{latex:string;inline?:boolean}) {
 function RichText({text}:{text:string}) {
   return <>{schoolText(text).split(/(\$[^$\n]+\$)/g).map((part,i)=>part.startsWith('$')&&part.endsWith('$')?<Formula key={i} latex={part.slice(1,-1)} inline/>:part)}</>;
 }
-export default function DetailedSolution({examId,versionHash,questionId,fallback}:{examId:string;versionHash:string;questionId:string;fallback:string}) {
-  const question=(bank as unknown as DetailedExam[]).find(exam=>exam.examId===examId&&exam.versionHash===versionHash)?.questions.find(q=>q.id===questionId);
+export default function DetailedSolution({examId,versionHash,questionId,fallback,blocks}:{examId:string;versionHash:string;questionId:string;fallback:string;blocks?:Block[]}) {
+  const question=blocks?{blocks}:(bank as unknown as DetailedExam[]).find(exam=>exam.examId===examId&&exam.versionHash===versionHash)?.questions.find(q=>q.id===questionId);
   if(!question)return <div className="ep-math-text">{fallback.split(/\r?\n/).map((line,i)=><p key={i}><RichText text={line}/></p>)}</div>;
   return <div className="ep-detailed-solution">{question.blocks.map((block,i)=>block.type==='text'?<p key={i}><RichText text={block.text}/></p>:block.type==='math'?<div className="ep-formula-line" key={i}><Formula latex={block.latex}/></div>:<FitTable key={i} table={block} rowHeaders={false} renderCell={text=><RichText text={text}/>}/>)}</div>;
 }

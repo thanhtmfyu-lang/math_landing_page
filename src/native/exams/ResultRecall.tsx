@@ -61,7 +61,7 @@ export function RecallSession({exam,items,renderText,renderSolutionExtra,focusOn
         <h4 id={instance+'-answer'}>Đáp án: {item.q.kind==='mc'?item.q.answer:item.q.kind==='tf'?item.q.answer.map((value,i)=>`${statementLetters[i]}) ${value?'Đúng':'Sai'}`).join('; '):item.q.kind==='short'?item.q.acceptedAnswers.map(value=>displayKeyAnswer(item.q.kind==='short'?item.q.mode:'exact',value)).join(' hoặc '):''}</h4>
         {item.q.correctionNote&&<p><strong>Đính chính MTM:</strong> {rich(item.q.correctionNote)}</p>}
         {item.q.sourceContent?.solutions&&<MtmSourceContent segments={item.q.sourceContent.solutions} assetBase="/practice-media/source-crops" label={item.q.sourceRef} kind="solution" context="review"/>}
-        {item.q.solution&&<Suspense fallback={<p role="status">Đang mở lời giải…</p>}><DetailedSolution examId={exam.id} versionHash={exam.versionHash} questionId={item.q.id} fallback={item.q.solution}/>{renderSolutionExtra?.(item.q)}</Suspense>}
+        {item.q.solution&&<Suspense fallback={<p role="status">Đang mở lời giải…</p>}><DetailedSolution examId={exam.id} versionHash={exam.versionHash} questionId={item.q.id} fallback={item.q.solution} blocks={item.q.solutionBlocks}/>{renderSolutionExtra?.(item.q)}</Suspense>}
         <p>Em tự đối chiếu cách làm của mình với lời giải:</p><div className="ep-recall-actions"><button type="button" className="ep-recall-primary" onClick={()=>mark(true)}>Đã hiểu, sang thẻ tiếp</button><button type="button" onClick={()=>mark(false)}>Cần ôn lại, sang thẻ tiếp</button></div>
       </div>}
       <button type="button" onClick={stop}>Dừng phiên ôn</button>

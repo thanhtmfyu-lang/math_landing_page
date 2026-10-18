@@ -15,6 +15,7 @@ export const PERIOD_LABELS: Record<Period, string> = {
   GK1: 'Giữa kỳ I', CK1: 'Cuối kỳ I', GK2: 'Giữa kỳ II', CK2: 'Cuối kỳ II',
 };
 export type PracticeQuestion = Exclude<Question, {kind: 'essay'}> & {
+  solutionBlocks?:({type:'text';text:string}|{type:'math';latex:string}|{type:'table';headers:string[];rows:string[][]})[];
   prompt?: string;
   text?: string;
   solution?: string;
@@ -31,6 +32,7 @@ export type PracticeQuestion = Exclude<Question, {kind: 'essay'}> & {
 
 };
 export interface PracticeExam extends Assessment {
+  serverGraded?:true;
   /** Transport for server-graded homework. Never sufficient for local scoring. */
   responseMode?:'questions-only';
   sections?:ExamSection[];
@@ -110,7 +112,7 @@ export function validateQuestionOnlyPracticeExam(input: unknown): Validation {
     if(!boundedText(q.id,120)||q.id!==q.id.trim()||ids.has(q.id))errors.push('Invalid or duplicate question id');else ids.add(q.id);
     if(!boundedText(q.sourceRef,20000))errors.push('Question source required');
     if(!units(q.maxMillipoints)||(q.kind==='self'?q.maxMillipoints!==0:q.maxMillipoints===0))errors.push('Invalid question points');else total+=q.maxMillipoints as number;
-    if('answer' in q||'acceptedAnswers' in q||'solution' in q||'shortRule' in q)errors.push('Private answer fields must be absent');
+    if('answer' in q||'acceptedAnswers' in q||'solution' in q||'solutionBlocks' in q||'shortRule' in q)errors.push('Private answer fields must be absent');
     if('shortFormat' in q)errors.push('Public short format requires the explicit MTM rubric');
     if(q.kind==='mc'){
       if(!Array.isArray(q.choices)||q.choices.length!==4||!Array.from(q.choices).every(c=>boundedText(c,20000))||new Set(q.choices).size!==4)errors.push('Four distinct choices required');
@@ -164,7 +166,7 @@ function validateEqualQuestionPublicExam(input:Record<string,unknown>):Validatio
     if(!boundedText(q.sourceRef,20000))errors.push('Question source required');
     if(!isMtmQuestionPoints(q.maxPoints,input.questions.length))errors.push('Question maxPoints must equal exact 10/N');
     if(q.maxMillipoints!==milli)errors.push('Question millipoints must derive from 10000/N');
-    if('answer' in q||'acceptedAnswers' in q||'solution' in q||'shortRule' in q)errors.push('Private answer fields must be absent');
+    if('answer' in q||'acceptedAnswers' in q||'solution' in q||'solutionBlocks' in q||'shortRule' in q)errors.push('Private answer fields must be absent');
     if((q.kind==='short'||'shortFormat' in q)&&(q.kind!=='short'||!validPublicShortFormat(q.shortFormat,String(q.mode))))errors.push('Invalid public short input format');
     if(q.kind==='mc'){
       if(!Array.isArray(q.choices)||q.choices.length!==4||!Array.from(q.choices).every(c=>boundedText(c,20000))||new Set(q.choices).size!==4)errors.push('Four distinct choices required');
@@ -204,7 +206,7 @@ function validatePracticePresentation(input: Record<string,unknown>, questionOnl
   if (!boundedText(input.title, 300)) errors.push('Missing title');
   if (!Number.isSafeInteger(input.durationMinutes) || (input.durationMinutes as number) < 1 || (input.durationMinutes as number) > 1440) errors.push('Invalid duration');
   if (!isSha256(input.versionHash) || !boundedText(input.rubricVersion, 120)) errors.push('Invalid exam/rubric version');
-  if (!isHttpsUrl(input.sourceUrl) || input.publicationVerified !== true || input.questionDisplayVerified!==true) errors.push('Publication/question display not verified');
+  if (!(input.serverGraded===true&&!('sourceUrl' in input)||isHttpsUrl(input.sourceUrl)) || input.publicationVerified !== true || input.questionDisplayVerified!==true) errors.push('Publication/question display not verified');
   const material = input.sourceMaterial;
   if (!isRecord(material) || !['title', 'publisher', 'version', 'locator'].every(key => boundedText(material[key], 1000))) errors.push('Incomplete source material');
   if (input.answerVerificationNote !== undefined && !boundedText(input.answerVerificationNote, 2000)) errors.push('Invalid answer verification note');
@@ -242,7 +244,7 @@ function validatePracticePresentation(input: Record<string,unknown>, questionOnl
  * query switches, fetches or fixture imports in the production entry point. */
 export const PRACTICE_EXAMS: readonly PracticeExam[] = /* @__PURE__ */ Object.freeze(verifiedCatalog as unknown as PracticeExam[]);
 export function readyExams(catalog: readonly unknown[]): PracticeExam[] {
-  const valid = catalog.filter((exam): exam is PracticeExam => validatePracticeExam(exam).valid);
+  const valid = catalog.filter((exam): exam is PracticeExam => (isRecord(exam)&&exam.serverGraded===true&&exam.responseMode==='questions-only'?validateQuestionOnlyPracticeExam(exam):validatePracticeExam(exam)).valid);
   return valid.filter(exam => valid.filter(other => other.id === exam.id).length === 1);
 }
 

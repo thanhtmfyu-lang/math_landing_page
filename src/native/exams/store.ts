@@ -27,7 +27,7 @@ export type Outcome<T> = {ok: true; value: T} | Failure;
  * Practice/history callers retain the complete-exam gate by default. */
 export type DraftValidationOptions = {allowQuestionOnly?:boolean};
 const validDraftExam=(exam:PracticeExam,options:DraftValidationOptions)=>
-  (options.allowQuestionOnly===true&&exam.responseMode==='questions-only'?validateQuestionOnlyPracticeExam(exam):validatePracticeExam(exam)).valid;
+  ((options.allowQuestionOnly===true||exam.serverGraded===true)&&exam.responseMode==='questions-only'?validateQuestionOnlyPracticeExam(exam):validatePracticeExam(exam)).valid;
 const fail = (code: string, message: string): Failure => ({ok: false, code, message});
 const validTime = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0 && (value as number) <= 8640000000000000;
 const validRevision = (value: unknown): value is number => Number.isSafeInteger(value) && (value as number) >= 0;
