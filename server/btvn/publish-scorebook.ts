@@ -26,5 +26,5 @@ export function scorebookResult(action:string,result:any) {
  if(action==='classes')return {classNames:publicClassNames(result)};
  if(!Array.isArray(result))throw Error('INVALID_SCOREBOOK_RESULT');
  return result.map((r:any):ScoreRow=>({studentId:r.studentId,fullName:r.fullName,className:r.className,lessonCode:r.lessonCode,title:r.title,date:r.date,dueAt:r.dueAt,expectedDueAt:r.expectedDueAt,sourceIdentity:r.sourceIdentity,
-  receipts:r.receipts.map((s:any)=>({score:s.score,submittedAt:s.submittedAt,late:s.late}))}));
+  attempts:(Array.isArray(r.attempts)?r.attempts:[]).slice(0,50).map((x:any)=>({startedAt:typeof x?.startedAt==='number'?x.startedAt:null,submittedAt:typeof x?.submittedAt==='number'?x.submittedAt:null})),receipts:r.receipts.map((s:any)=>({score:s.score,submittedAt:s.submittedAt,late:s.late}))}));
 }

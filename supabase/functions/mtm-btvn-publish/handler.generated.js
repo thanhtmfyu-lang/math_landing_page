@@ -1128,7 +1128,7 @@ function attendanceRpc(body) {
   ensure(body.apply === void 0 || typeof body.apply === "boolean");
   if (body.action === "sync_attendance") {
     ensure(Array.isArray(body.rows) && body.rows.length > 0 && body.rows.length <= 1e4);
-    for (const r of body.rows) ensure(record4(r) && Object.keys(r).every((k) => ["label", "fullName", "phone", "source"].includes(k)) && validAttendanceLabel(r.label) && text4(r.fullName, 160) && typeof r.phone === "string" && /^0\d{9}$/.test(r.phone) && (r.source === void 0 || text4(r.source, 200)));
+    for (const r of body.rows) ensure(record4(r) && Object.keys(r).every((k) => ["label", "fullName", "phone", "source", "school"].includes(k)) && validAttendanceLabel(r.label) && text4(r.fullName, 160) && typeof r.phone === "string" && /^0\d{9}$/.test(r.phone) && (r.source === void 0 || text4(r.source, 200)) && (r.school === void 0 || typeof r.school === "string" && r.school.length <= 160 && !/[\u0000-\u001f\u007f-\u009f]/.test(r.school)));
     return { name: "sync_attendance", payload: { p_payload: { rows: body.rows }, p_apply: body.apply ?? false } };
   }
   ensure(Array.isArray(body.sessions) && body.sessions.length <= 2e3);
@@ -1184,6 +1184,7 @@ function scorebookResult(action, result) {
     dueAt: r.dueAt,
     expectedDueAt: r.expectedDueAt,
     sourceIdentity: r.sourceIdentity,
+    attempts: (Array.isArray(r.attempts) ? r.attempts : []).slice(0, 50).map((x) => ({ startedAt: typeof x?.startedAt === "number" ? x.startedAt : null, submittedAt: typeof x?.submittedAt === "number" ? x.submittedAt : null })),
     receipts: r.receipts.map((s) => ({ score: s.score, submittedAt: s.submittedAt, late: s.late }))
   }));
 }

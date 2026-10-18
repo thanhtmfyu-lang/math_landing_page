@@ -1,4 +1,4 @@
-export type ScoreRow={studentId:string;fullName:string;className:string;lessonCode:string;title:string;date:string;dueAt:number|null;expectedDueAt?:number|null;sourceIdentity?:string;receipts:{score:number|null;submittedAt:number;late:boolean|null}[]};
+export type ScoreRow={studentId:string;fullName:string;className:string;lessonCode:string;title:string;date:string;dueAt:number|null;expectedDueAt?:number|null;sourceIdentity?:string;attempts?:{startedAt:number|null;submittedAt:number|null}[];receipts:{score:number|null;submittedAt:number;late:boolean|null}[]};
 const eligible=(rows:ScoreRow[])=>rows.filter(r=>r.date>='2026-10-01'&&!r.sourceIdentity?.startsWith('qa:'));
 const receiptsFor=(row:ScoreRow)=>row.receipts.filter(r=>r.submittedAt>=Date.parse('2026-10-15T00:00:00+07:00'));
 const pending=(row:ScoreRow)=>receiptsFor(row).some(r=>r.score===null);
