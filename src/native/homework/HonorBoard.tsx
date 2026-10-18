@@ -7,7 +7,7 @@ import {closesIn,fmt,look,place,type Row} from './RankArena';
 
 /** 18/10 anh Thành: trang chủ phải thấy "Hiểu bản chất" trước; bảng xếp hạng gọn nhưng vẫn to, tự hào:
  * top 3 mỗi khối có ảnh mặt + trường, học sinh đã đăng nhập thấy hạng của mình. Bảng từng lớp ở /xep-hang. */
-type Cohort={cohort:string;ranked:number;perfect:number;top:Row[]};
+type Cohort={cohort:string;label?:string;ranked:number;perfect:number;top:Row[]};
 export default function HonorBoard(){
  const [data,setData]=useState<Cohort[]>([]),[own,setOwn]=useState<Row|null>(null),[retry,setRetry]=useState(0);
  useEffect(()=>subscribeLeaderboardRefresh(()=>setRetry(n=>n+1)),[]);
@@ -29,10 +29,10 @@ export default function HonorBoard(){
    <p className="hs-meta"><span className="ar-live" aria-hidden="true"/>{shown.reduce((n,c)=>n+c.ranked,0)} em lên bảng · chốt sau <b>{closesIn('btvn-tuan')}</b></p>
    {own?<a className="hs-own" href="/xep-hang"><StudentAvatar appearance={look(own)} size={30}/><span>Hạng của em: <b>#{own.rank}</b> · {fmt(own.score)}đ</span></a>:<a className="hs-join" href="/btvn">Làm BTVN để có tên trên bảng →</a>}
   </div>
-  <div className="hs-cohorts">{shown.map(c=><article key={c.cohort} className="hs-card" aria-label={'Top 3 khối '+c.cohort}>
-   <h3>{c.cohort}</h3>
+  <div className="hs-cohorts">{shown.map(c=><article key={c.cohort} className="hs-card" aria-label={'Top 3 '+(c.label??c.cohort)}>
+   <h3>{c.label??c.cohort}{c.cohort==='HSA-TSA'&&<small>Đánh giá năng lực · tư duy</small>}</h3>
    <div className="hs-faces">{[1,0,2].map(i=>c.top[i]?face(c.top[i],i===0):<span key={i} className="hs-face"/>)}</div>
-   <a className="hs-go" href={'/xep-hang#ar-khoi-'+c.cohort}>Xem bảng xếp hạng khối {c.cohort} ↗</a>
+   <a className="hs-go" href={'/xep-hang#ar-khoi-'+c.cohort}>Xem bảng xếp hạng {c.cohort==='HSA-TSA'?'HSA · TSA':'khối '+c.cohort} ↗</a>
   </article>)}</div>
  </section>;
 }

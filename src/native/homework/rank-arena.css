@@ -122,3 +122,4 @@
 .ar-t-bac{background:#eef1f6;color:#4a5670}.ar-t-dong{background:#fbe7d8;color:#8a4b1c}
 .ar-step-time{font-size:10.5px;color:var(--ar-muted)}.ar-legend{display:flex;flex-wrap:wrap;gap:4px;align-items:center;margin-bottom:4px}.ar-legend .ar-badge{font-size:10.5px}
 .ar-list-score{width:96px}
+.ar-grid{grid-template-columns:repeat(auto-fit,minmax(300px,1fr))}

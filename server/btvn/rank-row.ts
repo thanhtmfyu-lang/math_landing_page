@@ -29,9 +29,9 @@ export function publicArena(data:any){
  if(!data||!['btvn-tuan','btvn-thang','kiem-tra-thang'].includes(data.kind)||!Array.isArray(data.cohorts)||data.cohorts.length>6)throw Error('Invalid arena');
  const num=(v:unknown,max:number)=>{if(typeof v!=='number'||!Number.isFinite(v)||v<0||v>max)throw Error('Invalid arena number');return v;};
  return {kind:data.kind as string,cohorts:data.cohorts.map((c:any)=>{
-  if(!c||!['2K9','2K10','2K11','2K12','2K13','2K14'].includes(c.cohort)||!Array.isArray(c.top)||c.top.length>10||!Array.isArray(c.classes)||c.classes.length>30)throw Error('Invalid arena cohort');
-  return {cohort:c.cohort as string,ranked:num(c.ranked,5000),perfect:num(c.perfect,5000),top:c.top.map((r:any)=>publicRankRow(r,10)),
-   classes:c.classes.map((k:any)=>{if(!validSchool(k?.className)||!k.className.startsWith(c.cohort+' ')||!validSchool(k.leader))throw Error('Invalid arena class');if(!Array.isArray(k.top)||k.top.length>10)throw Error('Invalid arena class top');
+  if(!c||!['2K9','2K10','2K11','2K12','2K13','2K14','HSA-TSA'].includes(c.cohort)||!Array.isArray(c.top)||c.top.length>10||!Array.isArray(c.classes)||c.classes.length>30)throw Error('Invalid arena cohort');
+  return {cohort:c.cohort as string,label:typeof c.label==='string'&&validSchool(c.label)&&c.label.length<=40?c.label:c.cohort,ranked:num(c.ranked,5000),perfect:num(c.perfect,5000),top:c.top.map((r:any)=>publicRankRow(r,10)),
+   classes:c.classes.map((k:any)=>{if(!validSchool(k?.className)||!(c.cohort==='HSA-TSA'?/(HSA|TSA)/i.test(k.className):k.className.startsWith(c.cohort+' '))||!validSchool(k.leader))throw Error('Invalid arena class');if(!Array.isArray(k.top)||k.top.length>10)throw Error('Invalid arena class top');
     return {className:k.className as string,students:num(k.students,5000),avg:num(k.avg,10),best:num(k.best,10),leader:k.leader as string,
      top:k.top.map((r:any)=>({...publicRankRow(r,10),cohortRank:num(r.cohortRank,5000)}))};})};
  })};

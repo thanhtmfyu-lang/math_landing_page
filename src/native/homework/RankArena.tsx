@@ -9,7 +9,7 @@ import type {RankRow} from './HomeLeaderboard';
  * Thứ tự anh chốt: bảng TỪNG LỚP (mọi lớp hiện sẵn, không phải bấm) rồi bảng TOÀN KHỐI kèm đua lớp. Một lượt gọi lấy cả 3 khối. */
 export type Row=RankRow&{schoolClass?:string;seconds?:number};
 type ClassRace={className:string;students:number;avg:number;best:number;leader:string;top:(Row&{cohortRank:number})[]};
-type Cohort={cohort:string;ranked:number;perfect:number;top:Row[];classes:ClassRace[]};
+type Cohort={cohort:string;label?:string;ranked:number;perfect:number;top:Row[];classes:ClassRace[]};
 const KINDS=[['btvn-tuan','BTVN tuần này'],['btvn-thang','BTVN tháng này'],['kiem-tra-thang','Kiểm tra tháng']] as const;
 export const fmt=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:2});
 export const look=(row:Row):StudentAppearance=>({avatar:row.avatar??DEFAULT_APPEARANCE.avatar,photo:row.photo??''});
@@ -102,15 +102,15 @@ export default function RankArena({compact=false}:{compact?:boolean}){
   {status==='error'&&<p className="ar-note" role="alert">Chưa tải được bảng xếp hạng. <button type="button" onClick={()=>setRetry(n=>n+1)}>Thử lại</button></p>}
   {status==='ready'&&<>
    <h3 className="ar-section">🏫 Bảng xếp hạng từng lớp{compact&&<a href="/xep-hang">Mở Đấu trường đầy đủ ↗</a>}</h3>
-   {data.map(c=><div key={c.cohort} id={'ar-khoi-'+c.cohort} className="ar-cohort-classes"><h4 className="ar-cohort-label">{c.cohort}</h4><div className="ar-class-grid">{c.classes.map((k,i)=>
+   {data.map(c=>{const list=c.cohort==='HSA-TSA'?c.classes:c.classes.filter(k=>!/(HSA|TSA)/i.test(k.className));return list.length?<div key={c.cohort} id={'ar-khoi-'+c.cohort} className="ar-cohort-classes"><h4 className="ar-cohort-label">{c.label??c.cohort}</h4><div className="ar-class-grid">{list.map((k,i)=>
     <article key={k.className} id={'ar-lop-'+encodeURIComponent(k.className)} className="ar-card ar-class-card" aria-label={'Bảng xếp hạng lớp '+k.className}>
      <header className="ar-card-head"><h3>{k.className}</h3><span>{k.students?(i<3&&k.students?['🥇','🥈','🥉'][i]+' ':'')+'TB '+fmt(k.avg)+' · '+k.students+' em':'Chưa có ai'}</span></header>
      {k.top.length?<><Podium rows={k.top.slice(0,3)} small/><Chasers rows={k.top.slice(3,compact?5:10)}/>{compact&&k.top.length>5&&<a className="ar-more" href={'/xep-hang#ar-lop-'+encodeURIComponent(k.className)}>Xem đủ top 10 lớp {k.className} ↗</a>}</>:<p className="ar-empty">Chưa có ai lên bảng. Nộp BTVN để giành ngôi đầu lớp! 🚀</p>}
-    </article>)}</div></div>)}
+    </article>)}</div></div>:null;})}
    <h3 className="ar-section">🏆 Bảng xếp hạng toàn khối</h3>
    <div className="ar-grid">{data.map(c=>{const maxAvg=Math.max(10,...c.classes.map(k=>k.avg));
     return <article key={c.cohort} className="ar-card" aria-labelledby={'ar-'+c.cohort}>
-     <header className="ar-card-head"><h3 id={'ar-'+c.cohort}>Khối {c.cohort}</h3><span>{c.ranked} em lên bảng{c.perfect?' · '+c.perfect+' điểm 10':''}</span></header>
+     <header className="ar-card-head"><h3 id={'ar-'+c.cohort}>{c.cohort==='HSA-TSA'?'HSA · TSA':'Khối '+c.cohort}</h3><span>{c.ranked} em lên bảng{c.perfect?' · '+c.perfect+' điểm 10':''}</span></header>
      {c.top.length?<><Podium rows={c.top.slice(0,3)}/><Chasers rows={c.top.slice(3,compact?5:10)}/>{compact&&c.top.length>5&&<a className="ar-more" href={'/xep-hang#ar-'+c.cohort}>Xem đủ top 10 khối {c.cohort} ↗</a>}</>:<p className="ar-empty">Chưa có ai lên bảng. Nộp BTVN sớm để giành ngôi đầu! 🚀</p>}
      {c.classes.some(k=>k.students)&&<div className="ar-race"><h4>🏁 Đua lớp <small>điểm trung bình</small></h4><ul>{c.classes.filter(k=>k.students).map((k,i)=><li key={k.className}>
       <a href={'#ar-lop-'+encodeURIComponent(k.className)} className="ar-race-row">

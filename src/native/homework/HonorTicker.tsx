@@ -5,13 +5,13 @@ import {requestLeaderboard,subscribeLeaderboardRefresh} from './leaderboard-refr
 /** 18/10 anh Thành: đầu trang web lúc nào cũng có dải vinh danh: gọi tên vô địch từng lớp, em điểm 10, lớp dẫn đầu.
  * Dùng chế độ gon=1 (không ảnh, vài trăm byte), tự làm mới khi có bài nộp. */
 type Mini={fullName?:string;className:string;score:number};
-type Arena={cohorts:{cohort:string;top:Mini[];classes:{className:string;avg:number;students:number;top:Mini[]}[]}[]};
+type Arena={cohorts:{cohort:string;label?:string;top:Mini[];classes:{className:string;avg:number;students:number;top:Mini[]}[]}[]};
 const fmt=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:2});
 export function honorItems(a:Arena){
  const out:string[]=[];
  for(const c of a.cohorts){
-  const lead=c.classes.find(k=>k.students);if(lead)out.push('🏁 Lớp dẫn đầu khối '+c.cohort+': '+lead.className+' (TB '+fmt(lead.avg)+')');
-  if(c.top[0])out.push('🏆 Quán quân khối '+c.cohort+': '+(c.top[0].fullName||'Học sinh MTM')+' '+fmt(c.top[0].score)+'đ');
+  const lead=c.classes.find(k=>k.students);if(lead)out.push('🏁 Lớp dẫn đầu '+(c.cohort==='HSA-TSA'?'HSA · TSA':'khối '+c.cohort)+': '+lead.className+' (TB '+fmt(lead.avg)+')');
+  if(c.top[0])out.push('🏆 Quán quân '+(c.cohort==='HSA-TSA'?'HSA · TSA':'khối '+c.cohort)+': '+(c.top[0].fullName||'Học sinh MTM')+' '+fmt(c.top[0].score)+'đ');
   for(const k of c.classes)if(k.top[0])out.push('👑 Vô địch lớp '+k.className+': '+(k.top[0].fullName||'Học sinh MTM')+' '+fmt(k.top[0].score)+'đ');
   for(const r of c.top)if(r.score>=10)out.push('⭐ '+(r.fullName||'Học sinh MTM')+' ('+r.className+') đạt 10 tuyệt đối');
  }
