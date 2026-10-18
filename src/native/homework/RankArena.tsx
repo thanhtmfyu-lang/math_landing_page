@@ -102,7 +102,7 @@ export default function RankArena({compact=false}:{compact?:boolean}){
   {status==='error'&&<p className="ar-note" role="alert">Chưa tải được bảng xếp hạng. <button type="button" onClick={()=>setRetry(n=>n+1)}>Thử lại</button></p>}
   {status==='ready'&&<>
    <h3 className="ar-section">🏫 Bảng xếp hạng từng lớp{compact&&<a href="/xep-hang">Mở Đấu trường đầy đủ ↗</a>}</h3>
-   {data.map(c=><div key={c.cohort} className="ar-cohort-classes"><h4 className="ar-cohort-label">{c.cohort}</h4><div className="ar-class-grid">{c.classes.map((k,i)=>
+   {data.map(c=><div key={c.cohort} id={'ar-khoi-'+c.cohort} className="ar-cohort-classes"><h4 className="ar-cohort-label">{c.cohort}</h4><div className="ar-class-grid">{c.classes.map((k,i)=>
     <article key={k.className} id={'ar-lop-'+encodeURIComponent(k.className)} className="ar-card ar-class-card" aria-label={'Bảng xếp hạng lớp '+k.className}>
      <header className="ar-card-head"><h3>{k.className}</h3><span>{k.students?(i<3&&k.students?['🥇','🥈','🥉'][i]+' ':'')+'TB '+fmt(k.avg)+' · '+k.students+' em':'Chưa có ai'}</span></header>
      {k.top.length?<><Podium rows={k.top.slice(0,3)} small/><Chasers rows={k.top.slice(3,compact?5:10)}/>{compact&&k.top.length>5&&<a className="ar-more" href={'/xep-hang#ar-lop-'+encodeURIComponent(k.className)}>Xem đủ top 10 lớp {k.className} ↗</a>}</>:<p className="ar-empty">Chưa có ai lên bảng. Nộp BTVN để giành ngôi đầu lớp! 🚀</p>}

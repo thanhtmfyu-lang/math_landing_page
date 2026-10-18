@@ -20,19 +20,19 @@ export default function HonorBoard(){
  const shown=data.filter(c=>c.top.length);
  if(!shown.length)return null;
  const face=(row:Row,big:boolean)=><figure key={row.rank} className={'hs-face hs-face-'+row.rank}>
-  <span className="hs-pic">{row.rank===1&&<b className="hs-crown" aria-hidden="true">👑</b>}<StudentAvatar appearance={look(row)} size={big?62:48}/><i aria-label={'Hạng '+row.rank}>{row.rank}</i></span>
+  <span className="hs-pic">{row.rank===1&&<b className="hs-crown" aria-hidden="true">👑</b>}<StudentAvatar appearance={look(row)} size={big?84:64}/><i aria-label={'Hạng '+row.rank}>{row.rank}</i></span>
   <figcaption><strong>{row.fullName||'Học sinh MTM'}</strong>{place(row)&&<small>{place(row)}</small>}<em>{fmt(row.score)}</em></figcaption>
  </figure>;
  return <section id="bang-xep-hang" className="mtm-arena mtm-honorstrip" aria-labelledby="hb-title">
   <div className="hs-side">
-   <h2 id="hb-title">🏆 Bảng vàng <em>tuần này</em></h2>
+   <h2 id="hb-title"><span aria-hidden="true">🏆</span> Bảng xếp hạng <em>BTVN tuần này</em></h2>
    <p className="hs-meta"><span className="ar-live" aria-hidden="true"/>{shown.reduce((n,c)=>n+c.ranked,0)} em lên bảng · chốt sau <b>{closesIn('btvn-tuan')}</b></p>
-   {own?<a className="hs-own" href="/xep-hang"><StudentAvatar appearance={look(own)} size={28}/><span>Em: <b>#{own.rank}</b> · {fmt(own.score)}đ</span></a>:<a className="hs-own" href="/btvn">Lên bảng: vào BTVN ↗</a>}
-   <a className="hs-all" href="/xep-hang">Bảng từng lớp ↗</a>
+   {own?<a className="hs-own" href="/xep-hang"><StudentAvatar appearance={look(own)} size={30}/><span>Hạng của em: <b>#{own.rank}</b> · {fmt(own.score)}đ</span></a>:<a className="hs-join" href="/btvn">Làm BTVN để có tên trên bảng →</a>}
   </div>
   <div className="hs-cohorts">{shown.map(c=><article key={c.cohort} className="hs-card" aria-label={'Top 3 khối '+c.cohort}>
    <h3>{c.cohort}</h3>
    <div className="hs-faces">{[1,0,2].map(i=>c.top[i]?face(c.top[i],i===0):<span key={i} className="hs-face"/>)}</div>
+   <a className="hs-go" href={'/xep-hang#ar-khoi-'+c.cohort}>Xem bảng xếp hạng khối {c.cohort} ↗</a>
   </article>)}</div>
  </section>;
 }
