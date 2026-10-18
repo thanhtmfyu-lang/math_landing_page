@@ -17,22 +17,42 @@
 /* LT-15 (Đợt 4): khối giới thiệu đề gọn một dòng, chi tiết mở khi cần. */
 .cp-intake-more summary{display:flex;align-items:center;min-height:44px;cursor:pointer;color:#233463;font-weight:600;text-decoration:underline;text-underline-offset:3px}.cp-intake-more summary:focus-visible{outline:3px solid #d7a93a;outline-offset:3px}.cp-intake-more p{line-height:1.7}@media(max-width:950px){.cp-intake{margin-bottom:12px}.cp-attempt{padding-top:16px}}
 
-/* 18/10 anh Thành: trang Luyện tập. Đề luyện lên trước; 10 trò chơi gom một mục mở/đóng, lưới 2 cột; hàng chọn lớp dính dưới menu khi cuộn. */
+/* 18/10 anh Thành: trang Luyện tập. Hàng chọn lớp dính dưới menu khi cuộn. Trò chơi ở CỘT PHẢI đầu trang (dính khi cuộn);
+   bấm một trò thì trò mở thành khung lớn giữa màn hình (cột hẹp không đủ chỗ chơi), bấm lại tên trò để đóng. */
 .cp-library .cp-track-nav { position: sticky; top: 92px; z-index: 40; background: var(--mig-bg, #f4f6fb); padding-block: 8px; }
-.cp-chapter-content > details.cp-games { margin-top: 20px; border: 1px solid #f1d98a; border-radius: 16px; background: #fffbea; }
-.cp-chapter-content > details.cp-games > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 16px 20px; min-height: 44px; }
-.cp-chapter-content > details.cp-games > summary::-webkit-details-marker { display: none; }
-.cp-chapter-content > details.cp-games > summary::before { content: "▸"; font-weight: 700; }
-.cp-chapter-content > details.cp-games[open] > summary::before { content: "▾"; }
-.cp-chapter-content > details.cp-games > summary span { font-weight: 800; font-size: 18px; color: #14245c; }
-.cp-chapter-content > details.cp-games > summary small { color: #5a6478; font-size: 14px; }
-.cp-games-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0 16px 16px; align-items: start; }
+.cp-library-layout { grid-template-columns: 260px minmax(0, 1fr) 300px; }
+.cp-library-layout > .cp-chapter-panel { order: 1; }
+.cp-library-layout > .cp-chapter-content { order: 2; }
+.cp-library-layout > .cp-games-panel { order: 3; position: sticky; top: 168px; max-height: calc(100vh - 190px); overflow-y: auto; }
+.cp-games-panel > details.cp-games { border: 1px solid #f1d98a; border-radius: 16px; background: #fffbea; }
+.cp-games-panel > details.cp-games > summary { cursor: pointer; list-style: none; display: flex; flex-direction: column; gap: 2px; padding: 14px 16px; min-height: 44px; }
+.cp-games-panel > details.cp-games > summary::-webkit-details-marker { display: none; }
+.cp-games-panel > details.cp-games > summary span { font-weight: 800; font-size: 17px; color: #14245c; }
+.cp-games-panel > details.cp-games > summary small { color: #5a6478; font-size: 13px; line-height: 1.5; }
+.cp-games-grid { display: grid; grid-template-columns: minmax(0, 1fr); gap: 8px; padding: 0 10px 12px; }
 .cp-games-grid > details { margin: 0; min-width: 0; }
-.cp-games-grid > details[open] { grid-column: 1 / -1; }
+.cp-games-grid > details > summary { font-size: 14px; }
+.cp-games-grid > details[open] {
+  position: fixed; z-index: 900; inset: 8vh max(16px, calc(50vw - 520px)); overflow: auto;
+  background: #fff; border-radius: 18px; padding: 8px 16px 20px;
+  box-shadow: 0 0 0 100vmax rgba(14, 24, 56, .45), 0 24px 60px rgba(14, 24, 56, .35);
+}
+.cp-games-grid > details[open] > summary { position: sticky; top: 0; background: #fff; z-index: 1; font-size: 18px; padding-block: 10px; }
+.cp-games-grid > details[open] > summary::after { content: "  ✕ Đóng"; font-size: 14px; color: #8a6700; font-weight: 700; }
+@media (max-width: 1200px) {
+  .cp-library-layout { grid-template-columns: 240px minmax(0, 1fr); }
+  .cp-library-layout > .cp-games-panel { grid-column: 1 / -1; order: 0; position: static; max-height: none; }
+  .cp-games-grid { grid-template-columns: repeat(2, minmax(0, 1fr)); }
+}
+@media (max-width: 950px) { .cp-library-layout { grid-template-columns: minmax(0, 1fr); } }
 @media (max-width: 760px) {
   .cp-library .cp-track-nav { top: 64px; overflow-x: auto; }
-  .cp-games-grid { grid-template-columns: minmax(0, 1fr); padding: 0 10px 10px; }
+  .cp-games-grid { grid-template-columns: minmax(0, 1fr); }
+  .cp-games-grid > details[open] { inset: 0; border-radius: 0; }
 }
-/* Đề luyện hiện trước, mục trò chơi xuống cuối (giữ thứ tự mã nguồn cho kiểm thử cũ). */
-.cp-chapter-content { display: flex; flex-direction: column; }
-.cp-chapter-content > details.cp-games { order: 10; }
+/* Cột trò chơi dính (sticky) tạo ngữ cảnh xếp lớp riêng: khi mở một trò phải nâng cả cột lên trên menu và hàng chọn lớp. */
+.cp-library-layout > .cp-games-panel { z-index: 41; }
+.cp-library-layout > .cp-games-panel:has(.cp-games-grid > details[open]) { z-index: 1000; overflow: visible; }
+.cp-library-layout { grid-template-columns: 240px minmax(0, 1fr) 280px; }
+@media (max-width: 1200px) { .cp-library-layout { grid-template-columns: 240px minmax(0, 1fr); } }
+@media (max-width: 950px) { .cp-library-layout { grid-template-columns: minmax(0, 1fr); } }

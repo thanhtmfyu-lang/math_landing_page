@@ -57,20 +57,20 @@ export default function PracticeLibrary(){
         <nav aria-label="Chọn chương hoặc chủ đề">{selected.chapters.map((c,index)=><Link key={c.id} href={practiceURL(selected.id,c.id)} aria-current={c.id===chapter.id?'page':undefined}><span className="cp-chapter-number">{index+1}</span><span>{c.title}</span></Link>)}</nav>
 
       </aside>
+        {['10','11','12'].includes(selected.id)&&<aside className="cp-games-panel" aria-label="Trò chơi và luyện nhanh"><details className="cp-games" open><summary><span>Trò chơi và luyện nhanh</span><small>Theo đúng chương đang chọn · bấm một trò để chơi</small></summary><div className="cp-games-grid">
+        <PracticeTool key={'miner:'+selected.id+':'+chapter.id} label="Thợ mỏ Toán · đào theo chương" loading="Đang mở hầm mỏ…"><MinerGame track={selected.id} chapter={chapter.id}/></PracticeTool>
+        <PracticeTool key={'recall:'+selected.id+':'+chapter.id} label="Ôn nhanh công thức" loading="Đang tải bộ thẻ…"><QuickRecall track={selected.id} chapter={chapter.id}/></PracticeTool>
+        <PracticeTool key={'interval:'+selected.id+':'+chapter.id} label="Mini game · Tập nghiệm trên trục số" loading="Đang tải trò tập nghiệm…"><IntervalGame/></PracticeTool>
+        <PracticeTool key={'mental:'+selected.id+':'+chapter.id} label="Trò tự luyện · Tính nhẩm 5 câu" loading="Đang tải trò tính nhẩm…"><MentalMath/></PracticeTool>
+        <PracticeTool key={'formula:'+selected.id+':'+chapter.id} label="Trò tự ôn · Nhận diện công thức" loading="Đang tải trò ghép thẻ…"><FormulaMatch track={selected.id} chapter={chapter.id}/></PracticeTool>
+        <PracticeTool key={'graph:'+selected.id+':'+chapter.id} label="Trò tự luyện · Đọc đồ thị đường thẳng" loading="Đang tải trò đồ thị…"><LineGraphGame/></PracticeTool>
+        <PracticeTool key={'error:'+selected.id+':'+chapter.id} label="Trò tự luyện · Săn lỗi biến đổi" loading="Đang tải trò săn lỗi…"><ErrorHunt/></PracticeTool>
+        <PracticeTool key={'solver:'+selected.id+':'+chapter.id} label="Tự luyện · Giải từng bước" loading="Đang tải bài giải từng bước…"><StepSolver/></PracticeTool>
+        <PracticeTool key={'domain:'+selected.id+':'+chapter.id} label="Mini game · Soi điều kiện" loading="Đang tải bài soi điều kiện…"><DomainCheck/></PracticeTool>
+        <PracticeTool key={'estimate:'+selected.id+':'+chapter.id} label="Mini game · Ước lượng rồi kiểm tra" loading="Đang tải bài ước lượng…"><EstimationGame/></PracticeTool>
+      </div></details></aside>}
       <div className="cp-chapter-content">
         <h2>{chapter.title}</h2><p>{chapter.forms.join(' · ')}</p>
-        {['10','11','12'].includes(selected.id)&&<details className="cp-games"><summary><span>Trò chơi và luyện nhanh</span><small>10 trò theo đúng chương đang chọn · bấm để mở</small></summary><div className="cp-games-grid">
-          <PracticeTool key={'miner:'+selected.id+':'+chapter.id} label="Thợ mỏ Toán · đào theo chương" loading="Đang mở hầm mỏ…"><MinerGame track={selected.id} chapter={chapter.id}/></PracticeTool>
-          <PracticeTool key={'recall:'+selected.id+':'+chapter.id} label="Ôn nhanh công thức" loading="Đang tải bộ thẻ…"><QuickRecall track={selected.id} chapter={chapter.id}/></PracticeTool>
-          <PracticeTool key={'interval:'+selected.id+':'+chapter.id} label="Mini game · Tập nghiệm trên trục số" loading="Đang tải trò tập nghiệm…"><IntervalGame/></PracticeTool>
-          <PracticeTool key={'mental:'+selected.id+':'+chapter.id} label="Trò tự luyện · Tính nhẩm 5 câu" loading="Đang tải trò tính nhẩm…"><MentalMath/></PracticeTool>
-          <PracticeTool key={'formula:'+selected.id+':'+chapter.id} label="Trò tự ôn · Nhận diện công thức" loading="Đang tải trò ghép thẻ…"><FormulaMatch track={selected.id} chapter={chapter.id}/></PracticeTool>
-          <PracticeTool key={'graph:'+selected.id+':'+chapter.id} label="Trò tự luyện · Đọc đồ thị đường thẳng" loading="Đang tải trò đồ thị…"><LineGraphGame/></PracticeTool>
-          <PracticeTool key={'error:'+selected.id+':'+chapter.id} label="Trò tự luyện · Săn lỗi biến đổi" loading="Đang tải trò săn lỗi…"><ErrorHunt/></PracticeTool>
-          <PracticeTool key={'solver:'+selected.id+':'+chapter.id} label="Tự luyện · Giải từng bước" loading="Đang tải bài giải từng bước…"><StepSolver/></PracticeTool>
-          <PracticeTool key={'domain:'+selected.id+':'+chapter.id} label="Mini game · Soi điều kiện" loading="Đang tải bài soi điều kiện…"><DomainCheck/></PracticeTool>
-          <PracticeTool key={'estimate:'+selected.id+':'+chapter.id} label="Mini game · Ước lượng rồi kiểm tra" loading="Đang tải bài ước lượng…"><EstimationGame/></PracticeTool>
-        </div></details>}
         {painted?<Suspense fallback={<div className="cp-shelf-loading" role="status" aria-live="polite">Đang tải danh sách bài…</div>}><ChapterShelf selected={selected} chapter={chapter}/></Suspense>:<div className="cp-shelf-loading" role="status" aria-live="polite">Đang tải danh sách bài…</div>}
       </div>
     </div>
