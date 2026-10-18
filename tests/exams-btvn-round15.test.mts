@@ -50,5 +50,5 @@ const publisher=await import(pathToFileURL(join(root,'scripts/publish-btvn-lesso
 assert.equal((await publisher.publishLesson({...fixture,kind:'kiem-tra-thang',opensAt:new Date(opensAt).toISOString(),closesAt:new Date(closesAt).toISOString()})).mode,'dry-run');
 await assert.rejects(publisher.validateLesson({...fixture,kind:'kiem-tra-thang'}));
 assert.ok(!readFileSync(join(root,'src/migration/Experience.tsx'),'utf8').includes('import HomeLeaderboard')); // The replaced hero must not force rank CSS into every route.
-assert.ok(readFileSync(join(root,'src/migration/Home.tsx'),'utf8').includes('<RankArena/><R106Hero/>'));
+assert.ok(readFileSync(join(root,'src/migration/Home.tsx'),'utf8').includes('<RankArena compact/><R106Hero/>'));
 console.log('Đạt đợt 15: SSR dữ liệu/rỗng/lỗi; API mặc định tắt, cache, whitelist, không cookie; thi web một lượt, giờ mở/đóng, chấm server, khóa lời giải; CLI Sheet và publish dry-run.');

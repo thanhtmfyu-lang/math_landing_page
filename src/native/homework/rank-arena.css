@@ -71,3 +71,9 @@
 .ar-podium-sm .ar-plinth span{font-size:11px}
 @media(max-width:760px){.ar-section{margin:18px 12px 2px}.ar-cohort-classes{padding:4px 10px}.ar-class-grid{grid-template-columns:minmax(0,1fr)}
  .ar-podium-sm .ar-step-avatar .r104-avatar{width:46px!important;height:46px!important}.ar-podium-sm .ar-step-1 .ar-step-avatar .r104-avatar{width:56px!important;height:56px!important}}
+.ar-class-grid{align-items:start}
+.ar-more{display:block;text-align:center;font-size:13px;font-weight:800;color:var(--ar-navy2);padding:6px;border-radius:12px;background:#f0f4ff;text-decoration:none}
+.ar-section a{margin-left:12px;font-size:14px;font-weight:800;color:var(--ar-navy2);vertical-align:middle}
+@media(max-width:760px){.ar-class-grid{grid-template-columns:none;grid-auto-flow:column;grid-auto-columns:86%;overflow-x:auto;scroll-snap-type:x mandatory;padding-bottom:8px;overscroll-behavior-x:contain}
+ .ar-class-grid>.ar-class-card{scroll-snap-align:start}.ar-cohort-label::after{content:'  · vuốt ngang xem các lớp →';font-weight:500;color:#dbe4ff;font-size:12px}
+ .ar-section a{display:block;margin:4px 0 0}}
