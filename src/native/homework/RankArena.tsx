@@ -111,7 +111,7 @@ export default function RankArena({compact=false}:{compact?:boolean}){
    <div className="ar-grid">{data.map(c=>{const maxAvg=Math.max(10,...c.classes.map(k=>k.avg));
     return <article key={c.cohort} className="ar-card" aria-labelledby={'ar-'+c.cohort}>
      <header className="ar-card-head"><h3 id={'ar-'+c.cohort}>Khối {c.cohort}</h3><span>{c.ranked} em lên bảng{c.perfect?' · '+c.perfect+' điểm 10':''}</span></header>
-     {c.top.length?<><Podium rows={c.top.slice(0,3)}/><Chasers rows={c.top.slice(3,10)}/></>:<p className="ar-empty">Chưa có ai lên bảng. Nộp BTVN sớm để giành ngôi đầu! 🚀</p>}
+     {c.top.length?<><Podium rows={c.top.slice(0,3)}/><Chasers rows={c.top.slice(3,compact?5:10)}/>{compact&&c.top.length>5&&<a className="ar-more" href={'/xep-hang#ar-'+c.cohort}>Xem đủ top 10 khối {c.cohort} ↗</a>}</>:<p className="ar-empty">Chưa có ai lên bảng. Nộp BTVN sớm để giành ngôi đầu! 🚀</p>}
      {c.classes.some(k=>k.students)&&<div className="ar-race"><h4>🏁 Đua lớp <small>điểm trung bình</small></h4><ul>{c.classes.filter(k=>k.students).map((k,i)=><li key={k.className}>
       <a href={'#ar-lop-'+encodeURIComponent(k.className)} className="ar-race-row">
        <span className="ar-race-pos">{i===0?'🥇':i===1?'🥈':i===2?'🥉':i+1}</span>
