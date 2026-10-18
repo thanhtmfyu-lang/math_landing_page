@@ -15,7 +15,7 @@ Deno.serve(async (req) => {
   if (req.method !== "POST" || !MA || !bang(req.headers.get("x-mtm-token") ?? "", MA)) return new Response("forbidden", { status: 403 });
   let p: unknown;
   try { p = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
-  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_dd_api9`, {
+  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_dd_api10`, {
     method: "POST",
     headers: { apikey: KHOA, Authorization: `Bearer ${KHOA}`, "Content-Type": "application/json" },
     body: JSON.stringify({ p }),
