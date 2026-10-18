@@ -16,6 +16,7 @@ const monthlyCards=(lessons:LessonMaterial[],now:number,className:string)=>lesso
 /** Server-only. Không liệt kê học sinh, không giữ mã thô trong repository.
  * Mỗi request đọc snapshot có quyền; CAS DB là điểm commit duy nhất.
  * Edge Function giữ resolver cũ + limiter chung; transport phải trỏ đúng Edge đã có. */
+export const PIN_SETUP='PIN_SETUP',PIN_REQUIRED='PIN_REQUIRED';
 export class SupabaseHomeworkRepository {
   constructor(private db:RpcTransport,private edge:(body:Record<string,unknown>)=>Promise<any>,private clock=Date.now,private signAsset?:(path:string,seconds:number)=>Promise<string>){}
   async login(gate:GateInput,details?:{classMismatch?:boolean}){
@@ -28,8 +29,15 @@ export class SupabaseHomeworkRepository {
       if(!confirmed?.ok||!confirmed.session)throw new HomeworkError(401,GATE_ERROR);
       return confirmed.session as string;
     }
-    if(keys.length!==3||!['fullName','phone','className'].every(k=>keys.includes(k)))throw new HomeworkError(401,GATE_ERROR);
+    const base=keys.filter(k=>k!=='pin'&&k!=='newPin');
+    if(base.length!==3||!['fullName','phone','className'].every(k=>base.includes(k)))throw new HomeworkError(401,GATE_ERROR);
     const result=await this.edge({operation:'forgot',...gate});
+    // 18/10 mã PIN 6 số: lần đầu phải đặt PIN; sai 5 lần khoá 15 phút.
+    if(result?.pin==='setup')throw new HomeworkError(428,PIN_SETUP);
+    if(result?.pin==='required')throw new HomeworkError(428,PIN_REQUIRED);
+    if(result?.pin==='weak')throw new HomeworkError(422,'Mã PIN quá dễ đoán. Em chọn 6 số khác, không dùng 123456 hay 6 số giống nhau.');
+    if(result?.pin==='wrong')throw new HomeworkError(422,'Sai mã PIN. Em còn '+Number(result.remaining??0)+' lần thử trước khi bị khoá 15 phút.');
+    if(result?.pin==='locked')throw new HomeworkError(423,'Sai mã PIN quá 5 lần. Em chờ 15 phút, hoặc nhắn trợ lý lớp qua Zalo 0967365413 để đặt lại PIN.');
     if(!result?.ok||!result.session)throw new HomeworkError(401,GATE_ERROR);
     if(details)details.classMismatch=result.classMismatch===true;
     return result.session as string;

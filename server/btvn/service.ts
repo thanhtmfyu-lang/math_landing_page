@@ -45,7 +45,7 @@ export class HomeworkService {
     for(const [key,value] of this.limits)if(value.until<=now)this.limits.delete(key);
     for(const [key,value] of this.sessions)if(value.expires<=now)this.sessions.delete(key);
     const candidate=gate as Record<string,string>;
-    const fields=candidate&&typeof candidate==='object'&&!Array.isArray(candidate)?Object.keys(candidate):[];
+    const fields=candidate&&typeof candidate==='object'&&!Array.isArray(candidate)?Object.keys(candidate).filter(k=>k!=='pin'&&k!=='newPin'):[];
     const byCode=fields.length===1&&fields[0]==='studentCode';
     const byIdentity=fields.length===3&&['fullName','phone','className'].every(k=>fields.includes(k));
     const valid=(byCode||byIdentity)&&fields.every(k=>typeof candidate[k]==='string'&&candidate[k].trim().length>0&&candidate[k].length<=160);

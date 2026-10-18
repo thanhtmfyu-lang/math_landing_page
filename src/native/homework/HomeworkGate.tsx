@@ -3,15 +3,33 @@ import {Link} from '../../migration/navigation';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
 
 type Identity = {fullName:string;phone:string;className:string};
+/** 18/10 mã PIN 6 số. Thông báo này đồng thời là tín hiệu chế độ "tạo PIN lần đầu" (không thêm state mới vào trang). */
+export const PIN_SETUP_NOTICE='Lần đầu vào bằng họ tên: em tạo mã PIN 6 số riêng để bảo vệ bài và điểm, rồi bấm Vào bài.';
+export const PIN_REQUIRED_NOTICE='Tài khoản đã có mã PIN. Em nhập mã PIN 6 số để vào bài.';
+const digits=(v:FormDataEntryValue|null)=>typeof v==='string'?v.replace(/\D/g,''):'';
+/** Đọc ô PIN (không điều khiển) khi gửi form; sự kiện giả trong kiểm thử không có form thì giữ nguyên. */
+function withPin(event:{currentTarget?:unknown},identity:Identity,setup:boolean):GateInput|null{
+  const form=event.currentTarget;
+  if(typeof HTMLFormElement==='undefined'||!(form instanceof HTMLFormElement))return {...identity};
+  const data=new FormData(form),pin=digits(data.get('btvn-pin')),newPin=digits(data.get('btvn-new-pin')),again=digits(data.get('btvn-new-pin-2'));
+  if(setup){
+    const second=form.elements.namedItem('btvn-new-pin-2');
+    if(second instanceof HTMLInputElement){second.setCustomValidity(newPin===again?'':'Hai lần nhập mã PIN chưa giống nhau.');if(!form.reportValidity())return null;}
+    return /^[0-9]{6}$/.test(newPin)?{...identity,newPin}:null;
+  }
+  return /^[0-9]{6}$/.test(pin)?{...identity,pin}:{...identity};
+}
+const pinField=(name:string,label:string,autoComplete:string,required:boolean,help?:string)=><label key={name}>{label}<input name={name} type="password" inputMode="numeric" pattern="[0-9]{6}" minLength={6} maxLength={6} autoComplete={autoComplete} required={required}/>{help&&<small>{help}</small>}</label>;
 type Props = {
   studentCode:string; identity:Identity; busy:boolean;
   classNames?:string[]; classesLoading?:boolean; classesError?:boolean; onReloadClasses?:()=>void;
   onCode:(value:string)=>void; onIdentity:(value:Identity)=>void;
   onLogin:(input:GateInput)=>void;
+  pinMode?:'enter'|'setup';
 };
 
 /** Hai form độc lập: trình duyệt chỉ kiểm các ô của thẻ đang gửi. */
-export default function HomeworkGate({studentCode,identity,busy,classNames=[],classesLoading=false,classesError=false,onReloadClasses,onCode,onIdentity,onLogin}:Props){
+export default function HomeworkGate({studentCode,identity,busy,classNames=[],classesLoading=false,classesError=false,onReloadClasses,onCode,onIdentity,onLogin,pinMode}:Props){
   return <><section className="btvn-entry-help mig-panel" aria-labelledby="btvn-entry-title">
     <h2 id="btvn-entry-title">Vào BTVN của lớp đang học</h2>
     <p>Chọn một cách bên dưới. Chưa có mã thì dùng họ tên, số điện thoại đã đăng ký và lớp.</p>
@@ -25,11 +43,17 @@ export default function HomeworkGate({studentCode,identity,busy,classNames=[],cl
       <p id="btvn-code-help">Nhập mã học sinh do MTM cấp riêng cho em.</p>
       <button type="submit" className="ep-primary" disabled={busy}>{busy?'Đang kiểm tra…':'Vào bài'}</button>
     </form>
-    <form className="btvn-gate mig-panel" aria-labelledby="btvn-identity-title" onSubmit={event=>{event.preventDefault();if(!busy&&!classesLoading&&classNames.includes(identity.className))onLogin({...identity});}}>
+    <form className="btvn-gate mig-panel" aria-labelledby="btvn-identity-title" onSubmit={event=>{event.preventDefault();if(!busy&&!classesLoading&&classNames.includes(identity.className)){const input=pinMode?withPin(event,identity,pinMode==='setup'):{...identity};if(input)onLogin(input);}}}>
       <h2 id="btvn-identity-title">Không có mã</h2>
       <p>Dùng họ tên học sinh hoặc phụ huynh và số điện thoại đã đăng ký với lớp. Gia đình có nhiều con cùng lớp nên nhập tên học sinh để đối chiếu đúng bài.</p>
       {([['fullName','Họ tên học sinh hoặc phụ huynh'],['phone','Số điện thoại (học sinh hoặc phụ huynh)']] as const).map(([key,label])=><label key={key}>{label}<input type={key==='phone'?'tel':'text'} autoComplete="off" maxLength={160} required value={identity[key]} onChange={event=>onIdentity({...identity,[key]:event.target.value})}/></label>)}
       <label>Lớp đang học<select required disabled={busy||classesLoading||!classNames.length} value={identity.className} onChange={event=>onIdentity({...identity,className:event.target.value})}><option value="">{classesLoading?'Đang tải lớp…':'Chọn lớp đang học'}</option>{[...classNames].sort((a,b)=>a.localeCompare(b,"vi",{numeric:true})).map(name=><option key={name} value={name}>{name}</option>)}</select></label>
+      {pinMode==='setup'&&<div className="btvn-pin-setup" role="group" aria-label="Tạo mã PIN">
+        <p><b>Tạo mã PIN 6 số</b> để bảo vệ bài và điểm của em. Lần sau vào bằng họ tên cần nhập PIN này. Không dùng ngày sinh, 123456 hay 6 số giống nhau; không cho người khác biết.</p>
+        {pinField('btvn-new-pin','Mã PIN mới (6 số)','new-password',true)}
+        {pinField('btvn-new-pin-2','Nhập lại mã PIN','new-password',true)}
+      </div>}
+      {pinMode==='enter'&&pinField('btvn-pin','Mã PIN (6 số)','current-password',false,'Lần đầu vào bằng cách này: để trống ô PIN, bấm Vào bài để tạo PIN. Quên PIN: nhắn Zalo trợ lý lớp.')}
       {classesError&&<p role="status">Chưa tải được danh sách lớp. <button type="button" disabled={busy||classesLoading} onClick={onReloadClasses}>Thử tải lại</button></p>}
       {!classesLoading&&!classesError&&!classNames.length&&<p role="status">Chưa có lớp để chọn. Em liên hệ MTM.</p>}
       <button type="submit" className="ep-primary" disabled={busy||classesLoading||!classNames.length}>{busy?'Đang kiểm tra…':'Vào bài'}</button>

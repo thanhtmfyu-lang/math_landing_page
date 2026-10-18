@@ -6,8 +6,11 @@ const answers=(v:unknown)=>!!v&&typeof v==='object'&&!Array.isArray(v)&&JSON.str
 function operation(body:Record<string,unknown>):{name:string;args:Record<string,unknown>}|null{
  const op=body.operation,base={p_session:body.session};
  if(op==='forgot'){
-  if(Object.keys(body).sort().join(',')!=='className,fullName,operation,phone'||!['fullName','phone','className'].every(k=>typeof body[k]==='string'&&String(body[k]).trim().length>0&&String(body[k]).length<=160))return null;
-  return {name:'mtm_btvn_forgot',args:{p_full_name:body.fullName,p_phone:body.phone,p_class_name:body.className}};
+  // 18/10: mã PIN 6 số (pin để vào, newPin để đặt lần đầu); chỉ nhận đúng các khoá này.
+  const keys=Object.keys(body).sort().filter(k=>k!=='pin'&&k!=='newPin').join(',');
+  if(keys!=='className,fullName,operation,phone'||!['fullName','phone','className'].every(k=>typeof body[k]==='string'&&String(body[k]).trim().length>0&&String(body[k]).length<=160))return null;
+  if(['pin','newPin'].some(k=>body[k]!==undefined&&!(typeof body[k]==='string'&&/^[0-9]{6}$/.test(String(body[k])))))return null;
+  return {name:'mtm_btvn_forgot_pin',args:{p_full_name:body.fullName,p_phone:body.phone,p_class_name:body.className,p_pin:body.pin??null,p_new_pin:body.newPin??null}};
  }
  if(op==='resolve'){if(typeof body.code!=='string'||body.code.length>80||!/^[a-f0-9]{32}$/i.test(body.code.replace(/[\s-]/g,'')))return null;return{name:'mtm_hw_resolve_code',args:{p_code:body.code}};}
  if(op==='confirm')return token(body.challenge)?{name:'mtm_hw_confirm',args:{p_challenge:body.challenge,p_confirm:true}}:null;

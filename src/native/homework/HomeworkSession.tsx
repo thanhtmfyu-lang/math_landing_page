@@ -10,7 +10,7 @@ import EntryNotice,{entryFailure} from './EntryNotice';
 import LessonCards from './LessonCards';
 import HomeworkOverview from './HomeworkOverview';
 import R104Dashboard from './R104Dashboard';
-import HomeworkGate from './HomeworkGate';
+import HomeworkGate,{PIN_SETUP_NOTICE,PIN_REQUIRED_NOTICE} from './HomeworkGate';
 import HomeworkTimePlan from './HomeworkTimePlan';
 import HomeworkStudyRhythmTool from './HomeworkStudyRhythmTool';
 import HomeworkSelfCheckTool from './HomeworkSelfCheckTool';
@@ -176,7 +176,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
       const next=await gateway.call(action,action==='login'?{gate:input}:{});
       if(!mounted.current||sessionGeneration.current!==generation+(action==='login'?1:0))return;
       completed=true;setState(next);setRoom(action==='start'||!!next.draft);setGate({fullName:'',phone:'',className:''});setStudentCode('');
-    }catch(error){if(current())setNotice(error instanceof Error?error.message:'Chưa kết nối được máy chủ. Em thử lại sau.');}finally{if(mounted.current&&(current()||completed))setBusy(false);}
+    }catch(error){if(current()){const message=error instanceof Error?error.message:'Chưa kết nối được máy chủ. Em thử lại sau.';setNotice(message==='PIN_SETUP'?PIN_SETUP_NOTICE:message==='PIN_REQUIRED'?PIN_REQUIRED_NOTICE:message);}}finally{if(mounted.current&&(current()||completed))setBusy(false);}
   };
   const selectLesson=async(code:string)=>{
     const generation=sessionGeneration.current,current=()=>mounted.current&&sessionGeneration.current===generation;
@@ -190,7 +190,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     {leaveConfirmation}
     {state?.demo&&<p className="btvn-demo" role="note">Bản thử với học sinh giả và buổi mẫu. Chưa giao BTVN cho lớp thật.</p>}{notice&&<p role="alert">{notice}</p>}{exitClosed&&<button type="button" className="btvn-btn" onClick={()=>{saverRef.current?.acceptClosed();setExitClosed(false);setNotice('Đã chọn bản máy chủ đã chấm. Em có thể rời bài.');}}>Chấp nhận bản máy chủ đã chấm</button>}
     {!state&&<header className="btvn-entry-heading"><div className="btvn-entry-bar"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><Link href="/" className="btvn-home-link">← Trang chủ</Link></div><h1>Bài tập về nhà</h1><p>Vào lớp để xem bài giảng và hoàn thành BTVN của em.</p></header>}
-    {checking?<LoadingCards label="Đang kiểm tra phiên và tải danh sách buổi học…"/>:!state?<HomeworkGate studentCode={studentCode} identity={gate} busy={busy} classNames={classNames} classesLoading={classesLoading} classesError={classesError} onReloadClasses={()=>void loadClasses()} onCode={setStudentCode} onIdentity={setGate} onLogin={input=>void run('login',input)}/>:<>
+    {checking?<LoadingCards label="Đang kiểm tra phiên và tải danh sách buổi học…"/>:!state?<HomeworkGate studentCode={studentCode} identity={gate} busy={busy} classNames={classNames} classesLoading={classesLoading} classesError={classesError} onReloadClasses={()=>void loadClasses()} onCode={setStudentCode} onIdentity={setGate} onLogin={input=>void run('login',input)} pinMode={notice===PIN_SETUP_NOTICE?'setup':'enter'}/>:<>
       <header className="btvn-top"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><div><b>Bài tập về nhà</b><p>Video buổi học và BTVN của lớp em</p></div><div className="btvn-me"><Link href="/" className="btvn-home-link">← Trang chủ</Link><b>{state.fullName}</b><span>{displayClassName(state)}</span><button disabled={busy} onClick={()=>void requestExit(async()=>{await gateway.call('logout');setState(null);setRoom(false);})}>Thoát</button></div></header>
       <HomeworkBrowserHelp/>
       {state.classMismatch&&<EntryNotice className={state.className}/>}
