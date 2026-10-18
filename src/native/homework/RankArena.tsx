@@ -7,17 +7,17 @@ import type {RankRow} from './HomeLeaderboard';
 
 /** 18/10 anh Thành: bảng xếp hạng công khai đầy đủ, "phô trương, đẹp, thích thú, muốn cạnh tranh".
  * Thứ tự anh chốt: bảng TỪNG LỚP (mọi lớp hiện sẵn, không phải bấm) rồi bảng TOÀN KHỐI kèm đua lớp. Một lượt gọi lấy cả 3 khối. */
-type Row=RankRow&{schoolClass?:string;seconds?:number};
+export type Row=RankRow&{schoolClass?:string;seconds?:number};
 type ClassRace={className:string;students:number;avg:number;best:number;leader:string;top:(Row&{cohortRank:number})[]};
 type Cohort={cohort:string;ranked:number;perfect:number;top:Row[];classes:ClassRace[]};
 const KINDS=[['btvn-tuan','BTVN tuần này'],['btvn-thang','BTVN tháng này'],['kiem-tra-thang','Kiểm tra tháng']] as const;
-const fmt=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:2});
-const look=(row:Row):StudentAppearance=>({avatar:row.avatar??DEFAULT_APPEARANCE.avatar,photo:row.photo??''});
-const place=(row:Row)=>[row.schoolClass&&'Lớp '+row.schoolClass,row.school].filter(Boolean).join(' · ');
+export const fmt=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:2});
+export const look=(row:Row):StudentAppearance=>({avatar:row.avatar??DEFAULT_APPEARANCE.avatar,photo:row.photo??''});
+export const place=(row:Row)=>[row.schoolClass&&'Lớp '+row.schoolClass,row.school].filter(Boolean).join(' · ');
 /** Phân loại (18/10 anh: "phân loại cho dễ"): Kim cương >= 9,5; Vàng >= 8,5; Bạc >= 7; Đồng >= 5. */
 export const tier=(score:number)=>score>=9.5?['💎','Kim cương','ar-t-kc']:score>=8.5?['🥇','Vàng','ar-t-vang']:score>=7?['🥈','Bạc','ar-t-bac']:score>=5?['🥉','Đồng','ar-t-dong']:null;
 export const clock=(s?:number)=>typeof s==='number'?(s>=3600?Math.floor(s/3600)+' giờ '+Math.floor(s%3600/60)+' phút':Math.floor(s/60)+':'+String(s%60).padStart(2,'0')):'';
-const Badges=({row}:{row:Row})=><>{(()=>{const t=tier(row.score);return t&&<span className={'ar-badge '+t[2]} title={'Hạng '+t[1]}>{t[0]} {t[1]}</span>;})()}{row.score>=10&&<span className="ar-badge ar-badge-10" title="Đạt điểm 10 tuyệt đối">⭐ 10</span>}{row.total>=2&&row.submitted===row.total&&<span className="ar-badge" title="Nộp đủ mọi bài trong kỳ">✅ Nộp đủ</span>}</>;
+export const Badges=({row}:{row:Row})=><>{(()=>{const t=tier(row.score);return t&&<span className={'ar-badge '+t[2]} title={'Hạng '+t[1]}>{t[0]} {t[1]}</span>;})()}{row.score>=10&&<span className="ar-badge ar-badge-10" title="Đạt điểm 10 tuyệt đối">⭐ 10</span>}{row.total>=2&&row.submitted===row.total&&<span className="ar-badge" title="Nộp đủ mọi bài trong kỳ">✅ Nộp đủ</span>}</>;
 const shortClass=(cohort:string,label:string)=>label.startsWith(cohort+' ')?label.slice(cohort.length+1):label;
 
 /** Mốc chốt bảng theo giờ Việt Nam: tuần chốt 24:00 Chủ nhật, tháng chốt 24:00 ngày cuối tháng. */
@@ -28,7 +28,7 @@ export function closesIn(kind:string,now=Date.now()){
  return days?days+' ngày '+hours+' giờ':hours?hours+' giờ '+mins+' phút':mins+' phút';
 }
 
-function Podium({rows,small=false}:{rows:Row[];small?:boolean}){
+export function Podium({rows,small=false}:{rows:Row[];small?:boolean}){
  return <div className={'ar-podium'+(small?' ar-podium-sm':'')}>{[1,0,2].map(i=>{const row=rows[i];if(!row)return <div key={i} className="ar-step ar-step-empty" aria-hidden="true"/>;
   return <article key={row.rank} className={'ar-step ar-step-'+row.rank}>
    {row.rank===1&&<span className="ar-crown" aria-hidden="true">👑</span>}
