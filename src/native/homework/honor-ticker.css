@@ -10,3 +10,4 @@
 .mtm-honor-cta{flex:none;color:#ffd966;font-size:13px;white-space:nowrap;padding:0 8px}
 @media(max-width:760px){.mtm-honor{width:calc(100% - 16px);font-size:13px;gap:6px}.mtm-honor-tag{padding:3px 9px;font-size:12px}.mtm-honor-cta{display:none}}
 @media(prefers-reduced-motion:reduce){.mtm-honor-run{animation:none}}
+.mtm-honor-one{display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;color:#fff3c4;font-weight:600;padding-left:8px}

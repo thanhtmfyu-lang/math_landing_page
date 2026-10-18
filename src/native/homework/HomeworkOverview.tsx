@@ -38,6 +38,9 @@ export default function HomeworkOverview({state,busy,onStart,onRefreshReceipt}:{
   const bestHasScore=!hidden&&state.bestScore!==null&&validScore(state.bestScore)&&!bestNeedsReview;
   const best=hidden?'Chờ công bố':state.bestScore===null?'Chưa có':bestHasScore?(bestReceipt?receiptScore(bestReceipt):state.bestScore.toLocaleString('vi-VN'))+'/10'+(bestReceipt&&pendingHomeworkReceipt(bestReceipt)?' · Tạm tính':''):'Chưa hiện được điểm';
   const remaining=Math.max(0,state.maxAttempts-state.attemptsUsed);
+  // 18/10 anh Thành: nộp BTVN mà dưới 7 điểm thì nhắc làm lại. Điểm lần đầu lên bảng xếp hạng lớp; điểm cao nhất gửi phụ huynh.
+  const lastScore=current&&!pendingCurrent?(current.officialScore??current.score):null;
+  const belowSeven=state.kind!=='kiem-tra-thang'&&!hidden&&typeof lastScore==='number'&&validScore(lastScore)&&lastScore<7;
   const monthly=state.kind==='kiem-tra-thang',canReview=state.solutionsAvailable!==false;
   const hasAnswers=!!state.draft?.answers&&typeof state.draft.answers==='object'&&!Array.isArray(state.draft.answers);
   const reviewReady=!!current&&canReview&&hasAnswers&&!!state.exam&&!!state.draft&&state.draft.examId===state.exam.id&&state.draft.examVersionHash===state.exam.versionHash&&state.draft.rubricVersion===state.exam.rubricVersion&&state.draft.answerKeyVersion===state.exam.answerKeyVersion;
@@ -46,6 +49,7 @@ export default function HomeworkOverview({state,busy,onStart,onRefreshReceipt}:{
   return <div id="btvn-summary" className="btvn-detail r106-homework-overview">
     <div className="btvn-heading"><p className="btvn-eyebrow">{displayClassName(state)} · {submittedReceipt?(monthly?'KẾT QUẢ KIỂM TRA THÁNG':'KẾT QUẢ BTVN'):hiddenSubmission?'ĐÃ NỘP':awaitingReceipt?'ĐANG XÁC NHẬN KẾT QUẢ':'CHUẨN BỊ LÀM BÀI'}</p><h1>{homeworkTitle(state)}</h1>{homeworkLessonCaption(state)&&<p className="btvn-sub">{homeworkLessonCaption(state)}</p>}</div>
     {submittedReceipt&&<div className="btvn-result-meta"><span>{scoreNeedsReview?'Bài đã nộp. Điểm đang được đối soát.':'Bài đã nộp và lưu kết quả.'}</span><strong className={'btvn-chip'+(bestHasScore?' success':'')}>Điểm cao nhất: {best}</strong></div>}
+    {belowSeven&&<div className="btvn-redo" role="alert"><strong>Em chưa đạt từ 7 điểm trở lên.</strong> {remaining>0?'Hãy làm lại bài này nhé (em còn '+remaining+' lượt).':'Em đã dùng hết lượt, hãy xem lời giải và ôn lại các câu sai nhé.'}<small>Điểm lần nộp đầu tính lên bảng xếp hạng lớp trên web. Điểm cao nhất trong các lần làm BTVN là điểm gửi phụ huynh.</small></div>}
     {monthly&&<p role="status">Kiểm tra cuối tháng · Chỉ 1 lượt. Mở: {state.opensAt&&homeworkDate(state.opensAt)}. Đóng: {state.closesAt&&homeworkDate(state.closesAt)} (giờ Việt Nam). {!canReview&&'Lời giải chỉ mở sau giờ đóng.'}</p>}
     {!monthly&&state.canStart===false&&state.opensAt!==undefined&&<p role="status">Mở làm sau buổi học: {homeworkDate(state.opensAt)} (giờ Việt Nam).</p>}
     <div className="btvn-detail-grid">

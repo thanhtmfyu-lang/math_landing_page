@@ -7,14 +7,17 @@ import type {RankRow} from './HomeLeaderboard';
 
 /** 18/10 anh Thành: bảng xếp hạng công khai đầy đủ, "phô trương, đẹp, thích thú, muốn cạnh tranh".
  * Thứ tự anh chốt: bảng TỪNG LỚP (mọi lớp hiện sẵn, không phải bấm) rồi bảng TOÀN KHỐI kèm đua lớp. Một lượt gọi lấy cả 3 khối. */
-type Row=RankRow&{schoolClass?:string};
+type Row=RankRow&{schoolClass?:string;seconds?:number};
 type ClassRace={className:string;students:number;avg:number;best:number;leader:string;top:(Row&{cohortRank:number})[]};
 type Cohort={cohort:string;ranked:number;perfect:number;top:Row[];classes:ClassRace[]};
 const KINDS=[['btvn-tuan','BTVN tuần này'],['btvn-thang','BTVN tháng này'],['kiem-tra-thang','Kiểm tra tháng']] as const;
 const fmt=(n:number)=>n.toLocaleString('vi-VN',{maximumFractionDigits:2});
 const look=(row:Row):StudentAppearance=>({avatar:row.avatar??DEFAULT_APPEARANCE.avatar,photo:row.photo??''});
 const place=(row:Row)=>[row.schoolClass&&'Lớp '+row.schoolClass,row.school].filter(Boolean).join(' · ');
-const Badges=({row}:{row:Row})=><>{row.score>=10&&<span className="ar-badge ar-badge-10" title="Đạt điểm 10 tuyệt đối">⭐ 10</span>}{row.total>=2&&row.submitted===row.total&&<span className="ar-badge" title="Nộp đủ mọi bài trong kỳ">✅ Nộp đủ</span>}</>;
+/** Phân loại (18/10 anh: "phân loại cho dễ"): Kim cương >= 9,5; Vàng >= 8,5; Bạc >= 7; Đồng >= 5. */
+export const tier=(score:number)=>score>=9.5?['💎','Kim cương','ar-t-kc']:score>=8.5?['🥇','Vàng','ar-t-vang']:score>=7?['🥈','Bạc','ar-t-bac']:score>=5?['🥉','Đồng','ar-t-dong']:null;
+export const clock=(s?:number)=>typeof s==='number'?(s>=3600?Math.floor(s/3600)+' giờ '+Math.floor(s%3600/60)+' phút':Math.floor(s/60)+':'+String(s%60).padStart(2,'0')):'';
+const Badges=({row}:{row:Row})=><>{(()=>{const t=tier(row.score);return t&&<span className={'ar-badge '+t[2]} title={'Hạng '+t[1]}>{t[0]} {t[1]}</span>;})()}{row.score>=10&&<span className="ar-badge ar-badge-10" title="Đạt điểm 10 tuyệt đối">⭐ 10</span>}{row.total>=2&&row.submitted===row.total&&<span className="ar-badge" title="Nộp đủ mọi bài trong kỳ">✅ Nộp đủ</span>}</>;
 const shortClass=(cohort:string,label:string)=>label.startsWith(cohort+' ')?label.slice(cohort.length+1):label;
 
 /** Mốc chốt bảng theo giờ Việt Nam: tuần chốt 24:00 Chủ nhật, tháng chốt 24:00 ngày cuối tháng. */
@@ -35,6 +38,7 @@ function Podium({rows,small=false}:{rows:Row[];small?:boolean}){
    <span className="ar-chip">{row.className}</span>
    {place(row)&&<small className="ar-step-school">{place(row)}</small>}
    <span className="ar-step-score">{fmt(row.score)}<small>/10</small></span>
+   {row.seconds!==undefined&&<small className="ar-step-time">⏱ {clock(row.seconds)}</small>}
    <div className="ar-plinth"><span>{row.rank===1?'Vô địch':row.rank===2?'Á quân':'Hạng ba'}</span></div>
   </article>;})}</div>;
 }
@@ -44,7 +48,7 @@ function Chasers({rows}:{rows:Row[]}){
  return <ol className="ar-list" start={rows[0].rank}>{rows.map(row=><li key={row.rank}>
   <b className="ar-list-rank">{row.rank}</b><StudentAvatar appearance={look(row)} size={28}/>
   <div className="ar-list-who"><strong>{row.fullName||'Học sinh MTM'} <Badges row={row}/></strong><small>{[row.className,place(row)].filter(Boolean).join(' · ')}</small></div>
-  <div className="ar-list-score"><span>{fmt(row.score)}</span><i style={{width:Math.max(4,row.score*10)+'%'}}/><small>Nộp {row.submitted}/{row.total}</small></div>
+  <div className="ar-list-score"><span>{fmt(row.score)}</span><i style={{width:Math.max(4,row.score*10)+'%'}}/><small>{row.seconds!==undefined?'⏱ '+clock(row.seconds)+' · ':''}Nộp {row.submitted}/{row.total}</small></div>
  </li>)}</ol>;
 }
 
@@ -55,7 +59,8 @@ export default function RankArena({compact=false}:{compact?:boolean}){
  useEffect(()=>subscribeLeaderboardRefresh(()=>setRetry(n=>n+1)),[]);
  useEffect(()=>{const t=setInterval(()=>setTick(n=>n+1),30_000);return()=>clearInterval(t);},[]);
  const [spot,setSpot]=useState(0);
- useEffect(()=>{if(typeof matchMedia!=='undefined'&&matchMedia('(prefers-reduced-motion: reduce)').matches)return;const t=setInterval(()=>setSpot(n=>n+1),3800);return()=>clearInterval(t);},[]);
+ // Luôn đổi người (đổi nội dung, không phải hiệu ứng); máy giảm chuyển động chỉ bỏ hiệu ứng trượt ở CSS.
+ useEffect(()=>{const t=setInterval(()=>setSpot(n=>n+1),3800);return()=>clearInterval(t);},[]);
  useEffect(()=>{snapshot.current='';setStatus('loading');},[kind]);
  useEffect(()=>{let live=true;
   requestLeaderboard<{enabled:boolean;cohorts:Cohort[]}>('/api/xep-hang?dau-truong=1&loai='+kind,{credentials:'omit'}).then(r=>{
@@ -116,6 +121,6 @@ export default function RankArena({compact=false}:{compact?:boolean}){
       </a></li>)}</ul></div>}
     </article>;})}</div>
   </>}
-  <p className="ar-foot">Xếp theo điểm trung bình lần nộp đầu của các bài trong kỳ; bằng điểm thì ai nộp nhiều bài hơn, rồi ai nộp sớm hơn đứng trên. Bài quá hạn chưa nộp tính 0. {!own&&<a href="/btvn">Vào BTVN để lên bảng ↗</a>}</p>
+  <p className="ar-foot"><span className="ar-legend">Phân loại: <b className="ar-badge ar-t-kc">💎 Kim cương ≥ 9,5</b> <b className="ar-badge ar-t-vang">🥇 Vàng ≥ 8,5</b> <b className="ar-badge ar-t-bac">🥈 Bạc ≥ 7</b> <b className="ar-badge ar-t-dong">🥉 Đồng ≥ 5</b></span> Xếp theo điểm trung bình lần nộp đầu của các bài trong kỳ; bằng điểm thì ai nộp nhiều bài hơn, rồi ai làm nhanh hơn (tổng thời gian làm ⏱), rồi ai nộp sớm hơn đứng trên. Bài quá hạn chưa nộp tính 0. {!own&&<a href="/btvn">Vào BTVN để lên bảng ↗</a>}</p>
  </section>;
 }

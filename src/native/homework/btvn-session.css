@@ -28,3 +28,6 @@
 
 /* Đợt 2: trợ giúp tại cổng, giữ hai form và bố cục phòng làm bài. */
 .btvn-entry-help{margin-bottom:20px}.btvn-entry-help h2{font-size:22px;line-height:1.35}.btvn-entry-help p,.btvn-entry-help summary{font-size:16px;line-height:1.65}.btvn-entry-help summary{cursor:pointer;min-height:44px;padding-block:8px}.btvn-entry-help a{text-decoration:underline;text-underline-offset:3px}.btvn-entry-help details+details{margin-top:4px}
+
+/* 18/10 nhắc làm lại khi dưới 7 điểm */
+.btvn-redo{margin:10px 0;padding:12px 16px;border-radius:14px;background:#fff4e5;border:2px solid #f5a623;color:#5a3600;display:grid;gap:4px}.btvn-redo strong{font-size:17px;color:#b45309}.btvn-redo small{color:#7a5a2a}

@@ -18,7 +18,10 @@ export function honorItems(a:Arena){
  return [...new Set(out)];
 }
 export default function HonorTicker(){
- const [items,setItems]=useState<string[]>([]),[retry,setRetry]=useState(0);
+ const [items,setItems]=useState<string[]>([]),[retry,setRetry]=useState(0),[still,setStill]=useState(false),[at,setAt]=useState(0);
+ // Máy bật "giảm chuyển động" (Windows tắt hiệu ứng): không chạy chữ trượt mà đổi từng dòng 3,5 giây/lần.
+ useEffect(()=>{if(typeof matchMedia==='undefined')return;const m=matchMedia('(prefers-reduced-motion: reduce)');setStill(m.matches);const f=()=>setStill(m.matches);m.addEventListener?.('change',f);return()=>m.removeEventListener?.('change',f);},[]);
+ useEffect(()=>{if(!still)return;const t=setInterval(()=>setAt(n=>n+1),3500);return()=>clearInterval(t);},[still]);
  useEffect(()=>subscribeLeaderboardRefresh(()=>setRetry(n=>n+1)),[]);
  useEffect(()=>{let live=true;
   requestLeaderboard<Arena>('/api/xep-hang?dau-truong=1&loai=btvn-tuan&gon=1',{credentials:'omit'}).then(r=>{if(live&&r.ok&&r.data&&Array.isArray(r.data.cohorts))setItems(honorItems(r.data));}).catch(()=>{});
@@ -28,7 +31,7 @@ export default function HonorTicker(){
  const line=items.map((t,i)=><span key={i}>{t}</span>);
  return <a className="mtm-honor" href="/xep-hang" aria-label={'Bảng vinh danh tuần: '+items.join('; ')}>
   <b className="mtm-honor-tag">🔥 Vinh danh tuần</b>
-  <span className="mtm-honor-track" aria-hidden="true"><span className="mtm-honor-run" style={{animationDuration:Math.max(25,items.length*5)+'s'}}>{line}{line}</span></span>
+  <span className="mtm-honor-track" aria-hidden="true">{still?<span className="mtm-honor-one" key={at%items.length}>{items[at%items.length]}</span>:<span className="mtm-honor-run" style={{animationDuration:Math.max(25,items.length*5)+'s'}}>{line}{line}</span>}</span>
   <b className="mtm-honor-cta">Xem bảng ↗</b>
  </a>;
 }

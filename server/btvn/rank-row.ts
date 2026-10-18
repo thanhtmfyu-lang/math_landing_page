@@ -15,7 +15,7 @@ export function publicRankRow(r:any,maxRank=Number.MAX_SAFE_INTEGER){
  const school=typeof r.school==='string'?r.school.normalize('NFC').trim().replace(/\s+/g,' '):'';
  if(r.schoolClass!==undefined&&r.schoolClass!==null&&(!validSchool(r.schoolClass)||r.schoolClass.length>40))throw Error('Invalid rank school class');
  const schoolClass=typeof r.schoolClass==='string'?r.schoolClass.normalize('NFC').trim().replace(/\s+/g,' '):'';
- return {rank:r.rank,fullName:r.fullName,className:r.className,school:school&&!['chưa cập nhật','chua cap nhat'].includes(school.toLocaleLowerCase('vi'))?school:null,...(schoolClass?{schoolClass}:{}),avatar:r.avatar??null,photo:r.photo_hidden?null:photo||null,score:r.score,submitted:r.submitted,total:r.total};
+ return {rank:r.rank,fullName:r.fullName,className:r.className,school:school&&!['chưa cập nhật','chua cap nhat'].includes(school.toLocaleLowerCase('vi'))?school:null,...(schoolClass?{schoolClass}:{}),...(typeof r.seconds==='number'&&Number.isFinite(r.seconds)&&r.seconds>=0&&r.seconds<=10_000_000?{seconds:Math.round(r.seconds)}:{}),avatar:r.avatar??null,photo:r.photo_hidden?null:photo||null,score:r.score,submitted:r.submitted,total:r.total};
 }
 // Phép chiếu ẩn danh được giữ cho nơi chưa có quyền công khai danh tính.
 export function anonymousRankRow(r:any,maxRank=10){
