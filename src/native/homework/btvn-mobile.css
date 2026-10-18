@@ -294,3 +294,77 @@
     padding: 10px 6px;
   }
 }
+
+/* 18/10 anh Thành chê trang vào BTVN "chưa ổn": khung hướng dẫn tràn sát mép, hai ô vào bài lệch chiều cao.
+   Gom mọi khối vào cùng khuôn giữa trang; hai ô cao bằng nhau, nút Vào bài thẳng hàng ở đáy. */
+.ep-root.btvn-session > .btvn-entry-help.mig-panel {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--btvn-page-gutter));
+  max-width: calc(var(--btvn-page-width) - 2 * var(--btvn-page-gutter));
+  margin: 8px auto 0;
+  padding: 20px 24px;
+  border-radius: 16px;
+  background: #f7f9fd;
+  border: 1px solid #dce2ed;
+}
+.ep-root.btvn-session > .btvn-entry-help.mig-panel h2 { margin: 0 0 6px; }
+.ep-root.btvn-session > .btvn-entry-help.mig-panel p { margin: 0 0 4px; }
+.ep-root.btvn-session .btvn-gates { align-items: stretch; margin-top: 20px; }
+.ep-root.btvn-session .btvn-gate { height: 100%; box-sizing: border-box; }
+.ep-root.btvn-session .btvn-gate > button[type="submit"] { margin-top: auto; align-self: flex-start; min-width: 140px; }
+@media (max-width: 700px) {
+  .ep-root.btvn-session > .btvn-entry-help.mig-panel { width: auto; margin-inline: 16px; padding: 16px; }
+  .ep-root.btvn-session .btvn-gate > button[type="submit"] { align-self: stretch; }
+}
+
+/* Trang vào bài: "Không có mã" (cách chính) bên trái rộng hơn; bên phải là "Có mã" + câu hỏi thường gặp. */
+.ep-root.btvn-session .btvn-gates.btvn-gates-main-first { grid-template-columns: minmax(0, 3fr) minmax(0, 2fr); align-items: start; }
+.ep-root.btvn-session .btvn-gate-main { height: auto; }
+.ep-root.btvn-session .btvn-gate-side { display: flex; flex-direction: column; gap: 16px; min-width: 0; }
+.ep-root.btvn-session .btvn-gate-side .btvn-gate { height: auto; }
+.ep-root.btvn-session .btvn-gate-side .btvn-gate > button[type="submit"] { margin-top: 8px; }
+.ep-root.btvn-session .btvn-gate-faq { box-sizing: border-box; padding: 12px 20px; border-radius: 16px; background: #f7f9fd; border: 1px solid #dce2ed; }
+.ep-root.btvn-session .btvn-gate-faq summary { cursor: pointer; min-height: 44px; display: flex; align-items: center; font-weight: 600; }
+.ep-root.btvn-session .btvn-gate-faq p { margin: 4px 0 12px; line-height: 1.6; }
+@media (max-width: 700px) {
+  .ep-root.btvn-session .btvn-gates.btvn-gates-main-first { grid-template-columns: minmax(0, 1fr); }
+}
+
+/* Sau khi đăng nhập: thanh trên cùng và dòng "Gặp lỗi khi làm bài trong Zalo?" nằm trong cùng khuôn với nội dung (trước đây trôi ra mép trái). */
+.ep-root.btvn-session > .btvn-top {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--btvn-page-gutter));
+  max-width: calc(var(--btvn-page-width) - 2 * var(--btvn-page-gutter));
+  margin-inline: auto;
+}
+.ep-root.btvn-session > details.btvn-entry-help:not(.mig-panel) {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--btvn-page-gutter));
+  max-width: calc(var(--btvn-page-width) - 2 * var(--btvn-page-gutter));
+  margin: 12px auto 0;
+  padding: 4px 20px;
+  border-radius: 12px;
+  background: #f7f9fd;
+  border: 1px solid #dce2ed;
+}
+.ep-root.btvn-session > details.btvn-entry-help:not(.mig-panel) summary { font-size: 15px; font-weight: 600; }
+@media (max-width: 700px) {
+  .ep-root.btvn-session > :is(.btvn-top, details.btvn-entry-help:not(.mig-panel)) { width: auto; margin-inline: 16px; }
+}
+
+/* Công cụ học tập (chia chặng, nhịp tự học, khởi động, tự kiểm, sân chơi): lưới 2 cột cùng khuôn trang thay vì một cột hẹp dài. */
+.ep-root.btvn-session > .btvn-tools {
+  box-sizing: border-box;
+  width: calc(100% - 2 * var(--btvn-page-gutter));
+  max-width: calc(var(--btvn-page-width) - 2 * var(--btvn-page-gutter));
+  margin: 24px auto 0;
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: stretch;
+}
+.ep-root.btvn-session > .btvn-tools > * { width: auto; max-width: none; margin: 0; box-sizing: border-box; min-width: 0; }
+.ep-root.btvn-session > .btvn-tools > .btvn-time-plan { grid-column: 1 / -1; }
+@media (max-width: 700px) {
+  .ep-root.btvn-session > .btvn-tools { width: auto; margin-inline: 16px; grid-template-columns: minmax(0, 1fr); }
+}

@@ -16,3 +16,20 @@
 .cp-shelf-loading{min-height:60vh;display:flex;align-items:flex-start;justify-content:center;padding-top:48px;color:#56657b;font-size:14px}
 /* LT-15 (Đợt 4): khối giới thiệu đề gọn một dòng, chi tiết mở khi cần. */
 .cp-intake-more summary{display:flex;align-items:center;min-height:44px;cursor:pointer;color:#233463;font-weight:600;text-decoration:underline;text-underline-offset:3px}.cp-intake-more summary:focus-visible{outline:3px solid #d7a93a;outline-offset:3px}.cp-intake-more p{line-height:1.7}@media(max-width:950px){.cp-intake{margin-bottom:12px}.cp-attempt{padding-top:16px}}
+
+/* 18/10 anh Thành: trang Luyện tập. Đề luyện lên trước; 10 trò chơi gom một mục mở/đóng, lưới 2 cột; hàng chọn lớp dính dưới menu khi cuộn. */
+.cp-library .cp-track-nav { position: sticky; top: 92px; z-index: 40; background: var(--mig-bg, #f4f6fb); padding-block: 8px; }
+.cp-chapter-content > details.cp-games { margin-top: 20px; border: 1px solid #f1d98a; border-radius: 16px; background: #fffbea; }
+.cp-chapter-content > details.cp-games > summary { cursor: pointer; list-style: none; display: flex; flex-wrap: wrap; align-items: baseline; gap: 4px 12px; padding: 16px 20px; min-height: 44px; }
+.cp-chapter-content > details.cp-games > summary::-webkit-details-marker { display: none; }
+.cp-chapter-content > details.cp-games > summary::before { content: "▸"; font-weight: 700; }
+.cp-chapter-content > details.cp-games[open] > summary::before { content: "▾"; }
+.cp-chapter-content > details.cp-games > summary span { font-weight: 800; font-size: 18px; color: #14245c; }
+.cp-chapter-content > details.cp-games > summary small { color: #5a6478; font-size: 14px; }
+.cp-games-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 12px; padding: 0 16px 16px; align-items: start; }
+.cp-games-grid > details { margin: 0; min-width: 0; }
+.cp-games-grid > details[open] { grid-column: 1 / -1; }
+@media (max-width: 760px) {
+  .cp-library .cp-track-nav { top: 64px; overflow-x: auto; }
+  .cp-games-grid { grid-template-columns: minmax(0, 1fr); padding: 0 10px 10px; }
+}

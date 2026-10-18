@@ -59,7 +59,8 @@ export default function PracticeLibrary(){
       </aside>
       <div className="cp-chapter-content">
         <h2>{chapter.title}</h2><p>{chapter.forms.join(' · ')}</p>
-        {['10','11','12'].includes(selected.id)&&<>
+        {painted?<Suspense fallback={<div className="cp-shelf-loading" role="status" aria-live="polite">Đang tải danh sách bài…</div>}><ChapterShelf selected={selected} chapter={chapter}/></Suspense>:<div className="cp-shelf-loading" role="status" aria-live="polite">Đang tải danh sách bài…</div>}
+        {['10','11','12'].includes(selected.id)&&<details className="cp-games"><summary><span>Trò chơi và luyện nhanh</span><small>10 trò theo đúng chương đang chọn · bấm để mở</small></summary><div className="cp-games-grid">
           <PracticeTool key={'miner:'+selected.id+':'+chapter.id} label="Thợ mỏ Toán · đào theo chương" loading="Đang mở hầm mỏ…"><MinerGame track={selected.id} chapter={chapter.id}/></PracticeTool>
           <PracticeTool key={'recall:'+selected.id+':'+chapter.id} label="Ôn nhanh công thức" loading="Đang tải bộ thẻ…"><QuickRecall track={selected.id} chapter={chapter.id}/></PracticeTool>
           <PracticeTool key={'interval:'+selected.id+':'+chapter.id} label="Mini game · Tập nghiệm trên trục số" loading="Đang tải trò tập nghiệm…"><IntervalGame/></PracticeTool>
@@ -70,8 +71,7 @@ export default function PracticeLibrary(){
           <PracticeTool key={'solver:'+selected.id+':'+chapter.id} label="Tự luyện · Giải từng bước" loading="Đang tải bài giải từng bước…"><StepSolver/></PracticeTool>
           <PracticeTool key={'domain:'+selected.id+':'+chapter.id} label="Mini game · Soi điều kiện" loading="Đang tải bài soi điều kiện…"><DomainCheck/></PracticeTool>
           <PracticeTool key={'estimate:'+selected.id+':'+chapter.id} label="Mini game · Ước lượng rồi kiểm tra" loading="Đang tải bài ước lượng…"><EstimationGame/></PracticeTool>
-        </>}
-        {painted?<Suspense fallback={<div className="cp-shelf-loading" role="status" aria-live="polite">Đang tải danh sách bài…</div>}><ChapterShelf selected={selected} chapter={chapter}/></Suspense>:<div className="cp-shelf-loading" role="status" aria-live="polite">Đang tải danh sách bài…</div>}
+        </div></details>}
       </div>
     </div>
   </section>;

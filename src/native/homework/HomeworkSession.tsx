@@ -200,10 +200,12 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
       </>}
 
     </>}
-    {!checking&&(!state||!room)&&<HomeworkTimePlan/>}
-    {!checking&&(!state||!room)&&<HomeworkStudyRhythmTool/>}
-    {!checking&&(!state||!room)&&<HomeworkWarmupTool key={'warmup:'+(state?.lessonCode??'')}/>}
-    {!checking&&(!state||!room)&&<HomeworkSelfCheckTool key={'entry:'+(state?.lessonCode??'')}/>}
-    {!checking&&(!state||!room)&&<aside className="btvn-self-check" aria-label="Đổi nhịp luyện Toán"><Link href="/san-choi" className="btvn-btn">Đổi nhịp với Sân chơi Toán</Link><p>Luyện riêng để đổi nhịp sau khi học, không tính điểm BTVN.</p></aside>}
+    {!checking&&(!state||!room)&&<div className="btvn-tools" aria-label="Công cụ học tập">
+      <HomeworkTimePlan/>
+      <HomeworkStudyRhythmTool/>
+      <HomeworkWarmupTool key={'warmup:'+(state?.lessonCode??'')}/>
+      <HomeworkSelfCheckTool key={'entry:'+(state?.lessonCode??'')}/>
+      <aside className="btvn-self-check" aria-label="Đổi nhịp luyện Toán"><Link href="/san-choi" className="btvn-btn">Đổi nhịp với Sân chơi Toán</Link><p>Luyện riêng để đổi nhịp sau khi học, không tính điểm BTVN.</p></aside>
+    </div>}
   </section>;
 }
