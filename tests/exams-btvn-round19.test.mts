@@ -13,7 +13,7 @@ assert.match(hero,/r104-photos\/learning-original.webp/);
 assert.match(hero,/r104-hero/);assert.match(hero,/Chương trình học/);
 assert.match(hero,/Tìm lớp phù hợp/);assert.match(hero,/Vào BTVN/);
 assert.ok(!hero.includes('mtm-rank-compact')); // One real leaderboard is mounted above the hero.
-const home=readFileSync(join(root,'src/migration/Home.tsx'),'utf8');assert.ok(home.includes('<HomeLeaderboard/><R106Hero/>'));
+const home=readFileSync(join(root,'src/migration/Home.tsx'),'utf8');assert.ok(home.includes('<RankArena/><R106Hero/>'));
 const css=readFileSync(join(root,'src/native/homework/leaderboard.css'),'utf8');assert.match(css,/@media\(max-width:760px\).*grid-template-columns:minmax\(0,1fr\)/);
 const empty={exam:null,fullName:'Học sinh GIẢ',className:'2K9 9+',lessonCode:'',dueAt:null,maxAttempts:5,attemptsUsed:0,draft:null,receipts:[],bestScore:null,demo:false,lessons:[]};
 function session(state:any,room=false){let slot=0;const hooks={useState:(v:any)=>{const i=slot++;return [i===0?state:i===6?room:v===true?false:v,()=>{}];},useEffect(){},useMemo:(fn:any)=>fn(),useRef:(v:any)=>({current:v})};return render(load('src/native/homework/HomeworkSession.tsx',hooks).default,{pathname:'/btvn'});}

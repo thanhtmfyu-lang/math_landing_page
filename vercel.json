@@ -73,6 +73,10 @@
     {
       "source": "/btvn/:class/:lesson",
       "destination": "/index.html"
+    },
+    {
+      "source": "/xep-hang",
+      "destination": "/index.html"
     }
   ],
   "headers": [
