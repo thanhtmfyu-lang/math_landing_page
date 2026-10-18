@@ -14,8 +14,8 @@ Deno.serve(async (req) => {
   const u = new URL(req.url);
   const tab = u.searchParams.get("tab") ?? "";
   if (req.method !== "GET" || !MA || !bang(u.searchParams.get("t") ?? "", MA)) return new Response("forbidden", { status: 403 });
-  if (!["diem", "xephang", "diemdanh", "zoom", "vantay", "chuyenbuoi", "cahomnay", "cachitiet", "tongquan", "hocsinh"].includes(tab)) return new Response("bad tab", { status: 400 });
-  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_btvn_sheet_csv3`, {
+  if (!["diem", "xephang", "diemdanh", "zoom", "vantay", "chuyenbuoi", "cahomnay", "cachitiet", "tongquan", "hocsinh", "phanhoi"].includes(tab)) return new Response("bad tab", { status: 400 });
+  const r = await fetch(`${URL_DB}/rest/v1/rpc/mtm_btvn_sheet_csv4`, {
     method: "POST",
     headers: { apikey: KHOA, Authorization: `Bearer ${KHOA}`, "Content-Type": "application/json" },
     body: JSON.stringify({ p_tab: tab }),
