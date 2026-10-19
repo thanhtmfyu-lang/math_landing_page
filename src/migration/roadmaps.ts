@@ -129,3 +129,27 @@ export function courseAdvice(c:Course):CourseAdvice{
  if(n===3)return{role:'Bước 3 · Vận dụng cao',forWho:'Em đã vững vận dụng, điểm từ 8 trở lên, mục tiêu 9+. Rèn bài nhiều bước, lập luận và kiểm tra lời giải.',when:g===12?'Học từ bây giờ đến hết tháng 2/2027.':'Học song song tiến độ trường trong năm học.',next:'Tiếp theo: '+after};
  return{role:'Bước 4 · Tổng ôn và luyện đề',forWho:'Mọi mức, sau khi đã học xong phần kiến thức tương ứng ở Step 1, 2 hoặc 3.',when:g===12?'Từ tháng 3/2027 đến ngày thi tốt nghiệp THPT.':'Khoảng 3-4 tuần trước mỗi kỳ thi học kỳ.',next:g===12?'Giữ nhịp một đề mỗi tuần đến ngày thi chính thức.':'Lên lớp '+(g+1)+' theo lộ trình của MTM.'};
 }
+
+// Thẻ khóa học v2: bìa dựng từ dữ liệu lộ trình (không dùng ảnh tĩnh) nên luôn khớp tiến độ.
+// Tháng trong năm học đánh số 0 = tháng 9/2026 ... 9 = tháng 6/2027.
+export type StepTone='s1'|'s2'|'s3'|'s4'|'hsa';
+export type StepCardV2={tone:StepTone;num:string;name:string;grade:string;from:[string,string];to:[string,string];fit:string[];outcome:string;windows:[number,number][];next:string};
+export const SCHOOL_MONTHS=['T9','T10','T11','T12','T1','T2','T3','T4','T5','T6'];
+export function stepCard(c:Course):StepCardV2{
+ const n=step(c),g=c.grade,y12=g===12,grade='Lớp '+g+' · '+(courseTrack(c).cohort);
+ if(n>4)return{tone:'hsa',num:'HSA',name:'Đánh giá năng lực',grade:'2K9 · ĐHQG Hà Nội',from:['Đề Toán','50 câu'],to:['Thời gian','75 phút'],fit:['2K9 xét tuyển bằng HSA','Toán 12 đã ở mức vận dụng'],outcome:'Luyện chắc đề Toán 75 phút: 35 câu trắc nghiệm, 15 câu điền đáp án.',windows:[[1,8]],next:'Sau khi thi: Step 4 lớp 12'};
+ const ys:[number,number][]=y12?[[1,5]]:[[0,8]];
+ if(n===1)return{tone:'s1',num:'1',name:'Nền tảng',grade,from:['Hiện tại','Dưới 6,5'],to:['Mục tiêu','Vững nền'],fit:['Điểm Toán trên lớp dưới 6,5','Hổng kiến thức lớp dưới'],outcome:'Nắm chắc khái niệm, làm đúng dạng cơ bản, trình bày đủ bước.',windows:ys,next:'Tiếp theo: Step 2 Vận dụng'};
+ if(n===2)return{tone:'s2',num:'2',name:'Vận dụng',grade,from:['Hiện tại','6,5-8'],to:['Mục tiêu','8+'],fit:['Làm được bài cơ bản','Hay mất điểm câu vận dụng'],outcome:'Nhận dạng nhanh dạng bài, biết phân tích đề trước khi làm.',windows:ys,next:'Tiếp theo: Step 3 hoặc Step 4'};
+ if(n===3)return{tone:'s3',num:'3',name:'Vận dụng cao',grade,from:['Hiện tại','Từ 8'],to:['Mục tiêu','9+'],fit:['Đã vững bài vận dụng','Muốn giải câu khó nhất đề'],outcome:'Xử lý bài nhiều bước, lập luận chặt và tự kiểm lời giải.',windows:ys,next:'Tiếp theo: Step 4 Tổng ôn'};
+ if(y12)return{tone:'s4',num:'4',name:'Tổng ôn & luyện đề',grade,from:['Nhịp học','1 đề/tuần'],to:['Đề thi','90 phút'],fit:['Đã học xong Step 1, 2 hoặc 3','Cần nhịp đề sát ngày thi'],outcome:'Chữa lỗi theo nhóm, phân bổ thời gian làm bài như thi thật.',windows:[[6,9]],next:'Giữ nhịp đề đến ngày thi'};
+ return{tone:'s4',num:'4',name:'Tổng ôn & luyện đề',grade,from:['Thời điểm','Trước kỳ thi'],to:['Hình thức','Đề có giờ'],fit:['Sắp thi giữa kỳ, cuối kỳ','Muốn hệ thống lại cả chương'],outcome:'Hệ thống chương, làm đề có giờ, sửa lỗi trước kỳ thi.',windows:[[2,3],[7,8]],next:'Lên lớp '+(g+1)+' theo lộ trình'};
+}
+// Vị trí "hôm nay" trên thanh năm học (0-10), null khi ngoài năm học 2026-2027.
+export function schoolYearPosition(d=new Date()){const i=(d.getFullYear()-2026)*12+d.getMonth()-8;return i<0||i>9?null:i+(d.getDate()-1)/31;}
+export function stepStatus(k:StepCardV2,d=new Date()):{now:boolean;label:string}{
+ const p=schoolYearPosition(d);if(p===null)return{now:false,label:'Hỏi MTM lịch học'};
+ if(k.windows.some(([a,b])=>p>=a&&p<b+1))return{now:true,label:'Đúng thời điểm học'};
+ const nx=k.windows.find(([a])=>a>p);if(!nx)return{now:false,label:'Hỏi MTM lịch học'};
+ const m=(nx[0]+8)%12+1,y=nx[0]<4?2026:2027;return{now:false,label:'Học từ '+String(m).padStart(2,'0')+'/'+y};
+}
