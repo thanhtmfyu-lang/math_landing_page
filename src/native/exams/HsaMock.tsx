@@ -12,6 +12,7 @@ import type {PracticeExam} from './data';
 import {QuestionReader,ExtraSolution,rich} from '../chapters/ChapterPractice';
 import HsaPaperReader,{HsaSolutionExtra,hsaRich,type HsaGroup,type HsaTables} from './HsaPaperReader';
 import {HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,normalizeHsaPhone,type HsaMockExam} from './hsa-mock';
+import {hsaCertificateDate,hsaCertificateFileName,hsaCertificateRank,renderHsaCertificate,type HsaCertificateData} from './hsa-certificate';
 import {HSA_GRADES,HSA_GRADE_LABEL,formatHsaDuration,formatHsaScore,hsaStatusMessage,isHsaGrade,sanitizeDisplayName,type HsaGrade,type HsaRankRow,type HsaSubmitStatus} from '../../../server/hsa/rank';
 import './exams.css';
 import './hsa-mock.css';
@@ -19,7 +20,7 @@ const ServerExamAttempt=lazy(()=>import('./ServerExamAttempt'));
 
 type Entry={name:string;grade:HsaGrade;phone:string;consent:true};
 type Board={state:'loading'|'off'|'on'|'error';open:boolean;rows:HsaRankRow[]};
-type RankState={status:HsaSubmitStatus;rank:number|null}|{status:'pending'|'error';message?:string};
+type RankState={status:HsaSubmitStatus;rank:number|null;name?:string}|{status:'pending'|'error';message?:string};
 type Outcome={attemptId:string;score:number;elapsedMs:number;server:boolean};
 const ENTRY_KEY='mtm:hsa:entry:v1',DEVICE_KEY='mtm:hsa:device:v1',rankKey=(id:string)=>'mtm:hsa:rank:v1:'+id,leadKey=(examId:string)=>'mtm:hsa:lead:v1:'+examId;
 const read=(key:string)=>{try{return localStore()?.getItem(key)??null;}catch{return null;}};
@@ -99,6 +100,24 @@ function Leaderboard({board,refresh,title,scale}:{board:Board;refresh:()=>void;t
  </section>;
 }
 
+/** Giấy khen điện tử (top 10): vẽ trên trình duyệt, xem trước ngay trong khung kết quả, tải PNG hoặc chia sẻ ảnh. */
+function HsaCertificate({data}:{data:HsaCertificateData}){
+ const [png,setPng]=useState<{blob:Blob;url:string}|null>(null),[failed,setFailed]=useState(false),[note,setNote]=useState('');
+ const key=JSON.stringify(data);
+ useEffect(()=>{let alive=true,url='';setPng(null);setFailed(false);renderHsaCertificate(JSON.parse(key)).then(blob=>{url=URL.createObjectURL(blob);if(alive)setPng({blob,url});else URL.revokeObjectURL(url);},()=>{if(alive)setFailed(true);});return()=>{alive=false;if(url)URL.revokeObjectURL(url);};},[key]);
+ const fileName=hsaCertificateFileName(data.paper,data.rank);
+ const file=png&&typeof File!=='undefined'?new File([png.blob],fileName,{type:'image/png'}):null;
+ const canShare=!!file&&typeof navigator!=='undefined'&&typeof navigator.canShare==='function'&&(()=>{try{return navigator.canShare({files:[file]});}catch{return false;}})();
+ const download=()=>{if(!png)return;const a=document.createElement('a');a.href=png.url;a.download=fileName;document.body.appendChild(a);a.click();a.remove();setNote('Đã tải giấy khen về máy.');};
+ const share=async()=>{if(!file)return;try{await navigator.share({files:[file],title:'Giấy khen thi thử HSA · MTM',text:'Hạng '+data.rank+' '+data.paper+' tại minhthanhmath.vn/thi-thu-hsa'});}catch(e){if((e as Error)?.name!=='AbortError')setNote('Chưa chia sẻ được. Em tải ảnh về rồi gửi nhé.');}};
+ if(failed)return null;
+ return <div className="hsa-cert"><p className="hsa-cert-head"><strong>Em lọt top 10, MTM gửi em giấy khen điện tử!</strong><span>Ảnh chỉ có tên hiển thị, đề, điểm và hạng. Kết quả thi thử tại MTM, không phải điểm HSA chính thức.</span></p>
+  {png?<img className="hsa-cert-preview" src={png.url} width={1080} height={1350} alt={'Giấy khen: '+data.name+', hạng '+data.rank+', '+data.paper+', '+data.scoreText}/>:<p className="hsa-cert-wait" role="status">Đang tạo giấy khen…</p>}
+  <p className="hsa-actions"><button type="button" className="hsa-primary" onClick={download} disabled={!png}>Tải giấy khen</button>{canShare&&<button type="button" className="hsa-ghost" onClick={()=>void share()}>Chia sẻ ảnh</button>}</p>
+  {note&&<p className="hsa-cert-note" role="status">{note}</p>}
+ </div>;
+}
+
 export default function HsaMock({search}:{search:string}){
  const cfg=hsaMockExam(new URLSearchParams(search).get('de'));
  if(!cfg)return <div className="hsa-page"><R106PageIntro eyebrow="MINH THÀNH MATH" title="Thi thử HSA miễn phí" description={<p>Chưa có đề mở. Em quay lại sau nhé.</p>}/></div>;
@@ -123,7 +142,7 @@ function HsaMockRoom({cfg}:{cfg:HsaMockExam}){
   try{const r=await fetch('/api/hsa-xep-hang',{method:'POST',headers:{'Content-Type':'application/json'},body:JSON.stringify({de:cfg.examId,attemptId:a.attemptId,attemptToken:a.attemptToken,name:e.name,grade:e.grade,device:deviceId()})});const data=await r.json().catch(()=>null);
    if(!r.ok)return setRank({status:'error',message:typeof data?.message==='string'?data.message:undefined});
    if(data?.enabled===false)return setRank(null);
-   const next={status:data.status as HsaSubmitStatus,rank:typeof data.rank==='number'?data.rank:null};setRank(next);write(rankKey(a.attemptId),JSON.stringify(next));void refresh();}
+   const next={status:data.status as HsaSubmitStatus,rank:typeof data.rank==='number'?data.rank:null,name:typeof data.name==='string'?data.name:e.name};setRank(next);write(rankKey(a.attemptId),JSON.stringify(next));void refresh();}
   catch{setRank({status:'error'});}
  },[cfg.examId,refresh]);
  const sendLead=useCallback(async(o:Outcome)=>{
@@ -161,6 +180,7 @@ function HsaMockRoom({cfg}:{cfg:HsaMockExam}){
      <div className="hsa-card hsa-who-bar"><span>Thí sinh: <strong>{entry.name}</strong> · {HSA_GRADE_LABEL[entry.grade]}{entry.phone?' · đã để lại số liên hệ':''}</span><button type="button" className="hsa-ghost" onClick={()=>setEditing(true)}>Sửa thông tin</button></div>
      {outcome&&<section className="hsa-card hsa-result" aria-live="polite"><h2>Kết quả của em</h2><p className="hsa-result-score"><strong>{scoreText(outcome.score)}</strong><span>Thời gian làm: {formatHsaDuration(outcome.elapsedMs/1000)}</span></p>
       <p>{!outcome.server?board.state==='off'?'Bảng xếp hạng sẽ mở sớm; lượt này chưa vào bảng.':'Lượt này chấm trên trình duyệt nên chưa vào bảng xếp hạng.':!rank?'':rank.status==='pending'?'Đang ghi bảng xếp hạng…':rank.status==='error'?(rank.message??'Chưa ghi được bảng xếp hạng.'):'rank' in rank?hsaStatusMessage(rank.status,rank.rank):''}{outcome.server&&rank?.status==='error'&&<> <button type="button" className="hsa-ghost" onClick={()=>{const a=exam&&readRemote(localStore(),exam);if(a)void submitRank(a);}}>Thử lại</button></>}</p>
+      {(()=>{const top=outcome.server&&board.state==='on'&&rank?hsaCertificateRank(rank):null;return top&&rank&&'rank' in rank?<HsaCertificate data={{name:rank.name??entry.name,paper:cfg.title,scoreText:scoreText(outcome.score),rank:top,date:hsaCertificateDate()}}/>:null;})()}
       {entry.phone?<p>{lead==='sent'?'MTM sẽ liên hệ qua số em để lại để gửi kết quả chi tiết và tư vấn.':lead===null?'Đang gửi kết quả cho MTM…':'Chưa gửi được thông tin cho MTM. Em nhắn Zalo để nhận kết quả chi tiết và tư vấn.'}</p>:<p>Muốn nhận phân tích kết quả và lộ trình HSA? Em thêm số điện thoại ở <button type="button" className="hsa-link" onClick={()=>setEditing(true)}>Sửa thông tin</button> trước lượt sau, hoặc nhắn Zalo cho MTM.</p>}
       <p className="hsa-actions"><Link className="hsa-primary" href="/khoa-hoc?lop=hsa">Xem lộ trình HSA</Link><a className="hsa-ghost" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer">Nhắn Zalo tư vấn</a></p>
      </section>}

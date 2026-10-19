@@ -137,3 +137,13 @@
 .hsa-table tbody th{text-align:left;font-weight:600;background:#f8f9fc}
 .hsa-table .hsa-line{display:inline;overflow:visible;padding:0;overflow-wrap:normal}
 @media(max-width:600px){.hsa-table{font-size:.9rem}.hsa-table th,.hsa-table td{padding:7px 10px}}
+/* Giấy khen điện tử (top 10): xem trước ảnh dọc 4:5, không tràn khung trên điện thoại. */
+.hsa-cert{margin:4px 0 14px;padding:14px;border:1px solid #f0d27a;border-left:5px solid var(--hsa-yellow);border-radius:14px;background:#fffbea}
+.hsa-page .hsa-cert p{margin:0 0 10px}
+.hsa-cert-head{display:flex;flex-direction:column;gap:4px}
+.hsa-cert-head strong{font-size:15.5px;color:#1d2c5e}
+.hsa-page .hsa-cert-head span{font-size:13px;line-height:1.5;color:#5a4a12}
+.hsa-cert-preview{display:block;width:100%;max-width:360px;height:auto;margin:0 0 12px;border-radius:10px;box-shadow:0 14px 30px -18px rgba(20,32,74,.6)}
+.hsa-cert-wait{font-size:14px;color:var(--hsa-muted)}
+.hsa-page .hsa-cert .hsa-cert-note{margin:0;font-size:13px;color:#166534}
+.hsa-page .hsa-cert .hsa-primary:disabled{opacity:.6;cursor:default}

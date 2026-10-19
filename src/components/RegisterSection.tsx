@@ -19,6 +19,7 @@ import { createRegistrationGate, emailRegistration } from './registration-submit
 
 import { applyRegistrationContext, registrationContextEvent } from './registration-context';
 import { describeLeadSource, storedLeadSource } from './lead-source';
+import { TRIAL_SLOT_LABEL, describeTrialSlot, trialDays, trialSlotsFor, type TrialSlotId } from './trial-slot';
 
 export function RegisterSection() {
   const [formData, setFormData] = useState({
@@ -30,6 +31,8 @@ export function RegisterSection() {
 
   const [groupInterest,setGroupInterest]=useState(false);
   const [trial,setTrial]=useState(true);
+  const [days]=useState(()=>trialDays());const [trialDay,setTrialDay]=useState('');const [trialSlot,setTrialSlot]=useState<TrialSlotId|''>('');
+  const pickedDay=days.find(d=>d.value===trialDay)??null;
   useEffect(()=>{const receive=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.group)setGroupInterest(true);setFormData(prior=>applyRegistrationContext(prior,detail));};window.addEventListener(registrationContextEvent,receive);return()=>window.removeEventListener(registrationContextEvent,receive)},[]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError,setSubmitError]=useState('');
@@ -42,12 +45,12 @@ export function RegisterSection() {
   const handleSubmit=async(e:React.FormEvent)=>{
     e.preventDefault();if(isSubmitted||submitting.current)return;submitting.current=true;setSubmitError('');
     try{
-      const sent=await gate.current({...formData,groupInterest,trial,leadSource:describeLeadSource(storedLeadSource())},async(data)=>{
+      const sent=await gate.current({...formData,groupInterest,trial,trialSlot:trial?describeTrialSlot(pickedDay,trialSlot):'',leadSource:describeLeadSource(storedLeadSource())},async(data)=>{
         if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)throw new Error('Form chưa sẵn sàng. Vui lòng liên hệ trung tâm qua kênh tư vấn.');
         setIsPending(true);
         await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...emailRegistration(data),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);
       });
-      if(sent){toast.success('Đã gửi yêu cầu tư vấn. Trung tâm sẽ liên hệ để xác nhận.');setIsSubmitted(true);setFormData({studentName:'',phone:'',grade:'',message:'',notes:'',groupSize:''});}
+      if(sent){toast.success('Đã gửi yêu cầu tư vấn. Trung tâm sẽ liên hệ để xác nhận.');setIsSubmitted(true);setFormData({studentName:'',phone:'',grade:'',message:'',notes:'',groupSize:''});setTrialDay('');setTrialSlot('');}
     }catch(error){const message=error instanceof Error?error.message:'Chưa xác nhận gửi được. Kiểm tra thông tin trước khi thử lại.';setSubmitError(message);toast.error(message);}
     finally{submitting.current=false;setIsPending(false);}
   };
@@ -135,6 +138,7 @@ export function RegisterSection() {
 
               <div className="space-y-2"><Label htmlFor="consult-notes">Bạn muốn MTM tư vấn thêm điều gì? (không bắt buộc)</Label><textarea id="consult-notes" maxLength={1500} rows={3} className="w-full rounded-lg border border-gray-300 p-3" value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="Ví dụ: lịch học phù hợp, phần kiến thức muốn củng cố…" /></div>
               <label className="flex items-center gap-3"><input type="checkbox" checked={trial} onChange={e=>setTrial(e.target.checked)}/>Mình muốn học thử, kiểm tra đầu vào</label>
+              {trial&&<div className="mtm-trial-slot" role="group" aria-labelledby="trial-slot-title" aria-describedby="trial-slot-note"><p id="trial-slot-title" className="mtm-trial-slot-title">Ca học thử mong muốn <span>(không bắt buộc)</span></p><div className="mtm-trial-chips" role="group" aria-label="Ngày mong muốn">{days.map(d=><button key={d.value} type="button" className="mtm-trial-chip" aria-pressed={trialDay===d.value} onClick={()=>{const next=trialDay===d.value?'':d.value;setTrialDay(next);if(trialSlot&&!trialSlotsFor(days.find(x=>x.value===next)).includes(trialSlot))setTrialSlot('');}}>{d.label}</button>)}</div><div className="mtm-trial-chips" role="group" aria-label="Buổi mong muốn">{trialSlotsFor(pickedDay).map(s=><button key={s} type="button" className="mtm-trial-chip" aria-pressed={trialSlot===s} onClick={()=>setTrialSlot(trialSlot===s?'':s)}>{TRIAL_SLOT_LABEL[s]}</button>)}</div><p id="trial-slot-note" className="mtm-trial-slot-note">MTM sẽ gọi lại xác nhận ca còn chỗ.</p></div>}
               <label className="flex items-center gap-3"><input type="checkbox" checked={groupInterest} onChange={e=>{setGroupInterest(e.target.checked);if(!e.target.checked)setFormData({...formData,groupSize:''})}}/>Mình muốn tìm hiểu đăng ký cùng bạn</label>
               {groupInterest&&<div className="space-y-2"><Label htmlFor="group-size">Số bạn trong nhóm (không bắt buộc)</Label><Input id="group-size" type="number" min={2} max={99} step={1} value={formData.groupSize} onChange={e=>setFormData({...formData,groupSize:e.target.value})}/><p className="text-sm text-gray-600">Tính cả bạn; có thể để trống nếu nhóm chưa chốt.</p></div>}
               <Button

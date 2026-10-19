@@ -6,3 +6,15 @@
 .mtm-registration-feedback:focus{outline:3px solid #a87500;outline-offset:5px;border-radius:8px}
 #register .mtm-data-notice a{overflow-wrap:anywhere}
 @media(max-width:600px){.mtm-registration-submit{width:100%;font-size:1rem}}
+/* Ca học thử mong muốn (chỉ hiện khi tích học thử): chip chọn một, không bắt buộc. */
+#register .mtm-trial-slot{margin-top:-8px;padding:12px 14px;border:1px solid #e1e6ef;border-left:4px solid #ffcf24;border-radius:12px;background:#f8fafd}
+#register .mtm-trial-slot-title{margin:0 0 8px;font-size:14px;font-weight:600;color:#213269}
+#register .mtm-trial-slot-title span{font-weight:400;color:#5b6780}
+#register .mtm-trial-chips{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 8px}
+#register .mtm-trial-chip{min-height:40px;padding:8px 12px;border:1px solid #c5d4ea;border-radius:999px;background:#fff;color:#213269;font-size:14px;line-height:1.2;white-space:nowrap;cursor:pointer}
+#register .mtm-trial-chip:hover:not(:disabled){border-color:#213269}
+#register .mtm-trial-chip[aria-pressed=true]{border-color:#213269;background:#213269;color:#ffcf24;font-weight:600}
+#register .mtm-trial-chip:focus-visible{outline:3px solid #a87500;outline-offset:2px}
+#register .mtm-trial-chip:disabled{cursor:default;opacity:.65}
+#register .mtm-trial-slot-note{margin:0;font-size:13px;color:#5b6780}
+@media(max-width:600px){#register .mtm-trial-slot{padding:10px 12px}#register .mtm-trial-chips{gap:6px}#register .mtm-trial-chip{padding:8px 10px;font-size:13.5px}}

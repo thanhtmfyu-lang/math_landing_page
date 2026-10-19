@@ -1,0 +1,30 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {join} from 'node:path';
+import {trialDays,trialSlotsFor,describeTrialSlot,TRIAL_SLOT_LABEL} from '../src/components/trial-slot.ts';
+import {emailRegistration,normalizeRegistration} from '../src/components/registration-submit.ts';
+// Thứ Ba 20/10/2026, 23:30 giờ Việt Nam (16:30 UTC): 7 ngày tới bắt đầu từ T4 21/10, không gồm hôm nay.
+const days=trialDays(new Date('2026-10-20T16:30:00Z'));
+assert.deepEqual(days.map(d=>d.label),['T4 21/10','T5 22/10','T6 23/10','T7 24/10','CN 25/10','T2 26/10','T3 27/10']);
+assert.deepEqual(days.filter(d=>d.weekend).map(d=>d.value),['2026-10-24','2026-10-25']);
+// Qua nửa đêm giờ Việt Nam (17:30 UTC) thì hôm nay là T4, danh sách bắt đầu từ T5.
+assert.equal(trialDays(new Date('2026-10-20T17:30:00Z'))[0].label,'T5 22/10');
+assert.equal(trialDays(new Date('2026-12-28T03:00:00Z'))[6].label,'T2 04/01');
+assert.deepEqual(trialSlotsFor(null),['chieu','toi']);
+assert.deepEqual(trialSlotsFor(days[0]),['chieu','toi']);
+assert.deepEqual(trialSlotsFor(days[3]),['chieu','toi','cuoi-tuan-sang']);
+assert.equal(TRIAL_SLOT_LABEL.chieu,'Chiều (14h–17h)');assert.equal(TRIAL_SLOT_LABEL.toi,'Tối (18h–21h)');
+assert.equal(describeTrialSlot(days[0],'toi'),'T4 21/10 · Tối (18h–21h)');
+assert.equal(describeTrialSlot(days[0],'cuoi-tuan-sang'),'T4 21/10');
+assert.equal(describeTrialSlot(days[4],'cuoi-tuan-sang'),'CN 25/10 · Cuối tuần sáng');
+assert.equal(describeTrialSlot(null,'chieu'),'Chiều (14h–17h)');
+assert.equal(describeTrialSlot(null,''),'');
+const form={studentName:'Synthetic',phone:'0912345678',grade:'12',message:'online',notes:'',groupSize:''};
+const mail=emailRegistration(normalizeRegistration({...form,trial:true,trialSlot:describeTrialSlot(days[0],'chieu')}));
+assert.equal(mail.trial_slot,'T4 21/10 · Chiều (14h–17h)');assert(mail.message.includes('Ca học thử mong muốn: T4 21/10 · Chiều (14h–17h)'));
+const none=emailRegistration(normalizeRegistration({...form,trial:true,trialSlot:''}));assert.equal(none.trial_slot,'');assert(!none.message.includes('Ca học thử'));assert(none.message.includes('Muốn học thử'));
+const off=emailRegistration(normalizeRegistration({...form,trial:false,trialSlot:'T3 21/10 · Tối (18h–21h)'}));assert.equal(off.trial_slot,'');assert(!off.message.includes('Ca học thử'));
+assert.throws(()=>normalizeRegistration({...form,trial:true,trialSlot:'x'.repeat(81)}));
+const ui=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/components/RegisterSection.tsx'),'utf8');
+assert(ui.includes('{trial&&<div className="mtm-trial-slot"'));assert(ui.includes('MTM sẽ gọi lại xác nhận ca còn chỗ.'));assert(!/còn trống|còn \d+ chỗ/.test(ui));
+console.log('PASS trial slot: 7 ngày tới (giờ VN), sáng cuối tuần chỉ T7/CN, ca mong muốn vào email, chỉ khi tích học thử');
