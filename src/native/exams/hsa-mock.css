@@ -120,3 +120,20 @@
 @media(max-width:600px){.hsa-page .r106-page-intro.hsa-intro{padding:20px 16px;border-radius:16px}}
 .mtm-migration.r106-site .hsa-page .r106-page-intro.hsa-intro h1{color:#fff;font-weight:800}
 .mtm-migration.r106-site .hsa-page .r106-page-intro.hsa-intro .r106-page-eyebrow{color:#ffcf24}
+/* Bảng số liệu của đề: bảng thật, cuộn ngang trong khung trên điện thoại. */
+.hsa-figure{margin:12px 0 6px;max-width:100%}
+.hsa-table-title{font-weight:700;color:#24345e;margin:0 0 6px;line-height:1.5}
+.hsa-table-title .hsa-line{display:inline;overflow:visible;padding:0}
+.hsa-table-hint{margin:4px 0 0;font-size:.8rem;color:#5d6575}
+.hsa-table-wrap{max-width:100%;overflow-x:auto;margin:0;border:1px solid #c9d2e3;border-radius:10px;background:#fff;-webkit-overflow-scrolling:touch}
+.hsa-table-wrap:focus-visible{outline:3px solid #d7a93a;outline-offset:2px}
+.hsa-table{border-collapse:collapse;width:100%;font-size:.95rem;color:#1f2a44}
+.hsa-table th,.hsa-table td{padding:8px 12px;text-align:center;vertical-align:middle;white-space:normal;overflow-wrap:normal}
+.hsa-table .hsa-nw{white-space:nowrap}
+.hsa-table th:not(.hsa-nw),.hsa-table td:not(.hsa-nw){min-width:6.5em}
+.hsa-table th+th,.hsa-table td,.hsa-table th+td{border-left:1px solid #dfe5f0}
+.hsa-table thead th{background:#eef2fa;font-weight:700}
+.hsa-table tbody tr>*{border-top:1px solid #dfe5f0}
+.hsa-table tbody th{text-align:left;font-weight:600;background:#f8f9fc}
+.hsa-table .hsa-line{display:inline;overflow:visible;padding:0;overflow-wrap:normal}
+@media(max-width:600px){.hsa-table{font-size:.9rem}.hsa-table th,.hsa-table td{padding:7px 10px}}
