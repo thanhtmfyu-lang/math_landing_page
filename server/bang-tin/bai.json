@@ -53,7 +53,8 @@
     "alt": "Khoảnh khắc trao hoa ngay giữa giờ học.",
     "width": 1280,
     "height": 720,
-    "video": true
+    "video": true,
+    "public": false
    },
    {
     "id": "2026-10-19-mung-20-10-05",

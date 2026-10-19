@@ -1,6 +1,8 @@
 import {allowedBtvnOrigin} from '../server/btvn/origin-policy';
 import {boardKey,localBoardPosts} from '../server/bang-tin/local';
 // Bảng tin trung tâm (19/10/2026): bài đã duyệt từ ảnh nhóm Zalo, chỉ trả khi phiên BTVN hợp lệ.
+// Quy tắc anh Thành chốt 19/10 17:45: ảnh, video lớp công khai trên trang chủ để marketing. Khách chưa đăng nhập nhận ảnh
+// đóng gói không đánh dấu "public": false (chuẩn fanpage: không cận mặt riêng một em).
 // Hai nguồn: ảnh thật đóng gói mã hóa trong kho (server/bang-tin, cần MTM_BANG_TIN_KEY) và bucket riêng tư mtm-bang-tin
 // từ nhóm Zalo (cần MTM_BANG_TIN_ENABLED=1 + migration 071). Mọi link ảnh ký, sống 1 giờ. Thiếu cả hai thì web chỉ hiện bài cố định.
 type Req={method?:string;body?:unknown;headers?:Record<string,string|string[]|undefined>};
@@ -13,8 +15,8 @@ export function createBoardApi(getEnv=()=>process.env,transport:typeof fetch=fet
  const env=getEnv(),h=req.headers??{},origin=h.origin;
  if(typeof origin!=='string'||origin!==`https://${h.host}`||!allowedBtvnOrigin(origin,env))return res.status(403).json({message:'Không thể xem bảng tin.'});
  const cookie=typeof h.cookie==='string'?h.cookie:'',session=cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith('mtm_btvn_demo='))?.slice(14)??'';
- if(!/^[0-9a-f]{64}$/.test(session))return res.status(401).json({message:'Em cần đăng nhập để xem bảng tin.'});
  const key=boardKey(env);
+ if(!/^[0-9a-f]{64}$/.test(session))return key?res.status(200).json({enabled:true,public:true,posts:localBoardPosts(key,Date.now(),true)}):res.status(401).json({message:'Em cần đăng nhập để xem bảng tin.'});
  if(!key&&env.MTM_BANG_TIN_ENABLED!=='1')return res.status(200).json({enabled:false,posts:[]});
  try{
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error();const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error();

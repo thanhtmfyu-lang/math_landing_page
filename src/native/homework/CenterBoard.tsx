@@ -10,10 +10,11 @@ const COLLAPSE_KEY='mtm-bang-tin-thu-gon';
 const readCollapsed=()=>{try{return localStorage.getItem(COLLAPSE_KEY)==='1';}catch{return false;}};
 
 /** Bảng tin trung tâm: đứng đầu Góc học tập. Ảnh máy chủ chỉ trả khi phiên BTVN hợp lệ. */
-export default function CenterBoard({onSkip}:{onSkip?:()=>void}){
- const [now,setNow]=useState(Date.now),[remote,setRemote]=useState<BoardPost[]>([]),[viewer,setViewer]=useState<Viewer>(null),[collapsed,setCollapsed]=useState(readCollapsed);
+export default function CenterBoard({onSkip,initial,guest}:{onSkip?:()=>void;initial?:unknown[];guest?:boolean}){
+ const [now,setNow]=useState(Date.now),[remote,setRemote]=useState<BoardPost[]>(initial?initial.map(parseServerPost).filter((p):p is BoardPost=>!!p):[]),[viewer,setViewer]=useState<Viewer>(null),[collapsed,setCollapsed]=useState(readCollapsed);
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),60_000);return()=>clearInterval(t);},[]);
  useEffect(()=>{
+  if(initial)return;
   const controller=new AbortController();
   fetch('/api/bang-tin',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}',signal:controller.signal})
    .then(r=>r.ok?r.json():null).then(data=>{if(data&&Array.isArray(data.posts))setRemote(data.posts.map(parseServerPost).filter((p:BoardPost|null):p is BoardPost=>!!p));})
@@ -36,6 +37,7 @@ export default function CenterBoard({onSkip}:{onSkip?:()=>void}){
      <strong>{lead.title}</strong><span className="mtm-board-summary">{lead.summary}</span><span className="mtm-board-open">Xem {lead.photos.length>1?'ảnh':'chi tiết'} <span aria-hidden="true">→</span></span></span>
    </button>}
    <div className="mtm-board-side">
+    {guest&&<a className="mtm-board-login" href="/btvn"><strong>Ảnh, video thật ở lớp</strong><span>Học sinh MTM đăng nhập BTVN để xem <span aria-hidden="true">→</span></span></a>}
     {events.length>0&&<div className="mtm-board-events" aria-labelledby="mtm-board-events-title"><h3 id="mtm-board-events-title">Sắp tới ở trung tâm</h3><ol>{events.map(e=><li key={e.date}><span className="mtm-board-date"><b>{e.date.slice(8,10)}</b><i>Th{Number(e.date.slice(5,7))}</i></span><span><strong>{e.title}</strong><small>{e.note}</small></span><em className={e.daysLeft<=1?'is-soon':''}>{countdownLabel(e.daysLeft)}</em></li>)}</ol></div>}
     {rest.length>0&&<div className="mtm-board-list"><h3>Bài trước</h3><ul>{rest.map(p=><li key={p.id}><button type="button" className={'mtm-board-item mtm-board-kind--'+p.kind} onClick={()=>setViewer({post:p,index:0})}><img src={small(p.photos[0])} alt="" loading="lazy" decoding="async"/><span><b>{kindLabels[p.kind]} · {dayLabel(p.date)}</b><strong>{p.title}</strong><small>{mediaCount(p)}</small></span></button></li>)}</ul></div>}
    </div>

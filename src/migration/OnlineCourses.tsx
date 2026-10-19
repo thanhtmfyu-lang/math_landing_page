@@ -13,7 +13,7 @@ const ONLINE_INTEREST='Học online qua Zoom (Toán 12 / HSA)';
 /** Nút chính: điền sẵn lớp 12 + hình thức online rồi cuộn tới form #register ngay trên trang này (không dùng liên kết dấu # vì App chuyển nó về trang chủ). */
 export function openOnlineRegistration(grade='12'){requestRegistration({grade,interest:ONLINE_INTEREST,mode:'online'});document.getElementById('register')?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});}
 function Actions(){
- return <div className="mtm-ol-actions"><div className="mtm-ol-buttons"><button type="button" className="mtm-ol-btn is-main" onClick={()=>openOnlineRegistration()}>Làm bài kiểm tra đầu vào miễn phí</button><a className="mtm-ol-btn is-zalo" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true"/>Nhắn Zalo 0967 365 413</a><Link className="mtm-ol-btn is-ghost" href="/thi-thu-hsa">Thi thử HSA miễn phí</Link></div><p className="mtm-ol-note">Học thử buổi đầu: không học tiếp thì không tính phí.</p></div>;
+ return <div className="mtm-ol-actions"><div className="mtm-ol-buttons"><Link className="mtm-ol-btn is-main" href="/kiem-tra-dau-vao?khoi=12">Làm bài kiểm tra đầu vào miễn phí</Link><a className="mtm-ol-btn is-zalo" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true"/>Nhắn Zalo 0967 365 413</a><Link className="mtm-ol-btn is-ghost" href="/thi-thu-hsa">Thi thử HSA miễn phí</Link></div><p className="mtm-ol-note">Học thử buổi đầu: không học tiếp thì không tính phí.</p></div>;
 }
 export default function OnlineCourses(){
  return <div className="mtm-online">

@@ -7,13 +7,14 @@ generatePracticeBank();
   import react from '@vitejs/plugin-react-swc';
   import path from 'path';
   import {btvnDevPlugin} from './server/btvn/dev-plugin';
+  import {dauVaoDevPlugin} from './server/dau-vao/dev-plugin';
 
   export default defineConfig(({command})=>{
     if(command==='build'&&(process.env.MTM_BTVN_DEMO==='1'||process.env.MTM_R106_PREVIEW==='1'))throw new Error('Tắt MTM_BTVN_DEMO và MTM_R106_PREVIEW trước khi tạo bản phát hành.');
     return {
     // Cache riêng trong worktree: build/ bị middleware chặn, node_modules dùng chung.
     cacheDir: process.env.MTM_BTVN_DEMO==='1'?'.qa-temp/btvn-vite-cache':undefined,
-    plugins: [publicExamCatalogPlugin(),react(),...(command==='serve'&&process.env.VERCEL!=='1'?[btvnDevPlugin()]:[]),publicSitemapPlugin()],
+    plugins: [publicExamCatalogPlugin(),react(),...(command==='serve'&&process.env.VERCEL!=='1'?[dauVaoDevPlugin(),btvnDevPlugin()]:[]),publicSitemapPlugin()],
     resolve: {
       extensions: ['.js', '.jsx', '.ts', '.tsx', '.json'],
       alias: {

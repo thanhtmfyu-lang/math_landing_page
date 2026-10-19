@@ -1,0 +1,112 @@
+import assert from 'node:assert/strict';
+import {assemble,grade,schoolWeek,DV_TRACKS,type Bank,type Banks,type Progress} from '../server/dau-vao/engine';
+import mau from './fixtures/dau-vao-mau.json';
+import {randomBytes} from 'node:crypto';
+import {validateHoSo} from '../server/dau-vao/ho-so';
+import {hoSoSummary} from '../server/dau-vao/phieu';
+import {saveHoSo,saveKetQua,validSig} from '../server/dau-vao/lead';
+import {createDauVaoApi} from '../api/kiem-tra-dau-vao';
+import {handleDauVao,dauVaoKey,loadBanks,PROGRESS} from '../server/dau-vao/handler';
+
+// Kho mã công khai: ngân hàng thật chỉ có dạng mã hóa. Có MTM_DAU_VAO_KEY thì kiểm ngân hàng thật; không có thì dùng bộ câu mẫu giả cùng cấu trúc chủ đề.
+const key=dauVaoKey(process.env);
+const REAL=!!key;
+const BANKS:Banks=key?loadBanks(key):mau as unknown as Banks;
+if(!REAL)console.log('dau-vao: không có MTM_DAU_VAO_KEY, kiểm bằng ngân hàng mẫu');
+
+// Tuần năm học: 07/09/2026 là tuần 1; 19/10/2026 là tuần 7; tháng 7 là hè của năm học sau (tuần âm).
+assert.deepEqual(schoolWeek('2026-09-07',PROGRESS),{week:1,summer:false,schoolYear:'2026-2027'});
+assert.equal(schoolWeek('2026-10-19',PROGRESS).week,7);
+assert.equal(schoolWeek('2027-01-20',PROGRESS).week,20);
+const summer=schoolWeek('2027-07-15',PROGRESS);assert.equal(summer.summer,true);assert.equal(summer.schoolYear,'2027-2028');assert.ok(summer.week<=0);
+
+// Mọi khối ghép được đề cho nhiều thời điểm trong năm; đủ câu, không trùng câu, không lộ đáp án.
+const dates=['2026-07-10','2026-09-10','2026-10-19','2026-12-20','2027-02-20','2027-04-15','2027-05-25'];
+for(const khoi of DV_TRACKS)for(const ngay of dates)for(const seed of [7,123456,2**31-2]){
+ const {paper,picks}=assemble(khoi,ngay,seed,BANKS,PROGRESS);
+ const want=khoi==='hsa'?25:20;
+ assert.equal(paper.questions.length,want,`${khoi} ${ngay} ${seed}: ${paper.questions.length} câu`);
+ assert.equal(new Set(paper.questions.map(q=>q.id)).size,want,'trùng câu');
+ const text=JSON.stringify(paper);assert.ok(!/"answer"|"explain"|"check"/.test(text),'đề lộ đáp án');
+ // Câu của chủ đề trường mới dạy dở chỉ ở mức 1-2.
+ for(const p of picks)if(p.section==='truong'){const w=paper.week;if(!(w>p.topic.school[1]))assert.ok(p.q.level<=2,`${p.q.id} vượt mức khi trường đang dạy dở`);}
+ // Phần "trường" không chứa chủ đề trường chưa dạy.
+ for(const p of picks)if(p.section==='truong')assert.ok(p.topic.school[0]>0&&p.topic.school[0]<paper.week,`${p.q.id} chưa học trên trường`);
+ // Ghép lại cùng seed ra đúng đề.
+ assert.deepEqual(assemble(khoi,ngay,seed,BANKS,PROGRESS).paper,paper);
+}
+// Đề đổi theo thời điểm: cuối năm có chủ đề học kỳ II mà đầu năm không có.
+const early=assemble('10','2026-09-28',99,BANKS,PROGRESS).paper,late=assemble('10','2027-05-10',99,BANKS,PROGRESS).paper;
+assert.notDeepEqual(new Set(early.questions.map(q=>q.topic)),new Set(late.questions.map(q=>q.topic)));
+
+// Chấm: đúng hết 10/10, bỏ trống 0, số thập phân dùng dấu phẩy vẫn đúng.
+{const {paper,picks}=assemble('12','2026-10-19',4242,BANKS,PROGRESS);const groups=PROGRESS.khoi['12'].groups;
+ const all=Object.fromEntries(picks.map(p=>[p.q.id,p.q.kind==='num'?String(p.q.answer).replace('.',','):p.q.answer]));
+ const full=grade(paper,picks,all,groups);assert.equal(full.score,10);assert.equal(full.correct,20);assert.ok(full.topics.every(t=>t.status==='vung'));
+ const none=grade(paper,picks,{},groups);assert.equal(none.score,0);assert.ok(none.topics.every(t=>t.status==='hong'));
+ assert.match(none.suggestion.level,/Step 1/);assert.match(full.suggestion.level,/Step 3/);}
+
+// API: GET trả đề không đáp án; POST chấm lại đúng đề; ngày quá xa bị từ chối; khối sai bị từ chối.
+{const now=Date.parse('2026-10-19T03:00:00Z');
+ const g=handleDauVao({method:'GET',query:{khoi:'10'}},BANKS,now);assert.equal(g.status,200);const paper=g.body as any;assert.equal(paper.ngay,'2026-10-19');
+ const p=handleDauVao({method:'POST',body:JSON.stringify({khoi:'10',ngay:paper.ngay,seed:paper.seed,answers:{}})},BANKS,now);assert.equal(p.status,200);assert.equal((p.body as any).code,paper.code);
+ assert.equal(handleDauVao({method:'POST',body:{khoi:'10',ngay:'2026-10-01',seed:paper.seed,answers:{}}},BANKS,now).status,410);
+ // Máy chủ chưa có khóa: báo đang cập nhật, không lỗi.
+ assert.equal(handleDauVao({method:'GET',query:{khoi:'10'}},null,now).status,503);
+ assert.equal(handleDauVao({method:'GET',query:{khoi:'tsa'}},BANKS,now).status,400);
+ assert.equal(handleDauVao({method:'POST',body:{khoi:'10',ngay:paper.ngay,seed:paper.seed,answers:{},extra:1}},BANKS,now).status,400);}
+
+// Ngân hàng thật: mỗi câu trỏ đúng chủ đề, mc có 4 phương án và đáp án 0-3, num là số; mỗi chủ đề đủ mức 1-4.
+if(REAL)for(const khoi of DV_TRACKS){const b=BANKS[khoi] as Bank;const ids=new Set(b.topics.map(t=>t.id));
+ for(const q of b.questions){assert.ok(ids.has(q.topic),q.id+' sai chủ đề');
+  if(q.kind==='mc'){assert.equal(q.choices?.length,4,q.id);assert.ok(Number.isInteger(q.answer)&&(q.answer as number)>=0&&(q.answer as number)<4,q.id);}
+  else assert.ok(typeof q.answer==='string'&&/^-?\d+(\.\d+)?$/.test(q.answer),q.id+' đáp số');
+  for(const s of [q.prompt,...(q.choices??[])])assert.equal((s.match(/\$/g)??[]).length%2,0,q.id+' lệch dấu $');}
+ for(const t of b.topics){const lv=new Set(b.questions.filter(q=>q.topic===t.id).map(q=>q.level));for(const l of [1,2,3,4])assert.ok(lv.has(l as 1),`${t.id} thiếu mức ${l}`);}
+ for(const id of Object.keys(PROGRESS.khoi[khoi].groups.flatMap(g=>Object.keys(g.covered)).reduce((a,k)=>({...a,[k]:1}),{}))){const all=khoi==='hsa'?new Set([...ids,...(BANKS['12'] as Bank).topics.map(t=>t.id)]):ids;assert.ok(all.has(id),'sổ tiến độ trỏ chủ đề lạ '+id);}
+}
+
+// Phiếu thông tin học thử: bắt buộc đủ ô quản lý lớp cần, đồng ý của phụ huynh, ngày sinh khớp khối.
+const today='2026-10-20';
+const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'THPT Kim Liên',lopTruong:'10A1',phuHuynh:'Nguyễn Văn Bình',sdtPh:'+84 912 345 678',sdtHs:'',hinhThuc:'truc-tiep',ngayRanh:['T5','T3','T3'],caRanh:['toi-20'],mucTieu:'diem-cao',nguon:'facebook',ghiChu:'',dongY:true,leadSource:'Nguồn: facebook'};
+{const h=validateHoSo(HS,today);assert.ok(typeof h!=='string',String(h));if(typeof h!=='string'){assert.equal(h.hoTen,'Nguyễn Văn An');assert.equal(h.sdtPh,'0912345678');assert.deepEqual(h.ngayRanh,['T3','T5']);assert.match(hoSoSummary(h),/T3, T5 · Tối 20h–22h/);}
+ assert.match(validateHoSo({...HS,dongY:false},today) as string,/đồng ý/);
+ assert.match(validateHoSo({...HS,sdtPh:'12345'},today) as string,/phụ huynh/);
+ assert.match(validateHoSo({...HS,truong:''},today) as string,/trường/);
+ assert.match(validateHoSo({...HS,ngaySinh:'2016-01-01'},today) as string,/khớp/);
+ assert.match(validateHoSo({...HS,ngaySinh:'2011-02-30'},today) as string,/ngày sinh/);
+ assert.match(validateHoSo({...HS,hinhThuc:undefined},today) as string,/trực tiếp/);
+ assert.match(validateHoSo({...HS,extra:1},today) as string,/không hợp lệ/);
+ assert.ok(typeof validateHoSo({...HS,khoi:'6',ngaySinh:'2015-03-01'},today)!=='string');
+ assert.ok(typeof validateHoSo({...HS,khoi:'hsa',ngaySinh:'2009-03-01'},today)!=='string');}
+
+// Kho lead: chưa bật thì enabled:false; bật thì ghi RPC, trả mã phiếu có chữ ký; nộp bài gắn kết quả đúng phiếu, chữ ký sai không ghi.
+{const k=randomBytes(32),calls:{name:string;args:any}[]=[];
+ const transport=(async(url:string,init:any)=>{const name=url.split('/rpc/')[1],args=JSON.parse(init.body);calls.push({name,args});
+  return new Response(JSON.stringify(name==='mtm_lead_dau_vao_add'?{status:'accepted',id:args.p_id}:true),{status:200});}) as unknown as typeof fetch;
+ const env={MTM_LEAD_ENABLED:'1',SUPABASE_URL:'https://x.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'k'};
+ assert.deepEqual((await saveHoSo(HS,k,today,{},transport)).body,{enabled:false});
+ assert.equal((await saveHoSo({...HS,dongY:false},k,today,env,transport)).status,400);
+ const out=await saveHoSo(HS,k,today,env,transport);assert.equal(out.status,200);const {id,sig}=out.body as any;
+ assert.ok(validSig(k,id,sig));assert.ok(!validSig(k,id,'0'.repeat(64)));assert.ok(!validSig(randomBytes(32),id,sig));
+ const add=calls[0].args;assert.equal(add.p_phone,'0912345678');assert.equal(add.p_grade,'10');assert.equal(add.p_ho_so.ngay_sinh,'2011-05-04');assert.match(add.p_notes,/Học thử mới/);assert.match(add.p_lead_source,/^Kiểm tra đầu vào web/);
+ const {paper,picks}=assemble('10','2026-10-19',77,BANKS,PROGRESS);const res=grade(paper,picks,{},PROGRESS.khoi['10'].groups);
+ assert.equal(await saveKetQua(id,sig,res,{name:'An',school:'Kim Liên'},k,env,transport),'saved');
+ const kq=calls[1];assert.equal(kq.name,'mtm_lead_dau_vao_ket_qua');assert.equal(kq.args.p_id,id);assert.equal(kq.args.p_ket_qua.diem,0);assert.match(kq.args.p_text,/Gợi ý lớp/);
+ assert.equal(await saveKetQua(id,'f'.repeat(64),res,{name:'',school:''},k,env,transport),'error');assert.equal(calls.length,2);
+ assert.equal(await saveKetQua(id,sig,res,{name:'',school:''},k,{},transport),'off');
+ const limited=(async()=>new Response(JSON.stringify({status:'limit'}),{status:200})) as unknown as typeof fetch;
+ assert.equal((await saveHoSo(HS,k,today,env,limited)).status,429);
+ const down=(async()=>new Response('x',{status:500})) as unknown as typeof fetch;
+ assert.equal((await saveHoSo(HS,k,today,env,down)).status,503);}
+
+const _p:Progress=PROGRESS;void _p;
+console.log('dau-vao: ok');
+// API: phiếu đi nhánh hoSo, nguồn gửi lạ bị chặn, nộp bài có mã phiếu trả thêm trạng thái lead.
+{const call=async(env:Record<string,string>,req:any)=>{let st=0,body:any;await createDauVaoApi(()=>env)(req,{setHeader(){},status:n=>{st=n;return {json:v=>{body=v;}};}});return {st,body};};
+ const h={origin:'https://minhthanhmath.vn',host:'minhthanhmath.vn'};
+ assert.equal((await call({},{method:'POST',headers:{origin:'https://evil.vn',host:'evil.vn'},body:{hoSo:HS}})).st,403);
+ const r=await call({},{method:'POST',headers:h,body:JSON.stringify({hoSo:HS})});assert.equal(r.st,200);assert.deepEqual(r.body,{enabled:false});
+ assert.equal((await call({},{method:'POST',headers:h,body:{hoSo:HS,x:1}})).st,400);
+ assert.equal((await call({},{method:'GET',query:{khoi:'10'}})).st,503);}
+console.log('dau-vao api: ok');

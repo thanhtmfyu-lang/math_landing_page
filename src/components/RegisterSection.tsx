@@ -12,6 +12,7 @@ import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner@2.0.3";
 import { ScrollReveal } from "./ScrollReveal";
 import emailjs from "@emailjs/browser";
+import {postLead} from "./lead-client";
 import './registration-submit.css';
 import { ZALO_ASSISTANT_URL } from './mtm-contact';
 
@@ -46,8 +47,9 @@ export function RegisterSection() {
     e.preventDefault();if(isSubmitted||submitting.current)return;submitting.current=true;setSubmitError('');
     try{
       const sent=await gate.current({...formData,groupInterest,trial,trialSlot:trial?describeTrialSlot(pickedDay,trialSlot):'',leadSource:describeLeadSource(storedLeadSource())},async(data)=>{
-        if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)throw new Error('Form chưa sẵn sàng. Vui lòng liên hệ trung tâm qua kênh tư vấn.');
         setIsPending(true);
+        if(await postLead('dang-ky',data)==='saved')return;
+        if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)throw new Error('Form chưa sẵn sàng. Vui lòng liên hệ trung tâm qua kênh tư vấn.');
         await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...emailRegistration(data),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);
       });
       if(sent){toast.success('Đã gửi yêu cầu tư vấn. Trung tâm sẽ liên hệ để xác nhận.');setIsSubmitted(true);setFormData({studentName:'',phone:'',grade:'',message:'',notes:'',groupSize:''});setTrialDay('');setTrialSlot('');}

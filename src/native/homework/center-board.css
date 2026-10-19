@@ -63,3 +63,15 @@
 .mtm-migration.r106-site .mtm-board-thumbs i{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;font-style:normal;font-size:16px;color:#fff;text-shadow:0 1px 4px #000}.mtm-migration.r106-site .mtm-board-thumbs img{display:block;width:64px;height:48px;object-fit:cover;border-radius:8px}
 @media (max-width:900px){.mtm-migration.r106-site .mtm-board-body{grid-template-columns:1fr}}
 @media (max-width:560px){.mtm-migration.r106-site .mtm-board{padding:18px 16px;border-radius:20px;margin-bottom:20px}.mtm-migration.r106-site .mtm-board-head h2{font-size:24px}.mtm-migration.r106-site .mtm-board-lead{border-radius:16px}.mtm-migration.r106-site .mtm-board-lead-copy{padding:14px 16px 16px}.mtm-migration.r106-site .mtm-board-lead-copy strong{font-size:19px}.mtm-migration.r106-site .mtm-board-viewer figure{padding:0 8px}.mtm-migration.r106-site .mtm-board-nav{background:rgba(6,12,28,.55)}.mtm-migration.r106-site .mtm-board-head-tools{width:100%}.mtm-migration.r106-site .mtm-board-head-tools button{flex:1}}
+.mtm-migration.r106-site .mtm-board-popup{position:fixed;inset:0;z-index:900;display:flex;align-items:flex-start;justify-content:center;padding:24px 16px;overflow-y:auto;background:rgba(6,12,28,.72)}
+.mtm-migration.r106-site .mtm-board-popup-box{width:min(1180px,100%);display:flex;flex-direction:column;gap:12px}
+.mtm-migration.r106-site .mtm-board-popup-box .mtm-board{margin:0}
+.mtm-migration.r106-site .mtm-board-popup-close{position:sticky;bottom:12px;align-self:center;min-height:48px;padding:0 28px;border:0;border-radius:999px;background:#ffcf24;color:#213269;font:700 16px Arial,Helvetica,sans-serif;cursor:pointer;box-shadow:0 8px 24px rgba(0,0,0,.25)}
+.mtm-migration.r106-site .mtm-board-popup-close:focus-visible{outline:3px solid #fff;outline-offset:3px}
+@media (max-width:560px){.mtm-migration.r106-site .mtm-board-popup{padding:12px 8px}.mtm-migration.r106-site .mtm-board-popup-close{width:100%}}
+.mtm-migration.r106-site .mtm-board-popup-x{position:fixed;top:12px;right:12px;z-index:2;width:44px;height:44px;border:1px solid rgba(255,255,255,.4);border-radius:50%;background:rgba(6,12,28,.7);color:#fff;font-size:24px;line-height:1;cursor:pointer}
+.mtm-migration.r106-site .mtm-board-popup-x:focus-visible{outline:3px solid #ffcf24;outline-offset:2px}
+.mtm-migration.r106-site .mtm-board-login{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:16px;background:linear-gradient(120deg,#ffcf24,#f9c418);color:#213269;text-decoration:none;font-family:Arial,Helvetica,sans-serif}
+.mtm-migration.r106-site .mtm-board-login strong{font-size:15px}.mtm-migration.r106-site .mtm-board-login span{font-size:13px}
+.mtm-migration.r106-site .mtm-board-login:focus-visible{outline:3px solid #fff;outline-offset:2px}
+.mtm-migration.r106-site .mtm-board-popup .mtm-board-toggle{display:none}
