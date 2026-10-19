@@ -1,6 +1,6 @@
 import {useEffect, useId, useLayoutEffect, useRef, useState, type CSSProperties, type KeyboardEvent, type TouchEvent} from 'react';
 import {ArrowRight, ArrowUpRight, ChevronLeft, ChevronRight, Pause, Play, X} from 'lucide-react';
-import {courses, step as courseStep} from './catalogue';
+import {courses, step as courseStep, displayCourseTitle} from './catalogue';
 import {Link} from './navigation';
 import {SocialLinks} from '../components/SocialLinks';
 import './R106Hero.css';
@@ -10,8 +10,8 @@ const photographs = [
   {src: '/r104-photos/learning-original.webp', tab: 'Học cùng MTM', caption: 'Học cùng thầy cô và những người bạn', alt: 'Thầy và các bạn cùng học tại Minh Thành Math'},
   {src: '/r104-photos/teacher-original.jpg', tab: 'Thầy Thành', caption: 'Thầy Tô Minh Thành', alt: 'Ấn phẩm giới thiệu thầy Tô Minh Thành được giữ nguyên từ MTM'},
 ] as const;
-const programmes = ['THCS', 'Toán 10 & 11', 'Toán 12', 'HSA', 'TSA'] as const;
-const labels = ['Nền tảng', 'Vận dụng', 'Nâng cao', 'Luyện đề', 'HSA · TSA'];
+const programmes = ['THCS', 'Toán 10 & 11', 'Toán 12', 'HSA'] as const;
+const labels = ['Nền tảng', 'Vận dụng', 'Nâng cao', 'Luyện đề', 'HSA'];
 const roadmap = [1, 2, 3, 4, 5].map(n => courses.find(course => course.grade === 12 && courseStep(course) === n));
 type Programme = typeof programmes[number];
 type Variables = CSSProperties & Record<`--${string}`, string | number>;
@@ -41,9 +41,9 @@ export default function R106Hero() {
   const album = useRef<HTMLDivElement>(null);
   shownRef.current = shown;
   const guided = programme === 'THCS' || programme === 'Toán 10 & 11';
-  const effectiveStep = programme === 'HSA' || programme === 'TSA' ? 4 : selected;
+  const effectiveStep = programme === 'HSA' ? 4 : selected;
   const course = roadmap[effectiveStep];
-  const courseTitle = guided ? programme === 'THCS' ? 'Học chắc nền tảng Toán THCS' : 'Từng bước vững Toán 10 & 11' : course?.title || 'Tìm lộ trình phù hợp';
+  const courseTitle = guided ? programme === 'THCS' ? 'Học chắc nền tảng Toán THCS' : 'Từng bước vững Toán 10 & 11' : (course && displayCourseTitle(course)) || 'Tìm lộ trình phù hợp';
   const courseHref = guided ? '/#courses' : course ? '/khoa-hoc/' + encodeURIComponent(course.slug) : '/khoa-hoc';
 
   useEffect(() => {
@@ -108,7 +108,7 @@ export default function R106Hero() {
   return <section className="r106-hero" id="home" aria-labelledby="r106-home-title" data-motion-paused={paused}>
     <div className="r106-workspace">
       <GoldenArch selected={effectiveStep} programme={programme} paused={paused}/>
-      <header className="r106-intro"><div><p className="r106-eyebrow"><span/> TOÁN THCS · THPT · HSA · TSA</p><h1 id="r106-home-title">Hiểu bản chất.<br/><em>Vững từng bước.</em></h1></div><div className="r106-welcome"><p>Học Toán cùng thầy cô và những người bạn.<br/>Từ nền tảng đến vận dụng.</p><div className="mtm-hero-actions"><Link href="/#courses" className="r106-primary">Tìm lớp phù hợp <span><ArrowUpRight size={19}/></span></Link><SocialLinks label="Kênh MTM cạnh nút tìm lớp"/><Link href="/btvn" className="r106-text-link">Vào BTVN <ArrowRight size={17}/></Link></div></div></header>
+      <header className="r106-intro"><div><p className="r106-eyebrow"><span/> TOÁN THCS · THPT · HSA</p><h1 id="r106-home-title">Hiểu bản chất.<br/><em>Vững từng bước.</em></h1></div><div className="r106-welcome"><p>Học Toán cùng thầy cô và những người bạn.<br/>Từ nền tảng đến vận dụng.</p><div className="mtm-hero-actions"><Link href="/#courses" className="r106-primary">Tìm lớp phù hợp <span><ArrowUpRight size={19}/></span></Link><SocialLinks label="Kênh MTM cạnh nút tìm lớp"/><Link href="/btvn" className="r106-text-link">Vào BTVN <ArrowRight size={17}/></Link></div></div></header>
       <aside className="r106-programmes" aria-label="Chương trình học">
         <span className="r106-kicker">CHỌN ĐIỂM BẮT ĐẦU</span>
         <div className="r106-programme-nav" style={{'--programme': programmes.indexOf(programme)} as Variables}>{programmes.map((item, index) => <button type="button" key={item} aria-pressed={item === programme} onClick={() => setProgramme(item)}><small>0{index + 1}</small><strong>{item}</strong><ArrowUpRight size={17}/></button>)}</div>
@@ -125,7 +125,7 @@ export default function R106Hero() {
         <span className="r106-photo-note" aria-live="polite">{photoStatus === 'loading' ? 'Đang tải ảnh '+photographs[photo].tab+'. Ảnh hiện tại vẫn được giữ.' : photographs[shown].caption}</span>{photoError && <p className="r106-image-error" role="status">{photoError} <button className="r106-image-retry" type="button" onClick={() => {if (photoStatus === 'error') {photoButton.current?.focus(); setPhotoAttempt(value => value + 1);}}}>Thử tải lại ảnh</button></p>}
       </div>
       <article className="r106-course" aria-label="Lộ trình của em">
-        <div className="r106-course-top"><span>LỘ TRÌNH CỦA EM</span><span>{guided ? 'LỚP HỌC' : programme === 'Toán 12' ? 'TOÁN 12' : 'HSA · TSA'}</span></div>
+        <div className="r106-course-top"><span>LỘ TRÌNH CỦA EM</span><span>{guided ? 'LỚP HỌC' : programme === 'Toán 12' ? 'TOÁN 12' : 'HSA'}</span></div>
         <div className="r106-course-heading"><span className="r106-course-number" aria-hidden="true">{guided ? '↗' : '0' + (effectiveStep + 1)}</span><h2>{courseTitle.startsWith('Step ') ? <><small>{courseTitle.split(':')[0]}:</small>{courseTitle.split(':').slice(1).join(':').trim()}</> : courseTitle}</h2></div>
         {guided ? <div className="r106-guidance"><p>Học chắc nền tảng, rèn cách trình bày và tìm lớp phù hợp tiến độ ở trường.</p><Link href="/#timetable" className="r106-text-link">Xem lịch tham chiếu <ArrowRight size={16}/></Link></div> : <div className="r106-dial"><div className="r106-dial-label"><span>Chọn bước phù hợp</span><strong>0{effectiveStep+1} / 05</strong></div><div className="r106-roadmap" role="group" aria-label="Chọn khóa học" onKeyDown={roadmapKeys}>{labels.map((label, index) => <button type="button" key={label} aria-label={`Khóa ${index + 1}: ${label}`} aria-pressed={effectiveStep === index} className={effectiveStep===index?'selected':''} tabIndex={effectiveStep === index ? 0 : -1} onClick={() => selectStep(index)}><span className="r106-node">0{index + 1}</span><small>{label}</small></button>)}</div><p className="r106-dial-note">Từ hiểu bản chất đến tự tin vận dụng.</p></div>}
         <Link href={courseHref} className="r106-course-explore"><span>{guided ? 'Tìm lớp phù hợp' : 'Xem nội dung khóa học'}</span><span><ArrowUpRight size={19}/></span></Link>

@@ -1,0 +1,14 @@
+/* Chỉnh giao diện chung 19/10/2026: nút ưu đãi, nút tư vấn trên đầu trang, nhịp khoảng cách. */
+#promotions .mtm-promo-card{background:#fff;border-radius:18px;border-top:4px solid #f5c518;box-shadow:0 10px 28px -14px rgba(29,44,94,.35);padding:28px;text-align:center}
+#promotions .mtm-promo-value{font-size:34px;font-weight:800;color:#1d2c5e;margin:12px 0}
+#promotions .mtm-promo-box{margin-top:28px;background:#fff;border-radius:18px;padding:22px 24px;color:#334366;display:grid;gap:12px;justify-items:start}
+#promotions .mtm-promo-cta{background:#1d2c5e!important;color:#fff!important;border-radius:999px;padding:12px 22px;height:auto;font-weight:700}
+#promotions .mtm-promo-cta:hover{background:#13204a!important}
+@media(min-width:900px){.mtm-migration .mig-nav-links .mig-mobile-consult{order:98;background:#f5c518;color:#1d2c5e!important;border-radius:999px;padding:10px 18px!important;font-weight:800}
+.mtm-migration .mig-nav-links .mig-login{order:99;background:transparent!important;border:1px solid #d6dfeb!important;color:#1d2c5e!important}}
+.mtm-sc-grid~.mtm-roadmap,div:has(>.mtm-sc-grid)+.mtm-roadmap{margin-top:40px}
+@media(min-width:1000px){.mtm-course-grid:has(>:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr))}}
+#register .mtm-register-lead{margin:-12px 0 20px;color:#334366;font-size:15px}
+#register .mtm-register-lead a{color:#1a4796;font-weight:700;text-decoration:underline;text-underline-offset:3px}
+#register .mtm-data-after{margin-top:22px;font-size:13px}
+#register .mtm-data-after summary{font-weight:700;color:#1d2c5e}

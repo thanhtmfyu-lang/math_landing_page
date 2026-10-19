@@ -1,0 +1,63 @@
+.mtm-roadmap{--rm-navy:#1d2c5e;--rm-cyan:#00889b;--rm-gold:#b07a00;--rm-line:#dde4ee;--rm-muted:#5a6881;margin:8px 0 34px;padding:28px;border:1px solid var(--rm-line);border-radius:22px;background:linear-gradient(180deg,#f7fbfd 0%,#fff 60%);color:var(--rm-navy)}
+.mtm-roadmap h2{font-size:24px;line-height:1.35;margin:4px 0 10px;letter-spacing:-.02em}
+.mtm-roadmap h3{font-size:16px;line-height:1.5;margin:0 0 8px;display:flex;align-items:center;gap:8px}
+.mtm-roadmap p{margin:0;font-size:14px;line-height:1.75;color:var(--rm-muted)}
+.mtm-roadmap-eyebrow{font-size:12px!important;font-weight:800;letter-spacing:.08em;color:var(--rm-cyan)!important}
+.mtm-roadmap-head{display:grid;grid-template-columns:1.3fr 1fr;gap:24px;align-items:start}
+.mtm-roadmap-facts{margin:0;display:grid;gap:12px}
+.mtm-roadmap-facts div{background:#fff;border:1px solid var(--rm-line);border-radius:14px;padding:12px 14px}
+.mtm-roadmap-facts dt{display:flex;align-items:center;gap:6px;font-size:12px;font-weight:800;color:var(--rm-cyan);text-transform:uppercase;letter-spacing:.04em}
+.mtm-roadmap-facts dd{margin:4px 0 0;font-size:14px;line-height:1.65;color:var(--rm-navy)}
+.mtm-roadmap-stages{list-style:none;padding:0;margin:26px 0 0;display:grid;grid-template-columns:repeat(auto-fit,minmax(190px,1fr));gap:14px}
+.mtm-roadmap-stages li{display:flex;gap:10px;background:#fff;border:1px solid var(--rm-line);border-top:4px solid var(--rm-cyan);border-radius:14px;padding:14px}
+.mtm-roadmap-stages li:last-child{border-top-color:var(--rm-gold)}
+.mtm-roadmap-index{font-weight:800;color:#b9c6d8;font-size:18px;line-height:1.4}
+.mtm-roadmap-period{font-size:12px!important;font-weight:800;color:var(--rm-cyan)!important;letter-spacing:.03em}
+.mtm-roadmap-stages h3{font-size:15px;margin:2px 0 6px}
+.mtm-roadmap-stages p{font-size:13px}
+.mtm-roadmap-course{margin-top:8px!important;font-weight:700;color:var(--rm-navy)!important}
+.mtm-roadmap-grid{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-top:16px}
+.mtm-roadmap-box{background:#fff;border:1px solid var(--rm-line);border-radius:14px;padding:16px}
+.mtm-roadmap-groups,.mtm-roadmap-place{list-style:none;padding:0;margin:0;display:grid;gap:10px}
+.mtm-roadmap-groups li{border-left:3px solid var(--rm-cyan);padding:2px 0 2px 12px}
+.mtm-roadmap-groups b{font-size:14px}.mtm-roadmap-groups small{margin-left:8px;color:var(--rm-muted);font-size:12px}
+.mtm-roadmap-fit{color:var(--rm-navy)!important;font-weight:600}
+.mtm-roadmap-place li{display:grid;gap:2px;padding:10px 12px;border-radius:10px;background:#f5f8fb}
+.mtm-roadmap-place span{font-size:13px;color:var(--rm-muted);line-height:1.6}.mtm-roadmap-place b{font-size:14px;color:var(--rm-navy)}
+.mtm-roadmap-fine{margin-top:10px!important;font-size:12px!important}
+.mtm-roadmap-consult{margin-top:16px;background:#fffbeb;border:1px solid #e9d78f;border-radius:14px;padding:16px}
+.mtm-roadmap-consult ol{list-style:none;padding:0;margin:6px 0 0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:12px}
+.mtm-roadmap-consult li{display:flex;gap:8px}
+.mtm-roadmap-consult li>span{flex:0 0 26px;height:26px;border-radius:50%;background:var(--rm-gold);color:#fff;font-weight:800;font-size:13px;display:grid;place-items:center}
+.mtm-roadmap-consult b{font-size:14px}.mtm-roadmap-consult p{font-size:13px;line-height:1.6}
+.mtm-roadmap-actions{margin-top:14px}
+.mtm-roadmap-notes{list-style:none;padding:0;margin:14px 0 0;display:grid;gap:6px}
+.mtm-roadmap-notes li{display:flex;gap:8px;align-items:flex-start;font-size:13px;line-height:1.65;color:var(--rm-muted)}
+.mtm-roadmap-notes svg{flex-shrink:0;margin-top:3px;color:var(--rm-cyan)}
+.mtm-course-advice{margin:18px 24px 24px;padding:18px;border:1px solid #dde4ee;border-radius:16px;background:#f7fbfd;color:#1d2c5e}
+.mtm-course-advice h2{font-size:18px;margin:0 0 4px}
+.mtm-course-advice dl{margin:12px 0 0;display:grid;gap:10px}
+.mtm-course-advice a{color:#00788a;font-weight:700;display:inline-flex;align-items:center;gap:6px;margin-top:12px}.mtm-course-advice dt{font-size:12px;font-weight:800;color:#00889b;text-transform:uppercase;letter-spacing:.04em}
+.mtm-course-advice dd{margin:2px 0 0;font-size:14px;line-height:1.7;color:#334366}
+@media(max-width:1000px){.mtm-roadmap-consult ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:700px){.mtm-roadmap{padding:18px 16px;border-radius:16px}.mtm-roadmap h2{font-size:20px}.mtm-roadmap-head,.mtm-roadmap-grid,.mtm-roadmap-stages,.mtm-roadmap-consult ol{grid-template-columns:1fr}}
+@media(max-width:700px){.mtm-course-advice{margin:16px 12px 20px}}
+.mig-catalogue .mig-course-grid:has(>.mig-course-reveal:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.mtm-step-badge{margin:0 0 8px!important;font-size:11px!important;line-height:1.4!important;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#287481!important}
+.mtm-step-card h2{font-size:16px!important;line-height:1.45!important;margin-bottom:10px!important}
+.mtm-step-facts{margin:0 0 12px;display:grid;gap:6px}
+.mtm-step-facts div{display:grid;grid-template-columns:72px 1fr;gap:8px;align-items:baseline}
+.mtm-step-facts dt{font-size:11px;font-weight:700;color:#7a879c}
+.mtm-step-facts dd{margin:0;font-size:13px;line-height:1.5;color:#1d2c5e;font-weight:600}
+.mtm-step-content{display:flex;align-items:center;gap:6px;margin:auto 0 12px!important;font-size:12px!important;color:#61718b!important}
+.mtm-step-card .mig-course-bottom small{color:#9b7500;font-weight:700}
+.ne-course-card .mtm-step-badge,.ne-course-card .mtm-step-facts,.ne-course-card .mtm-step-next{margin-left:8px;margin-right:8px}
+.ne-course-card .mtm-step-next{margin-top:auto;padding-top:10px;border-top:1px solid #eaf0f6;font-size:12px;font-weight:700;color:#9b7500}
+@media(max-width:1100px){.mig-catalogue .mig-course-grid:has(>.mig-course-reveal:nth-child(4):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.mig-catalogue .mig-course-grid:has(>.mig-course-reveal:nth-child(4):last-child){grid-template-columns:1fr}}
+.native-ui .ne-course-card>.mtm-step-badge{flex:none;margin:10px 8px 8px!important}
+.native-ui .ne-course-card>.mtm-step-next{flex:none;margin:auto 8px 0!important}
+.native-ui .ne-course-card h2{margin-bottom:2px}
+.native-ui .ne-course-grid:has(>.ne-course-card:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+@media(max-width:1100px){.native-ui .ne-course-grid:has(>.ne-course-card:nth-child(4):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.native-ui .ne-course-grid:has(>.ne-course-card:nth-child(4):last-child){grid-template-columns:1fr}}

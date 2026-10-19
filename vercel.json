@@ -63,6 +63,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/chinh-sach-bao-mat",
+      "destination": "/index.html"
+    },
+    {
       "source": "/tai-lieu",
       "destination": "/index.html"
     },
