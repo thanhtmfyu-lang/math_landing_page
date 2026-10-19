@@ -12,6 +12,15 @@
       "pointsScale": 50
     },
     {
+      "slug": "de-02",
+      "examId": "mtm-hsa-thi-thu-02",
+      "source": "hsa-paper",
+      "title": "Đề thi thử HSA số 02",
+      "placeholder": false,
+      "active": true,
+      "pointsScale": 50
+    },
+    {
       "slug": "de-mau-1",
       "examId": "mtm-preview-practice-hsa-01-v1",
       "source": "practice-bank",

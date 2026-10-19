@@ -74,7 +74,8 @@ for(const e of config.exams){
 const placeholder=config.exams.find((e:any)=>e.examId==='mtm-preview-practice-hsa-01-v1');
 assert.equal(placeholder?.placeholder,true,'Đề mẫu tạm phải gắn placeholder=true để trang hiện ghi chú.');
 assert.equal(placeholder?.active,false,'Đề mẫu đã tắt khi có đề HSA thật.');
-assert.deepEqual(HSA_MOCK_EXAMS.map(e=>[e.slug,e.examId,e.source,e.title,e.placeholder,e.pointsScale]),[['de-01','mtm-hsa-thi-thu-01','hsa-paper','Đề thi thử HSA số 01',false,50]]);
+assert.deepEqual(HSA_MOCK_EXAMS.map(e=>[e.slug,e.examId,e.source,e.title,e.placeholder,e.pointsScale]),[['de-01','mtm-hsa-thi-thu-01','hsa-paper','Đề thi thử HSA số 01',false,50],['de-02','mtm-hsa-thi-thu-02','hsa-paper','Đề thi thử HSA số 02',false,50]]);
+assert.equal(hsaMockExam(null)?.slug,'de-01','Mặc định mở đề 01');assert.equal(hsaMockExam('de-02')?.examId,'mtm-hsa-thi-thu-02');
 const paper01=json('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.public.json').exam;
 assert.equal(paper01.questions.length,50);assert.equal(paper01.durationMinutes,75);
 console.log('Đạt cấu hình đề: kiểm trường, trùng, nguồn; đề HSA số 01 (50 câu / 75 phút) đang mở, đề mẫu đã tắt.');
@@ -91,6 +92,15 @@ assert.ok(!sql.replace(/--.*$/gm,'').includes('mtm-preview-practice-hsa-01-v1'),
 assert.ok(!/phone|sdt|so_dien_thoai/i.test(sql.replace(/--.*$/gm,'')));
 assert.match(sql,/grant execute on function public\.mtm_hsa_rank_top\(text,integer\),public\.mtm_hsa_rank_submit\(text,uuid,text,text,text,text,text\) to service_role;/);
 console.log('Đạt migration 069: seed đúng đề HSA số 01, không seed đề mẫu, không có cột SĐT, chỉ service_role.');
+// 4b. Migration 070 (không sửa 069): seed đề 02 đúng bản client, cần 069 trước.
+const sql70=readFileSync(join(root,'supabase/migrations-pending/202610190070_thi_thu_hsa_de_02.sql'),'utf8');
+const b64b=/values\('mtm-hsa-thi-thu-02',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql70)?.[1];
+assert.ok(b64b);
+assert.deepEqual(JSON.parse(Buffer.from(b64b!,'base64').toString('utf8')),json('src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json'));
+assert.match(sql70,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-02',false\)/);
+assert.match(sql70,/to_regclass\('mtm_hsa_rank\.exams'\) is null/);
+assert.ok(!sql.includes('mtm-hsa-thi-thu-02'),'069 giữ nguyên, không seed đề 02');
+console.log('Đạt migration 070: seed đúng đề HSA số 02, yêu cầu 069, không sửa 069.');
 
 // 5. API: tắt mặc định, chỉ chuyển trường đã duyệt, băm mã thiết bị, không nhận điểm từ trình duyệt.
 const env:Record<string,string>={MTM_HSA_RANK_ENABLED:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'FIXTURE'};

@@ -1,0 +1,2000 @@
+{
+  "ma_de": "mtm-hsa-thi-thu-02",
+  "ten": "Đề thi thử HSA số 02 – Phần 1: Toán học và xử lý số liệu",
+  "thoi_gian_phut": 75,
+  "don_vi_soan": "Trung tâm Toán Minh Thành MTM – phòng Học liệu & Kiểm định",
+  "ngay_soan": "2026-10-19",
+  "dot_thi": "Thi thử tháng 11/2026",
+  "lien_he": "Hotline/Zalo 0967 365 413",
+  "cau_truc": {
+    "tong_so_cau": 50,
+    "thoi_gian_phut": 75,
+    "dang_cau_hoi": {
+      "mcq": {
+        "ten": "Trắc nghiệm 4 lựa chọn (1 đáp án đúng)",
+        "so_cau": 35,
+        "xac_minh": "theo nguồn (35 câu)"
+      },
+      "dien_so": {
+        "ten": "Điền đáp án (số)",
+        "so_cau": 15,
+        "xac_minh": "theo nguồn (15 câu)"
+      }
+    },
+    "cau_chum": {
+      "co": true,
+      "xac_minh": "theo nguồn: từ 2025 có câu hỏi chùm ở mọi phần",
+      "trong_de_nay": [
+        {
+          "chum": "A",
+          "cau": [
+            34,
+            35,
+            36
+          ],
+          "noi_dung": "mẫu số liệu ghép nhóm hai công ty giao hàng (độ phân tán, mẫu gộp)"
+        },
+        {
+          "chum": "B",
+          "cau": [
+            47,
+            48,
+            49
+          ],
+          "noi_dung": "bảng giá điện bậc thang (xử lý số liệu thực tế)"
+        }
+      ],
+      "so_chum_va_so_cau_moi_chum": "[suy luận] nguồn không nêu số chùm; chọn 2 chùm × 3 câu"
+    },
+    "dung_sai": "Không dùng: các nguồn chỉ nêu trắc nghiệm 4 lựa chọn và điền đáp án cho phần này (dạng đúng/sai không được nêu).",
+    "linh_vuc": {
+      "Đại số và một số yếu tố giải tích": "câu 1–13, 18–29, 46 (26 câu)",
+      "Hình học và đo lường": "câu 14–17, 30–32, 42–45 (11 câu)",
+      "Thống kê và xác suất (gồm xử lý số liệu)": "câu 33–41, 47–50 (13 câu)",
+      "xac_minh": "ba lĩnh vực theo nguồn; số câu mỗi lĩnh vực là [suy luận]"
+    },
+    "phan_bo_lop": {
+      "lop_10": 12,
+      "lop_11": 17,
+      "lop_12": 21,
+      "xac_minh": "[suy luận] (nguồn không công bố tỉ lệ theo lớp)"
+    },
+    "muc_do": {
+      "TH (thông hiểu)": 15,
+      "VD": 23,
+      "VDC": 12,
+      "ti_le": "30% / 46% / 24%",
+      "xac_minh": "[suy luận] theo yêu cầu của trung tâm (khoảng 30/45/25); đề số 02 không có câu nhận biết hay thế số trực tiếp"
+    },
+    "cham_diem": "Theo nguồn: tính theo số câu đúng, không trừ điểm câu sai. [suy luận] Quy đổi 1 câu đúng = 1 điểm (phần thi 50 điểm) để HS tự đánh giá.",
+    "quy_uoc_dien_dap_an": "[suy luận] Đáp án điền là số nguyên hoặc số thập phân, dùng dấu phẩy thập phân (ví dụ 2,46); làm tròn theo yêu cầu trong đề. Trường dap_an_so lưu giá trị số để máy chấm.",
+    "thu_tu_cau": "[suy luận] Sắp theo nhóm chủ đề để tiện chữa bài; đề thật có thể xếp khác.",
+    "nguon": [
+      {
+        "url": "https://baolaocai.vn/de-tham-khao-thi-danh-gia-nang-luc-dh-quoc-gia-ha-noi-nam-2025-post388247.html",
+        "noi_dung": "Đề tham khảo HSA 2025: phần Toán học và xử lý số liệu 50 câu, 75 phút; 35 câu trắc nghiệm 4 lựa chọn + 15 câu điền đáp án; nội dung: đại số và một số yếu tố giải tích, hình học và đo lường, thống kê và xác suất; điểm tính theo số câu đúng, không trừ điểm câu sai; từ 2025 bổ sung câu hỏi chùm."
+      },
+      {
+        "url": "https://nongnghiepmoitruong.vn/de-thi-tham-khao-danh-gia-nang-luc-dai-hoc-quoc-gia-ha-noi-nam-2025-d419075.html",
+        "noi_dung": "Xác nhận 50 câu, 75 phút, 35 trắc nghiệm 4 lựa chọn + 15 điền đáp án; có câu hỏi chùm."
+      },
+      {
+        "url": "https://cet.vnu.edu.vn/chuyen-muc/thong-bao-51.html",
+        "noi_dung": "Trang thông báo của Trung tâm Khảo thí ĐHQGHN: phần 1 Toán học và xử lý số liệu 50 câu, 75 phút; tổng bài thi 195 phút, thang 150."
+      },
+      {
+        "url": "https://baolaocai.vn/luu-y-diem-moi-trong-bai-thi-rieng-nam-2026-post888644.html",
+        "noi_dung": "HSA 2026: phần Toán học và xử lý số liệu bắt buộc, 50 câu, 75 phút; có thể có câu thử nghiệm không tính điểm (được bù thời gian)."
+      },
+      {
+        "url": "https://nhandan.vn/post-955826.html",
+        "noi_dung": "HSA 2026: phần 1 Toán học và xử lý số liệu 50 câu, 75 phút; tổng 150 điểm, 195 phút."
+      }
+    ],
+    "pham_vi": "Toán 10–11 và Toán 12 đến hết học kỳ I: ứng dụng đạo hàm, vectơ và tọa độ trong không gian (không dùng phương trình mặt phẳng, đường thẳng, mặt cầu), số đặc trưng đo mức độ phân tán của mẫu ghép nhóm, nguyên hàm – tích phân. Riêng câu 40 (xác suất có điều kiện, theo yêu cầu có bài xác suất có điều kiện) giải được hoàn toàn bằng tỉ số đếm trên bảng.",
+    "bang_so_lieu": "Câu có bảng số liệu dùng trường có cấu trúc bang = {tieu_de, cot, hang} (mọi ô là chuỗi); de_bai/dan_chung chỉ ghi \"theo bảng sau\". Câu có bang: 34, 35, 36, 37, 40, 47, 48, 49. Đề không dùng ảnh.",
+    "phan_bo_dap_an_mcq": {
+      "A": 9,
+      "B": 8,
+      "C": 9,
+      "D": 9
+    }
+  },
+  "tong_hop_kiem_dinh": {
+    "so_cau_khop": 50,
+    "tong_so_cau": 50,
+    "ghi_chu": "Mỗi câu được tính lại độc lập bằng Python (sympy/numpy: vét cạn, quét lưới, tích phân số, mô phỏng từng tháng, dựng tọa độ), không dùng lại lời giải trong đề; 14 câu đối chiếu thêm bằng Wolfram Language. Câu trắc nghiệm: kiểm đúng 1 phương án khớp giá trị tính lại, 4 phương án đôi một khác nhau; 104/105 phương án nhiễu được tái tạo từ mô hình lỗi sai bằng mã (riêng phương án D câu 25 chỉ lý giải). Câu điền số: đáp án chuỗi khớp dap_an_so và khớp giá trị tính lại sau làm tròn theo đề.",
+    "ngay_kiem": "2026-10-19"
+  },
+  "cau_hoi": [
+    {
+      "id": "HSA02-01",
+      "stt": 1,
+      "chu_de": "Hàm số – tiệm cận đứng và tiệm cận xiên",
+      "lop": 12,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Đồ thị hàm số $y=\\dfrac{x^2+3x-1}{x+2}$ có tiệm cận đứng và tiệm cận xiên cắt nhau tại điểm $I$. Độ dài đoạn thẳng $OI$ ($O$ là gốc tọa độ) bằng",
+      "lua_chon": {
+        "A": "$2\\sqrt{2}$",
+        "B": "$\\sqrt{13}$",
+        "C": "$\\sqrt{5}$",
+        "D": "$\\sqrt{29}$"
+      },
+      "dap_an": "C",
+      "loi_giai": "Tập xác định: $D=\\mathbb{R}\\setminus\\{-2\\}$.\nBước 1 (chia đa thức). $x^2+3x-1=(x+2)(x+1)-3$, nên $y=x+1-\\dfrac{3}{x+2}$.\nBước 2 (tiệm cận đứng). Tử số tại $x=-2$ bằng $4-6-1=-3\\ne0$, mẫu số dần tới $0$. Khi $x\\to-2^{+}$ thì $x+2\\to0^{+}$, nên $\\lim\\limits_{x\\to-2^{+}}y=-\\infty$. Vậy đường thẳng $x=-2$ là tiệm cận đứng.\nBước 3 (tiệm cận xiên). $\\lim\\limits_{x\\to\\pm\\infty}\\left[y-(x+1)\\right]=\\lim\\limits_{x\\to\\pm\\infty}\\left(-\\dfrac{3}{x+2}\\right)=0$, nên $y=x+1$ là tiệm cận xiên.\nBước 4. Giao điểm: $x=-2$, $y=-2+1=-1$, tức $I(-2;-1)$. Khi đó $OI=\\sqrt{(-2)^2+(-1)^2}=\\sqrt{5}$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Bỏ hằng số khi chia đa thức, lấy tiệm cận xiên là $y=x$, nên $I(-2;-2)$.",
+        "B": "Sai dấu tiệm cận đứng (lấy $x=2$), nên $I(2;3)$.",
+        "D": "Sai dấu tiệm cận đứng và chia đa thức sai thành $y=x+3$, nên $I(2;5)$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy: TCĐ x=-2 (lim x→-2+ = -oo); TCX y=1x+1 (cả ±∞: 1,1); I=(-2, -1); OI=sqrt(5).",
+        "gia_tri_tinh_lai": "sqrt(5)",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (2.828427)",
+          "B": "tái tạo được từ mô hình lỗi sai (3.605551)",
+          "D": "tái tạo được từ mô hình lỗi sai (5.385165)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-02",
+      "stt": 2,
+      "chu_de": "Hàm số – tính đơn điệu có tham số",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Có bao nhiêu giá trị nguyên của tham số $m$ thuộc đoạn $[-20;20]$ để hàm số $y=\\ln\\left(x^2+1\\right)-mx+1$ đồng biến trên $\\mathbb{R}$?",
+      "lua_chon": {
+        "A": "$20$",
+        "B": "$19$",
+        "C": "$21$",
+        "D": "$22$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Tập xác định $D=\\mathbb{R}$ (vì $x^2+1>0$ với mọi $x$).\n$y'=\\dfrac{2x}{x^2+1}-m$. Hàm số đồng biến trên $\\mathbb{R}$ $\\Leftrightarrow y'\\ge0$ với mọi $x\\in\\mathbb{R}$ (dấu bằng chỉ xảy ra tại hữu hạn điểm) $\\Leftrightarrow m\\le g(x)=\\dfrac{2x}{x^2+1}$ với mọi $x$ $\\Leftrightarrow m\\le\\min\\limits_{\\mathbb{R}}g(x)$.\n$g'(x)=\\dfrac{2\\left(x^2+1\\right)-2x\\cdot2x}{\\left(x^2+1\\right)^2}=\\dfrac{2\\left(1-x^2\\right)}{\\left(x^2+1\\right)^2}$; $g'(x)=0\\Leftrightarrow x=\\pm1$.\n$g$ nghịch biến trên $(-\\infty;-1)$, đồng biến trên $(-1;1)$, nghịch biến trên $(1;+\\infty)$; $\\lim\\limits_{x\\to\\pm\\infty}g(x)=0$; $g(-1)=-1$, $g(1)=1$. Vậy $\\min\\limits_{\\mathbb{R}}g=g(-1)=-1$.\nDo đó $m\\le-1$. Kiểm tra $m=-1$: $y'=\\dfrac{2x}{x^2+1}+1=\\dfrac{(x+1)^2}{x^2+1}\\ge0$, chỉ bằng $0$ tại $x=-1$, nên hàm số vẫn đồng biến trên $\\mathbb{R}$.\nKết hợp $m\\in[-20;20]$, $m\\in\\mathbb{Z}$: $m\\in\\{-20;-19;\\dots;-1\\}$, có $20$ giá trị. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Bỏ dấu bằng, lấy $m<-1$ (không kiểm trường hợp $m=-1$).",
+        "C": "Nhầm $\\min g$ bằng giới hạn $0$ tại vô cực, được $m\\le0$.",
+        "D": "Dùng giá trị lớn nhất $\\max g=1$ thay cho giá trị nhỏ nhất, được $m\\le1$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy quét y'=2x/(x²+1)−m trên lưới [−60;60] (1,2·10^6 điểm) cho từng m nguyên: các m thỏa = -20..-1 (20 giá trị); min g quét được = -1.000000.",
+        "gia_tri_tinh_lai": "20.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (19.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (21.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (22.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-03",
+      "stt": 3,
+      "chu_de": "Hàm số – số nghiệm của phương trình hàm hợp",
+      "lop": 12,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Cho hàm số $f(x)=x^3-3x$. Phương trình $f\\big(f(x)\\big)=1$ có bao nhiêu nghiệm thực?",
+      "dap_an": "9",
+      "dap_an_so": 9,
+      "loi_giai": "Đặt $t=f(x)$. Phương trình trở thành $f(t)=1\\Leftrightarrow h(t)=t^3-3t-1=0$.\nBước 1 (nghiệm $t$). $h'(t)=3t^2-3=0\\Leftrightarrow t=\\pm1$. Ta có $h(-2)=-3$, $h(-1)=1$, $h(1)=-3$, $h(2)=1$. Vì $h$ liên tục và đổi dấu trên mỗi khoảng $(-2;-1)$, $(-1;1)$, $(1;2)$ nên $h(t)=0$ có nghiệm $t_1\\in(-2;-1)$, $t_2\\in(-1;1)$, $t_3\\in(1;2)$. Phương trình bậc ba có tối đa $3$ nghiệm nên đây là tất cả các nghiệm, và cả ba đều thuộc $(-2;2)$.\nBước 2 (số nghiệm của $f(x)=t_i$). $f'(x)=3x^2-3=0\\Leftrightarrow x=\\pm1$; $f$ đạt cực đại $f(-1)=2$, cực tiểu $f(1)=-2$; $\\lim\\limits_{x\\to-\\infty}f(x)=-\\infty$, $\\lim\\limits_{x\\to+\\infty}f(x)=+\\infty$. Với mỗi $t\\in(-2;2)$, đường thẳng $y=t$ cắt đồ thị $y=f(x)$ tại đúng $3$ điểm (mỗi khoảng $(-\\infty;-1)$, $(-1;1)$, $(1;+\\infty)$ một điểm).\nBước 3. Ba giá trị $t_1,t_2,t_3$ khác nhau nên các nghiệm $x$ của ba phương trình $f(x)=t_i$ không trùng nhau. Số nghiệm: $3\\cdot3=9$.\nĐáp số: $9$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy.roots đa thức bậc 9 f(f(x))−1: 9 nghiệm thực; sympy real_roots: 9 nghiệm (phân biệt: 9).",
+        "gia_tri_tinh_lai": "9",
+        "wolfram": "NSolve f(f(x))==1 trên ℝ: 9 nghiệm",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-04",
+      "stt": 4,
+      "chu_de": "Hàm số – cực trị của hàm hợp có tham số",
+      "lop": 12,
+      "muc_do": "VDC",
+      "dang": "mcq",
+      "de_bai": "Cho hàm số $f(x)$ có đạo hàm $f'(x)=(x+1)^2(x-2)(x-4)$ với mọi $x\\in\\mathbb{R}$. Có bao nhiêu giá trị nguyên của tham số $m\\in[-10;10]$ để hàm số $g(x)=f\\left(x^2+m\\right)$ có đúng $5$ điểm cực trị?",
+      "lua_chon": {
+        "A": "$13$",
+        "B": "$12$",
+        "C": "$3$",
+        "D": "$11$"
+      },
+      "dap_an": "B",
+      "loi_giai": "$g'(x)=2x\\cdot f'\\left(x^2+m\\right)=2x\\left(x^2+m+1\\right)^2\\left(x^2+m-2\\right)\\left(x^2+m-4\\right)$.\nThừa số $\\left(x^2+m+1\\right)^2\\ge0$ không làm $g'$ đổi dấu. Điểm cực trị của $g$ là các điểm mà $g'$ đổi dấu, đến từ $x=0$, $x^2=2-m$, $x^2=4-m$.\n• Nếu $m<2$: $x^2=2-m>0$ cho $x=\\pm\\sqrt{2-m}$; $x^2=4-m>0$ cho $x=\\pm\\sqrt{4-m}$. Năm nghiệm $0;\\pm\\sqrt{2-m};\\pm\\sqrt{4-m}$ phân biệt và đều là nghiệm bội lẻ của $g'$ (chúng khác nghiệm của $x^2=-1-m$ vì $2-m\\ne-1-m$, $4-m\\ne-1-m$), nên $g$ có đúng $5$ điểm cực trị.\n• Nếu $m=2$: $g'(x)=2x^3\\left(x^2+3\\right)^2\\left(x^2-2\\right)$, đổi dấu tại $0;\\pm\\sqrt2$: $3$ cực trị. Nếu $2<m<4$: $x^2+m-2>0$, $g'$ đổi dấu tại $0;\\pm\\sqrt{4-m}$: $3$ cực trị.\n• Nếu $m\\ge4$: $x^2+m-2>0$ và $x^2+m-4\\ge0$ (bằng $0$ chỉ tại $x=0$ khi $m=4$), $g'$ chỉ đổi dấu tại $x=0$: $1$ cực trị.\nVậy $g$ có đúng $5$ điểm cực trị $\\Leftrightarrow m<2$. Kết hợp $m\\in[-10;10]$, $m\\in\\mathbb{Z}$: $m\\in\\{-10;\\dots;1\\}$, có $12$ giá trị. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Lấy cả $m=2$ (không xét trường hợp nghiệm $x^2=2-m$ trùng $x=0$).",
+        "C": "Coi nghiệm kép $x^2=-1-m$ (thừa số $(x^2+m+1)^2$) cũng làm $g'$ đổi dấu, nên khi $m<-1$ đếm thành $7$ cực trị và chỉ giữ $m\\in\\{-1;0;1\\}$.",
+        "D": "Loại nhầm $m=-1$ vì cho rằng thừa số $(x^2+m+1)^2=x^4$ làm $x=0$ không còn là cực trị."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy đếm số lần g'(x) đổi dấu trên [−6;6] (4·10^5 điểm) cho từng m∈[−10;10]: đúng 5 lần với m=[-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 0, 1] (12 giá trị).",
+        "gia_tri_tinh_lai": "12.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (13.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (3.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (11.0)"
+        },
+        "wolfram": "Solve g'(x)=0, kiểm đổi dấu từng nghiệm, m∈[−10;10]: 12 giá trị m",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-05",
+      "stt": 5,
+      "chu_de": "Ứng dụng đạo hàm – tối ưu chi phí thực tế",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Một hòn đảo ở vị trí $B$ cách bờ biển $3$ km; $H$ là điểm trên bờ gần $B$ nhất (coi bờ biển là đường thẳng). Một nhà máy điện ở vị trí $C$ trên bờ, cách $H$ là $10$ km. Người ta kéo dây điện từ $C$ đi dọc bờ đến một điểm $M$ nằm trên đoạn $HC$, rồi từ $M$ đi ngầm dưới biển thẳng đến $B$. Chi phí mỗi km dây trên bờ là $3$ triệu đồng, mỗi km dây ngầm dưới biển là $5$ triệu đồng. Chi phí kéo dây nhỏ nhất là",
+      "lua_chon": {
+        "A": "$45$ triệu đồng",
+        "B": "$52{,}20$ triệu đồng",
+        "C": "$31{,}32$ triệu đồng",
+        "D": "$42$ triệu đồng"
+      },
+      "dap_an": "D",
+      "loi_giai": "Đặt $HM=x$ (km), $0\\le x\\le10$. Khi đó $MB=\\sqrt{x^2+9}$ (tam giác $BHM$ vuông tại $H$), $MC=10-x$.\nChi phí (triệu đồng): $T(x)=5\\sqrt{x^2+9}+3(10-x)$, $x\\in[0;10]$.\n$T'(x)=\\dfrac{5x}{\\sqrt{x^2+9}}-3$. $T'(x)=0\\Leftrightarrow5x=3\\sqrt{x^2+9}\\ (x\\ge0)\\Leftrightarrow25x^2=9x^2+81\\Leftrightarrow x^2=\\dfrac{81}{16}\\Leftrightarrow x=\\dfrac94$ (nhận vì $\\dfrac94\\in[0;10]$).\n$T(0)=15+30=45$; $T\\!\\left(\\dfrac94\\right)=5\\sqrt{\\dfrac{81}{16}+\\dfrac{144}{16}}+3\\cdot\\dfrac{31}{4}=5\\cdot\\dfrac{15}{4}+\\dfrac{93}{4}=\\dfrac{168}{4}=42$; $T(10)=5\\sqrt{109}\\approx52{,}20$.\nVậy chi phí nhỏ nhất là $42$ triệu đồng, khi $HM=2{,}25$ km. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Chọn $M\\equiv H$ (cho rằng đi ngầm vuông góc với bờ là rẻ nhất), chi phí $5\\cdot3+3\\cdot10=45$.",
+        "B": "Chọn $M\\equiv C$ (kéo ngầm thẳng từ $C$), chi phí $5\\sqrt{109}\\approx52{,}20$.",
+        "C": "Đổi chỗ hai đơn giá (trên bờ $5$, dưới biển $3$), cực tiểu tại $M\\equiv C$: $3\\sqrt{109}\\approx31{,}32$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy quét x∈[0;10] (2·10^6 điểm): min T = 42.000000 tại x = 2.25000.",
+        "gia_tri_tinh_lai": "42.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (45.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (52.201533)",
+          "C": "tái tạo được từ mô hình lỗi sai (31.32092)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-06",
+      "stt": 6,
+      "chu_de": "Ứng dụng đạo hàm – tối ưu lợi nhuận",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Một cửa hàng nhập một loại áo với giá $120$ nghìn đồng/chiếc. Nếu bán với giá $200$ nghìn đồng/chiếc thì mỗi tháng bán được $300$ chiếc. Khảo sát cho thấy cứ giảm giá bán $10$ nghìn đồng thì mỗi tháng bán thêm được $30$ chiếc, và cứ tăng giá bán $10$ nghìn đồng thì mỗi tháng bán ít đi $30$ chiếc. Hỏi cửa hàng nên bán với giá bao nhiêu nghìn đồng/chiếc để lợi nhuận mỗi tháng lớn nhất?",
+      "dap_an": "210",
+      "dap_an_so": 210,
+      "loi_giai": "Gọi giá bán là $p$ (nghìn đồng/chiếc). Số áo bán được mỗi tháng: $q=300+30\\cdot\\dfrac{200-p}{10}=900-3p$. Điều kiện: $p\\ge120$ (không bán lỗ) và $q\\ge0\\Leftrightarrow p\\le300$.\nLợi nhuận mỗi tháng (nghìn đồng): $L(p)=(p-120)(900-3p)=-3p^2+1260p-108000$, $p\\in[120;300]$.\n$L'(p)=-6p+1260$; $L'(p)=0\\Leftrightarrow p=210\\in[120;300]$. $L'(p)>0$ khi $p<210$, $L'(p)<0$ khi $p>210$ nên $L$ đạt giá trị lớn nhất tại $p=210$.\nKhi đó $q=900-630=270$ chiếc, lợi nhuận $90\\cdot270=24\\,300$ nghìn đồng. (Lưu ý: giá tối ưu cao hơn giá $200$ hiện tại, tức là nên tăng giá chứ không giảm.)\nĐáp số: $210$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy quét p∈[120;300] bước 0,0001: lợi nhuận max = 24300.00 nghìn đồng tại p = 210.0000; kiểm mô hình cầu q(200)=300, q(190)=330, q(210)=270.",
+        "gia_tri_tinh_lai": "210.0",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-07",
+      "stt": 7,
+      "chu_de": "Ứng dụng đạo hàm – bài toán thực tế (thang qua hàng rào)",
+      "lop": 12,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Một hàng rào cao $2$ m chạy song song với bức tường của một tòa nhà và cách tường $1$ m. Người ta đặt một chiếc thang thẳng: chân thang đặt trên mặt đất phía ngoài hàng rào, thân thang tựa lên đỉnh hàng rào và đầu thang chạm vào tường. Chiều dài ngắn nhất của chiếc thang bằng bao nhiêu mét? (Bỏ qua bề dày hàng rào; làm tròn kết quả đến hàng phần trăm.)",
+      "dap_an": "4,16",
+      "dap_an_so": 4.16,
+      "loi_giai": "Gọi $\\alpha$ là góc giữa thang và mặt đất, $\\alpha\\in\\left(0;\\dfrac{\\pi}{2}\\right)$.\nĐoạn thang từ chân đến đỉnh hàng rào dài $\\dfrac{2}{\\sin\\alpha}$ (cạnh huyền của tam giác vuông có cạnh đối $2$ m). Đoạn từ đỉnh hàng rào đến tường có hình chiếu nằm ngang $1$ m nên dài $\\dfrac{1}{\\cos\\alpha}$.\nChiều dài thang: $\\ell(\\alpha)=\\dfrac{2}{\\sin\\alpha}+\\dfrac{1}{\\cos\\alpha}$.\n$\\ell'(\\alpha)=-\\dfrac{2\\cos\\alpha}{\\sin^2\\alpha}+\\dfrac{\\sin\\alpha}{\\cos^2\\alpha}=\\dfrac{\\sin^3\\alpha-2\\cos^3\\alpha}{\\sin^2\\alpha\\cos^2\\alpha}$. $\\ell'(\\alpha)=0\\Leftrightarrow\\tan^3\\alpha=2\\Leftrightarrow\\tan\\alpha=\\sqrt[3]{2}$.\nKhi $\\tan\\alpha<\\sqrt[3]2$ thì $\\ell'<0$, khi $\\tan\\alpha>\\sqrt[3]2$ thì $\\ell'>0$, nên $\\ell$ nhỏ nhất tại $\\tan\\alpha=k=\\sqrt[3]2$.\nKhi đó $\\sin\\alpha=\\dfrac{k}{\\sqrt{1+k^2}}$, $\\cos\\alpha=\\dfrac{1}{\\sqrt{1+k^2}}$, nên $\\ell=\\sqrt{1+k^2}\\left(\\dfrac2k+1\\right)$. Vì $\\dfrac2k=\\dfrac{2}{\\sqrt[3]2}=\\sqrt[3]4=k^2$ nên $\\ell_{\\min}=\\left(1+k^2\\right)^{3/2}=\\left(1+\\sqrt[3]4\\right)^{3/2}\\approx4{,}1619$ (m).\nĐáp số: $4{,}16$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy: min(2/sinα+1/cosα) = 4.161938; cách 2 theo khoảng cách chân thang–hàng rào u: min (u+1)√(1+4/u²) = 4.161938; (1+∛4)^1,5 = 4.161938.",
+        "gia_tri_tinh_lai": "4.16",
+        "wolfram": "NMinValue(2/sinα+1/cosα) = 4,161938…",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-08",
+      "stt": 8,
+      "chu_de": "Nguyên hàm – hạ bậc lượng giác",
+      "lop": 12,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Biết $F(x)$ là một nguyên hàm của hàm số $f(x)=\\sin^2x$ trên $\\mathbb{R}$ và $F(0)=0$. Giá trị của $F(\\pi)$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{\\pi}{2}$",
+        "B": "$\\pi$",
+        "C": "$0$",
+        "D": "$-\\dfrac{\\pi}{2}$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Hạ bậc: $\\sin^2x=\\dfrac{1-\\cos2x}{2}$.\n$F(x)=\\displaystyle\\int\\dfrac{1-\\cos2x}{2}\\,dx=\\dfrac{x}{2}-\\dfrac{\\sin2x}{4}+C$ (kiểm tra: $\\left(\\dfrac{x}{2}-\\dfrac{\\sin2x}{4}\\right)'=\\dfrac12-\\dfrac{\\cos2x}{2}=\\sin^2x$).\n$F(0)=0\\Rightarrow C=0$. Vậy $F(\\pi)=\\dfrac{\\pi}{2}-\\dfrac{\\sin2\\pi}{4}=\\dfrac{\\pi}{2}$. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Hạ bậc thiếu hệ số: $\\sin^2x=1-\\cos2x$, được $F(x)=x-\\dfrac{\\sin2x}{2}$.",
+        "C": "Áp dụng nhầm công thức lũy thừa: $F(x)=\\dfrac{\\sin^3x}{3}$.",
+        "D": "Hạ bậc sai dấu: $\\sin^2x=\\dfrac{\\cos2x-1}{2}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy ∫_0^π sin²x dx = pi/2 (= F(π) vì F(0)=0).",
+        "gia_tri_tinh_lai": "pi/2",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (3.141593)",
+          "C": "tái tạo được từ mô hình lỗi sai (0.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (-1.570796)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-09",
+      "stt": 9,
+      "chu_de": "Tích phân – hàm chứa dấu giá trị tuyệt đối",
+      "lop": 12,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Giá trị của tích phân $\\displaystyle\\int_0^3\\left|x^2-3x+2\\right|dx$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{3}{2}$",
+        "B": "$\\dfrac{5}{3}$",
+        "C": "$\\dfrac{11}{6}$",
+        "D": "$1$"
+      },
+      "dap_an": "C",
+      "loi_giai": "$x^2-3x+2=(x-1)(x-2)$: không âm trên $[0;1]$ và $[2;3]$, không dương trên $[1;2]$.\nMột nguyên hàm của $x^2-3x+2$ là $G(x)=\\dfrac{x^3}{3}-\\dfrac{3x^2}{2}+2x$; $G(0)=0$, $G(1)=\\dfrac56$, $G(2)=\\dfrac23$, $G(3)=\\dfrac32$.\n$\\displaystyle\\int_0^1\\left(x^2-3x+2\\right)dx=\\dfrac56$; $\\displaystyle\\int_1^2-\\left(x^2-3x+2\\right)dx=-\\left(\\dfrac23-\\dfrac56\\right)=\\dfrac16$; $\\displaystyle\\int_2^3\\left(x^2-3x+2\\right)dx=\\dfrac32-\\dfrac23=\\dfrac56$.\nTổng: $\\dfrac56+\\dfrac16+\\dfrac56=\\dfrac{11}{6}$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Bỏ dấu giá trị tuyệt đối: $\\int_0^3\\left(x^2-3x+2\\right)dx=\\dfrac32$.",
+        "B": "Bỏ sót đoạn $[1;2]$ (nơi biểu thức âm): $\\dfrac56+\\dfrac56$.",
+        "D": "Chỉ tính trên $[0;2]$, quên đoạn $[2;3]$: $\\dfrac56+\\dfrac16$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "sympy (chia tại nghiệm 1, 2) = 11/6; numpy trapezoid ∫|…| = 1.833333.",
+        "gia_tri_tinh_lai": "11/6",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (1.5)",
+          "B": "tái tạo được từ mô hình lỗi sai (1.666667)",
+          "D": "tái tạo được từ mô hình lỗi sai (1.0)"
+        },
+        "wolfram": "Integrate |x²−3x+2| trên [0;3] = 11/6",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-10",
+      "stt": 10,
+      "chu_de": "Tích phân – quãng đường chuyển động (phanh xe)",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Một ô tô đang chạy thẳng với vận tốc $72$ km/h thì người lái phát hiện chướng ngại vật phía trước, cách xe $60$ m. Sau $0{,}5$ giây phản xạ (trong thời gian này xe giữ nguyên vận tốc), người lái đạp phanh; kể từ lúc đạp phanh, ô tô chuyển động chậm dần đều với vận tốc $v(t)=20-5t$ (m/s), trong đó $t$ (giây) tính từ lúc đạp phanh. Khi ô tô dừng hẳn, khoảng cách từ ô tô đến chướng ngại vật là bao nhiêu mét?",
+      "dap_an": "10",
+      "dap_an_so": 10,
+      "loi_giai": "Đổi đơn vị: $72$ km/h $=\\dfrac{72\\,000}{3\\,600}$ m/s $=20$ m/s (khớp với $v(0)=20$).\nQuãng đường trong thời gian phản xạ: $20\\cdot0{,}5=10$ (m).\nXe dừng khi $v(t)=0\\Leftrightarrow t=4$ (s). Trên $[0;4]$ có $v(t)\\ge0$ nên quãng đường phanh bằng $\\displaystyle\\int_0^4(20-5t)\\,dt=\\left[20t-\\dfrac{5t^2}{2}\\right]_0^4=80-40=40$ (m).\nTổng quãng đường từ lúc phát hiện đến lúc dừng: $10+40=50$ (m) $<60$ m, nên xe không va chạm.\nKhoảng cách còn lại: $60-50=10$ (m). Đáp số: $10$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy: quãng đường phản xạ 10.00 m; tích phân số (Riemann bước 1e-5 s) quãng đường phanh = 40.0001 m; còn lại 9.9999 m.",
+        "gia_tri_tinh_lai": "10.0",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-11",
+      "stt": 11,
+      "chu_de": "Tích phân – diện tích hình phẳng giới hạn bởi parabol và hai tiếp tuyến",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Cho parabol $(P): y=x^2$. Gọi $d_1$, $d_2$ lần lượt là tiếp tuyến của $(P)$ tại các điểm $A(-1;1)$ và $B(2;4)$. Diện tích hình phẳng giới hạn bởi $(P)$, $d_1$ và $d_2$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{9}{8}$",
+        "B": "$\\dfrac{9}{4}$",
+        "C": "$\\dfrac{9}{2}$",
+        "D": "$9$"
+      },
+      "dap_an": "B",
+      "loi_giai": "$y'=2x$. Tiếp tuyến tại $A$: $y=-2(x+1)+1=-2x-1$. Tiếp tuyến tại $B$: $y=4(x-2)+4=4x-4$.\nGiao điểm của $d_1$, $d_2$: $-2x-1=4x-4\\Leftrightarrow x=\\dfrac12$.\nTa có $x^2-(-2x-1)=(x+1)^2\\ge0$ và $x^2-(4x-4)=(x-2)^2\\ge0$ nên $(P)$ nằm phía trên cả hai tiếp tuyến. Trên $\\left[-1;\\frac12\\right]$ hình bị chặn dưới bởi $d_1$, trên $\\left[\\frac12;2\\right]$ bị chặn dưới bởi $d_2$.\n$S_1=\\displaystyle\\int_{-1}^{1/2}\\left(x^2+2x+1\\right)dx=\\left[\\dfrac{x^3}{3}+x^2+x\\right]_{-1}^{1/2}=\\dfrac{19}{24}-\\left(-\\dfrac13\\right)=\\dfrac{27}{24}=\\dfrac98$.\n$S_2=\\displaystyle\\int_{1/2}^{2}\\left(x^2-4x+4\\right)dx=\\left[\\dfrac{x^3}{3}-2x^2+4x\\right]_{1/2}^{2}=\\dfrac83-\\dfrac{37}{24}=\\dfrac{27}{24}=\\dfrac98$.\n$S=S_1+S_2=\\dfrac94$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Chỉ tính một trong hai phần (trên $\\left[-1;\\frac12\\right]$ hoặc trên $\\left[\\frac12;2\\right]$).",
+        "C": "Nhầm sang hình giới hạn bởi $(P)$ và dây cung $AB$: $\\int_{-1}^{2}\\left(x+2-x^2\\right)dx=\\dfrac92$.",
+        "D": "Không chia tại giao điểm của hai tiếp tuyến, lấy $\\int_{-1}^{2}\\left(x^2+2x+1\\right)dx=9$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "sympy: d1: y=-2*x - 1, d2: y=4*x - 4, giao tại x=1/2; diện tích = 9/4; numpy ∫(x²−max(d1,d2)) = 2.250000.",
+        "gia_tri_tinh_lai": "9/4",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (1.125)",
+          "C": "tái tạo được từ mô hình lỗi sai (4.5)",
+          "D": "tái tạo được từ mô hình lỗi sai (9.0)"
+        },
+        "wolfram": "Integrate (x² − Max(−2x−1, 4x−4)) trên [−1;2] = 9/4",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-12",
+      "stt": 12,
+      "chu_de": "Tích phân và đạo hàm – bài toán thực tế (cổng parabol)",
+      "lop": 12,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Mặt trước của một cổng chào có dạng hình phẳng giới hạn bởi một đường parabol và mặt đất; chân cổng rộng $8$ m, đỉnh cổng cao $6$ m. Người ta làm một cửa ra vào hình chữ nhật có hai đỉnh nằm trên mặt đất, hai đỉnh còn lại nằm trên parabol, sao cho diện tích cửa lớn nhất. Phần còn lại của mặt trước cổng được ốp trang trí. Tính diện tích phần ốp trang trí (đơn vị: m², làm tròn đến hàng phần trăm).",
+      "dap_an": "13,52",
+      "dap_an_so": 13.52,
+      "loi_giai": "Chọn hệ trục $Oxy$: $Ox$ trùng mặt đất, $Oy$ là trục đối xứng của cổng (đơn vị: m). Parabol đi qua $(-4;0)$, $(4;0)$ và đỉnh $(0;6)$ nên có phương trình $y=6-\\dfrac38x^2$.\nDiện tích mặt cổng: $S=\\displaystyle\\int_{-4}^{4}\\left(6-\\dfrac38x^2\\right)dx=\\left[6x-\\dfrac{x^3}{8}\\right]_{-4}^{4}=(24-8)-(-24+8)=32$ (m²).\nCửa có hai đỉnh trên là $\\left(\\pm a;\\,6-\\dfrac38a^2\\right)$ với $0<a<4$. Diện tích cửa: $D(a)=2a\\left(6-\\dfrac38a^2\\right)=12a-\\dfrac34a^3$.\n$D'(a)=12-\\dfrac94a^2=0\\Leftrightarrow a^2=\\dfrac{16}{3}\\Leftrightarrow a=\\dfrac{4}{\\sqrt3}\\in(0;4)$. $D'>0$ khi $0<a<\\dfrac4{\\sqrt3}$, $D'<0$ khi $\\dfrac4{\\sqrt3}<a<4$, nên $D$ lớn nhất tại $a=\\dfrac4{\\sqrt3}$.\nKhi đó chiều cao cửa $6-\\dfrac38\\cdot\\dfrac{16}{3}=4$ (m), chiều rộng $\\dfrac{8}{\\sqrt3}$ (m), $D_{\\max}=\\dfrac{32}{\\sqrt3}=\\dfrac{32\\sqrt3}{3}\\approx18{,}475$ (m²).\nDiện tích phần ốp: $32-\\dfrac{32\\sqrt3}{3}\\approx13{,}5248$ (m²). Đáp số: $13{,}52$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy: diện tích cổng ∫ = 32.00000; quét nửa rộng cửa a∈(0;4]: max cửa = 18.47521 tại a = 2.30940; phần ốp = 13.52479.",
+        "gia_tri_tinh_lai": "13.52",
+        "wolfram": "32 − MaxValue(2a(6−3a²/8)) = 13,524791…",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-13",
+      "stt": 13,
+      "chu_de": "Nguyên hàm – bài toán tốc độ thay đổi (dân số)",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Dân số của một khu đô thị mới tăng với tốc độ $P'(t)=\\dfrac{4000}{t+2}$ (người/năm), trong đó $t$ (năm) tính từ thời điểm khu đô thị bắt đầu đón cư dân ($t\\ge0$). Tại thời điểm $t=0$ khu đô thị có $10\\,000$ người. Dân số của khu đô thị sau $6$ năm xấp xỉ bằng",
+      "lua_chon": {
+        "A": "$18\\,318$ người",
+        "B": "$8\\,318$ người",
+        "C": "$10\\,500$ người",
+        "D": "$15\\,545$ người"
+      },
+      "dap_an": "D",
+      "loi_giai": "$P(t)=\\displaystyle\\int\\dfrac{4000}{t+2}\\,dt=4000\\ln(t+2)+C$ (vì $t+2>0$; kiểm tra: $\\left(4000\\ln(t+2)\\right)'=\\dfrac{4000}{t+2}$).\n$P(0)=10\\,000\\Rightarrow4000\\ln2+C=10\\,000\\Rightarrow C=10\\,000-4000\\ln2$.\n$P(6)=4000\\ln8+10\\,000-4000\\ln2=10\\,000+4000\\ln4\\approx10\\,000+5\\,545{,}18=15\\,545{,}18$.\nVậy dân số sau $6$ năm xấp xỉ $15\\,545$ người. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Lấy hằng số $C=10\\,000$ (quên trừ $4000\\ln2$): $10\\,000+4000\\ln8$.",
+        "B": "Bỏ hằng số tích phân: $P(6)=4000\\ln8$.",
+        "C": "Nhầm tốc độ với số dân tăng thêm: $10\\,000+P'(6)=10\\,000+500$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Tích phân số (Simpson từng bước 1e-4 năm) P(6) = 15545.1774 người.",
+        "gia_tri_tinh_lai": "15545.177444",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (18317.766167)",
+          "B": "tái tạo được từ mô hình lỗi sai (8317.766167)",
+          "C": "tái tạo được từ mô hình lỗi sai (10500.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-14",
+      "stt": 14,
+      "chu_de": "Tọa độ trong không gian – hình bình hành",
+      "lop": 12,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Trong không gian $Oxyz$, cho ba điểm $A(1;2;-1)$, $B(3;0;1)$, $C(2;-1;4)$. Tọa độ điểm $D$ sao cho tứ giác $ABCD$ là hình bình hành là",
+      "lua_chon": {
+        "A": "$(2;3;-4)$",
+        "B": "$(4;-3;6)$",
+        "C": "$(0;1;2)$",
+        "D": "$\\left(\\dfrac{3}{2};\\dfrac{1}{2};\\dfrac{3}{2}\\right)$"
+      },
+      "dap_an": "C",
+      "loi_giai": "$\\overrightarrow{AB}=(2;-2;2)$, $\\overrightarrow{AC}=(1;-3;5)$ không cùng phương (vì $\\dfrac21\\ne\\dfrac{-2}{-3}$) nên $A,B,C$ không thẳng hàng.\n$ABCD$ là hình bình hành $\\Leftrightarrow\\overrightarrow{AD}=\\overrightarrow{BC}$. Ta có $\\overrightarrow{BC}=(2-3;-1-0;4-1)=(-1;-1;3)$.\nGọi $D(x;y;z)$: $(x-1;y-2;z+1)=(-1;-1;3)\\Rightarrow D(0;1;2)$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Nhầm thứ tự đỉnh, lấy $D=A+B-C$ (hình bình hành $ACBD$).",
+        "B": "Nhầm thứ tự đỉnh, lấy $D=B+C-A$ (hình bình hành $ABDC$).",
+        "D": "Lấy nhầm trung điểm của đường chéo $AC$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy: D = A + C − B = (0, 1, 2); kiểm AB→ = DC→: True; A,B,C không thẳng hàng: True.",
+        "gia_tri_tinh_lai": "(0, 1, 2)",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai ((2, 3, -4))",
+          "B": "tái tạo được từ mô hình lỗi sai ((4, -3, 6))",
+          "D": "tái tạo được từ mô hình lỗi sai ((3/2, 1/2, 3/2))"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-15",
+      "stt": 15,
+      "chu_de": "Tọa độ trong không gian – khoảng cách từ điểm đến đường thẳng (tích vô hướng)",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Trong không gian $Oxyz$, cho tam giác $ABC$ với $A(5;3;5)$, $B(1;0;1)$, $C(2;2;3)$. Khoảng cách từ $A$ đến đường thẳng $BC$ bằng",
+      "lua_chon": {
+        "A": "$\\sqrt{5}$",
+        "B": "$\\sqrt{14}$",
+        "C": "$\\dfrac{\\sqrt{101}}{2}$",
+        "D": "$\\sqrt{149}$"
+      },
+      "dap_an": "A",
+      "loi_giai": "$\\overrightarrow{BC}=(1;2;2)$. Gọi $H$ là hình chiếu vuông góc của $A$ trên đường thẳng $BC$: $H=B+t\\overrightarrow{BC}=(1+t;2t;1+2t)$.\n$\\overrightarrow{AH}=(t-4;\\,2t-3;\\,2t-4)$. Điều kiện $\\overrightarrow{AH}\\cdot\\overrightarrow{BC}=0\\Leftrightarrow(t-4)+2(2t-3)+2(2t-4)=0\\Leftrightarrow9t-18=0\\Leftrightarrow t=2$.\n$H(3;4;5)$ (nằm ngoài đoạn $BC$, về phía $C$, do góc $C$ của tam giác tù). $\\overrightarrow{AH}=(-2;1;0)$.\n$d(A,BC)=AH=\\sqrt{4+1+0}=\\sqrt5$. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Cho rằng chân đường vuông góc là $C$ (hoặc nằm trên đoạn $BC$), lấy $AC=\\sqrt{14}$.",
+        "C": "Lấy chân đường vuông góc là trung điểm của $BC$.",
+        "D": "Sai dấu tham số, lấy $H=B-2\\overrightarrow{BC}=(-1;-4;-3)$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy: min khoảng cách quét tham số t = 2.236068 tại t = 2.0000; công thức tích có hướng = 2.236068; √5 = 2.236068.",
+        "gia_tri_tinh_lai": "sqrt(5)",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (3.741657)",
+          "C": "tái tạo được từ mô hình lỗi sai (5.024938)",
+          "D": "tái tạo được từ mô hình lỗi sai (12.206556)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-16",
+      "stt": 16,
+      "chu_de": "Tọa độ trong không gian – chuyển động thẳng đều và vùng phủ radar",
+      "lop": 12,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Trong không gian $Oxyz$ (đơn vị trên mỗi trục là km), một trạm radar đặt tại gốc tọa độ $O$ phát hiện được các vật thể cách nó không quá $300$ km. Một máy bay bay thẳng với vận tốc không đổi: tại thời điểm $t=0$ máy bay ở vị trí $A(-624;-168;10)$, và sau $t$ giờ máy bay ở vị trí $M$ thỏa mãn $\\overrightarrow{AM}=t\\cdot\\vec v$ với $\\vec v=(480;360;0)$. Tổng thời gian radar phát hiện được máy bay là bao nhiêu phút? (Làm tròn kết quả đến hàng đơn vị.)",
+      "dap_an": "36",
+      "dap_an_so": 36,
+      "loi_giai": "Tọa độ máy bay sau $t$ giờ: $M(-624+480t;\\,-168+360t;\\,10)$, $t\\ge0$. (Tốc độ $|\\vec v|=\\sqrt{480^2+360^2}=600$ km/h; tại $t=0$, $OA=\\sqrt{417\\,700}\\approx646$ km $>300$ km.)\n$OM^2=(480t-624)^2+(360t-168)^2+10^2=360\\,000t^2-720\\,000t+417\\,700$.\nRadar phát hiện được máy bay $\\Leftrightarrow OM\\le300\\Leftrightarrow360\\,000t^2-720\\,000t+417\\,700\\le90\\,000\\Leftrightarrow3600t^2-7200t+3277\\le0$.\n$\\Delta'=3600^2-3600\\cdot3277=3600\\cdot323$, hai nghiệm $t_{1,2}=1\\mp\\dfrac{60\\sqrt{323}}{3600}=1\\mp\\dfrac{\\sqrt{323}}{60}$ (đều dương). Tập nghiệm $[t_1;t_2]$.\nThời gian phát hiện: $t_2-t_1=\\dfrac{\\sqrt{323}}{30}$ giờ $=2\\sqrt{323}$ phút $\\approx35{,}94$ phút.\nĐáp số: $36$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy quét t∈[0;3] giờ bước 1e-6: thời gian OM ≤ 300 là 35.9444 phút; tại t=0, OA = 646.30 km; 2√323 = 35.9444.",
+        "gia_tri_tinh_lai": "36",
+        "wolfram": "Solve OM²=90000: 60(t₂−t₁) = 35,944… phút",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-17",
+      "stt": 17,
+      "chu_de": "Vectơ trong không gian – tích vô hướng trong tứ diện đều",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Cho tứ diện đều $ABCD$ có cạnh bằng $a$. Gọi $M$ là trung điểm của cạnh $AD$. Côsin của góc giữa hai vectơ $\\overrightarrow{AB}$ và $\\overrightarrow{CM}$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{\\sqrt{3}}{6}$",
+        "B": "$0$",
+        "C": "$-\\dfrac{1}{2}$",
+        "D": "$-\\dfrac{\\sqrt{3}}{6}$"
+      },
+      "dap_an": "D",
+      "loi_giai": "$M$ là trung điểm $AD$ nên $\\overrightarrow{CM}=\\dfrac12\\left(\\overrightarrow{CA}+\\overrightarrow{CD}\\right)$.\n$\\overrightarrow{AB}\\cdot\\overrightarrow{CA}=-\\overrightarrow{AB}\\cdot\\overrightarrow{AC}=-a\\cdot a\\cos60^\\circ=-\\dfrac{a^2}{2}$.\n$\\overrightarrow{AB}\\cdot\\overrightarrow{CD}=\\overrightarrow{AB}\\cdot\\left(\\overrightarrow{AD}-\\overrightarrow{AC}\\right)=\\dfrac{a^2}{2}-\\dfrac{a^2}{2}=0$.\nSuy ra $\\overrightarrow{AB}\\cdot\\overrightarrow{CM}=\\dfrac12\\left(-\\dfrac{a^2}{2}+0\\right)=-\\dfrac{a^2}{4}$.\n$CM$ là trung tuyến của tam giác đều $ACD$ cạnh $a$ nên $CM=\\dfrac{a\\sqrt3}{2}$.\n$\\cos\\left(\\overrightarrow{AB},\\overrightarrow{CM}\\right)=\\dfrac{-\\frac{a^2}{4}}{a\\cdot\\frac{a\\sqrt3}{2}}=-\\dfrac{1}{2\\sqrt3}=-\\dfrac{\\sqrt3}{6}$. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Sai dấu: lấy $\\overrightarrow{AB}\\cdot\\overrightarrow{CA}=+\\dfrac{a^2}{2}$.",
+        "B": "Từ $AB\\perp CD$ suy luận sai thành $AB\\perp CM$.",
+        "C": "Lấy nhầm $CM=\\dfrac a2$ thay cho $\\dfrac{a\\sqrt3}{2}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy (tứ diện đều nội tiếp khối lập phương, cạnh 2.8284): cos(AB→,CM→) = -0.288675; −√3/6 = -0.288675.",
+        "gia_tri_tinh_lai": "-sqrt(3)/6",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (0.288675)",
+          "B": "tái tạo được từ mô hình lỗi sai (0.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (-0.5)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-18",
+      "stt": 18,
+      "chu_de": "Phương trình lượng giác",
+      "lop": 11,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Tổng tất cả các nghiệm thuộc đoạn $[0;2\\pi]$ của phương trình $\\cos2x+3\\sin x-2=0$ bằng",
+      "lua_chon": {
+        "A": "$\\pi$",
+        "B": "$\\dfrac{3\\pi}{2}$",
+        "C": "$\\dfrac{2\\pi}{3}$",
+        "D": "$\\dfrac{\\pi}{2}$"
+      },
+      "dap_an": "B",
+      "loi_giai": "$\\cos2x=1-2\\sin^2x$. Phương trình $\\Leftrightarrow1-2\\sin^2x+3\\sin x-2=0\\Leftrightarrow2\\sin^2x-3\\sin x+1=0\\Leftrightarrow\\sin x=1$ hoặc $\\sin x=\\dfrac12$.\n• $\\sin x=1\\Leftrightarrow x=\\dfrac\\pi2+k2\\pi$; trên $[0;2\\pi]$: $x=\\dfrac\\pi2$.\n• $\\sin x=\\dfrac12\\Leftrightarrow x=\\dfrac\\pi6+k2\\pi$ hoặc $x=\\dfrac{5\\pi}6+k2\\pi$; trên $[0;2\\pi]$: $x=\\dfrac\\pi6$, $x=\\dfrac{5\\pi}{6}$.\nTổng: $\\dfrac\\pi2+\\dfrac\\pi6+\\dfrac{5\\pi}6=\\dfrac{3\\pi}{2}$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Bỏ sót nghiệm của trường hợp $\\sin x=1$.",
+        "C": "Trường hợp $\\sin x=\\dfrac12$ chỉ lấy họ $x=\\dfrac\\pi6+k2\\pi$, bỏ họ $x=\\dfrac{5\\pi}{6}+k2\\pi$.",
+        "D": "Chỉ giữ trường hợp $\\sin x=1$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy solveset trên [0;2π]: [pi/6, pi/2, 5*pi/6]; numpy tìm cực tiểu |f|≈0: [0.5236, 1.5708, 2.61799]; tổng = 3*pi/2.",
+        "gia_tri_tinh_lai": "3*pi/2",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (3.141593)",
+          "C": "tái tạo được từ mô hình lỗi sai (2.094395)",
+          "D": "tái tạo được từ mô hình lỗi sai (1.570796)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-19",
+      "stt": 19,
+      "chu_de": "Hàm số lượng giác – mô hình thực tế (vòng quay)",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Một vòng quay quan sát quay đều. Độ cao (so với mặt đất) của một cabin được mô hình hóa bởi $h(t)=50-45\\cos\\dfrac{\\pi t}{15}$ (mét), trong đó $t$ (phút) tính từ lúc cabin ở vị trí thấp nhất. Trong vòng quay đầu tiên ($0\\le t\\le30$), tổng thời gian cabin ở độ cao không thấp hơn $72{,}5$ m là",
+      "lua_chon": {
+        "A": "$20$ phút",
+        "B": "$5$ phút",
+        "C": "$10$ phút",
+        "D": "$15$ phút"
+      },
+      "dap_an": "C",
+      "loi_giai": "$h(t)\\ge72{,}5\\Leftrightarrow50-45\\cos\\dfrac{\\pi t}{15}\\ge72{,}5\\Leftrightarrow\\cos\\dfrac{\\pi t}{15}\\le-\\dfrac12$.\nĐặt $u=\\dfrac{\\pi t}{15}$; với $0\\le t\\le30$ thì $0\\le u\\le2\\pi$. Trên $[0;2\\pi]$: $\\cos u\\le-\\dfrac12\\Leftrightarrow\\dfrac{2\\pi}{3}\\le u\\le\\dfrac{4\\pi}{3}$.\nSuy ra $\\dfrac{2\\pi}3\\le\\dfrac{\\pi t}{15}\\le\\dfrac{4\\pi}{3}\\Leftrightarrow10\\le t\\le20$.\nTổng thời gian: $20-10=10$ phút. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Đổi sai chiều bất đẳng thức, giải $\\cos\\dfrac{\\pi t}{15}\\ge-\\dfrac12$.",
+        "B": "Chỉ lấy nửa cung $\\left[\\dfrac{2\\pi}{3};\\pi\\right]$ của nghiệm $\\cos u\\le-\\dfrac12$.",
+        "D": "Giải sai $\\cos u\\le-\\dfrac12$ thành $u\\in\\left[\\dfrac\\pi2;\\dfrac{3\\pi}2\\right]$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy quét t∈[0;30] bước 1e-5: thời gian h ≥ 72,5 m là 10.0000 phút.",
+        "gia_tri_tinh_lai": "10.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (20.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (5.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (15.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-20",
+      "stt": 20,
+      "chu_de": "Cấp số nhân – gửi tiết kiệm định kỳ (lãi kép)",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Đầu mỗi tháng, một người gửi vào ngân hàng $5$ triệu đồng theo hình thức lãi kép với lãi suất $0{,}5\\%$/tháng (lãi được nhập vào gốc vào cuối mỗi tháng; lãi suất không đổi; người đó không rút tiền). Ngay sau khi nhận lãi của tháng thứ $24$, tổng số tiền người đó có trong tài khoản là bao nhiêu triệu đồng? (Làm tròn kết quả đến hàng phần trăm.)",
+      "dap_an": "127,80",
+      "dap_an_so": 127.8,
+      "loi_giai": "Khoản gửi đầu tháng thứ $k$ ($1\\le k\\le24$) được tính lãi $25-k$ tháng, nên cuối tháng $24$ trở thành $5\\cdot1{,}005^{25-k}$ (triệu đồng).\nTổng: $S=5\\left(1{,}005^{24}+1{,}005^{23}+\\dots+1{,}005^{1}\\right)$, là tổng $24$ số hạng của cấp số nhân có số hạng đầu $1{,}005$, công bội $1{,}005$.\n$S=5\\cdot1{,}005\\cdot\\dfrac{1{,}005^{24}-1}{1{,}005-1}=5\\cdot1{,}005\\cdot\\dfrac{1{,}005^{24}-1}{0{,}005}$.\n$1{,}005^{24}\\approx1{,}127160$, nên $\\dfrac{1{,}005^{24}-1}{0{,}005}\\approx25{,}43196$ và $S\\approx5\\cdot1{,}005\\cdot25{,}43196\\approx127{,}7956$.\nĐáp số: $127{,}80$ (triệu đồng).",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Mô phỏng từng tháng (gửi đầu tháng, nhập lãi cuối tháng): số dư sau lãi tháng 24 = 127.795575 triệu đồng.",
+        "gia_tri_tinh_lai": "127.8",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-21",
+      "stt": 21,
+      "chu_de": "Cấp số nhân – trả góp khi lãi suất thay đổi",
+      "lop": 11,
+      "muc_do": "VDC",
+      "dang": "mcq",
+      "de_bai": "Một người vay ngân hàng $300$ triệu đồng với lãi suất $1\\%$/tháng (lãi kép tính trên dư nợ). Cuối mỗi tháng, kể từ tháng thứ nhất, người đó trả $10$ triệu đồng. Ngay sau lần trả thứ $12$, ngân hàng điều chỉnh lãi suất lên $1{,}2\\%$/tháng. Để trả hết nợ đúng vào cuối tháng thứ $36$ (tính từ lúc vay), từ tháng thứ $13$ người đó phải trả vào cuối mỗi tháng một số tiền cố định (như nhau) xấp xỉ bằng",
+      "lua_chon": {
+        "A": "$10{,}18$ triệu đồng",
+        "B": "$9{,}94$ triệu đồng",
+        "C": "$10{,}31$ triệu đồng",
+        "D": "$8{,}68$ triệu đồng"
+      },
+      "dap_an": "A",
+      "loi_giai": "Công thức dư nợ: vay $A$, lãi $r$/tháng, cuối mỗi tháng trả $m$ thì sau $n$ tháng dư nợ $D_n=A(1+r)^n-m\\cdot\\dfrac{(1+r)^n-1}{r}$.\nBước 1 (12 tháng đầu, $r=1\\%$, $m=10$): $D_{12}=300\\cdot1{,}01^{12}-10\\cdot\\dfrac{1{,}01^{12}-1}{0{,}01}\\approx338{,}0475-126{,}8250=211{,}2225$ (triệu đồng).\nBước 2 (24 tháng sau, $r=1{,}2\\%$, trả $X$): hết nợ $\\Leftrightarrow D_{12}\\cdot1{,}012^{24}-X\\cdot\\dfrac{1{,}012^{24}-1}{0{,}012}=0$.\n$\\Rightarrow X=\\dfrac{D_{12}\\cdot0{,}012\\cdot1{,}012^{24}}{1{,}012^{24}-1}$. Với $1{,}012^{24}\\approx1{,}331473$: $X\\approx\\dfrac{281{,}2370}{27{,}6227}\\approx10{,}18$ (triệu đồng).\nChọn A.",
+      "phan_tich_nhieu": {
+        "B": "Tính 24 tháng sau vẫn với lãi suất cũ $1\\%$/tháng.",
+        "C": "Bỏ qua 12 tháng đầu, tính như vay $300$ triệu trong $36$ tháng với lãi $1{,}2\\%$/tháng.",
+        "D": "Cho rằng dư nợ sau 12 tháng là $300-12\\cdot10=180$ triệu (quên lãi)."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "Mô phỏng dư nợ từng tháng + chia đôi: khoản trả cố định từ tháng 13 = 10.181360 triệu đồng (dư nợ sau 12 tháng = 211.2225).",
+        "gia_tri_tinh_lai": "10.18136",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (9.942975)",
+          "C": "tái tạo được từ mô hình lỗi sai (10.311668)",
+          "D": "tái tạo được từ mô hình lỗi sai (8.676372)"
+        },
+        "wolfram": "D₁₂·0,012·1,012²⁴/(1,012²⁴−1) = 10,18136…",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-22",
+      "stt": 22,
+      "chu_de": "Cấp số cộng – cấp số nhân",
+      "lop": 11,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Ba số dương $a,b,c$ theo thứ tự lập thành một cấp số cộng có tổng bằng $15$. Nếu cộng thêm lần lượt $1$, $4$, $19$ vào $a$, $b$, $c$ thì được ba số theo thứ tự lập thành một cấp số nhân. Giá trị của $c$ bằng",
+      "lua_chon": {
+        "A": "$-16$",
+        "B": "$27$",
+        "C": "$3$",
+        "D": "$8$"
+      },
+      "dap_an": "D",
+      "loi_giai": "$a+b+c=3b=15\\Rightarrow b=5$. Gọi công sai là $d$: $a=5-d$, $c=5+d$.\nBa số mới: $6-d$; $9$; $24+d$ lập cấp số nhân $\\Leftrightarrow(6-d)(24+d)=9^2=81\\Leftrightarrow144-18d-d^2=81\\Leftrightarrow d^2+18d-63=0\\Leftrightarrow d=3$ hoặc $d=-21$.\n$d=-21$ cho $c=5-21=-16<0$ (loại vì ba số dương). $d=3$ cho $a=2$, $b=5$, $c=8$; kiểm tra: $3;9;27$ là cấp số nhân công bội $3$.\nVậy $c=8$. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Không loại nghiệm $d=-21$ theo điều kiện ba số dương.",
+        "B": "Lấy nhầm số hạng thứ ba của cấp số nhân $3;9;27$.",
+        "C": "Lấy nhầm công sai $d=3$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy giải (6−d)(24+d)=81: d∈[-21, 3]; nghiệm thỏa ba số dương: d=[3]; c=8; vét cạn d=k/100: [Fraction(3, 1)].",
+        "gia_tri_tinh_lai": "8",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (-16.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (27.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (3.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-23",
+      "stt": 23,
+      "chu_de": "Giới hạn hàm số tại vô cực có tham số",
+      "lop": 11,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho các số thực $a$, $b$ thỏa mãn $\\lim\\limits_{x\\to+\\infty}\\left(\\sqrt{ax^2+bx+1}-3x\\right)=2$. Giá trị của $a+b$ bằng",
+      "lua_chon": {
+        "A": "$15$",
+        "B": "$21$",
+        "C": "$13$",
+        "D": "$45$"
+      },
+      "dap_an": "B",
+      "loi_giai": "• Nếu $a<0$ thì $ax^2+bx+1<0$ khi $x$ đủ lớn, biểu thức không xác định. Nếu $0\\le a<9$ thì $\\sqrt{ax^2+bx+1}-3x=x\\left(\\sqrt{a+\\frac bx+\\frac1{x^2}}-3\\right)\\to-\\infty$; nếu $a>9$ thì biểu thức $\\to+\\infty$. Vậy giới hạn hữu hạn bắt buộc $a=9$.\n• Với $a=9$: $\\sqrt{9x^2+bx+1}-3x=\\dfrac{bx+1}{\\sqrt{9x^2+bx+1}+3x}=\\dfrac{b+\\frac1x}{\\sqrt{9+\\frac bx+\\frac1{x^2}}+3}\\to\\dfrac{b}{6}$ (khi $x\\to+\\infty$).\n$\\dfrac b6=2\\Rightarrow b=12$. Vậy $a+b=21$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Nhân liên hợp nhưng quên số hạng $3x$ ở mẫu, được $\\dfrac b3=2$, $b=6$.",
+        "C": "Nhớ sai kết quả giới hạn thành $\\dfrac b2$, được $b=4$.",
+        "D": "Lẫn với công thức hoành độ đỉnh, lấy giới hạn bằng $\\dfrac{b}{2a}$, được $b=36$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy: với a=9, lim = b/6 ⇒ b = [12]; kiểm (9;12): 2; a=8,9 ⇒ -oo, a=9,1 ⇒ oo (không hữu hạn).",
+        "gia_tri_tinh_lai": "21",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (15.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (13.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (45.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-24",
+      "stt": 24,
+      "chu_de": "Hàm số liên tục có tham số",
+      "lop": 11,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho hàm số $f(x)=\\begin{cases}\\dfrac{x^2+ax+b}{x-1} & \\text{khi } x\\ne1\\\\ 5 & \\text{khi } x=1\\end{cases}$ ($a,b$ là tham số thực). Biết $f(x)$ liên tục tại $x=1$. Giá trị của $a-b$ bằng",
+      "lua_chon": {
+        "A": "$-1$",
+        "B": "$-7$",
+        "C": "$7$",
+        "D": "$9$"
+      },
+      "dap_an": "C",
+      "loi_giai": "$f$ liên tục tại $1\\Leftrightarrow\\lim\\limits_{x\\to1}f(x)=f(1)=5$.\nMẫu $x-1\\to0$ nên để giới hạn hữu hạn thì tử phải dần tới $0$: $1+a+b=0\\Rightarrow b=-1-a$. (Nếu $1+a+b\\ne0$ thì giới hạn là vô cực.)\nKhi đó $x^2+ax-1-a=(x-1)(x+1)+a(x-1)=(x-1)(x+1+a)$, nên $\\lim\\limits_{x\\to1}f(x)=\\lim\\limits_{x\\to1}(x+1+a)=2+a$.\n$2+a=5\\Rightarrow a=3$, $b=-4$. Vậy $a-b=7$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Tính nhầm $a+b$.",
+        "B": "Tính nhầm $b-a$.",
+        "D": "Phân tích sai $x^2+ax-1-a=(x-1)(x+a)$, được $1+a=5$, $a=4$, $b=-5$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy: (a;b) = (3;-4); kiểm lim_(x→1) = 5 = f(1).",
+        "gia_tri_tinh_lai": "7",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (-1.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (-7.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (9.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-25",
+      "stt": 25,
+      "chu_de": "Đạo hàm – tiếp tuyến đi qua một điểm",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Có bao nhiêu đường thẳng đi qua điểm $A(2;2)$ và tiếp xúc với đồ thị $(C)$ của hàm số $y=x^3-3x$?",
+      "lua_chon": {
+        "A": "$2$",
+        "B": "$1$",
+        "C": "$3$",
+        "D": "$0$"
+      },
+      "dap_an": "A",
+      "loi_giai": "$y'=3x^2-3$. Tiếp tuyến tại $M\\left(x_0;x_0^3-3x_0\\right)$: $y=\\left(3x_0^2-3\\right)(x-x_0)+x_0^3-3x_0$.\nTiếp tuyến đi qua $A(2;2)$ $\\Leftrightarrow2=\\left(3x_0^2-3\\right)(2-x_0)+x_0^3-3x_0\\Leftrightarrow2=6x_0^2-3x_0^3-6+3x_0+x_0^3-3x_0\\Leftrightarrow2x_0^3-6x_0^2+8=0$.\n$\\Leftrightarrow x_0^3-3x_0^2+4=0\\Leftrightarrow(x_0+1)(x_0-2)^2=0\\Leftrightarrow x_0=-1$ hoặc $x_0=2$.\n$x_0=-1$: tiếp tuyến $y=2$. $x_0=2$: tiếp tuyến $y=9x-16$. Hai đường thẳng khác nhau.\nVậy có $2$ tiếp tuyến. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Thấy $A\\in(C)$ nên chỉ tính tiếp tuyến tại $A$ (bỏ sót tiếp tuyến tại điểm khác đi qua $A$).",
+        "C": "Đếm nghiệm kép $x_0=2$ hai lần, cho rằng có ba tiếp tuyến.",
+        "D": "Hiểu sai rằng từ một điểm nằm trên đồ thị không kẻ được tiếp tuyến nào “đi qua” điểm đó."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy: điều kiện qua A cho x0 ∈ [-1, 2]; các tiếp tuyến khác nhau: ['2', '9*x - 16'].",
+        "gia_tri_tinh_lai": "2.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (1.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (3.0)",
+          "D": "chỉ lý giải (không mô hình hóa bằng mã); đã kiểm là SAI"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-26",
+      "stt": 26,
+      "chu_de": "Hàm số mũ, logarit – mô hình thải trừ thuốc",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Sau khi tiêm, nồng độ một loại thuốc trong máu giảm theo hàm mũ $C(t)=C_0e^{-kt}$ ($t$ tính bằng giờ, $k>0$), với chu kỳ bán thải là $4$ giờ (cứ sau $4$ giờ nồng độ giảm còn một nửa). Ngay sau khi tiêm, nồng độ là $120$ mg/L; thuốc chỉ có tác dụng khi nồng độ không dưới $25$ mg/L. Thời gian thuốc có tác dụng kể từ lúc tiêm là bao nhiêu giờ? (Làm tròn kết quả đến hàng phần mười.)",
+      "dap_an": "9,1",
+      "dap_an_so": 9.1,
+      "loi_giai": "Chu kỳ bán thải $4$ giờ: $e^{-4k}=\\dfrac12\\Rightarrow e^{-k}=\\left(\\dfrac12\\right)^{1/4}$, nên $C(t)=120\\left(\\dfrac12\\right)^{t/4}$.\nThuốc có tác dụng $\\Leftrightarrow120\\left(\\dfrac12\\right)^{t/4}\\ge25\\Leftrightarrow2^{t/4}\\le\\dfrac{120}{25}=4{,}8\\Leftrightarrow\\dfrac t4\\le\\log_24{,}8$ (hàm $2^u$ đồng biến).\n$\\Leftrightarrow t\\le4\\log_24{,}8=4\\cdot\\dfrac{\\ln4{,}8}{\\ln2}\\approx4\\cdot2{,}2630=9{,}0521$ (giờ).\nVì $C(t)$ giảm nên thuốc có tác dụng trên $[0;\\,9{,}05]$ giờ. Đáp số: $9{,}1$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Python: t = ln(4,8)/k với k=ln2/4 ⇒ t = 9.05214 giờ; quét lưới: C(t) ≥ 25 trên [0; 9.0521].",
+        "gia_tri_tinh_lai": "9.1",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-27",
+      "stt": 27,
+      "chu_de": "Bất phương trình mũ",
+      "lop": 11,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Bất phương trình $\\left(\\dfrac13\\right)^{x^2-2x}\\ge\\dfrac{1}{27}$ có bao nhiêu nghiệm nguyên?",
+      "lua_chon": {
+        "A": "$3$",
+        "B": "$0$",
+        "C": "Vô số",
+        "D": "$5$"
+      },
+      "dap_an": "D",
+      "loi_giai": "$\\dfrac1{27}=\\left(\\dfrac13\\right)^3$. Vì cơ số $\\dfrac13\\in(0;1)$ nên hàm $\\left(\\dfrac13\\right)^u$ nghịch biến, bất phương trình $\\Leftrightarrow x^2-2x\\le3$.\n$\\Leftrightarrow x^2-2x-3\\le0\\Leftrightarrow(x+1)(x-3)\\le0\\Leftrightarrow-1\\le x\\le3$.\nNghiệm nguyên: $-1;0;1;2;3$, có $5$ nghiệm. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Bỏ dấu bằng (giải $x^2-2x<3$), mất hai nghiệm $x=-1$, $x=3$.",
+        "B": "Viết sai $\\dfrac1{27}=\\left(\\dfrac13\\right)^{-3}$, được $x^2-2x\\le-3$ (vô nghiệm).",
+        "C": "Quên đổi chiều bất đẳng thức khi cơ số $\\dfrac13<1$, được $x^2-2x\\ge3$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Vét cạn x∈[−1000;1000] bằng phân số chính xác: nghiệm nguyên [-1, 0, 1, 2, 3] (5 nghiệm).",
+        "gia_tri_tinh_lai": "5.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (3.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (0.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (oo)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-28",
+      "stt": 28,
+      "chu_de": "Phương trình logarit (điều kiện, trị tuyệt đối)",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Tổng tất cả các nghiệm của phương trình $2\\log_3(x-2)+\\log_3(x-4)^2=0$ bằng",
+      "lua_chon": {
+        "A": "$3+\\sqrt{2}$",
+        "B": "$6+\\sqrt{2}$",
+        "C": "$6$",
+        "D": "$9$"
+      },
+      "dap_an": "B",
+      "loi_giai": "Điều kiện: $x-2>0$ và $(x-4)^2>0$ $\\Leftrightarrow x>2$, $x\\ne4$.\nVới điều kiện đó, $\\log_3(x-4)^2=2\\log_3|x-4|$. Phương trình $\\Leftrightarrow2\\left[\\log_3(x-2)+\\log_3|x-4|\\right]=0\\Leftrightarrow(x-2)|x-4|=1$.\n• Trường hợp $x>4$: $(x-2)(x-4)=1\\Leftrightarrow x^2-6x+7=0\\Leftrightarrow x=3\\pm\\sqrt2$. Chỉ $x=3+\\sqrt2\\approx4{,}41>4$ thỏa mãn.\n• Trường hợp $2<x<4$: $(x-2)(4-x)=1\\Leftrightarrow x^2-6x+9=0\\Leftrightarrow x=3$ (thỏa mãn).\nTổng các nghiệm: $3+\\sqrt2+3=6+\\sqrt2$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Biến đổi sai $\\log_3(x-4)^2=2\\log_3(x-4)$ (thiếu trị tuyệt đối), mất nghiệm $x=3$.",
+        "C": "Dùng Vi-ét cho $x^2-6x+7=0$, không đối chiếu điều kiện.",
+        "D": "Nhận cả hai nghiệm $3\\pm\\sqrt2$ ở trường hợp $x>4$ và nghiệm $x=3$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "sympy real_roots của (x−2)²(x−4)²−1, lọc miền x>2, x≠4 và thay lại vào phương trình gốc (40 chữ số): nghiệm [3.0, 4.41421356]; numpy quét cực tiểu |VT| ≈ 0 tại [3.0, 4.4142]; tổng = 7.4142135624; 6+√2 = 7.4142135624.",
+        "gia_tri_tinh_lai": "sqrt(2) + 6",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (4.414214)",
+          "C": "tái tạo được từ mô hình lỗi sai (6.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (9.0)"
+        },
+        "wolfram": "Solve trả về {3, 3, 3+√2} (x=3 là nghiệm bội); tổng các nghiệm phân biệt = 6+√2; thay lại cho 0",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-29",
+      "stt": 29,
+      "chu_de": "Bất phương trình mũ – đếm tham số nguyên",
+      "lop": 11,
+      "muc_do": "VDC",
+      "dang": "mcq",
+      "de_bai": "Có bao nhiêu số nguyên dương $y$ sao cho ứng với mỗi $y$ có không quá $10$ số nguyên $x$ thỏa mãn $\\left(3^{x+2}-\\sqrt3\\right)\\left(3^x-y\\right)<0$?",
+      "lua_chon": {
+        "A": "$19\\,682$",
+        "B": "$59\\,049$",
+        "C": "$19\\,683$",
+        "D": "$6\\,561$"
+      },
+      "dap_an": "C",
+      "loi_giai": "$3^{x+2}-\\sqrt3>0\\Leftrightarrow x+2>\\dfrac12\\Leftrightarrow x>-\\dfrac32$. Với $y\\ge1$: $3^x-y<0\\Leftrightarrow x<\\log_3y$, trong đó $\\log_3y\\ge0$.\n• Trường hợp $3^{x+2}-\\sqrt3<0$ và $3^x-y>0$: cần $x<-\\dfrac32$ và $x>\\log_3y\\ge0$, vô lí.\n• Trường hợp $3^{x+2}-\\sqrt3>0$ và $3^x-y<0$: $-\\dfrac32<x<\\log_3y$. Tập nghiệm nguyên là $\\{-1;0;1;\\dots\\}$ gồm các số nguyên nhỏ hơn $\\log_3y$.\nCó không quá $10$ số nguyên $x$ $\\Leftrightarrow$ $x=9$ không là nghiệm (các nghiệm nằm trong $\\{-1;0;\\dots;8\\}$) $\\Leftrightarrow9\\ge\\log_3y\\Leftrightarrow y\\le3^9=19\\,683$.\nKết hợp $y$ nguyên dương: $1\\le y\\le19\\,683$, có $19\\,683$ giá trị. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Lấy $y<3^9$ (bỏ trường hợp $y=3^9$, khi đó $x<9$ vẫn chỉ có $10$ số nguyên).",
+        "B": "Đếm thiếu nghiệm $x=-1$ (cho rằng $x\\ge0$), được điều kiện $y\\le3^{10}$.",
+        "D": "Đếm thừa một số nguyên $x$, được điều kiện $y\\le3^8$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "Vét cạn chính xác (Fraction) số x nguyên ∈[−40;40] cho 105 giá trị y mẫu (gồm 19682, 19683, 19684) trùng công thức đếm; đếm y∈[1;70000] có ≤10 nghiệm: 19683; số nghiệm tại y=19683: 10, y=19684: 11.",
+        "gia_tri_tinh_lai": "19683.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (19682.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (59049.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (6561.0)"
+        },
+        "wolfram": "đếm x∈[−40;40]: y=19683 có 10 nghiệm, y=19684 có 11 nghiệm (khớp ngưỡng 3⁹)",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-30",
+      "stt": 30,
+      "chu_de": "Hình học không gian – khoảng cách từ điểm đến mặt phẳng",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Cho hình chóp $S.ABC$ có $SA$ vuông góc với mặt phẳng $(ABC)$, tam giác $ABC$ vuông tại $B$, $AB=a$, $BC=a\\sqrt3$, $SA=2a$. Gọi $N$ là trung điểm của $AC$. Khoảng cách từ $N$ đến mặt phẳng $(SBC)$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{a\\sqrt{5}}{5}$",
+        "B": "$\\dfrac{2a\\sqrt{5}}{5}$",
+        "C": "$\\dfrac{a\\sqrt{21}}{7}$",
+        "D": "$\\dfrac{a\\sqrt{2}}{2}$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Bước 1. Đường thẳng $AC$ cắt $(SBC)$ tại $C$, và $\\dfrac{NC}{AC}=\\dfrac12$, nên $d(N,(SBC))=\\dfrac12d(A,(SBC))$.\nBước 2. $BC\\perp AB$ (giả thiết) và $BC\\perp SA$ (vì $SA\\perp(ABC)$) nên $BC\\perp(SAB)$. Kẻ $AH\\perp SB$ tại $H$; vì $AH\\subset(SAB)$ nên $AH\\perp BC$. Do đó $AH\\perp(SBC)$ và $d(A,(SBC))=AH$.\nBước 3. Tam giác $SAB$ vuông tại $A$: $\\dfrac1{AH^2}=\\dfrac1{SA^2}+\\dfrac1{AB^2}=\\dfrac1{4a^2}+\\dfrac1{a^2}=\\dfrac{5}{4a^2}\\Rightarrow AH=\\dfrac{2a}{\\sqrt5}=\\dfrac{2a\\sqrt5}{5}$.\nBước 4. $d(N,(SBC))=\\dfrac12\\cdot\\dfrac{2a\\sqrt5}{5}=\\dfrac{a\\sqrt5}{5}$. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Tính đúng $d(A,(SBC))$ nhưng quên nhân $\\dfrac12$ khi chuyển sang $N$.",
+        "C": "Dùng nhầm cạnh $BC$ thay cho $AB$ trong hệ thức đường cao: $\\dfrac12\\cdot\\dfrac{SA\\cdot BC}{\\sqrt{SA^2+BC^2}}$.",
+        "D": "Dùng nhầm cạnh $AC$ thay cho $AB$: $\\dfrac12\\cdot\\dfrac{SA\\cdot AC}{\\sqrt{SA^2+AC^2}}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy tọa độ (a=1): d(N,(SBC)) = 0.447214; √5/5 = 0.447214.",
+        "gia_tri_tinh_lai": "sqrt(5)/5",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (0.894427)",
+          "C": "tái tạo được từ mô hình lỗi sai (0.654654)",
+          "D": "tái tạo được từ mô hình lỗi sai (0.707107)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-31",
+      "stt": 31,
+      "chu_de": "Hình học không gian – khoảng cách giữa hai đường thẳng chéo nhau (lăng trụ)",
+      "lop": 11,
+      "muc_do": "VDC",
+      "dang": "mcq",
+      "de_bai": "Cho hình lăng trụ đứng $ABC.A'B'C'$ có đáy $ABC$ là tam giác vuông cân tại $A$, $AB=AC=a$, $AA'=a\\sqrt2$. Gọi $M$ là trung điểm của $BC$. Khoảng cách giữa hai đường thẳng $AM$ và $B'C$ bằng",
+      "lua_chon": {
+        "A": "$a$",
+        "B": "$\\dfrac{a\\sqrt{2}}{2}$",
+        "C": "$\\dfrac{a\\sqrt{6}}{6}$",
+        "D": "$\\dfrac{a}{2}$"
+      },
+      "dap_an": "D",
+      "loi_giai": "Bước 1. Tam giác $ABC$ cân tại $A$ nên $AM\\perp BC$; lăng trụ đứng nên $AM\\perp BB'$. Suy ra $AM\\perp(BCC'B')$ tại $M$.\nBước 2. Trong mặt phẳng $(BCC'B')$ kẻ $MK\\perp B'C$ tại $K$. Vì $AM\\perp(BCC'B')$ nên $AM\\perp MK$. Vậy $MK$ là đoạn vuông góc chung của $AM$ và $B'C$, $d(AM,B'C)=MK$.\nBước 3. $BC=a\\sqrt2$, $BB'=a\\sqrt2$ nên $BCC'B'$ là hình vuông cạnh $a\\sqrt2$, $B'C=2a$. Khoảng cách từ $B$ đến $B'C$: $\\dfrac{BB'\\cdot BC}{B'C}=\\dfrac{a\\sqrt2\\cdot a\\sqrt2}{2a}=a$.\nBước 4. $M$ là trung điểm $BC$, $C\\in B'C$, nên $MK=\\dfrac12d(B,B'C)=\\dfrac a2$. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Lấy khoảng cách từ $B$ (thay vì từ $M$) đến $B'C$.",
+        "B": "Nhầm khoảng cách cần tìm với độ dài đoạn $AM=\\dfrac{a\\sqrt2}{2}$.",
+        "C": "Đọc nhầm $AA'=a$: khi đó $d=\\dfrac12\\cdot\\dfrac{a\\cdot a\\sqrt2}{a\\sqrt3}=\\dfrac{a\\sqrt6}{6}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy (a=1): công thức tích có hướng d = 0.500000; quét lưới 2001×2001 min = 0.50000.",
+        "gia_tri_tinh_lai": "1/2",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (1.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (0.707107)",
+          "C": "tái tạo được từ mô hình lỗi sai (0.408248)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-32",
+      "stt": 32,
+      "chu_de": "Hình học không gian – thể tích khối lăng trụ",
+      "lop": 11,
+      "muc_do": "TH",
+      "dang": "dien_so",
+      "de_bai": "Cho hình lăng trụ tam giác đều $ABC.A'B'C'$ có cạnh đáy bằng $4$, góc giữa đường thẳng $A'B$ và mặt phẳng $(ABC)$ bằng $30^\\circ$. Tính thể tích khối lăng trụ.",
+      "dap_an": "16",
+      "dap_an_so": 16,
+      "loi_giai": "Lăng trụ đều nên $AA'\\perp(ABC)$; hình chiếu của $A'B$ trên $(ABC)$ là $AB$, do đó góc giữa $A'B$ và $(ABC)$ là $\\widehat{A'BA}=30^\\circ$.\nTam giác $A'AB$ vuông tại $A$: $AA'=AB\\tan30^\\circ=\\dfrac{4}{\\sqrt3}$.\nDiện tích đáy: $S=\\dfrac{4^2\\sqrt3}{4}=4\\sqrt3$.\n$V=S\\cdot AA'=4\\sqrt3\\cdot\\dfrac4{\\sqrt3}=16$. Đáp số: $16$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy: AA' = 2.309401, kiểm góc (A'B,(ABC)) = 30.0000°; V = S_đáy·h = 16.000000.",
+        "gia_tri_tinh_lai": "16.0",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-33",
+      "stt": 33,
+      "chu_de": "Xác suất – quy tắc nhân, biến cố độc lập",
+      "lop": 11,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Ba xạ thủ độc lập với nhau, mỗi người bắn một viên đạn vào cùng một tấm bia. Xác suất bắn trúng bia của ba người lần lượt là $0{,}6$; $0{,}7$; $0{,}8$. Xác suất để tấm bia bị trúng ít nhất hai viên đạn là",
+      "lua_chon": {
+        "A": "$0{,}452$",
+        "B": "$0{,}788$",
+        "C": "$0{,}336$",
+        "D": "$0{,}976$"
+      },
+      "dap_an": "B",
+      "loi_giai": "Gọi $A_1,A_2,A_3$ là biến cố người thứ $1,2,3$ bắn trúng; $P(A_1)=0{,}6$, $P(A_2)=0{,}7$, $P(A_3)=0{,}8$, độc lập.\nĐúng hai viên trúng: $0{,}6\\cdot0{,}7\\cdot0{,}2+0{,}6\\cdot0{,}3\\cdot0{,}8+0{,}4\\cdot0{,}7\\cdot0{,}8=0{,}084+0{,}144+0{,}224=0{,}452$.\nCả ba trúng: $0{,}6\\cdot0{,}7\\cdot0{,}8=0{,}336$.\nCác biến cố trên xung khắc nên xác suất ít nhất hai viên trúng là $0{,}452+0{,}336=0{,}788$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Chỉ tính trường hợp đúng hai viên trúng.",
+        "C": "Chỉ tính trường hợp cả ba viên trúng.",
+        "D": "Nhầm sang “ít nhất một viên”: $1-0{,}4\\cdot0{,}3\\cdot0{,}2$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Liệt kê 8 kết quả: P(đúng k viên) = {0: 0.024, 1: 0.188, 2: 0.452, 3: 0.336}; P(≥2) = 0.788000.",
+        "gia_tri_tinh_lai": "197/250",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (0.452)",
+          "C": "tái tạo được từ mô hình lỗi sai (0.336)",
+          "D": "tái tạo được từ mô hình lỗi sai (0.976)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-34",
+      "stt": 34,
+      "chu_de": "Thống kê – khoảng tứ phân vị mẫu ghép nhóm (câu chùm A)",
+      "lop": 12,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "chum": "A",
+      "dan_chung": "**Dùng chung cho câu 34–36.** Một sàn thương mại điện tử thống kê thời gian giao hàng nội thành (phút) của $50$ đơn hàng do công ty X giao và $50$ đơn hàng do công ty Y giao, theo bảng sau.",
+      "de_bai": "Khoảng tứ phân vị của mẫu số liệu ghép nhóm về thời gian giao hàng của công ty X (làm tròn đến hàng phần trăm) là",
+      "bang": {
+        "tieu_de": "Thời gian giao hàng nội thành của 50 đơn hàng mỗi công ty",
+        "cot": [
+          "Thời gian (phút)",
+          "[20; 25)",
+          "[25; 30)",
+          "[30; 35)",
+          "[35; 40)",
+          "[40; 45)"
+        ],
+        "hang": [
+          [
+            "Số đơn của công ty X",
+            "6",
+            "12",
+            "18",
+            "10",
+            "4"
+          ],
+          [
+            "Số đơn của công ty Y",
+            "10",
+            "8",
+            "12",
+            "9",
+            "11"
+          ]
+        ]
+      },
+      "lua_chon": {
+        "A": "$8{,}00$ phút",
+        "B": "$10{,}00$ phút",
+        "C": "$8{,}04$ phút",
+        "D": "$25{,}00$ phút"
+      },
+      "dap_an": "C",
+      "loi_giai": "Mẫu X: $n=50$; tần số tích lũy: $6;\\ 18;\\ 36;\\ 46;\\ 50$; độ dài nhóm $h=5$.\n• $Q_1$: $\\dfrac n4=12{,}5$; nhóm đầu tiên có tần số tích lũy $\\ge12{,}5$ là $[25;30)$ (tần số $12$, tần số tích lũy nhóm trước $6$): $Q_1=25+\\dfrac{12{,}5-6}{12}\\cdot5=25+\\dfrac{65}{24}\\approx27{,}7083$.\n• $Q_3$: $\\dfrac{3n}4=37{,}5$; nhóm chứa là $[35;40)$ (tần số $10$, tần số tích lũy nhóm trước $36$): $Q_3=35+\\dfrac{37{,}5-36}{10}\\cdot5=35{,}75$.\n$\\Delta_Q=Q_3-Q_1=35{,}75-27{,}7083\\approx8{,}04$ (phút). Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Làm tròn $\\dfrac n4=12{,}5$ thành $12$ và $\\dfrac{3n}4=37{,}5$ thành $37$ trước khi thay vào công thức.",
+        "B": "Coi giá trị đại diện như mẫu không ghép nhóm: $Q_1=27{,}5$, $Q_3=37{,}5$.",
+        "D": "Nhầm sang khoảng biến thiên $45-20$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Python công thức tứ phân vị ghép nhóm: Q1 = 27.7083, Q3 = 35.7500, ΔQ = 8.0417.",
+        "gia_tri_tinh_lai": "8.041667",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (8.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (10.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (25.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-35",
+      "stt": 35,
+      "chu_de": "Thống kê – độ lệch chuẩn mẫu ghép nhóm (câu chùm A)",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "chum": "A",
+      "dan_chung": "**Dùng chung cho câu 34–36.** Một sàn thương mại điện tử thống kê thời gian giao hàng nội thành (phút) của $50$ đơn hàng do công ty X giao và $50$ đơn hàng do công ty Y giao, theo bảng sau.",
+      "de_bai": "Tính độ lệch chuẩn của mẫu số liệu ghép nhóm về thời gian giao hàng của công ty Y (đơn vị: phút; làm tròn kết quả đến hàng phần mười).",
+      "bang": {
+        "tieu_de": "Thời gian giao hàng nội thành của 50 đơn hàng mỗi công ty",
+        "cot": [
+          "Thời gian (phút)",
+          "[20; 25)",
+          "[25; 30)",
+          "[30; 35)",
+          "[35; 40)",
+          "[40; 45)"
+        ],
+        "hang": [
+          [
+            "Số đơn của công ty X",
+            "6",
+            "12",
+            "18",
+            "10",
+            "4"
+          ],
+          [
+            "Số đơn của công ty Y",
+            "10",
+            "8",
+            "12",
+            "9",
+            "11"
+          ]
+        ]
+      },
+      "dap_an": "7,1",
+      "dap_an_so": 7.1,
+      "loi_giai": "Giá trị đại diện các nhóm: $22{,}5;\\ 27{,}5;\\ 32{,}5;\\ 37{,}5;\\ 42{,}5$; tần số của Y: $10;8;12;9;11$; $n=50$.\nSố trung bình: $\\overline{y}=\\dfrac{10\\cdot22{,}5+8\\cdot27{,}5+12\\cdot32{,}5+9\\cdot37{,}5+11\\cdot42{,}5}{50}=\\dfrac{225+220+390+337{,}5+467{,}5}{50}=\\dfrac{1640}{50}=32{,}8$.\nTrung bình các bình phương: $\\dfrac{10\\cdot22{,}5^2+8\\cdot27{,}5^2+12\\cdot32{,}5^2+9\\cdot37{,}5^2+11\\cdot42{,}5^2}{50}=\\dfrac{5062{,}5+6050+12675+12656{,}25+19868{,}75}{50}=\\dfrac{56312{,}5}{50}=1126{,}25$.\nPhương sai: $s^2=1126{,}25-32{,}8^2=1126{,}25-1075{,}84=50{,}41$. Độ lệch chuẩn: $s=\\sqrt{50{,}41}=7{,}1$ (phút).\nĐáp số: $7{,}1$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy: Y có trung bình 32.8000, phương sai (chia n) 50.4100, độ lệch chuẩn 7.100000; numpy.std(ddof=0) trên 50 giá trị đại diện = 7.100000.",
+        "gia_tri_tinh_lai": "7.1",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-36",
+      "stt": 36,
+      "chu_de": "Thống kê – phương sai của mẫu gộp (câu chùm A)",
+      "lop": 12,
+      "muc_do": "VDC",
+      "dang": "mcq",
+      "chum": "A",
+      "dan_chung": "**Dùng chung cho câu 34–36.** Một sàn thương mại điện tử thống kê thời gian giao hàng nội thành (phút) của $50$ đơn hàng do công ty X giao và $50$ đơn hàng do công ty Y giao, theo bảng sau.",
+      "de_bai": "Gộp $100$ đơn hàng của cả hai công ty thành một mẫu số liệu ghép nhóm (cùng các nhóm như bảng). Phương sai của mẫu gộp (làm tròn đến hàng phần trăm) là",
+      "bang": {
+        "tieu_de": "Thời gian giao hàng nội thành của 50 đơn hàng mỗi công ty",
+        "cot": [
+          "Thời gian (phút)",
+          "[20; 25)",
+          "[25; 30)",
+          "[30; 35)",
+          "[35; 40)",
+          "[40; 45)"
+        ],
+        "hang": [
+          [
+            "Số đơn của công ty X",
+            "6",
+            "12",
+            "18",
+            "10",
+            "4"
+          ],
+          [
+            "Số đơn của công ty Y",
+            "10",
+            "8",
+            "12",
+            "9",
+            "11"
+          ]
+        ]
+      },
+      "lua_chon": {
+        "A": "$40{,}73$",
+        "B": "$40{,}53$",
+        "C": "$39{,}91$",
+        "D": "$37{,}49$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Mẫu gộp: tần số $16;\\ 20;\\ 30;\\ 19;\\ 15$ ứng với giá trị đại diện $22{,}5;\\ 27{,}5;\\ 32{,}5;\\ 37{,}5;\\ 42{,}5$; $n=100$.\nSố trung bình: $\\overline z=\\dfrac{16\\cdot22{,}5+20\\cdot27{,}5+30\\cdot32{,}5+19\\cdot37{,}5+15\\cdot42{,}5}{100}=\\dfrac{360+550+975+712{,}5+637{,}5}{100}=32{,}35$.\nTrung bình các bình phương: $\\dfrac{16\\cdot506{,}25+20\\cdot756{,}25+30\\cdot1056{,}25+19\\cdot1406{,}25+15\\cdot1806{,}25}{100}=\\dfrac{8100+15125+31687{,}5+26718{,}75+27093{,}75}{100}=1087{,}25$.\nPhương sai: $s^2=1087{,}25-32{,}35^2=1087{,}25-1046{,}5225=40{,}7275\\approx40{,}73$.\n(Kiểm tra bằng cách khác: X có $\\overline x=31{,}9$, $s_X^2=30{,}64$; Y có $\\overline y=32{,}8$, $s_Y^2=50{,}41$. Phương sai gộp $=\\dfrac{30{,}64+50{,}41}{2}+\\dfrac{(31{,}9-32{,}35)^2+(32{,}8-32{,}35)^2}{2}=40{,}525+0{,}2025=40{,}7275$.) Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Lấy trung bình cộng hai phương sai $\\dfrac{30{,}64+50{,}41}{2}$, bỏ qua chênh lệch giữa hai số trung bình.",
+        "C": "Lấy trung bình cộng hai độ lệch chuẩn rồi bình phương.",
+        "D": "Làm tròn số trung bình $32{,}35\\approx32{,}4$ trước khi bình phương: $1087{,}25-32{,}4^2=37{,}49$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy.var(ddof=0) trên 100 giá trị đại diện của mẫu gộp = 40.727500; ddof=1: 41.138889. Ngày 19/10 thay phương án D cũ 41,14 (chia n−1) bằng 37,49 để tránh tranh cãi quy ước n hay n−1; SGK dùng chia n.",
+        "gia_tri_tinh_lai": "40.7275",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (40.525)",
+          "C": "tái tạo được từ mô hình lỗi sai (39.912961)",
+          "D": "tái tạo được từ mô hình lỗi sai (1087.25-32.4**2 = 37.49)"
+        },
+        "wolfram": "phương sai mẫu gộp = 40,7275",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-37",
+      "stt": 37,
+      "chu_de": "Thống kê – tần số chưa biết, trung vị và tứ phân vị mẫu ghép nhóm",
+      "lop": 11,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Thời gian (phút) hoàn thành một bài kiểm tra trực tuyến của một nhóm học sinh được cho theo bảng sau, trong đó $x$ là số nguyên dương chưa biết. Biết trung vị của mẫu số liệu ghép nhóm bằng $24$. Tính tứ phân vị thứ ba $Q_3$ của mẫu số liệu (đơn vị: phút).",
+      "bang": {
+        "tieu_de": "Thời gian hoàn thành bài kiểm tra trực tuyến",
+        "cot": [
+          "Thời gian (phút)",
+          "[0; 10)",
+          "[10; 20)",
+          "[20; 30)",
+          "[30; 40)",
+          "[40; 50)"
+        ],
+        "hang": [
+          [
+            "Số học sinh",
+            "4",
+            "10",
+            "x",
+            "8",
+            "3"
+          ]
+        ]
+      },
+      "dap_an": "31,25",
+      "dap_an_so": 31.25,
+      "loi_giai": "Cỡ mẫu $n=25+x$. Tần số tích lũy: $4;\\ 14;\\ 14+x;\\ 22+x;\\ 25+x$.\nBước 1 (xác định nhóm chứa trung vị). Công thức trung vị cho giá trị thuộc nhóm chứa trung vị; $24\\in(20;30)$ nên nhóm chứa trung vị là $[20;30)$, nhóm trước có tần số tích lũy $14$.\nBước 2. $M_e=20+\\dfrac{\\frac n2-14}{x}\\cdot10=24\\Leftrightarrow10\\left(\\dfrac{25+x}{2}-14\\right)=4x\\Leftrightarrow5x-15=4x\\Leftrightarrow x=15$.\nKiểm tra: $n=40$, $\\dfrac n2=20$ và $14<20\\le29$ nên nhóm chứa trung vị đúng là $[20;30)$; $M_e=20+\\dfrac{20-14}{15}\\cdot10=24$ (khớp).\nBước 3 ($Q_3$). Tần số tích lũy: $4;14;29;37;40$. $\\dfrac{3n}{4}=30$; nhóm đầu tiên có tần số tích lũy $\\ge30$ là $[30;40)$ (tần số $8$, tích lũy nhóm trước $29$).\n$Q_3=30+\\dfrac{30-29}{8}\\cdot10=31{,}25$ (phút). Đáp số: $31{,}25$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Vét cạn x∈[1;1000] với công thức trung vị ghép nhóm: x thỏa Me=24 là [15]; khi đó Q3 = 31.25.",
+        "gia_tri_tinh_lai": "31.25",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-38",
+      "stt": 38,
+      "chu_de": "Tổ hợp – chia đồ vật",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Có bao nhiêu cách chia $8$ quyển sách khác nhau cho ba bạn sao cho bạn thứ nhất nhận $2$ quyển, bạn thứ hai và bạn thứ ba mỗi bạn nhận $3$ quyển?",
+      "lua_chon": {
+        "A": "$280$",
+        "B": "$1120$",
+        "C": "$6561$",
+        "D": "$560$"
+      },
+      "dap_an": "D",
+      "loi_giai": "Bước 1: chọn $2$ quyển cho bạn thứ nhất: $C_8^2=28$ cách.\nBước 2: chọn $3$ trong $6$ quyển còn lại cho bạn thứ hai: $C_6^3=20$ cách.\nBước 3: $3$ quyển cuối cho bạn thứ ba: $1$ cách.\nTheo quy tắc nhân: $28\\cdot20\\cdot1=560$ cách. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Chia thêm cho $2!$ vì nghĩ hai nhóm $3$ quyển giống nhau (nhưng hai bạn là khác nhau).",
+        "B": "Dùng chỉnh hợp $A_8^2$ cho bạn thứ nhất (tính thứ tự 2 quyển).",
+        "C": "Mỗi quyển chọn một trong 3 bạn ($3^8$), bỏ qua điều kiện số lượng."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Vét cạn 3^8 = 6561 cách giao 8 quyển cho 3 bạn: 560 cách có số lượng (2;3;3).",
+        "gia_tri_tinh_lai": "560.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (280.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (1120.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (6561.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-39",
+      "stt": 39,
+      "chu_de": "Xác suất – đếm theo số dư",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Chọn ngẫu nhiên $3$ số khác nhau từ tập hợp $\\{1;2;3;\\dots;20\\}$. Xác suất để tổng ba số được chọn chia hết cho $3$ là",
+      "lua_chon": {
+        "A": "$\\dfrac{1}{3}$",
+        "B": "$\\dfrac{32}{95}$",
+        "C": "$\\dfrac{3}{38}$",
+        "D": "$\\dfrac{49}{190}$"
+      },
+      "dap_an": "B",
+      "loi_giai": "$n(\\Omega)=C_{20}^3=1140$.\nChia theo số dư khi chia cho $3$: dư $0$: $\\{3;6;\\dots;18\\}$ có $6$ số; dư $1$: $\\{1;4;\\dots;19\\}$ có $7$ số; dư $2$: $\\{2;5;\\dots;20\\}$ có $7$ số.\nTổng ba số chia hết cho $3$ khi và chỉ khi: ba số cùng số dư, hoặc ba số có ba số dư khác nhau $0;1;2$.\n• Cùng số dư: $C_6^3+C_7^3+C_7^3=20+35+35=90$. • Ba số dư khác nhau: $6\\cdot7\\cdot7=294$.\n$n(A)=90+294=384$, $P(A)=\\dfrac{384}{1140}=\\dfrac{32}{95}$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Cho rằng tổng chia cho $3$ có ba số dư đồng khả năng.",
+        "C": "Chỉ tính trường hợp ba số cùng số dư: $\\dfrac{20+35+35}{1140}$.",
+        "D": "Chỉ tính trường hợp ba số có ba số dư khác nhau: $\\dfrac{294}{1140}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "Vét cạn C(20,3) = 1140 bộ: 384 bộ có tổng chia hết cho 3 ⇒ P = 32/95.",
+        "gia_tri_tinh_lai": "32/95",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (0.333333)",
+          "C": "tái tạo được từ mô hình lỗi sai (0.078947)",
+          "D": "tái tạo được từ mô hình lỗi sai (0.257895)"
+        },
+        "wolfram": "Count Subsets(1..20, 3) tổng chia hết 3 / C(20,3) = 32/95",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-40",
+      "stt": 40,
+      "chu_de": "Xác suất có điều kiện – đọc bảng khảo sát",
+      "lop": 12,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Kết quả khảo sát $500$ người trưởng thành về thói quen tập thể dục và tình trạng huyết áp được cho theo bảng sau. Chọn ngẫu nhiên một người trong $500$ người được khảo sát. Biết rằng người được chọn bị huyết áp cao, tính xác suất người đó có tập thể dục thường xuyên (làm tròn kết quả đến hàng phần trăm).",
+      "bang": {
+        "tieu_de": "Kết quả khảo sát 500 người trưởng thành",
+        "cot": [
+          "Thói quen",
+          "Huyết áp bình thường",
+          "Huyết áp cao"
+        ],
+        "hang": [
+          [
+            "Tập thể dục thường xuyên",
+            "210",
+            "30"
+          ],
+          [
+            "Không tập thể dục thường xuyên",
+            "180",
+            "80"
+          ]
+        ]
+      },
+      "dap_an": "0,27",
+      "dap_an_so": 0.27,
+      "loi_giai": "Gọi $A$: “người được chọn tập thể dục thường xuyên”, $B$: “người được chọn bị huyết áp cao”.\nTheo bảng: số người bị huyết áp cao $n(B)=30+80=110$; số người vừa tập thường xuyên vừa bị huyết áp cao $n(A\\cap B)=30$.\n$P(A\\mid B)=\\dfrac{P(A\\cap B)}{P(B)}=\\dfrac{30/500}{110/500}=\\dfrac{30}{110}=\\dfrac{3}{11}\\approx0{,}2727$.\nLưu ý: không nhầm với $P(B\\mid A)=\\dfrac{30}{240}=0{,}125$ hay $P(A\\cap B)=\\dfrac{30}{500}=0{,}06$.\nĐáp số: $0{,}27$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Python đọc trực tiếp trường bang: tổng 500 người; P(tập TX | HA cao) = 30/110 = 0.272727.",
+        "gia_tri_tinh_lai": "0.27",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-41",
+      "stt": 41,
+      "chu_de": "Thống kê – phương sai, độ lệch chuẩn khi biến đổi mẫu",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Mẫu số liệu $x_1,x_2,\\dots,x_n$ có phương sai bằng $4$. Mẫu số liệu $y_1,y_2,\\dots,y_n$ với $y_i=3x_i-2$ ($i=1,2,\\dots,n$) có độ lệch chuẩn bằng",
+      "lua_chon": {
+        "A": "$36$",
+        "B": "$12$",
+        "C": "$6$",
+        "D": "$4$"
+      },
+      "dap_an": "C",
+      "loi_giai": "$\\overline y=3\\overline x-2$, nên $y_i-\\overline y=3\\left(x_i-\\overline x\\right)$.\n$s_y^2=\\dfrac1n\\sum\\left(y_i-\\overline y\\right)^2=\\dfrac9n\\sum\\left(x_i-\\overline x\\right)^2=9s_x^2=36$ (phép cộng/trừ hằng số không làm thay đổi độ phân tán).\nĐộ lệch chuẩn: $s_y=\\sqrt{36}=6$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Tính ra phương sai $9\\cdot4$ nhưng quên lấy căn.",
+        "B": "Nhân hệ số $3$ với phương sai thay vì với độ lệch chuẩn.",
+        "D": "Áp dụng cả phép trừ $2$ cho độ lệch chuẩn: $3\\cdot2-2$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy: mẫu ngẫu nhiên 37 giá trị có phương sai 4.000000; sau biến đổi y=3x−2 độ lệch chuẩn = 6.000000.",
+        "gia_tri_tinh_lai": "6.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (36.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (12.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (4.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-42",
+      "stt": 42,
+      "chu_de": "Hệ thức lượng trong tam giác – đo chiều cao thực tế",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Để đo chiều cao của một tháp truyền hình $CD$ ($C$ là chân tháp, $D$ là đỉnh tháp, $CD$ vuông góc với mặt đất phẳng) mà không đến được chân tháp, người ta chọn hai điểm $A$, $B$ trên mặt đất cách nhau $50$ m và đo được $\\widehat{CAB}=70^\\circ$, $\\widehat{CBA}=60^\\circ$; từ $A$ nhìn lên đỉnh tháp được góc nâng $\\widehat{DAC}=32^\\circ$. Tính chiều cao $CD$ của tháp (đơn vị: m; bỏ qua chiều cao dụng cụ đo; làm tròn kết quả đến hàng phần trăm).",
+      "dap_an": "35,32",
+      "dap_an_so": 35.32,
+      "loi_giai": "Trong tam giác $ABC$: $\\widehat{ACB}=180^\\circ-70^\\circ-60^\\circ=50^\\circ$.\nĐịnh lí sin: $\\dfrac{AC}{\\sin\\widehat{ABC}}=\\dfrac{AB}{\\sin\\widehat{ACB}}\\Rightarrow AC=\\dfrac{50\\sin60^\\circ}{\\sin50^\\circ}\\approx\\dfrac{50\\cdot0{,}866025}{0{,}766044}\\approx56{,}5258$ (m).\nTam giác $ACD$ vuông tại $C$ (vì $CD$ vuông góc với mặt đất): $CD=AC\\cdot\\tan\\widehat{DAC}=AC\\tan32^\\circ\\approx56{,}5258\\cdot0{,}624869\\approx35{,}3212$ (m).\nĐáp số: $35{,}32$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy dựng tọa độ: C = (19.3330;53.1169), AC = 56.52579 m, CD = AC·tan32° = 35.32124 m.",
+        "gia_tri_tinh_lai": "35.32",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-43",
+      "stt": 43,
+      "chu_de": "Tọa độ trong mặt phẳng – cực trị tổng khoảng cách (thực tế)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Trong mặt phẳng tọa độ $Oxy$ (đơn vị trên mỗi trục là km), một con đường thẳng có phương trình $d: x+y-3=0$; hai khu dân cư ở $A(2;3)$ và $B(5;4)$. Cần đặt một trạm trung chuyển $M$ trên đường $d$ sao cho tổng khoảng cách $MA+MB$ nhỏ nhất. Giá trị nhỏ nhất của $MA+MB$ (km) bằng",
+      "lua_chon": {
+        "A": "$\\sqrt{34}$",
+        "B": "$\\sqrt{10}$",
+        "C": "$4\\sqrt{2}$",
+        "D": "$\\sqrt{2}$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Đặt $f(x;y)=x+y-3$: $f(A)=2>0$, $f(B)=6>0$ nên $A$, $B$ nằm cùng phía đối với $d$.\nGọi $A'$ là điểm đối xứng của $A$ qua $d$. Vectơ pháp tuyến $\\vec n=(1;1)$; $A'=A-\\dfrac{2f(A)}{1^2+1^2}\\vec n=(2;3)-2(1;1)=(0;1)$. (Kiểm tra: trung điểm $AA'$ là $(1;2)\\in d$, $\\overrightarrow{AA'}=(-2;-2)$ cùng phương $\\vec n$.)\nVới mọi $M\\in d$: $MA=MA'$, nên $MA+MB=MA'+MB\\ge A'B$. Vì $A'$, $B$ nằm khác phía đối với $d$ ($f(A')=-2<0$) nên đoạn $A'B$ cắt $d$ tại $M_0$, dấu bằng xảy ra tại $M=M_0$.\n$A'B=\\sqrt{(5-0)^2+(4-1)^2}=\\sqrt{34}\\approx5{,}83$ (km). Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Quên lấy đối xứng, lấy luôn $AB=\\sqrt{10}$ (đoạn $AB$ không cắt $d$).",
+        "C": "Lấy tổng khoảng cách từ $A$ và $B$ đến $d$: $\\sqrt2+3\\sqrt2$.",
+        "D": "Sai dấu khi lấy đối xứng, được $A'(4;5)$ và $A'B=\\sqrt2$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy quét M(t;3−t) trên d: min(MA+MB) = 5.830952 tại t = 1.2500; √34 = 5.830952.",
+        "gia_tri_tinh_lai": "sqrt(34)",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (3.162278)",
+          "C": "tái tạo được từ mô hình lỗi sai (5.656854)",
+          "D": "tái tạo được từ mô hình lỗi sai (1.414214)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-44",
+      "stt": 44,
+      "chu_de": "Đường tròn – vị trí tương đối với đường thẳng, diện tích lớn nhất",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Trong mặt phẳng $Oxy$, cho đường tròn $(C):(x-2)^2+(y+1)^2=16$ có tâm $I$ và đường thẳng $\\Delta: x+y+m=0$. Gọi $S$ là tập hợp các giá trị thực của $m$ để $\\Delta$ cắt $(C)$ tại hai điểm phân biệt $A$, $B$ sao cho tam giác $IAB$ có diện tích lớn nhất. Tổng các phần tử của $S$ bằng",
+      "lua_chon": {
+        "A": "$-6$",
+        "B": "$-1$",
+        "C": "$2$",
+        "D": "$-2$"
+      },
+      "dap_an": "D",
+      "loi_giai": "$(C)$ có tâm $I(2;-1)$, bán kính $R=4$.\n$S_{IAB}=\\dfrac12IA\\cdot IB\\sin\\widehat{AIB}=\\dfrac12R^2\\sin\\widehat{AIB}\\le\\dfrac12R^2=8$; dấu bằng khi $\\widehat{AIB}=90^\\circ$.\nKhi $\\widehat{AIB}=90^\\circ$, tam giác $IAB$ vuông cân tại $I$ nên $d(I,\\Delta)=\\dfrac{R}{\\sqrt2}=2\\sqrt2<R$ (thỏa mãn cắt tại hai điểm).\n$d(I,\\Delta)=\\dfrac{|2-1+m|}{\\sqrt2}=\\dfrac{|m+1|}{\\sqrt2}=2\\sqrt2\\Leftrightarrow|m+1|=4\\Leftrightarrow m=3$ hoặc $m=-5$.\nTổng các phần tử của $S$: $3+(-5)=-2$. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Đọc sai tâm $I(2;1)$, được $|3+m|=4$.",
+        "B": "Cho rằng diện tích lớn nhất khi $\\Delta$ đi qua tâm $I$ (khi đó tam giác suy biến).",
+        "C": "Sai dấu cả hai tọa độ tâm, lấy $I(-2;1)$, được $|m-1|=4$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "numpy quét m∈[−15;15] bước 0,001: diện tích IAB lớn nhất = 8.000000 tại m ∈ [-5.0, 3.0]; tổng = -2.000.",
+        "gia_tri_tinh_lai": "-2.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (-6.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (-1.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (2.0)"
+        },
+        "wolfram": "Solve |m+1|/√2 = 4/√2: m ∈ {−5; 3}, tổng −2",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-45",
+      "stt": 45,
+      "chu_de": "Ba đường conic – parabol (ăng-ten chảo)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Một ăng-ten chảo có mặt cắt qua trục là một đường parabol. Đường kính miệng chảo là $1{,}2$ m, độ sâu của chảo (khoảng cách từ đỉnh chảo đến mặt phẳng miệng chảo) là $0{,}15$ m. Bộ thu sóng được đặt tại tiêu điểm của parabol. Khoảng cách từ đỉnh chảo đến bộ thu sóng bằng",
+      "lua_chon": {
+        "A": "$1{,}2$ m",
+        "B": "$0{,}6$ m",
+        "C": "$2{,}4$ m",
+        "D": "$0{,}3$ m"
+      },
+      "dap_an": "B",
+      "loi_giai": "Chọn hệ trục $Oxy$ với $O$ là đỉnh chảo, $Ox$ là trục của parabol (đơn vị: m). Phương trình chính tắc: $y^2=2px$ ($p>0$), tiêu điểm $F\\left(\\dfrac p2;0\\right)$.\nMép miệng chảo cách trục $\\dfrac{1{,}2}{2}=0{,}6$ m và cách đỉnh theo phương trục $0{,}15$ m, nên điểm $(0{,}15;0{,}6)$ thuộc parabol.\n$0{,}6^2=2p\\cdot0{,}15\\Leftrightarrow0{,}36=0{,}3p\\Leftrightarrow p=1{,}2$.\nKhoảng cách từ đỉnh đến bộ thu: $OF=\\dfrac p2=0{,}6$ m. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Lấy tham số tiêu $p$ làm khoảng cách từ đỉnh đến tiêu điểm (đúng phải là $\\dfrac p2$).",
+        "C": "Dùng đường kính $1{,}2$ m thay cho bán kính $0{,}6$ m: $1{,}44=0{,}3p$.",
+        "D": "Dùng dạng $y^2=4px$ (được $p=0{,}6$) nhưng vẫn lấy tiêu điểm $\\dfrac p2$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "sympy: p = 6/5, tiêu điểm cách đỉnh p/2 = 3/5; kiểm định nghĩa (MF = d(M, đường chuẩn)) tại mép chảo: True.",
+        "gia_tri_tinh_lai": "3/5",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (1.2)",
+          "C": "tái tạo được từ mô hình lỗi sai (2.4)",
+          "D": "tái tạo được từ mô hình lỗi sai (0.3)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-46",
+      "stt": 46,
+      "chu_de": "Phương trình quy về phương trình bậc hai (chứa căn)",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Tổng tất cả các nghiệm của phương trình $\\sqrt{x^2-2x+3}=2x-1$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{2}{3}$",
+        "B": "$\\dfrac{1-\\sqrt{7}}{3}$",
+        "C": "$\\dfrac{1+\\sqrt{7}}{3}$",
+        "D": "$\\dfrac{\\sqrt{7}-1}{3}$"
+      },
+      "dap_an": "C",
+      "loi_giai": "Phương trình $\\Leftrightarrow\\begin{cases}2x-1\\ge0\\\\x^2-2x+3=(2x-1)^2\\end{cases}$ (vế trái luôn xác định vì $x^2-2x+3=(x-1)^2+2>0$).\n$x^2-2x+3=4x^2-4x+1\\Leftrightarrow3x^2-2x-2=0\\Leftrightarrow x=\\dfrac{1\\pm\\sqrt7}{3}$.\nĐiều kiện $x\\ge\\dfrac12$: $x=\\dfrac{1+\\sqrt7}{3}\\approx1{,}215$ thỏa mãn; $x=\\dfrac{1-\\sqrt7}{3}\\approx-0{,}549$ loại.\nPhương trình có nghiệm duy nhất, tổng các nghiệm bằng $\\dfrac{1+\\sqrt7}{3}$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Bình phương rồi dùng Vi-ét, không đối chiếu điều kiện $2x-1\\ge0$.",
+        "B": "Đối chiếu điều kiện sai, giữ nhầm nghiệm âm.",
+        "D": "Khai triển sai $(2x-1)^2=4x^2+1$, được $3x^2+2x-2=0$ và lấy nghiệm dương."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "numpy đổi dấu + sympy nsolve: nghiệm [1.21525044]; (1+√7)/3 = 1.21525044.",
+        "gia_tri_tinh_lai": "1/3 + sqrt(7)/3",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (0.666667)",
+          "B": "tái tạo được từ mô hình lỗi sai (-0.548584)",
+          "D": "tái tạo được từ mô hình lỗi sai (0.548584)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-47",
+      "stt": 47,
+      "chu_de": "Xử lý số liệu – tính tiền điện bậc thang (câu chùm B)",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "chum": "B",
+      "dan_chung": "**Dùng chung cho câu 47–49.** Một địa phương áp dụng biểu giá điện sinh hoạt bậc thang theo bảng sau: số kWh dùng trong tháng được tính tiền lần lượt theo từng bậc, từ bậc thấp đến bậc cao (ví dụ dùng $120$ kWh thì $50$ kWh tính giá bậc 1, $50$ kWh tính giá bậc 2, $20$ kWh tính giá bậc 3). Số tiền phải trả bằng tiền điện tính theo bậc cộng thêm $8\\%$ thuế giá trị gia tăng (GTGT).",
+      "de_bai": "Trong tháng 10, một hộ gia đình dùng hết $235$ kWh. Số tiền hộ đó phải trả (đã gồm thuế GTGT) là",
+      "bang": {
+        "tieu_de": "Biểu giá điện sinh hoạt bậc thang (giả định, dùng cho bài toán)",
+        "cot": [
+          "Bậc",
+          "Mức sử dụng trong tháng",
+          "Giá (đồng/kWh)"
+        ],
+        "hang": [
+          [
+            "Bậc 1",
+            "Từ 0 đến 50 kWh",
+            "1 800"
+          ],
+          [
+            "Bậc 2",
+            "Từ 51 đến 100 kWh",
+            "1 900"
+          ],
+          [
+            "Bậc 3",
+            "Từ 101 đến 200 kWh",
+            "2 200"
+          ],
+          [
+            "Bậc 4",
+            "Từ 201 đến 300 kWh",
+            "2 800"
+          ],
+          [
+            "Bậc 5",
+            "Từ 301 đến 400 kWh",
+            "3 100"
+          ],
+          [
+            "Bậc 6",
+            "Từ 401 kWh trở lên",
+            "3 200"
+          ]
+        ]
+      },
+      "lua_chon": {
+        "A": "$543\\,240$ đồng",
+        "B": "$503\\,000$ đồng",
+        "C": "$710\\,640$ đồng",
+        "D": "$544\\,860$ đồng"
+      },
+      "dap_an": "A",
+      "loi_giai": "$235$ kWh được chia: bậc 1: $50$ kWh; bậc 2: $50$ kWh; bậc 3: $100$ kWh; bậc 4: $235-200=35$ kWh.\nTiền theo bậc: $50\\cdot1800+50\\cdot1900+100\\cdot2200+35\\cdot2800=90\\,000+95\\,000+220\\,000+98\\,000=503\\,000$ (đồng).\nCộng thuế GTGT $8\\%$: $503\\,000\\cdot1{,}08=543\\,240$ (đồng). Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Quên cộng $8\\%$ thuế GTGT.",
+        "C": "Tính toàn bộ $235$ kWh theo giá của bậc cao nhất đạt tới (bậc 4).",
+        "D": "Đếm số kWh mỗi bậc bằng hiệu hai đầu mút (bậc 2 có $49$ kWh, bậc 3 có $99$ kWh), dồn phần dư vào bậc 4."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Python hàm giá bậc thang đọc từ trường bang: tiền theo bậc = 503000 đ; gồm 8% GTGT = 543240.00 đ.",
+        "gia_tri_tinh_lai": "543240.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "phuong_an_nhieu": {
+          "B": "tái tạo được từ mô hình lỗi sai (503000.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (710640.0)",
+          "D": "tái tạo được từ mô hình lỗi sai (544860.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-48",
+      "stt": 48,
+      "chu_de": "Xử lý số liệu – suy ngược số kWh từ hóa đơn (câu chùm B)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "chum": "B",
+      "dan_chung": "**Dùng chung cho câu 47–49.** Một địa phương áp dụng biểu giá điện sinh hoạt bậc thang theo bảng sau: số kWh dùng trong tháng được tính tiền lần lượt theo từng bậc, từ bậc thấp đến bậc cao (ví dụ dùng $120$ kWh thì $50$ kWh tính giá bậc 1, $50$ kWh tính giá bậc 2, $20$ kWh tính giá bậc 3). Số tiền phải trả bằng tiền điện tính theo bậc cộng thêm $8\\%$ thuế giá trị gia tăng (GTGT).",
+      "de_bai": "Trong tháng 11, hộ gia đình đó phải trả $843\\,588$ đồng (đã gồm thuế GTGT). Hỏi trong tháng 11 hộ đó đã dùng bao nhiêu kWh điện?",
+      "bang": {
+        "tieu_de": "Biểu giá điện sinh hoạt bậc thang (giả định, dùng cho bài toán)",
+        "cot": [
+          "Bậc",
+          "Mức sử dụng trong tháng",
+          "Giá (đồng/kWh)"
+        ],
+        "hang": [
+          [
+            "Bậc 1",
+            "Từ 0 đến 50 kWh",
+            "1 800"
+          ],
+          [
+            "Bậc 2",
+            "Từ 51 đến 100 kWh",
+            "1 900"
+          ],
+          [
+            "Bậc 3",
+            "Từ 101 đến 200 kWh",
+            "2 200"
+          ],
+          [
+            "Bậc 4",
+            "Từ 201 đến 300 kWh",
+            "2 800"
+          ],
+          [
+            "Bậc 5",
+            "Từ 301 đến 400 kWh",
+            "3 100"
+          ],
+          [
+            "Bậc 6",
+            "Từ 401 kWh trở lên",
+            "3 200"
+          ]
+        ]
+      },
+      "dap_an": "331",
+      "dap_an_so": 331,
+      "loi_giai": "Tiền điện chưa gồm thuế: $843\\,588:1{,}08=781\\,100$ (đồng).\nTiền điện cộng dồn khi dùng hết các bậc: hết bậc 2 ($100$ kWh): $90\\,000+95\\,000=185\\,000$; hết bậc 3 ($200$ kWh): $185\\,000+220\\,000=405\\,000$; hết bậc 4 ($300$ kWh): $405\\,000+280\\,000=685\\,000$; hết bậc 5 ($400$ kWh): $685\\,000+310\\,000=995\\,000$.\nVì $685\\,000<781\\,100\\le995\\,000$ nên hộ đó dùng đến bậc 5. Số kWh ở bậc 5: $\\dfrac{781\\,100-685\\,000}{3100}=\\dfrac{96\\,100}{3100}=31$.\nTổng số điện: $300+31=331$ (kWh). Đáp số: $331$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Vét cạn x∈[0;2000] kWh: hóa đơn 843 588 đ ứng với x = [331].",
+        "gia_tri_tinh_lai": "331",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-49",
+      "stt": 49,
+      "chu_de": "Xử lý số liệu – giá điện bình quân, bất phương trình (câu chùm B)",
+      "lop": 10,
+      "muc_do": "VDC",
+      "dang": "mcq",
+      "chum": "B",
+      "dan_chung": "**Dùng chung cho câu 47–49.** Một địa phương áp dụng biểu giá điện sinh hoạt bậc thang theo bảng sau: số kWh dùng trong tháng được tính tiền lần lượt theo từng bậc, từ bậc thấp đến bậc cao (ví dụ dùng $120$ kWh thì $50$ kWh tính giá bậc 1, $50$ kWh tính giá bậc 2, $20$ kWh tính giá bậc 3). Số tiền phải trả bằng tiền điện tính theo bậc cộng thêm $8\\%$ thuế giá trị gia tăng (GTGT).",
+      "de_bai": "Giá điện bình quân của một tháng bằng tiền điện tính theo bậc (chưa gồm thuế) chia cho số kWh đã dùng trong tháng. Có bao nhiêu số nguyên $x$ với $1\\le x\\le500$ sao cho nếu một hộ dùng $x$ kWh trong tháng thì giá điện bình quân không vượt quá $2\\,200$ đồng/kWh?",
+      "bang": {
+        "tieu_de": "Biểu giá điện sinh hoạt bậc thang (giả định, dùng cho bài toán)",
+        "cot": [
+          "Bậc",
+          "Mức sử dụng trong tháng",
+          "Giá (đồng/kWh)"
+        ],
+        "hang": [
+          [
+            "Bậc 1",
+            "Từ 0 đến 50 kWh",
+            "1 800"
+          ],
+          [
+            "Bậc 2",
+            "Từ 51 đến 100 kWh",
+            "1 900"
+          ],
+          [
+            "Bậc 3",
+            "Từ 101 đến 200 kWh",
+            "2 200"
+          ],
+          [
+            "Bậc 4",
+            "Từ 201 đến 300 kWh",
+            "2 800"
+          ],
+          [
+            "Bậc 5",
+            "Từ 301 đến 400 kWh",
+            "3 100"
+          ],
+          [
+            "Bậc 6",
+            "Từ 401 kWh trở lên",
+            "3 200"
+          ]
+        ]
+      },
+      "lua_chon": {
+        "A": "$200$",
+        "B": "$259$",
+        "C": "$272$",
+        "D": "$258$"
+      },
+      "dap_an": "D",
+      "loi_giai": "Gọi $T(x)$ là tiền điện theo bậc (đồng) khi dùng $x$ kWh. Cần $\\dfrac{T(x)}{x}\\le2200\\Leftrightarrow T(x)\\le2200x$.\n• $1\\le x\\le100$: mọi kWh có giá $\\le1900$ nên $T(x)\\le1900x<2200x$: thỏa mãn ($100$ số).\n• $101\\le x\\le200$: $T(x)=185\\,000+2200(x-100)=2200x-35\\,000<2200x$: thỏa mãn ($100$ số).\n• $201\\le x\\le300$: $T(x)=405\\,000+2800(x-200)=2800x-155\\,000\\le2200x\\Leftrightarrow600x\\le155\\,000\\Leftrightarrow x\\le258{,}33$, tức $201\\le x\\le258$ ($58$ số).\n• $301\\le x\\le400$: $T(x)=685\\,000+3100(x-300)=3100x-245\\,000\\le2200x\\Leftrightarrow x\\le272{,}2$, mâu thuẫn với $x\\ge301$: không có số nào.\n• $401\\le x\\le500$: $T(x)=995\\,000+3200(x-400)=3200x-285\\,000\\le2200x\\Leftrightarrow x\\le285$, mâu thuẫn: không có số nào.\nTổng: $100+100+58=258$ số. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Cho rằng cứ dùng sang bậc 4 (giá $2\\,800>2\\,200$) là giá bình quân vượt $2\\,200$, chỉ đếm $x\\le200$.",
+        "B": "Giải đúng $x\\le258{,}33$ nhưng làm tròn lên thành $259$.",
+        "C": "Giải bất phương trình ở bậc 5 được $x\\le272{,}2$ mà không đối chiếu điều kiện $x>300$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5)",
+        "cach_kiem": "Vét cạn x∈[1;500] với phân số chính xác: 258 giá trị thỏa giá bình quân ≤ 2 200 (lớn nhất x = 258).",
+        "gia_tri_tinh_lai": "258.0",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "phuong_an_nhieu": {
+          "A": "tái tạo được từ mô hình lỗi sai (200.0)",
+          "B": "tái tạo được từ mô hình lỗi sai (259.0)",
+          "C": "tái tạo được từ mô hình lỗi sai (272.0)"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "HSA02-50",
+      "stt": 50,
+      "chu_de": "Xác suất – đếm dãy không giảm",
+      "lop": 10,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Gieo một con xúc xắc cân đối và đồng chất $4$ lần liên tiếp. Tính xác suất để số chấm xuất hiện ở mỗi lần gieo (từ lần thứ hai) không nhỏ hơn số chấm xuất hiện ở lần gieo liền trước (làm tròn kết quả đến hàng phần nghìn).",
+      "dap_an": "0,097",
+      "dap_an_so": 0.097,
+      "loi_giai": "Không gian mẫu: $n(\\Omega)=6^4=1296$ (mỗi kết quả là một dãy $(a_1;a_2;a_3;a_4)$, $a_i\\in\\{1;\\dots;6\\}$).\nBiến cố $A$: $a_1\\le a_2\\le a_3\\le a_4$. Đặt $b_i=a_i+i-1$ ($i=1,2,3,4$), ta được $1\\le b_1<b_2<b_3<b_4\\le9$.\nTương ứng $(a_i)\\mapsto(b_i)$ là song ánh giữa các dãy không giảm và các bộ $4$ số tăng ngặt chọn từ $\\{1;\\dots;9\\}$ (ngược lại $a_i=b_i-i+1$). Mỗi bộ $4$ số tăng ngặt ứng với một tập con $4$ phần tử của $\\{1;\\dots;9\\}$.\n$n(A)=C_9^4=126$, $P(A)=\\dfrac{126}{1296}=\\dfrac{7}{72}\\approx0{,}0972$.\nĐáp số: $0{,}097$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3 (sympy 1.14, numpy 2.5) + Wolfram Language",
+        "cach_kiem": "Vét cạn 6^4 = 1296 dãy: 126 dãy không giảm ⇒ P = 7/72 ≈ 0.097222.",
+        "gia_tri_tinh_lai": "0.097",
+        "wolfram": "Count Tuples(1..6, 4) không giảm / 6⁴ = 7/72 ≈ 0,0972",
+        "ngay_kiem": "2026-10-19"
+      }
+    }
+  ]
+}

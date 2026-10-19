@@ -10,7 +10,7 @@ import {resultFor} from './result';
 import {readRemote,type RemoteAttempt,type RemoteResult} from './server-attempt';
 import type {PracticeExam} from './data';
 import {QuestionReader,ExtraSolution,rich} from '../chapters/ChapterPractice';
-import HsaPaperReader,{HsaSolutionExtra,hsaRich,type HsaGroup} from './HsaPaperReader';
+import HsaPaperReader,{HsaSolutionExtra,hsaRich,type HsaGroup,type HsaTables} from './HsaPaperReader';
 import {HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,normalizeHsaPhone,type HsaMockExam} from './hsa-mock';
 import {HSA_GRADES,HSA_GRADE_LABEL,formatHsaDuration,formatHsaScore,hsaStatusMessage,isHsaGrade,sanitizeDisplayName,type HsaGrade,type HsaRankRow,type HsaSubmitStatus} from '../../../server/hsa/rank';
 import './exams.css';
@@ -35,16 +35,16 @@ function localOutcome(exam:PracticeExam,draft:Draft|null):Outcome|null{
 }
 const remoteOutcome=(r:RemoteResult):Outcome=>({attemptId:r.attemptId,score:r.score.ok?r.score.finalMillipoints??r.score.earnedMillipoints:0,elapsedMs:Math.max(0,Math.min(r.submittedAt,r.deadline)-r.startedAt),server:true});
 
-type HsaPaperPublic={exam:PracticeExam;groups:HsaGroup[];scale:number};
+type HsaPaperPublic={exam:PracticeExam;groups:HsaGroup[];tables?:HsaTables;scale:number};
 /** Bản công khai của đề HSA thật: chỉ câu hỏi và dữ liệu chùm, không đáp án. */
 const PAPER_PUBLIC=import.meta.glob<HsaPaperPublic>('./hsa-papers/*.public.json',{import:'default'});
 /** Bản có đáp án và lời giải, chỉ dùng khi chấm trên trình duyệt (bảng xếp hạng chưa mở).
  * Build với VITE_HSA_KEY_IN_BUNDLE=0 thì tệp này không vào bản build: chỉ đặt khi máy chủ chấm đề (migration 069) đã chạy. */
 const PAPER_KEYS:Record<string,()=>Promise<PracticeExam>>=import.meta.env.VITE_HSA_KEY_IN_BUNDLE==='0'?{}:import.meta.glob<PracticeExam>('./hsa-papers/*.key.json',{import:'default'});
-type Paper={exam:PracticeExam;groups:HsaGroup[]};
+type Paper={exam:PracticeExam;groups:HsaGroup[];tables?:HsaTables};
 /** Đề để hiện số câu, thời gian và chơi ở chế độ máy chủ (với hsa-paper: bản không đáp án). */
 async function loadPaper(cfg:HsaMockExam):Promise<Paper>{
- if(cfg.source==='hsa-paper'){const load=PAPER_PUBLIC['./hsa-papers/'+cfg.examId+'.public.json'];if(!load)throw Error('missing');const p=await load();if(p.exam.id!==cfg.examId)throw Error('missing');return {exam:p.exam,groups:p.groups};}
+ if(cfg.source==='hsa-paper'){const load=PAPER_PUBLIC['./hsa-papers/'+cfg.examId+'.public.json'];if(!load)throw Error('missing');const p=await load();if(p.exam.id!==cfg.examId)throw Error('missing');return {exam:p.exam,groups:p.groups,tables:p.tables};}
  return {exam:await loadExam(cfg),groups:[]};
 }
 /** Đề có đáp án để chấm trên trình duyệt; null khi bản build không chứa đáp án. */
@@ -144,9 +144,9 @@ function HsaMockRoom({cfg}:{cfg:HsaMockExam}){
   const d=readDraft(store,exam);if(d.ok&&mode==='local'){const o=localOutcome(exam,d.value);if(o){setOutcome(o);setLead(read(leadKey(cfg.examId))?'sent':'skipped');}}
  },[exam,mode]);
  const saveEntry=(e:Entry)=>{write(ENTRY_KEY,JSON.stringify(e));setEntry(e);setEditing(false);};
- const groups=paper?.groups??[];
+ const groups=paper?.groups??[],tables=paper?.tables;
  const attemptProps=cfg.source==='hsa-paper'
-  ?{questionReader:exam?<HsaPaperReader exam={exam} groups={groups}/>:undefined,renderText:hsaRich,renderSolutionExtra:(q:PracticeExam['questions'][number])=><HsaSolutionExtra groups={groups} question={q}/>,displayTitle:cfg.title,contextLabel:'Thi thử HSA'}
+  ?{questionReader:exam?<HsaPaperReader exam={exam} groups={groups} tables={tables}/>:undefined,renderText:hsaRich,renderSolutionExtra:(q:PracticeExam['questions'][number])=><HsaSolutionExtra groups={groups} tables={tables} question={q}/>,displayTitle:cfg.title,contextLabel:'Thi thử HSA'}
   :{questionReader:exam?<QuestionReader exam={exam}/>:undefined,renderText:rich,renderSolutionExtra:(q:PracticeExam['questions'][number])=><ExtraSolution question={q}/>,displayTitle:cfg.title,contextLabel:'Thi thử HSA'};
  const facts=exam??paper?.exam;
  return <div className="hsa-page ep-root">
