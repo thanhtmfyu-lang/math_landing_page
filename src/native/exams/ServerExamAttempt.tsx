@@ -1,13 +1,14 @@
-import {useEffect,useRef,useState} from 'react';
+import {useEffect,useRef,useState,type ReactNode} from 'react';
 import PracticeAttempt from './PracticeAttempt';
 import {localStore} from './local-store';
 import {draftKey,type Draft} from './store';
-import type {PracticeExam} from './data';
-import {readRemote,saveRemote,startRemote,submitRemote,remoteSolutionPdf,validateRemoteResult,hydrateRemoteReview,needsFreshRemote,type RemoteResult} from './server-attempt';
+import type {PracticeExam,PracticeQuestion} from './data';
+import type {PracticeAttemptProps} from './attempt-types';
+import {readRemote,saveRemote,startRemote,submitRemote,remoteSolutionPdf,validateRemoteResult,hydrateRemoteReview,needsFreshRemote,type RemoteAttempt,type RemoteResult} from './server-attempt';
 
 /** Keys arrive only in the server receipt after submission. The capability is
  * kept on this browser and never placed in a URL or sent to analytics. */
-export default function ServerExamAttempt({exam,previousExam,catalogUrl}:{exam:PracticeExam;previousExam?:PracticeExam;catalogUrl:string}){
+export default function ServerExamAttempt({exam,previousExam,catalogUrl,onResult,attemptProps}:{exam:PracticeExam;previousExam?:PracticeExam;catalogUrl:string;onResult?:(attempt:RemoteAttempt,result:RemoteResult)=>void;attemptProps?:Pick<PracticeAttemptProps,'questionReader'|'renderText'|'displayTitle'|'contextLabel'|'audienceLabel'>&{renderSolutionExtra?:(q:PracticeQuestion)=>ReactNode}}){
  const store=localStore(),session=useRef(readRemote(store,exam));
  const [review,setReview]=useState<RemoteResult|null>(()=>{try{const a=session.current,d=JSON.parse(store?.getItem(draftKey(exam.id))??'null');return a?.result&&a.localAttemptId===d?.attemptId?hydrateRemoteReview(validateRemoteResult(a.result,exam.id,exam.versionHash),exam):null;}catch{return null;}});
  const [message,setMessage]=useState('');
@@ -23,8 +24,9 @@ export default function ServerExamAttempt({exam,previousExam,catalogUrl}:{exam:P
   const a={...session.current!,localAttemptId:draft.attemptId,result:r};
   // A failed browser write does not discard an acknowledged server receipt.
   session.current=a;setReview(hydrateRemoteReview(r,exam));try{saveRemote(store,exam.id,a);}catch{setMessage('Máy chủ đã nhận bài. Chưa lưu được quyền xem lại trên trình duyệt; hãy giữ trang mở.');}
+  onResult?.(a,r);
   return r.answers;
  }
  if(restoring)return <p role="status">Đang xác nhận bài đã lưu với máy chủ…</p>;
- return <>{message&&<p role="status">{message}</p>}<PracticeAttempt exam={review?.exam??exam} previousExam={previousExam} catalogUrl={catalogUrl} kind="exam" onServerStart={begin} onServerSubmit={submit} serverScore={review?.score} deadlineAt={timing?.deadline} clockOffsetMs={timing?.clientReceivedAt!==undefined?timing.serverNow-timing.clientReceivedAt:0} renderSolutionExtra={q=>review&&q.id===exam.questions[0]?.id?<button type="button" onClick={()=>{void remoteSolutionPdf(session.current!).then(url=>window.open(url,'_blank','noopener,noreferrer')).catch(e=>setMessage(e.message));}}>Mở PDF lời giải sau khi nộp</button>:null}/></>;
+ return <>{message&&<p role="status">{message}</p>}<PracticeAttempt {...attemptProps} exam={review?.exam??exam} previousExam={previousExam} catalogUrl={catalogUrl} kind="exam" onServerStart={begin} onServerSubmit={submit} serverScore={review?.score} deadlineAt={timing?.deadline} clockOffsetMs={timing?.clientReceivedAt!==undefined?timing.serverNow-timing.clientReceivedAt:0} renderSolutionExtra={q=><>{attemptProps?.renderSolutionExtra?.(q)}{review&&q.id===exam.questions[0]?.id&&!attemptProps?.questionReader?<button type="button" onClick={()=>{void remoteSolutionPdf(session.current!).then(url=>window.open(url,'_blank','noopener,noreferrer')).catch(e=>setMessage(e.message));}}>Mở PDF lời giải sau khi nộp</button>:null}</>}/></>;
 }

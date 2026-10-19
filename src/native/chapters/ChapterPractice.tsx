@@ -23,7 +23,7 @@ import './chapters.css';
 type VariationTable={caption:string;headers:string[];rows:string[][]};
 type DisplayQuestion=PracticeQuestion&{image?:string;imageAlt?:string;solutionTables?:VariationTable[];questionTables?:VariationTable[];statementSolutions?:string[]};
 export type PracticeBankItem={exam:PracticeExam;note:string;limits:string[];scope:string;published:boolean;presentationTitle?:string;track?:string};
-const rich=(text:string):ReactNode=><MathText text={text}/>;
+export const rich=(text:string):ReactNode=><MathText text={text}/>;
 const QuestionPdf=lazy(()=>import('../exams/QuestionPdf'));
 const pdfMeta=questionPdfs as Record<string,{bytes:number;totalPages:number}>;
 /** Bản đề MTM dạng trang (logo, watermark) cho khung đọc đề; null khi chưa có số trang đã kiểm. */
@@ -35,7 +35,7 @@ const wideScreen=()=>typeof matchMedia==='function'&&matchMedia('(min-width: 900
 const noop=()=>{};
 const points=(value:number)=>(value/1000).toLocaleString('vi-VN',{maximumFractionDigits:3});
 
-function QuestionReader({exam}:{exam:PracticeExam}) {
+export function QuestionReader({exam}:{exam:PracticeExam}) {
   const roomQuestion=useContext(RoomQuestionContext);
   const pdf=useMemo(()=>mtmQuestionPdf(exam),[exam]);
   const [mode,setMode]=useState<'pages'|'questions'>(()=>pdf&&wideScreen()?'pages':'questions');
@@ -55,7 +55,7 @@ function QuestionReader({exam}:{exam:PracticeExam}) {
 
 // TH-05 (Đợt 4): bảng biến thiên không tràn khung ở màn hẹp (FitTable chuyển dạng dọc khi dạng ngang không vừa).
 function Tables({tables}:{tables?:VariationTable[]}){return <>{tables?.map((table,index)=><FitTable key={index} table={table} renderCell={rich}/>)}</>;}
-function ExtraSolution({question}:{question:PracticeQuestion}) {const q=question as DisplayQuestion;return <>{q.statementSolutions&&<ol className="cp-statements">{q.statementSolutions.map((text,index)=><li key={index}><MathText text={text}/></li>)}</ol>}<Tables tables={q.solutionTables}/></>;}
+export function ExtraSolution({question}:{question:PracticeQuestion}) {const q=question as DisplayQuestion;return <>{q.statementSolutions&&<ol className="cp-statements">{q.statementSolutions.map((text,index)=><li key={index}><MathText text={text}/></li>)}</ol>}<Tables tables={q.solutionTables}/></>;}
 
 export default function ChapterPractice({additionalBank=[],catalogUrl='/luyen-tap',contextLabel='Luyện Chương I',audienceLabel,closedNotice}:{additionalBank?:PracticeBankItem[];catalogUrl?:string;contextLabel?:string;audienceLabel?:string;closedNotice?:(examId:string)=>string|undefined}) {
   const bank=additionalBank;

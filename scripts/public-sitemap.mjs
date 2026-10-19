@@ -6,7 +6,7 @@ export function publicSitemapPaths(){
  const exams=read('src/native/exams/catalog.json');
  const documents=read('src/native/reader-files.json').files;
  // Allowlist only: never crawl a private tree, authenticated API or runtime data.
- return [...new Set(['/', '/khoa-hoc','/thi-thu','/luyen-tap','/tai-lieu','/huong-dan','/san-choi',
+ return [...new Set(['/', '/khoa-hoc','/thi-thu','/thi-thu-hsa','/luyen-tap','/tai-lieu','/huong-dan','/san-choi',
   ...courses.map(c=>'/khoa-hoc/'+encodeURIComponent(c.slug)),
   ...exams.filter(e=>e.publicationVerified===true&&e.questionDisplayVerified===true).map(e=>'/thi-thu/'+encodeURIComponent(e.id)),
   ...documents.map(d=>'/tai-lieu/'+encodeURIComponent(d.id))])];

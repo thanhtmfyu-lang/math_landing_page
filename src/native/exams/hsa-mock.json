@@ -1,0 +1,23 @@
+{
+  "version": 1,
+  "about": "Danh sách đề trang /thi-thu-hsa. Đề HSA thật của tổ Học liệu: chuyển bằng scripts/convert-hsa-paper.mjs vào src/native/exams/hsa-papers (source: hsa-paper); đề cũ có thể trỏ tới catalog.json (source: catalog) hoặc practice-tests.json (source: practice-bank). Muốn có bảng xếp hạng thì seed đề vào mtm_exam_private.exam_keys + mtm_hsa_rank.exams (xem migration 069). placeholder=true chỉ dùng cho đề mẫu tạm thời; pointsScale là thang điểm hiển thị.",
+  "exams": [
+    {
+      "slug": "de-01",
+      "examId": "mtm-hsa-thi-thu-01",
+      "source": "hsa-paper",
+      "title": "Đề thi thử HSA số 01",
+      "placeholder": false,
+      "active": true,
+      "pointsScale": 50
+    },
+    {
+      "slug": "de-mau-1",
+      "examId": "mtm-preview-practice-hsa-01-v1",
+      "source": "practice-bank",
+      "title": "Đề mẫu số 1 · Toán và xử lý số liệu",
+      "placeholder": true,
+      "active": false
+    }
+  ]
+}
