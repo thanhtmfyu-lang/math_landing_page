@@ -61,3 +61,11 @@
 }
 @media (max-width:480px){.mtm-ol-btn{width:100%}}
 @media (prefers-reduced-motion:reduce){.mtm-ol-btn{transition:none}.mtm-ol-btn:hover{transform:none}}
+/* Màu nhấn (anh Thành 19/10): mỗi lợi ích một màu, câu hỏi đang mở có viền đỏ HSA. */
+.mtm-ol-benefits li{border-left:5px solid var(--b,#1d2c5e)}
+.mtm-ol-benefits li:nth-child(1){--b:#c8344a}.mtm-ol-benefits li:nth-child(2){--b:#d9822b}.mtm-ol-benefits li:nth-child(3){--b:#0e9f8f}.mtm-ol-benefits li:nth-child(4){--b:#2563c9}.mtm-ol-benefits li:nth-child(5){--b:#5b3fc4}
+.mtm-ol-benefits .mtm-ol-num{background:var(--b,#1d2c5e);color:#fff}
+.mtm-ol-section.is-soft{background:linear-gradient(180deg,#fff4f6 0%,#f5f7fb 60%)}
+.mtm-ol-pack{background:linear-gradient(180deg,var(--soft) 0,#fff 55%)}
+.mtm-ol-faq details[open]{border-color:#c8344a;border-left:5px solid #c8344a}
+.mtm-ol-faq details[open] summary:after{background:#c8344a}
