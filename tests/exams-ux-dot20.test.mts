@@ -12,7 +12,7 @@ const notFound=render(load('src/migration/StudyRoutes.tsx').NotFound);
 assert.match(notFound,/404/);for(const href of ['/','/khoa-hoc','/thi-thu','/btvn'])assert.ok(notFound.includes('href="'+href+'"'));
 const {FloatingContact,contactAllowed}=load('src/components/FloatingContact.tsx');
 for(const [pathname,search] of [['/btvn',''],['/btvn/lop-gia/buoi-gia',''],['/quan-tri/de-thi',''],['/admin',''],['/thi-thu/de-gia',''],['/luyen-tap','?id=gia'],['/luyen-tap','?luot=gia']]){assert.equal(contactAllowed(pathname,search),false);assert.equal(render(FloatingContact,{pathname,search}),'');}
-const contact=render(FloatingContact,{pathname:'/khoa-hoc'});assert.match(contact,/tel:0964345413/);assert.match(contact,/href="\/#register"/);assert.match(contact,/https:\/\/zalo.me\/0967365413/);assert.match(contact,/Gọi tư vấn/);assert.match(contact,/Zalo trợ lý/);
+const contact=render(FloatingContact,{pathname:'/khoa-hoc'});assert.doesNotMatch(contact,/tel:/);assert.match(contact,/href="\/#register"/);assert.match(contact,/https:\/\/zalo.me\/0967365413/);assert.match(contact,/Nhắn Zalo tư vấn/);assert.match(contact,/Zalo trợ lý/);
 const homeContact=render(FloatingContact,{pathname:'/'});assert.match(homeContact,/mtm-home-consultation-dock/);assert.match(homeContact,/https:\/\/zalo.me\/0967365413/);assert.match(homeContact,/Tư vấn ngay/);assert.match(homeContact,/target="_blank"/);assert.doesNotMatch(homeContact,/tel:|href="\/#register"/);
 const skeleton=render(load('src/components/LoadingCards.tsx').LoadingCards,{label:'Đang tải buổi học'});assert.match(skeleton,/aria-busy="true"/);assert.equal((skeleton.match(/class="mtm-skeleton-card"/g)||[]).length,3);
 const read=(p:string)=>readFileSync(join(root,p),'utf8');

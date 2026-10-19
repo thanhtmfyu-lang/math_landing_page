@@ -1,5 +1,6 @@
 import { ArrowUpRight, ArrowRight } from 'lucide-react';
 import { PortalLinks } from './PortalLinks';
+import { ZALO_ASSISTANT_URL } from './mtm-contact';
 
 export function HeroSection() {
   return <>
@@ -14,7 +15,7 @@ export function HeroSection() {
             <a className="mtm-primary" href="#register">Tìm lớp phù hợp <ArrowUpRight size={21} aria-hidden="true" /></a>
             <a className="mtm-secondary" href="#courses">Khám phá khóa học <ArrowRight size={18} aria-hidden="true" /></a>
           </div>
-          <p className="mtm-contact">82 Chùa Láng, Hà Nội <span aria-hidden="true">·</span> <a href="tel:0964345413">0964 345 413</a></p>
+          <p className="mtm-contact">82 Chùa Láng, Hà Nội <span aria-hidden="true">·</span> <a href={ZALO_ASSISTANT_URL}>Zalo 0967 365 413</a></p>
         </div>
         <figure className="mtm-hero-photo mtm-community-photo">
           <a href="/mtm-class-moment-v1.jpg" target="_blank" rel="noopener noreferrer" aria-label="Xem ảnh tập thể MTM đầy đủ"><img src="/mtm-class-moment-v1.jpg" alt="Khoảnh khắc thầy trò và tập thể MTM quây quần trong lớp học" width="2048" height="1282" {...{'fetchpriority':'high'}} loading="eager" decoding="async" /></a>

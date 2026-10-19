@@ -1,7 +1,7 @@
 import {useEffect,useState} from 'react';
-import {Phone,MessageCircle,ArrowUpRight} from 'lucide-react';
+import {MessageCircle,ArrowUpRight} from 'lucide-react';
 import {Link} from '../migration/navigation';
-import {CONSULTATION_PHONE_URL,ZALO_ASSISTANT_URL} from './mtm-contact';
+import {ZALO_ASSISTANT_URL} from './mtm-contact';
 import {ZaloIcon} from './SocialLinks';
 import './home-consultation.css';
 export function contactAllowed(pathname:string,search=''){
@@ -18,5 +18,5 @@ export function FloatingContact({pathname,search=''}:{pathname:string;search?:st
  },[pathname,search,allowed]);
  if(!allowed)return null;
  if(pathname==='/')return <nav className="mtm-home-consultation-dock" hidden={nearForm} aria-label="Tư vấn khóa học qua Zalo"><a href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer" aria-label="Tư vấn ngay về khóa học, mở Zalo ở tab mới"><ZaloIcon/><span>Tư vấn ngay</span><ArrowUpRight size={18} aria-hidden="true"/></a></nav>;
- return <nav className="mtm-contact-dock" aria-label="Liên hệ nhanh" hidden={nearForm}><a href={CONSULTATION_PHONE_URL} aria-label="Gọi tư vấn lớp mới: 0964 345 413"><Phone size={18} aria-hidden="true"/><span>Gọi tư vấn</span></a><a href={ZALO_ASSISTANT_URL} aria-label="Zalo trợ lý lớp đang học: 0967 365 413" target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true"/><span>Zalo trợ lý</span></a><Link className="mtm-contact-register" href="/#register"><ArrowUpRight size={18} aria-hidden="true"/><span>Đăng ký tư vấn</span></Link></nav>;
+ return <nav className="mtm-contact-dock" aria-label="Liên hệ nhanh" hidden={nearForm}><a href={ZALO_ASSISTANT_URL} aria-label="Nhắn Zalo tư vấn lớp mới: 0967 365 413" target="_blank" rel="noopener noreferrer"><ZaloIcon/><span>Nhắn Zalo tư vấn</span></a><a href={ZALO_ASSISTANT_URL} aria-label="Zalo trợ lý lớp đang học: 0967 365 413" target="_blank" rel="noopener noreferrer"><MessageCircle size={18} aria-hidden="true"/><span>Zalo trợ lý</span></a><Link className="mtm-contact-register" href="/#register"><ArrowUpRight size={18} aria-hidden="true"/><span>Đăng ký tư vấn</span></Link></nav>;
 }

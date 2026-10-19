@@ -1,3 +1,3 @@
 import {Helmet} from 'react-helmet-async';
-import {MTM_SOCIAL_CHANNELS} from './mtm-contact';
-export function StructuredData(){const schema={'@context':'https://schema.org','@type':'EducationalOrganization',name:'Minh Thành Math',url:'https://minhthanhmath.vn',telephone:'+84964345413',address:{'@type':'PostalAddress',streetAddress:'82 Chùa Láng',addressLocality:'Hà Nội',addressCountry:'VN'},sameAs:MTM_SOCIAL_CHANNELS.map(channel=>channel.url)};return <Helmet defer={false}><script type="application/ld+json">{JSON.stringify(schema)}</script></Helmet>}
+import {MTM_SOCIAL_CHANNELS,ZALO_ASSISTANT_URL} from './mtm-contact';
+export function StructuredData(){const schema={'@context':'https://schema.org','@type':'EducationalOrganization',name:'Minh Thành Math',url:'https://minhthanhmath.vn',contactPoint:{'@type':'ContactPoint',contactType:'customer service',url:ZALO_ASSISTANT_URL,availableLanguage:'vi'},address:{'@type':'PostalAddress',streetAddress:'82 Chùa Láng',addressLocality:'Hà Nội',addressCountry:'VN'},sameAs:MTM_SOCIAL_CHANNELS.map(channel=>channel.url)};return <Helmet defer={false}><script type="application/ld+json">{JSON.stringify(schema)}</script></Helmet>}
