@@ -1,3 +1,4 @@
+import './site-polish.css';
 import '../native/chapters/practice-nav.css';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
 import {motion,useReducedMotion} from 'motion/react';

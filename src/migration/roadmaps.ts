@@ -24,7 +24,7 @@ export const TRACKS:Track[]=[
    {period:'06-09/2026',title:'Vòng 1 cho nhóm học sớm',detail:'Nhóm XPS đã học hết kiến thức 12 trong hè: hàm số, vectơ và Oxyz, nguyên hàm - tích phân, thống kê.',courses:'Step 1 hoặc Step 2'},
    {period:'10-12/2026',title:'Vòng 2 nâng cao và học chắc học kỳ I',detail:'Nhóm XPS học lại theo chuyên đề ở mức vận dụng và vận dụng cao. Nhóm XPT học ứng dụng đạo hàm, vectơ và tọa độ trong không gian, số liệu ghép nhóm, mở đầu nguyên hàm. Mỗi tuần ôn một mảng lớp 10-11 nối vào bài đang học.',detail:'Ứng dụng đạo hàm và đồ thị, vectơ và tọa độ trong không gian, số liệu ghép nhóm, mở đầu nguyên hàm. Mỗi tuần ôn lại một mảng lớp 10-11 nối vào bài đang học.',courses:'Step 1, 2 hoặc 3 theo mức của em'},
    {period:'01-02/2027',title:'Tích phân, Oxyz, xác suất',detail:'Hai nhóm cùng về đích kiến thức: tích phân và ứng dụng, phương pháp tọa độ trong không gian, xác suất có điều kiện. Tuần Tết (Tết Nguyên đán 06/02/2027) giảm tải, cuối tháng 2 kiểm tra 10 mảng nền, mảng nào dưới 7/10 thì bù.',courses:'Tiếp tục Step đang học'},
-   {period:'03-04/2027',title:'Luyện đề theo nhóm lỗi',detail:'Mỗi tuần một đề 90 phút, chữa lỗi theo nhóm: hàm số, hình học, tích phân, thống kê - xác suất, bài thực tế, phân bổ thời gian.',courses:'Step 4: Tổng ôn và luyện đề'},
+   {period:'03-04/2027',title:'Luyện đề theo nhóm lỗi',detail:'Mỗi tuần 5-10 đề 90 phút, chữa lỗi theo nhóm: hàm số, hình học, tích phân, thống kê - xác suất, bài thực tế, phân bổ thời gian.',courses:'Step 4: Tổng ôn và luyện đề'},
    {period:'05-06/2027',title:'Tổng duyệt đến ngày thi',detail:'Thi thử mô phỏng, chốt công thức và điều kiện, giảm tải dần và giữ nhịp theo ngày thi chính thức.',courses:'Step 4: Tổng ôn và luyện đề'},
   ],
   placements:[
@@ -87,7 +87,7 @@ export const TRACKS:Track[]=[
   stages:[
    {period:'10-12/2026',title:'Chuyên đề trọng tâm',detail:'Hàm số chuyên sâu (đơn điệu, cực trị, max-min, hàm hợp, tiệm cận, tương giao), mũ - logarit, nguyên hàm - tích phân, Oxyz.',courses:'Đọc vị đề ĐGNL HSA'},
    {period:'01-02/2027',title:'Dữ liệu, xác suất, đề 75 phút',detail:'Đọc bảng và biểu đồ, xác suất - thống kê, ôn mảng lớp 10-11 hay ra. Từ cuối tháng 1 làm đề Toán 75 phút, phân loại lỗi kiến thức, đọc đề, thời gian.',courses:'Đọc vị đề ĐGNL HSA'},
-   {period:'03-05/2027',title:'Luyện đề theo ca thi',detail:'Thi đúng ca đã đăng ký. Nếu chọn đợt muộn, cứ 2 tuần một đề, tuần xen kẽ chữa lỗi.',courses:'Đọc vị đề ĐGNL HSA'},
+   {period:'03-05/2027',title:'Luyện đề theo ca thi',detail:'Mỗi tuần 5-10 đề Toán 75 phút, chữa lỗi ngay trong tuần, thi đúng ca đã đăng ký.',courses:'Đọc vị đề ĐGNL HSA'},
   ],
   placements:[
    {level:'2K9 xét tuyển bằng HSA, Toán 12 đã ở mức vận dụng',start:'Vào thẳng lộ trình HSA'},
@@ -127,7 +127,7 @@ export function courseAdvice(c:Course):CourseAdvice{
  if(n===1)return{role:'Bước 1 · Nền tảng',forWho:'Em còn hổng kiến thức hoặc điểm Toán trên lớp dưới 6,5. Học lại từ khái niệm, dạng cơ bản và cách trình bày.',when:g===12?'Học từ bây giờ đến hết tháng 2/2027, song song vá nền 10-11.':'Học song song tiến độ trường trong năm học.',next:'Khi làm chắc bài cơ bản, chuyển lên Step 2 Vận dụng, rồi '+after};
  if(n===2)return{role:'Bước 2 · Vận dụng',forWho:'Em làm được bài cơ bản, điểm khoảng 6,5-8, muốn lên 8+. Luyện các dạng bài và cách phân tích đề.',when:g===12?'Học từ bây giờ đến hết tháng 2/2027.':'Học song song tiến độ trường trong năm học.',next:'Em mục tiêu 9+ học tiếp Step 3, còn lại vào '+after};
  if(n===3)return{role:'Bước 3 · Vận dụng cao',forWho:'Em đã vững vận dụng, điểm từ 8 trở lên, mục tiêu 9+. Rèn bài nhiều bước, lập luận và kiểm tra lời giải.',when:g===12?'Học từ bây giờ đến hết tháng 2/2027.':'Học song song tiến độ trường trong năm học.',next:'Tiếp theo: '+after};
- return{role:'Bước 4 · Tổng ôn và luyện đề',forWho:'Mọi mức, sau khi đã học xong phần kiến thức tương ứng ở Step 1, 2 hoặc 3.',when:g===12?'Từ tháng 3/2027 đến ngày thi tốt nghiệp THPT.':'Khoảng 3-4 tuần trước mỗi kỳ thi học kỳ.',next:g===12?'Giữ nhịp một đề mỗi tuần đến ngày thi chính thức.':'Lên lớp '+(g+1)+' theo lộ trình của MTM.'};
+ return{role:'Bước 4 · Tổng ôn và luyện đề',forWho:'Mọi mức, sau khi đã học xong phần kiến thức tương ứng ở Step 1, 2 hoặc 3.',when:g===12?'Từ tháng 3/2027 đến ngày thi tốt nghiệp THPT.':'Khoảng 3-4 tuần trước mỗi kỳ thi học kỳ.',next:g===12?'Giữ nhịp 5-10 đề mỗi tuần đến ngày thi chính thức.':'Lên lớp '+(g+1)+' theo lộ trình của MTM.'};
 }
 
 // Thẻ khóa học v2: bìa dựng từ dữ liệu lộ trình (không dùng ảnh tĩnh) nên luôn khớp tiến độ.
@@ -142,8 +142,8 @@ export function stepCard(c:Course):StepCardV2{
  if(n===1)return{tone:'s1',num:'1',name:'Nền tảng',grade,from:['Hiện tại','Dưới 6,5'],to:['Mục tiêu','Vững nền'],fit:['Điểm Toán trên lớp dưới 6,5','Hổng kiến thức lớp dưới'],outcome:'Nắm chắc khái niệm, làm đúng dạng cơ bản, trình bày đủ bước.',windows:ys,next:'Tiếp theo: Step 2 Vận dụng'};
  if(n===2)return{tone:'s2',num:'2',name:'Vận dụng',grade,from:['Hiện tại','6,5-8'],to:['Mục tiêu','8+'],fit:['Làm được bài cơ bản','Hay mất điểm câu vận dụng'],outcome:'Nhận dạng nhanh dạng bài, biết phân tích đề trước khi làm.',windows:ys,next:'Tiếp theo: Step 3 hoặc Step 4'};
  if(n===3)return{tone:'s3',num:'3',name:'Vận dụng cao',grade,from:['Hiện tại','Từ 8'],to:['Mục tiêu','9+'],fit:['Đã vững bài vận dụng','Muốn giải câu khó nhất đề'],outcome:'Xử lý bài nhiều bước, lập luận chặt và tự kiểm lời giải.',windows:ys,next:'Tiếp theo: Step 4 Tổng ôn'};
- if(y12)return{tone:'s4',num:'4',name:'Tổng ôn & luyện đề',grade,from:['Nhịp học','1 đề/tuần'],to:['Đề thi','90 phút'],fit:['Đã học xong Step 1, 2 hoặc 3','Cần nhịp đề sát ngày thi'],outcome:'Chữa lỗi theo nhóm, phân bổ thời gian làm bài như thi thật.',windows:[[6,9]],next:'Giữ nhịp đề đến ngày thi'};
- return{tone:'s4',num:'4',name:'Tổng ôn & luyện đề',grade,from:['Thời điểm','Trước kỳ thi'],to:['Hình thức','Đề có giờ'],fit:['Sắp thi giữa kỳ, cuối kỳ','Muốn hệ thống lại cả chương'],outcome:'Hệ thống chương, làm đề có giờ, sửa lỗi trước kỳ thi.',windows:[[2,3],[7,8]],next:'Lên lớp '+(g+1)+' theo lộ trình'};
+ if(y12)return{tone:'s4',num:'4',name:'Tổng ôn & luyện đề',grade,from:['Nhịp luyện','5-10 đề/tuần'],to:['Đề thi','90 phút'],fit:['Đã học xong Step 1, 2 hoặc 3','Cần nhịp đề sát ngày thi'],outcome:'5-10 đề 90 phút mỗi tuần, chữa lỗi theo nhóm, phân bổ thời gian như thi thật.',windows:[[6,9]],next:'Giữ nhịp đề đến ngày thi'};
+ return{tone:'s4',num:'4',name:'Tổng ôn & luyện đề',grade,from:['Nhịp luyện','5-10 đề/tuần'],to:['Thời điểm','Trước kỳ thi'],fit:['Sắp thi giữa kỳ, cuối kỳ','Muốn hệ thống lại cả chương'],outcome:'Hệ thống chương, làm 5-10 đề có giờ mỗi tuần, sửa lỗi trước kỳ thi.',windows:[[2,3],[7,8]],next:'Lên lớp '+(g+1)+' theo lộ trình'};
 }
 // Vị trí "hôm nay" trên thanh năm học (0-10), null khi ngoài năm học 2026-2027.
 export function schoolYearPosition(d=new Date()){const i=(d.getFullYear()-2026)*12+d.getMonth()-8;return i<0||i>9?null:i+(d.getDate()-1)/31;}

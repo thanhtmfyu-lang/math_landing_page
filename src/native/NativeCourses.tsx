@@ -6,7 +6,7 @@ import {RoadmapPanel} from '../migration/RoadmapPanel';
 import {StepCardGrid} from '../migration/StepCard';
 import {TRACKS,courseAdvice,courseTrack} from '../migration/roadmaps';
 import {parseCatalogQuery,catalogURL} from '../migration/route-policy';
-import {nativeCourseMetadata,nativeLessonUrl,resolveNativeLesson,publicSnapshot} from './model';
+import {nativeCourseMetadata,nativeLessonUrl,resolveNativeLesson} from './model';
 import {enrollmentHeadline} from './enrollment-year';
 import {courseSearch} from './course-search';
 import R106PageIntro from '../migration/R106PageIntro';
@@ -14,7 +14,7 @@ import './native.css';
 import ScoreGoalTool from './ScoreGoalTool';
 import './course-catalog-ux.css';
 export function Pending({children}:{children:ReactNode}){return <p className="ne-pending" role="status">{children}</p>;}
-export function SnapshotNotice(){return <div className="ne-snapshot">Nội dung theo bản chụp nguồn ngày {publicSnapshot.capturedAt.slice(0,10)}.</div>;}
+export function SnapshotNotice(){return null;}
 function SafeOverview({html}:{html:string}){
  const content=useMemo(()=>{const doc=new DOMParser().parseFromString(html,'text/html');let count=0;const visit=(node:Node):ReactNode=>{if(++count>2000)return null;if(node.nodeType===3)return node.textContent;if(!(node instanceof Element))return null;const tag=node.tagName.toLowerCase();if(['script','style','iframe','object','embed','form','input','img','svg'].includes(tag))return null;const children=Array.from(node.childNodes).map(visit);return ['p','h2','h3','h4','ul','ol','li','strong','b','em','i','br','blockquote','span'].includes(tag)?createElement(tag,{key:count},...children):<span key={count}>{children}</span>;};return Array.from(doc.body.childNodes).map(visit);},[html]);
  return <div className="ne-overview">{content}</div>;
@@ -26,9 +26,9 @@ export function NativeCatalogue({search}:{search:string}){
  useEffect(()=>{if(advanced)searchInput.current?.focus();},[advanced]);
  const change=(patch:Partial<typeof state>,replace=false)=>navigate(catalogURL({...state,...patch}),{replace});
  return <div className="native-ui"><SnapshotNotice/><section className="ne-catalog"><R106PageIntro eyebrow="KHÓA HỌC MTM" title={!track?'Danh mục khóa học Toán':<>{track.id==='hsa'?'Lộ trình HSA 2027':(headline?'Lộ trình luyện thi '+headline.year:'Lộ trình Toán '+track.id)} <span>dành cho {track.cohort}</span></>} description={<p>Chọn lớp hoặc HSA để xem lộ trình cả năm, lớp đang học đến đâu và nên bắt đầu từ bước nào.</p>}><div className="ne-grades" role="group" aria-label="Chọn lớp">{TRACKS.map(t=>t.id).sort().map(grade=><button key={grade} aria-pressed={state.grade===grade} onClick={()=>change({grade:grade as typeof state.grade})}>{grade==='hsa'?'HSA':'Lớp '+grade}</button>)}</div><div className="ne-filter-toggle"><button onClick={()=>{if(filtersVisible&&!state.query&&state.grade!=='all')setAdvanced(!advanced);else{setAdvanced(true);searchInput.current?.focus();}}} aria-expanded={filtersVisible} aria-controls="ne-catalog-search"><Search size={15}/> Tìm và lọc khóa học</button></div></R106PageIntro>{filtersVisible&&<div id="ne-catalog-search" className="ne-search-row"><input ref={searchInput} aria-label="Tìm khóa học" placeholder="Tên khóa học hoặc chủ đề…" maxLength={120} value={state.query} onChange={e=>change({query:e.target.value},true)}/>{state.query&&<button type="button" onClick={()=>{setAdvanced(true);change({query:''},true);searchInput.current?.focus();}}>Xóa từ tìm kiếm</button>}<select aria-label="Sắp xếp khóa học" value={state.order} onChange={e=>change({order:e.target.value as typeof state.order})}><option value="roadmap">Theo lộ trình</option><option value="name">Theo tên</option></select><button onClick={()=>change({grade:'all',query:''})}>Tất cả</button></div>}
- {track&&<RoadmapPanel track={track.id}/>}
  <p className="ne-catalog-count" role="status" aria-live="polite">{list.length} khóa học{state.grade==='all'?' ở tất cả các lớp':state.grade==='hsa'?' HSA':' lớp '+state.grade}{state.query?' khớp từ tìm kiếm.':'.'}</p>
  {list.length?<div><StepCardGrid list={list}/></div>:<div className="ne-empty"><h2>Không tìm thấy khóa học</h2><button onClick={()=>change({query:'',grade:'all'})}>Xóa bộ lọc</button></div>}
+ {track&&<RoadmapPanel track={track.id}/>}
  {state.grade!=='all'&&state.grade!=='hsa'&&<ScoreGoalTool key={state.grade} grade={state.grade}/>}
  </section></div>;
 }

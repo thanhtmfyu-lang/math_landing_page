@@ -61,7 +61,7 @@ export function RegisterSection() {
               Đăng Ký Tư Vấn
             </h2>
 
-            <div id="data-notice" className="mtm-data-notice"><p>Bạn có thể tự gửi email trực tiếp tới <a href="mailto:quanlytoanminhthanhmath@gmail.com">quanlytoanminhthanhmath@gmail.com</a>. Đây là lựa chọn gửi riêng qua ứng dụng email của bạn.</p><h3>Thông tin đăng ký được dùng thế nào?</h3><p>Biểu mẫu sử dụng EmailJS để gửi yêu cầu tư vấn. Bạn cũng có thể <a href={ZALO_ASSISTANT_URL}>nhắn Zalo 0967 365 413</a> thay cho biểu mẫu.</p><details><summary>Xem chi tiết về dữ liệu đăng ký</summary><p>Tên học sinh, số điện thoại, lớp, hình thức học và thông tin tư vấn tùy chọn bạn nhập được gửi qua dịch vụ EmailJS để trung tâm tiếp nhận yêu cầu tư vấn. Chỉ cung cấp thông tin cần thiết; không gửi mật khẩu hoặc hồ sơ nhạy cảm. Việc gửi yêu cầu không tự đăng ký lớp, tạo tài khoản hay đồng ý nhận quảng cáo.</p><p>Cần hỏi về việc sử dụng hoặc chỉnh sửa thông tin đã gửi? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>. Nếu không muốn dùng biểu mẫu, bạn có thể nhắn Zalo trực tiếp.</p></details></div><form aria-describedby="data-notice" onSubmit={handleSubmit} className="space-y-6"><fieldset disabled={isPending || isSubmitted} className="space-y-6">
+            <p id="data-notice" className="mtm-register-lead">Để lại thông tin, MTM liên hệ lại để tư vấn lộ trình cho em. Không muốn điền? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>.</p><form aria-describedby="data-notice" onSubmit={handleSubmit} className="space-y-6"><fieldset disabled={isPending || isSubmitted} className="space-y-6">
               {/* Họ tên */}
               <div className="space-y-2">
                 <Label htmlFor="student-name">Họ và tên học sinh *</Label>
@@ -149,7 +149,7 @@ export function RegisterSection() {
                   Yêu cầu tư vấn đã được gửi; lịch học và đăng ký cần trung tâm xác nhận.
                 </p>
               )}
-            </fieldset></form>
+            </fieldset></form><details className="mtm-data-notice mtm-data-after"><summary>Thông tin đăng ký được dùng thế nào?</summary><p>Bạn cũng có thể tự gửi email tới <a href="mailto:quanlytoanminhthanhmath@gmail.com">quanlytoanminhthanhmath@gmail.com</a>.</p><p>Tên học sinh, số điện thoại, lớp, hình thức học và thông tin tư vấn tùy chọn bạn nhập được gửi qua dịch vụ EmailJS để trung tâm tiếp nhận yêu cầu tư vấn. Chỉ cung cấp thông tin cần thiết; không gửi mật khẩu hoặc hồ sơ nhạy cảm. Việc gửi yêu cầu không tự đăng ký lớp, tạo tài khoản hay đồng ý nhận quảng cáo.</p><p>Cần hỏi về việc sử dụng hoặc chỉnh sửa thông tin đã gửi? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>. Nếu không muốn dùng biểu mẫu, bạn có thể nhắn Zalo trực tiếp.</p></details>
             {submitError&&<div ref={errorRef} tabIndex={-1} role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 mtm-registration-feedback"><p>{submitError}</p><p>Thông tin vẫn được giữ trong biểu mẫu. Bạn có thể <a href={ZALO_ASSISTANT_URL} className="underline font-semibold">nhắn Zalo 0967 365 413</a> để được tư vấn. Nếu chưa rõ yêu cầu đã tới trung tâm hay chưa, hãy nhắn Zalo kiểm tra trước khi gửi lại.</p></div>}
           </div>
         </ScrollReveal>

@@ -172,12 +172,6 @@
       "time": "14:00–16:00"
     },
     {
-      "class_name": "TSA",
-      "group": "TSA",
-      "weekday": 7,
-      "time": "14:00–17:00"
-    },
-    {
       "class_name": "2K12",
       "group": "2K12",
       "weekday": 7,
