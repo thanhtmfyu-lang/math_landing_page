@@ -67,6 +67,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/hoc-online",
+      "destination": "/index.html"
+    },
+    {
       "source": "/tai-lieu",
       "destination": "/index.html"
     },
