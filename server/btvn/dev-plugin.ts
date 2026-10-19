@@ -8,13 +8,15 @@ import {demoStudents} from './demo-students';
 import {HomeworkService} from './service';
 import {handleHomework} from './http';
 import {demoLessons} from './demo-lessons';
+import {boardKey,localBoardPosts} from '../bang-tin/local';
+import {createBoardMediaApi} from '../../api/bang-tin-anh';
 import type {PracticeExam} from '../../src/native/exams/data';
 export function btvnDevPlugin():Plugin {
   return {name:'mtm-btvn-demo',apply:'serve',configureServer(server){
     // Vite dev có thể đọc source file: chặn module riêng qua mọi URL, kể cả /@fs.
     server.middlewares.use((req,res,next)=>{
       let path='';try{path=decodeURIComponent(req.url??'').replace(/\\/g,'/').replace(/\/{2,}/g,'/');}catch{res.statusCode=400;res.end();return;}
-      if(/(?:^|\/)server\/btvn(?:\/|$)/i.test(path)||/^\/(?:build|dist|scripts|tests)(?:\/|$)/i.test(path)||/btvn-web-diem-danh\/phieu-a/i.test(path)||path.startsWith('/api/')&&!(process.env.MTM_BTVN_DEMO==='1'&&process.env.MTM_R106_PREVIEW==='1'&&/^\/api\/xep-hang(?:-cua-em)?(?:\?|$)/.test(path))&&!/^\/api\/btvn(?:\?|$|\/)/.test(path)&&!(process.env.MTM_BTVN_DEMO==='1'&&/^\/api\/bang-tin(?:\?|$)/.test(path))){
+      if(/(?:^|\/)server\/btvn(?:\/|$)/i.test(path)||/^\/(?:build|dist|scripts|tests)(?:\/|$)/i.test(path)||/btvn-web-diem-danh\/phieu-a/i.test(path)||path.startsWith('/api/')&&!(process.env.MTM_BTVN_DEMO==='1'&&process.env.MTM_R106_PREVIEW==='1'&&/^\/api\/xep-hang(?:-cua-em)?(?:\?|$)/.test(path))&&!/^\/api\/btvn(?:\?|$|\/)/.test(path)&&!(process.env.MTM_BTVN_DEMO==='1'&&/^\/api\/bang-tin(?:-anh)?(?:\?|$)/.test(path))){
         res.statusCode=404;res.setHeader('Cache-Control','no-store');res.end();return;
       }next();
     });
@@ -32,7 +34,8 @@ export function btvnDevPlugin():Plugin {
     const service=new HomeworkService(repo,exam,Date.parse('2026-10-16T18:30:00+07:00'),undefined,undefined,Date.now,materials,lessonExams);
     if(enhanced)server.middlewares.use(r106PreviewApi(service,target));
     // Bảng tin bản thử: chưa nối máy chủ thì chỉ hiện bài cố định trong mã.
-    server.middlewares.use('/api/bang-tin',(_req,res)=>{res.writeHead(200,{'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({enabled:false,posts:[]}));});
+    server.middlewares.use('/api/bang-tin-anh',(req,res)=>{const api=createBoardMediaApi();api({method:req.method,headers:req.headers as Record<string,string>,query:Object.fromEntries(new URLSearchParams((req.url??'').split('?')[1]??''))},{setHeader:(k,v)=>res.setHeader(k,v),status:n=>{res.statusCode=n;return {end:b=>res.end(b)};}});});
+    server.middlewares.use('/api/bang-tin',(_req,res)=>{const key=boardKey(process.env);res.writeHead(200,{'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({enabled:!!key,posts:key?localBoardPosts(key):[]}));});
     server.middlewares.use('/api/btvn',async(req,res)=>{
       const headers={'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'};
       if(req.url&&req.url!=='/'&&req.url!==''){res.writeHead(404,headers);res.end(JSON.stringify({message:'Không tìm thấy bài.'}));return;}

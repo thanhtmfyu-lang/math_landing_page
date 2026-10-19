@@ -1,0 +1,91 @@
+[
+ {
+  "id": "2026-10-19-gio-nghi-phong-ben",
+  "kind": "tai-lop",
+  "title": "Giờ nghỉ ở phòng bên",
+  "date": "2026-10-19",
+  "place": "MTM, 18 ngách 23 ngõ 82 Chùa Láng",
+  "summary": "Nghỉ giữa giờ: ăn vặt, tạo dáng một chút rồi quay lại bài. Không khí học ở MTM là vậy đó!",
+  "photos": [
+   {
+    "id": "2026-10-19-gio-nghi-phong-ben-01",
+    "alt": "Nhóm bạn phòng bên tạo dáng giờ nghỉ.",
+    "width": 1600,
+    "height": 1200
+   },
+   {
+    "id": "2026-10-19-gio-nghi-phong-ben-02",
+    "alt": "Ăn vặt giữa giờ trước khi vào bài tiếp.",
+    "width": 1600,
+    "height": 1200
+   }
+  ]
+ },
+ {
+  "id": "2026-10-19-mung-20-10",
+  "kind": "ngay-le",
+  "title": "Mừng 20/10 sớm ở MTM",
+  "date": "2026-10-19",
+  "pinned": true,
+  "place": "Phòng MTM-Emories, 18 ngách 23 ngõ 82 Chùa Láng",
+  "summary": "Tối nay lớp học có thêm hoa và trà sữa. Thầy đi từng bàn trao quà, chúc các bạn nữ MTM một ngày 20/10 thật vui, xinh và tự tin. Vui xong, cả lớp lại cầm đề học tiếp!",
+  "photos": [
+   {
+    "id": "2026-10-19-mung-20-10-01",
+    "alt": "Cả lớp cùng khoe bó hoa nhỏ mừng 20/10.",
+    "width": 1600,
+    "height": 1200
+   },
+   {
+    "id": "2026-10-19-mung-20-10-02",
+    "alt": "Thầy đi từng bàn trao quà cho các bạn.",
+    "width": 1600,
+    "height": 2134
+   },
+   {
+    "id": "2026-10-19-mung-20-10-03",
+    "alt": "Những bó hoa nhỏ được trao tận tay.",
+    "width": 1600,
+    "height": 2134
+   },
+   {
+    "id": "2026-10-19-mung-20-10-04",
+    "alt": "Khoảnh khắc trao hoa ngay giữa giờ học.",
+    "width": 1280,
+    "height": 720,
+    "video": true
+   },
+   {
+    "id": "2026-10-19-mung-20-10-05",
+    "alt": "Góc MTM-Emories hôm nay có thêm hoa và nụ cười.",
+    "width": 1600,
+    "height": 1200
+   },
+   {
+    "id": "2026-10-19-mung-20-10-06",
+    "alt": "Quà đến tận bàn, ai cũng bất ngờ.",
+    "width": 720,
+    "height": 1280,
+    "video": true
+   },
+   {
+    "id": "2026-10-19-mung-20-10-07",
+    "alt": "Trà sữa trên bàn, đề vẫn trong tay: vui xong lại học tiếp.",
+    "width": 1600,
+    "height": 1200
+   },
+   {
+    "id": "2026-10-19-mung-20-10-08",
+    "alt": "Lớp học tối nay: vừa ấm áp, vừa tập trung.",
+    "width": 1600,
+    "height": 1200
+   },
+   {
+    "id": "2026-10-19-mung-20-10-09",
+    "alt": "Các bạn nữ bàn cuối cùng ly trà sữa 20/10.",
+    "width": 1600,
+    "height": 1200
+   }
+  ]
+ }
+]

@@ -1,5 +1,8 @@
 import {useEffect,useRef,useState} from 'react';
-import {boardEvents,countdownLabel,dayLabel,kindLabels,parseServerPost,staticPosts,upcomingEvents,visiblePosts,type BoardPost} from './center-board-data';
+import {boardEvents,countdownLabel,dayLabel,kindLabels,parseServerPost,staticPosts,upcomingEvents,visiblePosts,type BoardPhoto,type BoardPost} from './center-board-data';
+
+const still=(p:BoardPhoto)=>p.video?p.poster??p.thumb??'':p.url;
+const small=(p:BoardPhoto)=>p.thumb??still(p);
 import './center-board.css';
 
 type Viewer={post:BoardPost;index:number}|null;
@@ -28,18 +31,20 @@ export default function CenterBoard({onSkip}:{onSkip?:()=>void}){
   </header>
   {!collapsed&&<div className="mtm-board-body">
    {lead&&<button type="button" className={'mtm-board-lead mtm-board-kind--'+lead.kind} onClick={()=>setViewer({post:lead,index:0})}>
-    <span className="mtm-board-lead-media"><img src={lead.photos[0].url} alt={lead.photos[0].alt} width={lead.photos[0].width} height={lead.photos[0].height} decoding="async"/></span>
-    <span className="mtm-board-lead-copy"><span className="mtm-board-tags"><b>{kindLabels[lead.kind]}</b><em>{dayLabel(lead.date)}</em>{lead.photos.length>1&&<em>{lead.photos.length} ảnh</em>}</span>
+    <span className="mtm-board-lead-media"><img src={still(lead.photos[0])} alt={lead.photos[0].alt} width={lead.photos[0].width} height={lead.photos[0].height} decoding="async"/></span>
+    <span className="mtm-board-lead-copy"><span className="mtm-board-tags"><b>{kindLabels[lead.kind]}</b><em>{dayLabel(lead.date)}</em>{lead.photos.length>1&&<em>{mediaCount(lead)}</em>}</span>
      <strong>{lead.title}</strong><span className="mtm-board-summary">{lead.summary}</span><span className="mtm-board-open">Xem {lead.photos.length>1?'ảnh':'chi tiết'} <span aria-hidden="true">→</span></span></span>
    </button>}
    <div className="mtm-board-side">
     {events.length>0&&<div className="mtm-board-events" aria-labelledby="mtm-board-events-title"><h3 id="mtm-board-events-title">Sắp tới ở trung tâm</h3><ol>{events.map(e=><li key={e.date}><span className="mtm-board-date"><b>{e.date.slice(8,10)}</b><i>Th{Number(e.date.slice(5,7))}</i></span><span><strong>{e.title}</strong><small>{e.note}</small></span><em className={e.daysLeft<=1?'is-soon':''}>{countdownLabel(e.daysLeft)}</em></li>)}</ol></div>}
-    {rest.length>0&&<div className="mtm-board-list"><h3>Bài trước</h3><ul>{rest.map(p=><li key={p.id}><button type="button" className={'mtm-board-item mtm-board-kind--'+p.kind} onClick={()=>setViewer({post:p,index:0})}><img src={p.photos[0].url} alt="" loading="lazy" decoding="async"/><span><b>{kindLabels[p.kind]} · {dayLabel(p.date)}</b><strong>{p.title}</strong><small>{p.photos.length} ảnh</small></span></button></li>)}</ul></div>}
+    {rest.length>0&&<div className="mtm-board-list"><h3>Bài trước</h3><ul>{rest.map(p=><li key={p.id}><button type="button" className={'mtm-board-item mtm-board-kind--'+p.kind} onClick={()=>setViewer({post:p,index:0})}><img src={small(p.photos[0])} alt="" loading="lazy" decoding="async"/><span><b>{kindLabels[p.kind]} · {dayLabel(p.date)}</b><strong>{p.title}</strong><small>{mediaCount(p)}</small></span></button></li>)}</ul></div>}
    </div>
   </div>}
   {viewer&&<PhotoViewer post={viewer.post} index={viewer.index} onIndex={index=>setViewer({post:viewer.post,index})} onClose={()=>setViewer(null)}/>}
  </section>;
 }
+
+function mediaCount(p:BoardPost){const v=p.photos.filter(x=>x.video).length,a=p.photos.length-v;return [a&&a+' ảnh',v&&v+' video'].filter(Boolean).join(' · ');}
 
 function PhotoViewer({post,index,onIndex,onClose}:{post:BoardPost;index:number;onIndex:(i:number)=>void;onClose:()=>void}){
  const dialog=useRef<HTMLDivElement>(null),touch=useRef<number|null>(null),count=post.photos.length,photo=post.photos[index];
@@ -56,10 +61,10 @@ function PhotoViewer({post,index,onIndex,onClose}:{post:BoardPost;index:number;o
  return <div className="mtm-board-viewer" role="dialog" aria-modal="true" aria-label={post.title} tabIndex={-1} ref={dialog} onClick={e=>{if(e.target===e.currentTarget)onClose();}}>
   <div className="mtm-board-viewer-bar"><span><b>{kindLabels[post.kind]} · {dayLabel(post.date)}</b><strong>{post.title}</strong></span><button type="button" onClick={onClose} aria-label="Đóng">✕</button></div>
   <figure onTouchStart={e=>{touch.current=e.touches[0].clientX;}} onTouchEnd={e=>{const start=touch.current;touch.current=null;if(start===null||count<2)return;const dx=e.changedTouches[0].clientX-start;if(Math.abs(dx)>40)go(dx<0?1:-1);}}>
-   <img key={photo.url} src={photo.url} alt={photo.alt}/>
+   {photo.video?<video key={photo.url} src={photo.url} poster={photo.poster} controls playsInline autoPlay muted aria-label={photo.alt}/>:<img key={photo.url} src={photo.url} alt={photo.alt}/>}
    {count>1&&<><button type="button" className="mtm-board-nav is-prev" onClick={()=>go(-1)} aria-label="Ảnh trước">‹</button><button type="button" className="mtm-board-nav is-next" onClick={()=>go(1)} aria-label="Ảnh sau">›</button></>}
    <figcaption>{count>1&&<b>{index+1}/{count}</b>}{index===0?post.summary:photo.alt}{post.place&&index===0&&<small> · {post.place}</small>}</figcaption>
   </figure>
-  {count>1&&<div className="mtm-board-thumbs">{post.photos.map((p,i)=><button key={p.url} type="button" aria-label={'Ảnh '+(i+1)} aria-current={i===index} onClick={()=>onIndex(i)}><img src={p.url} alt="" loading="lazy"/></button>)}</div>}
+  {count>1&&<div className="mtm-board-thumbs">{post.photos.map((p,i)=><button key={p.url} type="button" aria-label={'Ảnh '+(i+1)} aria-current={i===index} onClick={()=>onIndex(i)}><img src={small(p)} alt="" loading="lazy"/>{p.video&&<i aria-hidden="true">▶</i>}</button>)}</div>}
  </div>;
 }

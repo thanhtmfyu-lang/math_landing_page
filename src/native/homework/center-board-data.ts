@@ -2,7 +2,7 @@
 // Hai nguồn: bài cố định trong mã (ngày lễ, ảnh trung tâm đã công khai) và bài máy chủ trả về
 // từ ảnh nhóm Zalo đã qua bước duyệt (/api/bang-tin). Lịch "Sắp tới" lấy từ lịch phòng Nội bộ & Sự kiện.
 export type BoardKind='ngay-le'|'su-kien'|'tai-lop'|'thong-bao';
-export type BoardPhoto={url:string;alt:string;width?:number;height?:number};
+export type BoardPhoto={url:string;alt:string;width?:number;height?:number;thumb?:string;poster?:string;video?:boolean};
 export type BoardPost={id:string;kind:BoardKind;title:string;date:string;summary:string;photos:BoardPhoto[];place?:string;visibleFrom?:string;pinned?:boolean};
 export type BoardEvent={date:string;title:string;note:string};
 
@@ -18,8 +18,8 @@ const moments=[
 ] as const;
 
 export const staticPosts:BoardPost[]=[
- {id:'2026-10-20-phu-nu-viet-nam',kind:'ngay-le',title:'Chúc mừng ngày Phụ nữ Việt Nam 20/10',date:'2026-10-20',visibleFrom:'2026-10-19T20:00:00+07:00',pinned:true,place:'Cả trung tâm',
-  summary:'MTM gửi lời chúc tới các bạn nữ, các mẹ, cô giáo và các chị trợ giảng: luôn vui, khỏe và tự tin như lúc giải xong một bài Toán khó. Ảnh các lớp chúc mừng trong ngày sẽ được cập nhật tại đây.',
+ {id:'2026-10-20-phu-nu-viet-nam',kind:'ngay-le',title:'Chúc mừng ngày Phụ nữ Việt Nam 20/10',date:'2026-10-20',visibleFrom:'2026-10-19T20:00:00+07:00',place:'Cả trung tâm',
+  summary:'MTM gửi lời chúc tới các bạn nữ, các mẹ, cô giáo và các chị trợ giảng: luôn vui, khỏe và tự tin như lúc giải xong một bài Toán khó. Ảnh các lớp chúc mừng có ở bài "Mừng 20/10 sớm ở MTM".',
   photos:[{url:'/bang-tin/2026-10-20-phu-nu-viet-nam.webp',alt:'Thiệp MTM chúc mừng ngày Phụ nữ Việt Nam 20/10',width:1200,height:900}]},
  {id:'khoanh-khac-mtm',kind:'tai-lop',title:'Khoảnh khắc ở MTM',date:'2026-10-19',place:'18 ngách 23 ngõ 82 Chùa Láng',
   summary:'Những buổi học, những nụ cười và chung một màu áo MTM. Bấm vào ảnh để xem từng khoảnh khắc.',
@@ -68,10 +68,12 @@ export function parseServerPost(value:unknown):BoardPost|null{
  if(typeof x.id!=='string'||!/^[a-z0-9-]{1,80}$/.test(x.id)||!(typeof x.kind==='string'&&x.kind in kindLabels)||typeof x.title!=='string'||!x.title.trim()||x.title.length>120
   ||typeof x.date!=='string'||!DATE.test(x.date)||typeof x.summary!=='string'||x.summary.length>1500||!Array.isArray(x.photos)||x.photos.length>60)return null;
  const photos:BoardPhoto[]=[];
+ const ok=(u:unknown):u is string=>typeof u==='string'&&(u.startsWith('https://')||/^\/bang-tin\/[a-z0-9-]+\.(webp|jpg|png)$/.test(u)||/^\/api\/bang-tin-anh\?f=[a-z0-9-]+&e=\d{10}&s=[A-Za-z0-9_-]{20,60}$/.test(u));
  for(const p of x.photos){
   if(!p||typeof p!=='object')return null;const y=p as Record<string,unknown>;
-  if(typeof y.url!=='string'||!(y.url.startsWith('https://')||/^\/bang-tin\/[a-z0-9-]+\.(webp|jpg|png)$/.test(y.url))||typeof y.alt!=='string'||y.alt.length>200)return null;
-  photos.push({url:y.url,alt:y.alt||'Ảnh tại MTM',width:Number.isInteger(y.width)?y.width as number:undefined,height:Number.isInteger(y.height)?y.height as number:undefined});
+  if(!ok(y.url)||typeof y.alt!=='string'||y.alt.length>200||(y.thumb!==undefined&&!ok(y.thumb))||(y.poster!==undefined&&!ok(y.poster)))return null;
+  photos.push({url:y.url,alt:y.alt||'Ảnh tại MTM',width:Number.isInteger(y.width)?y.width as number:undefined,height:Number.isInteger(y.height)?y.height as number:undefined,
+   thumb:y.thumb as string|undefined,poster:y.poster as string|undefined,video:y.video===true});
  }
  return {id:x.id,kind:x.kind as BoardKind,title:x.title.trim(),date:x.date,summary:x.summary,photos,place:typeof x.place==='string'&&x.place.length<=120?x.place:undefined,pinned:x.pinned===true};
 }
