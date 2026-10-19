@@ -32,6 +32,10 @@ export const HSA_MOCK_EXAMS:readonly HsaMockExam[]=checked.ok?checked.value.exam
 export const hsaMockExam=(slug:string|null)=>HSA_MOCK_EXAMS.find(e=>e.slug===slug)??HSA_MOCK_EXAMS[0];
 /** Số điện thoại không bắt buộc: rỗng trả ''; sai định dạng ném lỗi tiếng Việt như form đăng ký. */
 export function normalizeHsaPhone(phone:string){const p=phone.trim();if(!p)return '';return normalizeRegistration({studentName:'Thi thử HSA',phone:p,grade:'hsa',message:'online'}).phone;}
+/** Lead thi thử HSA dạng form đăng ký để lưu vào máy chủ trung tâm (/api/dang-ky). */
+export function hsaLeadRegistration({name,grade,phone,scoreText,examTitle,leadSource}:{name:string;grade:HsaGrade;phone:string;scoreText:string;examTitle:string;leadSource:string}){
+ return normalizeRegistration({studentName:name,phone,grade:grade==='khac'?'hsa':grade,message:'online',notes:[`Thi thử HSA: ${scoreText} · ${examTitle}`,`Tên trên bảng xếp hạng: ${name} · ${HSA_GRADE_LABEL[grade]}`].join('\n'),leadSource});
+}
 /** Lead gửi qua đúng đường EmailJS của form đăng ký; không có hình thức học vì em chưa chọn. */
 export function hsaLeadPayload({name,grade,phone,scoreText,examTitle,leadSource}:{name:string;grade:HsaGrade;phone:string;scoreText:string;examTitle:string;leadSource:string}){
  const data=normalizeRegistration({studentName:name,phone,grade:grade==='khac'?'hsa':grade,message:'online',notes:`Thi thử HSA: ${scoreText}`,leadSource});
