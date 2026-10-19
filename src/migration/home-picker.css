@@ -1,0 +1,21 @@
+.mtm-gp{padding:56px 0 48px;background:#f6f8fc}
+.mtm-gp h2{font-size:clamp(26px,3.2vw,36px);color:#1d2c5e;margin:6px 0 8px;font-weight:800}
+.mtm-gp-lead{color:#475069;max-width:640px;margin:0 0 24px}
+.mtm-gp-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px}
+.mtm-gp-card{--c:#2563c9;--l:#e6eefb;display:flex;flex-direction:column;gap:10px;padding:20px;border-radius:16px;background:#fff;border:1px solid #e3e7f0;border-top:5px solid var(--c);color:#1d2c5e;text-decoration:none;transition:transform .15s,box-shadow .15s}
+.mtm-gp-card:hover,.mtm-gp-card:focus-visible{transform:translateY(-2px);box-shadow:0 10px 24px rgba(29,44,94,.12)}
+.mtm-gp-card.is-s1{--c:#0e9f8f;--l:#e3f6f3}.mtm-gp-card.is-s2{--c:#2563c9;--l:#e6eefb}.mtm-gp-card.is-s4{--c:#d9822b;--l:#fcefe1}.mtm-gp-card.is-hsa{--c:#c8344a;--l:#fbe6e9}
+.mtm-gp-title{font-size:24px;font-weight:800;color:var(--c)}
+.mtm-gp-text{font-size:15px;line-height:1.5;color:#475069;flex:1}
+.mtm-gp-meta{align-self:flex-start;font-size:13px;font-weight:700;background:var(--l);color:#1d2c5e;padding:4px 10px;border-radius:999px}
+.mtm-gp-go{display:inline-flex;align-items:center;gap:6px;font-weight:800;color:var(--c)}
+.mtm-gp-foot{margin:20px 0 0;color:#475069}.mtm-gp-foot a{color:#1d2c5e;font-weight:700;text-decoration:underline}
+.mtm-sl{padding:44px 0;background:#fff;border-top:1px solid #e3e7f0}
+.mtm-sl h2{font-size:22px;color:#1d2c5e;font-weight:800;margin:0 0 16px}
+.mtm-sl-grid{display:grid;grid-template-columns:repeat(6,minmax(0,1fr));gap:12px}
+.mtm-sl-card{display:flex;flex-direction:column;gap:4px;padding:14px 16px;border-radius:12px;background:#f6f8fc;border:1px solid #e3e7f0;color:#1d2c5e;text-decoration:none}
+.mtm-sl-card strong{font-size:16px}.mtm-sl-card span{font-size:13px;color:#5a6378}
+.mtm-sl-card:hover{border-color:#1d2c5e}
+.mtm-sl-note{margin:14px 0 0;font-size:14px;color:#5a6378}.mtm-sl-note a{color:#1d2c5e;text-decoration:underline}
+@media (max-width:1100px){.mtm-gp-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.mtm-sl-grid{grid-template-columns:repeat(3,minmax(0,1fr))}}
+@media (max-width:640px){.mtm-gp{padding:40px 0 32px}.mtm-gp-grid{grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}.mtm-gp-card{padding:14px;gap:6px}.mtm-gp-title{font-size:20px}.mtm-gp-text{display:none}.mtm-gp-meta{font-size:11.5px;white-space:nowrap;padding:3px 8px}.mtm-sl-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}

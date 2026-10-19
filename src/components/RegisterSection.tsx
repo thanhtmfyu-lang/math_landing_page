@@ -18,6 +18,7 @@ import { ZALO_ASSISTANT_URL } from './mtm-contact';
 import { createRegistrationGate, emailRegistration } from './registration-submit';
 
 import { applyRegistrationContext, registrationContextEvent } from './registration-context';
+import { describeLeadSource, storedLeadSource } from './lead-source';
 
 export function RegisterSection() {
   const [formData, setFormData] = useState({
@@ -28,6 +29,7 @@ export function RegisterSection() {
   });
 
   const [groupInterest,setGroupInterest]=useState(false);
+  const [trial,setTrial]=useState(true);
   useEffect(()=>{const receive=(event:Event)=>{const detail=(event as CustomEvent).detail;if(detail?.group)setGroupInterest(true);setFormData(prior=>applyRegistrationContext(prior,detail));};window.addEventListener(registrationContextEvent,receive);return()=>window.removeEventListener(registrationContextEvent,receive)},[]);
   const [isSubmitted, setIsSubmitted] = useState(false);
   const [submitError,setSubmitError]=useState('');
@@ -40,7 +42,7 @@ export function RegisterSection() {
   const handleSubmit=async(e:React.FormEvent)=>{
     e.preventDefault();if(isSubmitted||submitting.current)return;submitting.current=true;setSubmitError('');
     try{
-      const sent=await gate.current({...formData,groupInterest},async(data)=>{
+      const sent=await gate.current({...formData,groupInterest,trial,leadSource:describeLeadSource(storedLeadSource())},async(data)=>{
         if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)throw new Error('Form chưa sẵn sàng. Vui lòng liên hệ trung tâm qua kênh tư vấn.');
         setIsPending(true);
         await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...emailRegistration(data),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);
@@ -58,10 +60,10 @@ export function RegisterSection() {
         <ScrollReveal>
           <div className="max-w-3xl mx-auto">
             <h2 className="text-3xl font-bold text-blue-600 mb-8 uppercase">
-              Đăng Ký Tư Vấn
+              Đăng ký học thử, tư vấn
             </h2>
 
-            <p id="data-notice" className="mtm-register-lead">Để lại thông tin, MTM liên hệ lại để tư vấn lộ trình cho em. Không muốn điền? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>.</p><form aria-describedby="data-notice" onSubmit={handleSubmit} className="space-y-6"><fieldset disabled={isPending || isSubmitted} className="space-y-6">
+            <p id="data-notice" className="mtm-register-lead">Để lại thông tin, MTM gọi lại để tư vấn lộ trình và hẹn buổi học thử, kiểm tra đầu vào cho em. Không muốn điền? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>.</p><form aria-describedby="data-notice" onSubmit={handleSubmit} className="space-y-6"><fieldset disabled={isPending || isSubmitted} className="space-y-6">
               {/* Họ tên */}
               <div className="space-y-2">
                 <Label htmlFor="student-name">Họ và tên học sinh *</Label>
@@ -132,6 +134,7 @@ export function RegisterSection() {
               </div>
 
               <div className="space-y-2"><Label htmlFor="consult-notes">Bạn muốn MTM tư vấn thêm điều gì? (không bắt buộc)</Label><textarea id="consult-notes" maxLength={1500} rows={3} className="w-full rounded-lg border border-gray-300 p-3" value={formData.notes} onChange={e=>setFormData({...formData,notes:e.target.value})} placeholder="Ví dụ: lịch học phù hợp, phần kiến thức muốn củng cố…" /></div>
+              <label className="flex items-center gap-3"><input type="checkbox" checked={trial} onChange={e=>setTrial(e.target.checked)}/>Mình muốn học thử, kiểm tra đầu vào</label>
               <label className="flex items-center gap-3"><input type="checkbox" checked={groupInterest} onChange={e=>{setGroupInterest(e.target.checked);if(!e.target.checked)setFormData({...formData,groupSize:''})}}/>Mình muốn tìm hiểu đăng ký cùng bạn</label>
               {groupInterest&&<div className="space-y-2"><Label htmlFor="group-size">Số bạn trong nhóm (không bắt buộc)</Label><Input id="group-size" type="number" min={2} max={99} step={1} value={formData.groupSize} onChange={e=>setFormData({...formData,groupSize:e.target.value})}/><p className="text-sm text-gray-600">Tính cả bạn; có thể để trống nếu nhóm chưa chốt.</p></div>}
               <Button
