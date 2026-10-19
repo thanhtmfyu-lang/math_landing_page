@@ -17,8 +17,8 @@ export const TRACKS:Track[]=[
   exam:'Tốt nghiệp THPT 2027: dự kiến tháng 6/2027, chờ lịch chính thức của Bộ GDĐT. Đề Toán 90 phút theo cấu trúc áp dụng từ 2025.',
   schedule:'3 buổi/tuần · 2 giờ/buổi',
   groups:[
-   {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 6/2026',now:'Đã đi hết một vòng kiến thức 12; từ 28/9 học vòng 2 nâng cao, đang ở ứng dụng đạo hàm và bài toán thực tế.',fit:'Em đã học trước Toán 12, mục tiêu 8+ hoặc 9+.'},
-   {name:'Nhóm XPT',start:'Học từ tháng 9/2026',now:'Đã xong chương hàm số và kiểm tra chương; đang học vectơ trong không gian.',fit:'Em mới bắt đầu Toán 12 hoặc cần học chắc từ gốc. Học sinh mới tháng 10 thường vào nhóm này.'},
+   {name:'Nhóm XPT',start:'Học từ tháng 9/2026',now:'Đã xong chương hàm số và kiểm tra chương; đang học vectơ trong không gian.',fit:'Học sinh mới được ưu tiên xếp vào nhóm này trước. Em học theo tiến độ trường, kể cả khi mới bắt đầu hoặc cần học chắc từ gốc.'},
+   {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 6/2026',now:'Đã đi hết một vòng kiến thức 12; từ 28/9 học vòng 2 nâng cao, đang ở ứng dụng đạo hàm và bài toán thực tế.',fit:'Nhóm học từ hè. Học sinh mới chỉ xếp vào nhóm này khi chưa thể vào nhóm XPT, lớp còn chỗ và em theo kịp tiến độ sau kiểm tra đầu vào.'},
   ],
   stages:[
    {period:'06-09/2026',title:'Vòng 1 cho nhóm học sớm',detail:'Nhóm XPS đã học hết kiến thức 12 trong hè: hàm số, vectơ và Oxyz, nguyên hàm - tích phân, thống kê.',courses:'Step 1 hoặc Step 2'},
@@ -39,8 +39,8 @@ export const TRACKS:Track[]=[
   exam:'Kỳ thi gần nhất: kiểm tra học kỳ trên trường. Tốt nghiệp THPT và HSA của 2K10 vào năm 2028, chưa có lịch.',
   schedule:'2 buổi/tuần · 2 giờ/buổi, một buổi Đại số và một buổi Hình học',
   groups:[
-   {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 6/2026',now:'Đại số đã qua lượng giác, dãy số và đang học giới hạn; Hình học đã xong quan hệ song song và thống kê, đang ôn thi giữa kỳ I.',fit:'Em đã học trước lớp 11 trong hè, mục tiêu 8+ hoặc 9+.'},
-   {name:'Nhóm XPT',start:'Học từ tháng 9/2026',now:'Đại số đang học phương trình lượng giác; Hình học đang học giao tuyến và thiết diện.',fit:'Em học theo tiến độ trường. Học sinh mới tháng 10 thường vào nhóm này.'},
+   {name:'Nhóm XPT',start:'Học từ tháng 9/2026',now:'Đại số đang học phương trình lượng giác; Hình học đang học giao tuyến và thiết diện.',fit:'Học sinh mới được ưu tiên xếp vào nhóm này trước. Em học theo tiến độ trường, kể cả khi mới bắt đầu hoặc cần học chắc từ gốc.'},
+   {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 6/2026',now:'Đại số đã qua lượng giác, dãy số và đang học giới hạn; Hình học đã xong quan hệ song song và thống kê, đang ôn thi giữa kỳ I.',fit:'Nhóm học từ hè. Học sinh mới chỉ xếp vào nhóm này khi chưa thể vào nhóm XPT, lớp còn chỗ và em theo kịp tiến độ sau kiểm tra đầu vào.'},
   ],
   stages:[
    {period:'10-12/2026',title:'Toán 11 học kỳ I',detail:'Hàm số lượng giác và phương trình lượng giác, dãy số - cấp số, số liệu ghép nhóm, giới hạn và hàm số liên tục, quan hệ song song trong không gian. Ôn thi giữa kỳ cuối tháng 10, cuối kỳ tháng 12.',courses:'Step 1, 2 hoặc 3 theo mức của em'},
@@ -60,8 +60,8 @@ export const TRACKS:Track[]=[
   exam:'Kỳ thi gần nhất: kiểm tra học kỳ trên trường. Mùa thi của 2K11 vào năm 2029, chưa có lịch.',
   schedule:'2 buổi/tuần · 2 giờ/buổi, một buổi Đại số và một buổi Hình học',
   groups:[
-   {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 7/2026',now:'Đã xong mệnh đề - tập hợp, bất phương trình bậc nhất hai ẩn, hệ thức lượng; đang học vectơ và ôn thi giữa kỳ I.',fit:'Em đã học trước lớp 10 trong hè, mục tiêu 8+ hoặc 9+.'},
-   {name:'Nhóm XPT',start:'Học từ tháng 9/2026',now:'Đang học bất phương trình bậc nhất hai ẩn và tổng, hiệu hai vectơ.',fit:'Em học theo tiến độ trường. Học sinh mới tháng 10 thường vào nhóm này.'},
+   {name:'Nhóm XPT',start:'Học từ tháng 9/2026',now:'Đang học bất phương trình bậc nhất hai ẩn và tổng, hiệu hai vectơ.',fit:'Học sinh mới được ưu tiên xếp vào nhóm này trước. Em học theo tiến độ trường, kể cả khi mới bắt đầu hoặc cần học chắc từ gốc.'},
+   {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 7/2026',now:'Đã xong mệnh đề - tập hợp, bất phương trình bậc nhất hai ẩn, hệ thức lượng; đang học vectơ và ôn thi giữa kỳ I.',fit:'Nhóm học từ hè. Học sinh mới chỉ xếp vào nhóm này khi chưa thể vào nhóm XPT, lớp còn chỗ và em theo kịp tiến độ sau kiểm tra đầu vào.'},
   ],
   stages:[
    {period:'10/2026-01/2027',title:'Nửa đầu lớp 10',detail:'Mệnh đề - tập hợp, bất phương trình và hệ bất phương trình bậc nhất hai ẩn, hàm số bậc hai, hệ thức lượng trong tam giác, vectơ, thống kê theo trường.',courses:'Step 1, 2 hoặc 3 theo mức của em'},
