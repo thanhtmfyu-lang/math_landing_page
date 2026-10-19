@@ -47,6 +47,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/thi-thu-hsa",
+      "destination": "/index.html"
+    },
+    {
       "source": "/so-tay",
       "destination": "/index.html"
     },

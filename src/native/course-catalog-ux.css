@@ -6,3 +6,5 @@
 .native-ui .course-score-goal summary{min-height:48px;padding:12px 4px;font-size:16px;font-weight:700;cursor:pointer;overflow-wrap:anywhere}
 .native-ui .course-score-goal summary:focus-visible{outline:3px solid #b07a00;outline-offset:3px;border-radius:8px}
 @media(max-width:600px){.mtm-migration.r106-site .native-ui .ne-catalog .ne-search-row>*{flex-basis:100%;width:100%;min-width:0}}
+.ne-hsa-mock{margin:14px 0 4px;padding:12px 16px;border:1px solid #d8e3f2;border-radius:12px;background:#fff;font-size:14px;line-height:1.6;color:#213269}
+.ne-hsa-mock a{font-weight:700;color:#1a4796;text-decoration:underline;text-underline-offset:3px}

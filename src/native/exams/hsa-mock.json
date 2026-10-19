@@ -1,0 +1,14 @@
+{
+  "version": 1,
+  "about": "Danh sách đề trang /thi-thu-hsa. Tổ học liệu thêm đề HSA thật vào đây; mỗi đề phải có sẵn trong catalog.json (source: catalog) hoặc practice-tests.json (source: practice-bank), và muốn có bảng xếp hạng thì seed đề vào mtm_exam_private.exam_keys + mtm_hsa_rank.exams (xem migration 069). placeholder=true chỉ dùng cho đề mẫu tạm thời.",
+  "exams": [
+    {
+      "slug": "de-mau-1",
+      "examId": "mtm-preview-practice-hsa-01-v1",
+      "source": "practice-bank",
+      "title": "Đề mẫu số 1 · Toán và xử lý số liệu",
+      "placeholder": true,
+      "active": true
+    }
+  ]
+}

@@ -1,0 +1,71 @@
+/* /thi-thu-hsa: lớp riêng, không dựa vào tiện ích Tailwind (một số lớp không có trong CSS build). */
+.hsa-page{--hsa-navy:#213269;--hsa-muted:#4f6a91;--hsa-line:#d8e3f2;--hsa-yellow:#ffcf24;color:var(--hsa-navy)}
+.hsa-page .hsa-intro{margin-bottom:18px}
+.hsa-page .hsa-intro .r106-page-description p{margin:0 0 8px;max-width:640px;line-height:1.7}
+.hsa-facts{display:flex;gap:10px;margin:0;padding:0;list-style:none}
+.hsa-facts li{display:flex;flex-direction:column;align-items:flex-start;min-width:84px;padding:10px 14px;border:1px solid var(--hsa-line);border-radius:12px;background:#fff}
+.hsa-facts strong{font-size:24px;line-height:1.2;font-weight:700}
+.hsa-facts span{font-size:12px;color:var(--hsa-muted)}
+.hsa-placeholder{margin:0 0 18px;padding:12px 16px;border:1px solid #e9cf72;border-left:4px solid var(--hsa-yellow);border-radius:10px;background:#fff9e3;font-size:14px;line-height:1.6;color:#4c3b06}
+.hsa-picker{display:flex;flex-wrap:wrap;gap:8px;margin:0 0 18px}
+.hsa-picker a{padding:8px 14px;border:1px solid var(--hsa-line);border-radius:999px;background:#fff;font-size:14px}
+.hsa-picker a[aria-current=page]{background:var(--hsa-navy);border-color:var(--hsa-navy);color:#fff}
+.hsa-layout{display:grid;grid-template-columns:minmax(0,1fr) 340px;gap:24px;align-items:start}
+.hsa-main{display:flex;flex-direction:column;gap:16px;min-width:0}
+.hsa-side{position:sticky;top:88px;min-width:0}
+.hsa-card{margin:0;padding:20px;border:1px solid var(--hsa-line);border-radius:16px;background:#fff;box-shadow:0 16px 36px -32px #21326973}
+.hsa-card h2{margin:0 0 12px;font-size:18px;line-height:1.35;font-weight:700}
+.hsa-entry{display:flex;flex-direction:column;gap:14px;max-width:640px}
+.hsa-field{display:flex;flex-direction:column;gap:6px;margin:0;padding:0;border:0}
+.hsa-field>span,.hsa-field legend{font-size:14px;font-weight:600;padding:0}
+.hsa-field input{min-height:46px;padding:10px 12px;border:1px solid #c5d4ea;border-radius:10px;background:#fff;color:var(--hsa-navy);font-size:16px}
+.hsa-field input:focus-visible{outline:3px solid #9cb8e6;outline-offset:1px}
+.hsa-field small{font-size:12.5px;color:var(--hsa-muted);line-height:1.5}
+.hsa-grades>div{display:flex;flex-wrap:wrap;gap:8px;margin-top:6px}
+.hsa-grade{display:inline-flex;align-items:center;gap:6px;min-height:44px;padding:8px 14px;border:1px solid #c5d4ea;border-radius:10px;background:#fff;font-size:14px;cursor:pointer}
+.hsa-grade input{width:16px;height:16px;margin:0;accent-color:var(--hsa-navy)}
+.hsa-grade.is-on{border-color:var(--hsa-navy);background:#eef3fc;font-weight:600}
+.hsa-consent{display:flex;gap:10px;align-items:flex-start;font-size:13.5px;line-height:1.6;color:#334366}
+.hsa-consent input{flex:none;width:18px;height:18px;margin:3px 0 0;accent-color:var(--hsa-navy)}
+.hsa-consent a,.hsa-link{color:#1a4796;font-weight:600;text-decoration:underline;text-underline-offset:3px}
+.hsa-link{padding:0;border:0;background:none;font:inherit;cursor:pointer}
+.hsa-error{margin:0;padding:10px 12px;border-radius:10px;background:#fdeeee;color:#8a1f1f;font-size:14px}
+.hsa-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center;margin:0}
+.hsa-primary,.hsa-ghost{display:inline-flex;align-items:center;justify-content:center;min-height:44px;padding:10px 18px;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;text-decoration:none}
+.hsa-primary{border:1px solid var(--hsa-navy);background:var(--hsa-navy);color:#fff!important}
+.hsa-primary:hover{background:#18264f}
+.hsa-ghost{border:1px solid #c5d4ea;background:#fff;color:var(--hsa-navy)!important}
+.hsa-who-bar{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:10px;padding:12px 16px;font-size:14px}
+.hsa-result{border-color:#b9cdf0;background:linear-gradient(180deg,#f4f8ff,#fff 70%)}
+.hsa-result p{margin:0 0 10px;font-size:14.5px;line-height:1.6}
+.hsa-result-score{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px 16px}
+.hsa-result-score strong{font-size:34px;line-height:1.1;font-weight:800}
+.hsa-result-score span{color:var(--hsa-muted)}
+.hsa-board{padding:18px}
+.hsa-board-head{display:flex;flex-direction:column;gap:2px;margin-bottom:12px}
+.hsa-board-head h2{margin:0}
+.hsa-board-head span{font-size:12.5px;color:var(--hsa-muted)}
+.hsa-board>p{font-size:14px;line-height:1.6;margin:0 0 10px}
+.hsa-soon{padding:12px 14px;border-radius:10px;background:#f2f6fd;color:var(--hsa-navy)}
+.hsa-rows{margin:0 0 10px;padding:0;list-style:none;max-height:560px;overflow:auto}
+.hsa-rows li{display:grid;grid-template-columns:34px minmax(0,1fr) auto;align-items:center;gap:10px;padding:9px 4px;border-bottom:1px solid #edf1f7}
+.hsa-rank{display:grid;place-items:center;width:30px;height:30px;border-radius:50%;background:#eef3fb;font-size:13px;font-weight:700}
+.hsa-rows li.is-top-1 .hsa-rank{background:var(--hsa-yellow)}
+.hsa-rows li.is-top-2 .hsa-rank{background:#dfe6f1}
+.hsa-rows li.is-top-3 .hsa-rank{background:#f3dcc3}
+.hsa-who,.hsa-score{display:flex;flex-direction:column;min-width:0}
+.hsa-who strong{font-size:14px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+.hsa-who small,.hsa-score small{font-size:11.5px;color:var(--hsa-muted)}
+.hsa-score{align-items:flex-end;text-align:right}
+.hsa-score strong{font-size:16px}
+.hsa-rules{font-size:13px;color:#334366}
+.hsa-rules summary{cursor:pointer;font-weight:600;min-height:32px}
+.hsa-rules ul{margin:6px 0 0;padding-left:18px;list-style:disc;line-height:1.6}
+@media(max-width:960px){.hsa-layout{grid-template-columns:minmax(0,1fr)}.hsa-side{position:static}}
+@media(max-width:600px){.hsa-page.ep-root{padding:16px 16px 48px}.hsa-facts{flex-wrap:wrap}.hsa-facts li{min-width:0;flex:1;padding:8px 10px}.hsa-facts strong{font-size:20px}.hsa-card{padding:16px;border-radius:14px}.hsa-result-score strong{font-size:28px}}
+/* Ghi đè kiểu nút/fieldset chung của trang (độ ưu tiên cao hơn .ep-root button). */
+.hsa-page .hsa-primary{background:var(--hsa-navy)!important;border-color:var(--hsa-navy)!important;color:#fff!important}
+.hsa-page .hsa-primary:hover{background:#18264f!important}
+.hsa-page .hsa-ghost{background:#fff!important;color:var(--hsa-navy)!important}
+.hsa-page fieldset.hsa-grades{border:0!important;padding:0!important;margin:0!important}
+.hsa-page fieldset.hsa-grades legend{margin-bottom:2px}
