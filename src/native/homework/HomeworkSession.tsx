@@ -10,6 +10,7 @@ import EntryNotice,{entryFailure} from './EntryNotice';
 import LessonCards from './LessonCards';
 import HomeworkOverview from './HomeworkOverview';
 import R104Dashboard from './R104Dashboard';
+import BtvnCertificates from './BtvnCertificates';
 import HomeworkGate,{PIN_SETUP_NOTICE,PIN_REQUIRED_NOTICE} from './HomeworkGate';
 import HomeworkTimePlan from './HomeworkTimePlan';
 import HomeworkStudyRhythmTool from './HomeworkStudyRhythmTool';
@@ -195,7 +196,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
       <header className="btvn-top"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><div><b>Bài tập về nhà</b><p>Video buổi học và BTVN của lớp em</p></div><div className="btvn-me"><Link href="/" className="btvn-home-link">← Trang chủ</Link><b>{state.fullName}</b><span>{displayClassName(state)}</span><button disabled={busy} onClick={()=>void requestExit(async()=>{await gateway.call('logout');setState(null);setRoom(false);})}>Thoát</button></div></header>
       <HomeworkBrowserHelp/>
       {state.classMismatch&&<EntryNotice className={state.className}/>}
-      {!room&&<><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
+      {!room&&<><BtvnCertificates state={state}/><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
       {room&&(state.exam||state.opensAt!==undefined||state.kind==='kiem-tra-thang')&&<><button className="btvn-btn btvn-back" disabled={busy} onClick={()=>void requestExit(()=>setRoom(false))}>← Các buổi học</button>
         {state.exam&&state.draft&&state.draft.submittedAt===null?<ManagedAttempt key={state.draft.attemptId} state={{...state,exam:state.exam}} gateway={gateway} saverRef={saverRef} onState={next=>setState(previous=>previous?mergeHomeworkSave(previous,next):next)} onPendingChange={pending=>{remotePending.current=pending;}}/>:<HomeworkOverview key={state.lessonCode+':'+(state.draft?.attemptId??'new')} state={state} busy={busy} onRefreshReceipt={()=>void refreshReceipt()} onStart={()=>void run('start')}/>}
       </>}
