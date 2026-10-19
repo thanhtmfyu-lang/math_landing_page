@@ -8,6 +8,8 @@ const SEEN='mtm-bang-tin-da-xem';
 export default function HomeBoardPopup(){
  const [posts,setPosts]=useState<unknown[]|null>(null),closeRef=useRef<HTMLButtonElement>(null);
  useEffect(()=>{
+  // Khách bấm "Tư vấn" từ khóa học/lộ trình về /?quan-tam=…#register: để họ đăng ký luôn, không chắn bằng bảng tin.
+  if(new URLSearchParams(location.search).has('quan-tam')||location.hash==='#register')return;
   try{if(sessionStorage.getItem(SEEN))return;}catch{}
   const controller=new AbortController();
   fetch('/api/bang-tin',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body:'{}',signal:controller.signal})
