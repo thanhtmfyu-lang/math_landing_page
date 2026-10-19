@@ -14,7 +14,7 @@ export function btvnDevPlugin():Plugin {
     // Vite dev có thể đọc source file: chặn module riêng qua mọi URL, kể cả /@fs.
     server.middlewares.use((req,res,next)=>{
       let path='';try{path=decodeURIComponent(req.url??'').replace(/\\/g,'/').replace(/\/{2,}/g,'/');}catch{res.statusCode=400;res.end();return;}
-      if(/(?:^|\/)server\/btvn(?:\/|$)/i.test(path)||/^\/(?:build|dist|scripts|tests)(?:\/|$)/i.test(path)||/btvn-web-diem-danh\/phieu-a/i.test(path)||path.startsWith('/api/')&&!(process.env.MTM_BTVN_DEMO==='1'&&process.env.MTM_R106_PREVIEW==='1'&&/^\/api\/xep-hang(?:-cua-em)?(?:\?|$)/.test(path))&&!/^\/api\/btvn(?:\?|$|\/)/.test(path)){
+      if(/(?:^|\/)server\/btvn(?:\/|$)/i.test(path)||/^\/(?:build|dist|scripts|tests)(?:\/|$)/i.test(path)||/btvn-web-diem-danh\/phieu-a/i.test(path)||path.startsWith('/api/')&&!(process.env.MTM_BTVN_DEMO==='1'&&process.env.MTM_R106_PREVIEW==='1'&&/^\/api\/xep-hang(?:-cua-em)?(?:\?|$)/.test(path))&&!/^\/api\/btvn(?:\?|$|\/)/.test(path)&&!(process.env.MTM_BTVN_DEMO==='1'&&/^\/api\/bang-tin(?:\?|$)/.test(path))){
         res.statusCode=404;res.setHeader('Cache-Control','no-store');res.end();return;
       }next();
     });
@@ -31,6 +31,8 @@ export function btvnDevPlugin():Plugin {
     const lessonExams=Object.fromEntries(materials.filter(l=>l.lessonCode!=='buoi-mau-01').map(l=>[l.lessonCode,{...exam,id:exam.id+'-'+l.lessonCode}]));
     const service=new HomeworkService(repo,exam,Date.parse('2026-10-16T18:30:00+07:00'),undefined,undefined,Date.now,materials,lessonExams);
     if(enhanced)server.middlewares.use(r106PreviewApi(service,target));
+    // Bảng tin bản thử: chưa nối máy chủ thì chỉ hiện bài cố định trong mã.
+    server.middlewares.use('/api/bang-tin',(_req,res)=>{res.writeHead(200,{'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'});res.end(JSON.stringify({enabled:false,posts:[]}));});
     server.middlewares.use('/api/btvn',async(req,res)=>{
       const headers={'Cache-Control':'no-store','Content-Type':'application/json; charset=utf-8'};
       if(req.url&&req.url!=='/'&&req.url!==''){res.writeHead(404,headers);res.end(JSON.stringify({message:'Không tìm thấy bài.'}));return;}
