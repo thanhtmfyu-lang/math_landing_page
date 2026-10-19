@@ -104,7 +104,7 @@ export function validateQuestionOnlyPracticeExam(input: unknown): Validation {
   if(!Array.isArray(input.questions)||!input.questions.length||input.questions.length>300)return {valid:false,errors:[...errors,'Complete bounded questions required']};
   if(input.questionCount!==input.questions.length||!Number.isSafeInteger(input.questionCount))errors.push('Question count mismatch');
   const id=input.id;
-  if(flexible&&(!boundedText(id,120)||!['mtm-custom-','mtm-preview-','mtm-practice-'].some(prefix=>id.startsWith(prefix))))errors.push('Flexible profile requires a custom edition');
+  if(flexible&&(!boundedText(id,120)||!['mtm-custom-','mtm-preview-','mtm-practice-','mtm-hsa-'].some(prefix=>id.startsWith(prefix))))errors.push('Flexible profile requires a custom edition');
   const units=(n:unknown)=>Number.isSafeInteger(n)&&(n as number)>=0&&(n as number)<=10000;
   const ids=new Set<string>();let total=0;
   for(const q of input.questions){
@@ -136,9 +136,9 @@ export function validateQuestionOnlyPracticeExam(input: unknown): Validation {
     else{
       let offset=0;
       for(const section of input.sections){
-        if(!isRecord(section)||!boundedText(section.label,100)||!(homework?['mc','tf','short','self']:['mc','tf','short']).includes(section.kind as string)||!Number.isSafeInteger(section.count)||(section.count as number)<1||(section.count as number)>300){errors.push('Invalid section');continue;}
+        if(!isRecord(section)||!boundedText(section.label,100)||!(homework?['mc','tf','short','self']:['mc','tf','short','mixed']).includes(section.kind as string)||!Number.isSafeInteger(section.count)||(section.count as number)<1||(section.count as number)>300){errors.push('Invalid section');continue;}
         const count=section.count as number,questions=input.questions.slice(offset,offset+count);
-        if(questions.length!==count||questions.some(q=>!isRecord(q)||q.kind!==section.kind))errors.push('Section/question mismatch');
+        if(questions.length!==count||questions.some(q=>!isRecord(q)||(section.kind==='mixed'?!['mc','tf','short'].includes(q.kind as string):q.kind!==section.kind)))errors.push('Section/question mismatch');
         offset+=count;
       }
       if(offset!==input.questions.length)errors.push('Complete section counts required');

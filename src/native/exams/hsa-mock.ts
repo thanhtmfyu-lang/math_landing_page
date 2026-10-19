@@ -1,9 +1,11 @@
 import raw from './hsa-mock.json';
 import {HSA_GRADE_LABEL,validHsaExamId,type HsaGrade} from '../../../server/hsa/rank';
 import {emailRegistration,normalizeRegistration} from '../../components/registration-submit';
-/** Cấu hình đề cho /thi-thu-hsa. Nội dung đề không nằm ở đây: chỉ trỏ tới đề đã có trong ngân hàng MTM. */
-export type HsaMockSource='practice-bank'|'catalog';
-export type HsaMockExam={slug:string;examId:string;source:HsaMockSource;title:string;placeholder:boolean;active:boolean};
+/** Cấu hình đề cho /thi-thu-hsa. Nội dung đề không nằm ở đây: chỉ trỏ tới đề đã có trong ngân hàng MTM
+ * (hsa-paper: đề chuyển từ tệp của tổ Học liệu bằng scripts/convert-hsa-paper.mjs, nằm ở ./hsa-papers). */
+export type HsaMockSource='practice-bank'|'catalog'|'hsa-paper';
+/** pointsScale: thang điểm hiển thị (đề HSA thật: 50, mỗi câu đúng 1 điểm); bộ chấm vẫn dùng thang 10. */
+export type HsaMockExam={slug:string;examId:string;source:HsaMockSource;title:string;placeholder:boolean;active:boolean;pointsScale?:number};
 export type HsaMockConfig={version:1;exams:HsaMockExam[]};
 export function validateHsaMockConfig(input:unknown):{ok:true;value:HsaMockConfig}|{ok:false;errors:string[]}{
  const errors:string[]=[],o=input as Record<string,unknown>;
@@ -13,10 +15,11 @@ export function validateHsaMockConfig(input:unknown):{ok:true;value:HsaMockConfi
  o.exams.forEach((e:any,i:number)=>{
   const at='Đề '+(i+1)+': ';
   if(!e||typeof e!=='object'){errors.push(at+'không hợp lệ');return;}
-  const extra=Object.keys(e).filter(k=>!['slug','examId','source','title','placeholder','active'].includes(k));if(extra.length)errors.push(at+'trường lạ '+extra.join(', '));
+  const extra=Object.keys(e).filter(k=>!['slug','examId','source','title','placeholder','active','pointsScale'].includes(k));if(extra.length)errors.push(at+'trường lạ '+extra.join(', '));
   if(typeof e.slug!=='string'||!/^[a-z0-9]+(?:-[a-z0-9]+)*$/.test(e.slug)||e.slug.length>40)errors.push(at+'slug chỉ gồm a-z, 0-9, dấu gạch');else if(slugs.has(e.slug))errors.push(at+'slug trùng');else slugs.add(e.slug);
   if(!validHsaExamId(e.examId))errors.push(at+'examId không hợp lệ');else if(ids.has(e.examId))errors.push(at+'examId trùng');else ids.add(e.examId);
-  if(!['practice-bank','catalog'].includes(e.source))errors.push(at+'source phải là practice-bank hoặc catalog');
+  if(!['practice-bank','catalog','hsa-paper'].includes(e.source))errors.push(at+'source phải là practice-bank, catalog hoặc hsa-paper');
+  if(e.pointsScale!==undefined&&(!Number.isSafeInteger(e.pointsScale)||e.pointsScale<1||e.pointsScale>100||10000%e.pointsScale))errors.push(at+'pointsScale phải là số nguyên 1–100 chia hết 10000');
   if(typeof e.title!=='string'||e.title.trim().length<3||e.title.length>120)errors.push(at+'title 3–120 ký tự');
   if(typeof e.placeholder!=='boolean'||typeof e.active!=='boolean')errors.push(at+'placeholder và active phải là true/false');
  });

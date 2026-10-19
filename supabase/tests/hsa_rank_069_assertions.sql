@@ -2,9 +2,15 @@
 --   begin; \i supabase/tests/hsa_rank_069_assertions.sql; rollback;
 create temporary table hsa_qa069_results(name text primary key,passed boolean not null) on commit drop;
 do $qa$
-declare ex constant text='mtm-preview-practice-hsa-01-v1';s jsonb;r jsonb;a uuid[]='{}';tk text[]='{}';i int;top jsonb;
+declare ex constant text='mtm-hsa-thi-thu-01';s jsonb;full_ans jsonb;part_ans jsonb;r jsonb;a uuid[]='{}';tk text[]='{}';i int;top jsonb;
  dev constant text[]=array[repeat('1',64),repeat('2',64),repeat('3',64),repeat('4',64),repeat('5',64),repeat('6',64)];
 begin
+ -- Đáp án lấy từ chính khóa đề đã seed (50 câu, mỗi câu 200 phần nghìn): đúng hết = 10000; đúng 27 câu đầu = 5400.
+ select jsonb_object_agg(q->>'id',case q->>'kind' when 'mc' then q->'answer' else q->'acceptedAnswers'->0 end),
+  jsonb_object_agg(q->>'id',case q->>'kind' when 'mc' then q->'answer' else q->'acceptedAnswers'->0 end) filter(where n<=27)
+  into full_ans,part_ans
+  from mtm_exam_private.exam_keys k,jsonb_array_elements(k.exam->'questions') with ordinality as x(q,n) where k.id=ex;
+ if (select count(*) from jsonb_object_keys(full_ans))<>50 or (select count(*) from jsonb_object_keys(part_ans))<>27 then raise exception 'HSA_QA_069_KEYS';end if;
  if has_function_privilege('anon','public.mtm_hsa_rank_submit(text,uuid,text,text,text,text,text)','execute')
   or has_function_privilege('authenticated','public.mtm_hsa_rank_top(text,integer)','execute')
   or not has_function_privilege('service_role','public.mtm_hsa_rank_top(text,integer)','execute') then raise exception 'HSA_QA_069_GRANTS';end if;
@@ -14,10 +20,10 @@ begin
  end loop;
  -- Chưa nộp thì không vào bảng.
  if public.mtm_hsa_rank_submit(ex,a[1],tk[1],'Học sinh GIẢ A','hoc sinh gia a','12',dev[1])->>'status'<>'not_submitted' then raise exception 'HSA_QA_069_NOT_SUBMITTED';end if;
- -- 1: 5,5 điểm; 2: 10 điểm; 3: 5,5 điểm nhưng nhanh hơn 1; 4 trùng thiết bị với 2; 5 nộp quá hạn; 6 nộp sau 30 giây.
- perform public.mtm_exam_submit(a[1],tk[1],'{"hsa-p1-mc1":"B","hsa-p1-tf1":[true,true,false,false],"hsa-p1-short1":"12"}'::jsonb);
- perform public.mtm_exam_submit(a[2],tk[2],'{"hsa-p1-mc1":"B","hsa-p1-mc2":"C","hsa-p1-mc3":"B","hsa-p1-tf1":[true,true,false,true],"hsa-p1-short1":"12","hsa-p1-short2":"24"}'::jsonb);
- perform public.mtm_exam_submit(a[3],tk[3],'{"hsa-p1-mc1":"B","hsa-p1-tf1":[true,true,false,false],"hsa-p1-short1":"12"}'::jsonb);
+ -- 1: 5,4 điểm (27/50 câu); 2: 10 điểm; 3: 5,4 điểm nhưng nhanh hơn 1; 4 trùng thiết bị với 2; 5 nộp quá hạn; 6 nộp sau 30 giây.
+ perform public.mtm_exam_submit(a[1],tk[1],part_ans);
+ perform public.mtm_exam_submit(a[2],tk[2],full_ans);
+ perform public.mtm_exam_submit(a[3],tk[3],part_ans);
  perform public.mtm_exam_submit(a[4],tk[4],'{}'::jsonb);
  perform public.mtm_exam_submit(a[5],tk[5],'{}'::jsonb);
  perform public.mtm_exam_submit(a[6],tk[6],'{}'::jsonb);
@@ -27,7 +33,7 @@ begin
  update mtm_exam_private.attempts set started_at=submitted_at-interval '30 seconds' where id=a[6];
  update mtm_exam_private.attempts set started_at=submitted_at-interval '40 minutes',deadline=submitted_at-interval '15 minutes' where id=a[5];
  r=public.mtm_hsa_rank_submit(ex,a[1],tk[1],'Học sinh GIẢ A','hoc sinh gia a','12',dev[1]);
- if r->>'status'<>'accepted' or (r->>'score')::int<>5500 or (r->>'rank')::int<>1 or (r->>'seconds')::int<>1200 then raise exception 'HSA_QA_069_ACCEPT %',r;end if;
+ if r->>'status'<>'accepted' or (r->>'score')::int<>5400 or (r->>'rank')::int<>1 or (r->>'seconds')::int<>1200 then raise exception 'HSA_QA_069_ACCEPT %',r;end if;
  insert into hsa_qa069_results values('Điểm và thời gian lấy từ lượt máy chủ đã chấm',true);
  if public.mtm_hsa_rank_submit(ex,a[1],tk[1],'Học sinh GIẢ A','hoc sinh gia a','12',dev[1])->>'status'<>'already' then raise exception 'HSA_QA_069_IDEMPOTENT';end if;
  begin perform public.mtm_hsa_rank_submit(ex,a[2],tk[1],'Học sinh GIẢ B','hoc sinh gia b','11',dev[2]);raise exception 'HSA_QA_069_TOKEN';

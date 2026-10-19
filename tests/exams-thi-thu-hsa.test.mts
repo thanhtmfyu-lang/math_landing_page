@@ -47,7 +47,7 @@ assert.throws(()=>publicHsaRow({rank:1,name:'An',grade:'12',score:10001,seconds:
 for(const s of HSA_SUBMIT_STATUS)assert.ok(hsaStatusMessage(s,3).length>10);
 console.log('Đạt thứ tự xếp hạng và phép chiếu công khai (không lộ SĐT, mã thiết bị).');
 
-// 3. Cấu hình đề: dữ liệu, không tự viết câu hỏi; đề mẫu trỏ đúng bài luyện MTM và được đánh dấu placeholder.
+// 3. Cấu hình đề: dữ liệu, không tự viết câu hỏi; đề HSA số 01 đang mở, đề mẫu đã tắt.
 const config=json('src/native/exams/hsa-mock.json');
 assert.ok(validateHsaMockConfig(config).ok);
 assert.ok(HSA_MOCK_EXAMS.length>=1);
@@ -58,6 +58,8 @@ assert.equal(bad({slug:'Đề 1'}).ok,false);
 assert.equal(bad({examId:'X'}).ok,false);
 assert.equal(bad({active:false}).ok,false);
 assert.equal(bad({placeholder:'yes'}).ok,false);
+assert.equal(bad({pointsScale:7}).ok,false);
+assert.equal(bad({pointsScale:'50'}).ok,false);
 assert.equal(bad({answers:['A']}).ok,false);
 assert.equal(validateHsaMockConfig({...config,exams:[config.exams[0],config.exams[0]]}).ok,false);
 assert.equal(validateHsaMockConfig({version:2,exams:config.exams}).ok,false);
@@ -65,23 +67,30 @@ assert.equal(validateHsaMockConfig({version:1,exams:[]}).ok,false);
 const bank=[...json('src/native/chapters/practice-tests.json'),...json('src/native/chapters/exact-tests.json'),...json('src/native/chapters/archived-tests.json')].map((p:any)=>p.exam);
 const catalog=json('src/native/exams/catalog.json');
 for(const e of config.exams){
- const exam=(e.source==='catalog'?catalog:bank).find((x:any)=>x.id===e.examId);
+ const exam=e.source==='hsa-paper'?json('src/native/exams/hsa-papers/'+e.examId+'.key.json'):(e.source==='catalog'?catalog:bank).find((x:any)=>x.id===e.examId);
  assert.ok(exam,'Đề '+e.examId+' phải có sẵn trong nguồn '+e.source);
  assert.ok(validatePracticeExam(exam).valid,'Đề '+e.examId+' phải hợp lệ');
 }
 const placeholder=config.exams.find((e:any)=>e.examId==='mtm-preview-practice-hsa-01-v1');
 assert.equal(placeholder?.placeholder,true,'Đề mẫu tạm phải gắn placeholder=true để trang hiện ghi chú.');
-console.log('Đạt cấu hình đề: kiểm trường, trùng, nguồn; đề mẫu có trong ngân hàng MTM và đánh dấu placeholder.');
+assert.equal(placeholder?.active,false,'Đề mẫu đã tắt khi có đề HSA thật.');
+assert.deepEqual(HSA_MOCK_EXAMS.map(e=>[e.slug,e.examId,e.source,e.title,e.placeholder,e.pointsScale]),[['de-01','mtm-hsa-thi-thu-01','hsa-paper','Đề thi thử HSA số 01',false,50]]);
+const paper01=json('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.public.json').exam;
+assert.equal(paper01.questions.length,50);assert.equal(paper01.durationMinutes,75);
+console.log('Đạt cấu hình đề: kiểm trường, trùng, nguồn; đề HSA số 01 (50 câu / 75 phút) đang mở, đề mẫu đã tắt.');
 
-// 4. Migration 069 seed đúng bản đề client đang dùng (cùng versionHash) và không chứa SĐT.
+// 4. Migration 069 seed đúng bản đề client đang dùng (cùng versionHash), không seed đề mẫu, không chứa SĐT.
 const sql=readFileSync(join(root,'supabase/migrations-pending/202610190069_thi_thu_hsa_xep_hang.sql'),'utf8');
-const b64=/values\('mtm-preview-practice-hsa-01-v1',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql)?.[1];
+const b64=/values\('mtm-hsa-thi-thu-01',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql)?.[1];
 assert.ok(b64);
 const seeded=JSON.parse(Buffer.from(b64!,'base64').toString('utf8'));
-assert.deepEqual(seeded,bank.find((x:any)=>x.id==='mtm-preview-practice-hsa-01-v1'));
+assert.deepEqual(seeded,json('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.key.json'));
+assert.equal(seeded.versionHash,paper01.versionHash);
+assert.match(sql,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-01',false\)/);
+assert.ok(!sql.replace(/--.*$/gm,'').includes('mtm-preview-practice-hsa-01-v1'),'069 không seed đề mẫu');
 assert.ok(!/phone|sdt|so_dien_thoai/i.test(sql.replace(/--.*$/gm,'')));
 assert.match(sql,/grant execute on function public\.mtm_hsa_rank_top\(text,integer\),public\.mtm_hsa_rank_submit\(text,uuid,text,text,text,text,text\) to service_role;/);
-console.log('Đạt migration 069: seed đúng đề mẫu, không có cột SĐT, chỉ service_role.');
+console.log('Đạt migration 069: seed đúng đề HSA số 01, không seed đề mẫu, không có cột SĐT, chỉ service_role.');
 
 // 5. API: tắt mặc định, chỉ chuyển trường đã duyệt, băm mã thiết bị, không nhận điểm từ trình duyệt.
 const env:Record<string,string>={MTM_HSA_RANK_ENABLED:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'FIXTURE'};

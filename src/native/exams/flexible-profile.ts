@@ -1,7 +1,8 @@
 import {validateAssessment,scoreAssessment,type Assessment,type Validation} from './assessment';
 import {validateMtmAssessment} from './mtm-profile';
 import {MTM_SCORING_VERSION} from './mtm-scoring';
-export type ExamSection={label:string;kind:'mc'|'tf'|'short'|'self';count:number};
+/** kind 'mixed': một phần gồm trắc nghiệm, đúng/sai và điền số xen kẽ theo thứ tự đề gốc (đề HSA), đánh số câu liền mạch. */
+export type ExamSection={label:string;kind:'mc'|'tf'|'short'|'self'|'mixed';count:number};
 export const FLEX_RUBRIC='MTM-FLEX-10-v1';
 export function validatePracticeProfile(input:unknown):Validation {
  const e=input as Assessment&{rubricVersion?:string;sections?:ExamSection[]};
@@ -9,11 +10,11 @@ export function validatePracticeProfile(input:unknown):Validation {
  if(!equalQuestion&&e?.rubricVersion!==FLEX_RUBRIC&&e?.rubricVersion!=='MTM-BTVN-10-v1')return validateMtmAssessment(input);
  const gate=validateAssessment(input);if(!gate.valid)return gate;
  const errors:string[]=[];
- if(!equalQuestion&&!e.id.startsWith('mtm-custom-')&&!e.id.startsWith('mtm-preview-')&&!e.id.startsWith('mtm-practice-'))errors.push('Flexible profile requires a custom edition');
+ if(!equalQuestion&&!e.id.startsWith('mtm-custom-')&&!e.id.startsWith('mtm-preview-')&&!e.id.startsWith('mtm-practice-')&&!e.id.startsWith('mtm-hsa-'))errors.push('Flexible profile requires a custom edition');
  if(equalQuestion&&e.sections===undefined)return gate;
  if(!Array.isArray(e.sections)||!e.sections.length||(!equalQuestion&&e.sections.length>12))return{valid:false,errors:[...errors,'Sections required']};
- let offset=0;for(const section of e.sections){if(!section||typeof section.label!=='string'||!section.label.trim()||section.label.length>100||!(e.rubricVersion==='MTM-BTVN-10-v1'?['mc','tf','short','self']:['mc','tf','short']).includes(section.kind)||!Number.isSafeInteger(section.count)||section.count<1||(!equalQuestion&&section.count>300)){errors.push('Invalid section');continue;}
- if(e.questions.slice(offset,offset+section.count).length!==section.count||e.questions.slice(offset,offset+section.count).some(q=>q.kind!==section.kind))errors.push('Section/question mismatch');offset+=section.count;}
+ let offset=0;for(const section of e.sections){if(!section||typeof section.label!=='string'||!section.label.trim()||section.label.length>100||!(e.rubricVersion==='MTM-BTVN-10-v1'?['mc','tf','short','self']:['mc','tf','short','mixed']).includes(section.kind)||!Number.isSafeInteger(section.count)||section.count<1||(!equalQuestion&&section.count>300)){errors.push('Invalid section');continue;}
+ if(e.questions.slice(offset,offset+section.count).length!==section.count||e.questions.slice(offset,offset+section.count).some(q=>section.kind==='mixed'?!['mc','tf','short'].includes(q.kind):q.kind!==section.kind))errors.push('Section/question mismatch');offset+=section.count;}
  if(offset!==e.questions.length||(!equalQuestion&&offset>300))errors.push('Complete section counts required');
  return{valid:!errors.length,errors};
 }
