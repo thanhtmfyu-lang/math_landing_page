@@ -1,4 +1,4 @@
--- 072 (19/10/2026): Đề ôn giữa kỳ I Toán 10, 11, 12 (Quyết định số 8) cho trang /de-giua-ky-1. CHƯA ÁP.
+-- 072 (19/10/2026): Đề ôn giữa kỳ I Toán 10, 11, 12 (Quyết định số 8) cho trang /de-giua-ky-1. ĐÃ ÁP (Claude, 20/10/2026 00:35 qua luồng công ty; anh Thành duyệt).
 -- Số 071 đã dùng cho PR bảng tin trung tâm (202610190071_bang_tin_trung_tam.sql); file này dùng 072.
 -- Phụ thuộc 060 (mtm_exam_private.exam_keys, mtm_exam_start/mtm_exam_submit, bộ chấm mtm_exam_private.grade). Không cần 069/070/071.
 -- Không đổi bộ chấm: grade() của 060 đã chấm câu đúng/sai theo pointsByCorrectCount [0,100,250,500,1000]
