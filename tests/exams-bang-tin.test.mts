@@ -35,4 +35,8 @@ assert.throws(()=>openMedia(key,q.f,q.e,q.s,now));// khóa ngẫu nhiên không 
 assert.equal(openMedia(key,q.f,q.e,q.s+'x',now),null);
 assert.equal(openMedia(key,q.f,q.e,q.s,now+2*3600e3),null);
 assert.equal(openMedia(key,'../bai',q.e,q.s,now),null);
+// Khách chưa đăng nhập (trang chủ): bỏ khung đánh dấu "public": false.
+const pub=localBoardPosts(key,now,true).flatMap(p=>p.photos.map(x=>new URL(x.url,'https://x.vn').searchParams.get('f')));
+assert.ok(pub.length>0&&!pub.includes('2026-10-19-mung-20-10-04'));
+assert.ok(posts.flatMap(p=>p.photos.map(x=>new URL(x.url,'https://x.vn').searchParams.get('f'))).includes('2026-10-19-mung-20-10-04'));
 console.log('bang-tin ok');
