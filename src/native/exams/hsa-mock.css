@@ -118,3 +118,5 @@
 .hsa-page .hsa-rows li.is-top-3 .hsa-rank{background:#e8b98a}
 .hsa-page .hsa-score strong{color:var(--hsa-red)}
 @media(max-width:600px){.hsa-page .r106-page-intro.hsa-intro{padding:20px 16px;border-radius:16px}}
+.mtm-migration.r106-site .hsa-page .r106-page-intro.hsa-intro h1{color:#fff;font-weight:800}
+.mtm-migration.r106-site .hsa-page .r106-page-intro.hsa-intro .r106-page-eyebrow{color:#ffcf24}
