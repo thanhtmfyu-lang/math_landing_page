@@ -1,0 +1,203 @@
+{
+ "version": 1,
+ "capNhat": "19/10/2026",
+ "ghiChu": "Sổ tiến độ lớp tại MTM theo chủ đề ngân hàng đề. covered: tuần năm học nhóm đã dạy chủ đề (tuần âm = học trong hè trước năm học). follows=school: nhóm học theo tiến độ trường (chủ đề chưa ghi thì lấy tuần trường bắt đầu dạy). Nguồn: src/migration/roadmaps.ts và sổ dạy đối chiếu 19/10/2026; tuần trường là suy luận theo SGK Kết nối tri thức. Cập nhật đầu mỗi tháng cùng roadmaps.ts.",
+ "namHoc": [
+  {
+   "nam": "2026-2027",
+   "tuan1": "2026-09-07"
+  },
+  {
+   "nam": "2027-2028",
+   "tuan1": "2027-09-06"
+  }
+ ],
+ "khoi": {
+  "6": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp Toán 6",
+     "now": "Học theo tiến độ trường.",
+     "follows": "school",
+     "covered": {}
+    }
+   ]
+  },
+  "7": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp Toán 7",
+     "now": "Học theo tiến độ trường.",
+     "follows": "school",
+     "covered": {}
+    }
+   ]
+  },
+  "8": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp Toán 8",
+     "now": "Học theo tiến độ trường.",
+     "follows": "school",
+     "covered": {}
+    }
+   ]
+  },
+  "9": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp Toán 9 (ôn vào 10)",
+     "now": "Học theo tiến độ trường, lồng dạng đề vào 10 Hà Nội.",
+     "follows": "school",
+     "covered": {}
+    }
+   ]
+  },
+  "10": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp 10 nhóm XPT",
+     "start": "Học từ tháng 9/2026",
+     "now": "Đang học bất phương trình bậc nhất hai ẩn và tổng, hiệu hai vectơ.",
+     "follows": "school",
+     "covered": {
+      "T10-01": 1,
+      "T10-02": 2,
+      "T10-03": 5,
+      "T10-06": 6
+     }
+    },
+    {
+     "id": "XPS",
+     "name": "Lớp 10 nhóm XPS 8+ / 9+",
+     "start": "Học từ tháng 7/2026",
+     "now": "Đã xong mệnh đề - tập hợp, bất phương trình bậc nhất hai ẩn, hệ thức lượng; đang học vectơ.",
+     "covered": {
+      "T10-01": -8,
+      "T10-02": -7,
+      "T10-03": -6,
+      "T10-04": -4,
+      "T10-05": -2,
+      "T10-06": 6
+     }
+    }
+   ]
+  },
+  "11": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp 11 nhóm XPT",
+     "start": "Học từ tháng 9/2026",
+     "now": "Đại số đang học phương trình lượng giác; Hình học đang học giao tuyến và thiết diện.",
+     "follows": "school",
+     "covered": {
+      "T11-01": 1,
+      "T11-02": 2,
+      "T11-03": 3,
+      "T11-04": 5,
+      "T11-08": 4
+     }
+    },
+    {
+     "id": "XPS",
+     "name": "Lớp 11 nhóm XPS 8+ / 9+",
+     "start": "Học từ tháng 6/2026",
+     "now": "Đại số đã qua lượng giác, dãy số, đang học giới hạn; Hình học đã xong quan hệ song song và thống kê.",
+     "covered": {
+      "T11-01": -12,
+      "T11-02": -11,
+      "T11-03": -10,
+      "T11-04": -9,
+      "T11-05": -7,
+      "T11-06": -6,
+      "T11-07": -3,
+      "T11-08": -8,
+      "T11-09": -5,
+      "T11-10": 5,
+      "T11-11": 7
+     }
+    }
+   ]
+  },
+  "12": {
+   "groups": [
+    {
+     "id": "XPT",
+     "name": "Lớp 12 nhóm XPT",
+     "start": "Học từ tháng 9/2026",
+     "now": "Đã xong chương hàm số và kiểm tra chương; đang học vectơ trong không gian.",
+     "follows": "school",
+     "covered": {
+      "T12-01": 1,
+      "T12-02": 2,
+      "T12-03": 3,
+      "T12-04": 4,
+      "T12-05": 5,
+      "T12-06": 7
+     }
+    },
+    {
+     "id": "XPS",
+     "name": "Lớp 12 nhóm XPS 8+ / 9+",
+     "start": "Học từ tháng 6/2026",
+     "now": "Đã đi hết một vòng kiến thức 12; từ 28/9 học vòng 2 nâng cao.",
+     "covered": {
+      "T12-01": -15,
+      "T12-02": -14,
+      "T12-03": -14,
+      "T12-04": -13,
+      "T12-05": -13,
+      "T12-06": -12,
+      "T12-07": -12,
+      "T12-08": -11,
+      "T12-09": -11,
+      "T12-10": -10,
+      "T12-11": -10,
+      "T12-12": -9,
+      "T12-13": -9,
+      "T12-14": -8,
+      "T12-15": -8,
+      "T12-16": -7,
+      "T12-17": -7,
+      "T12-18": -6
+     }
+    }
+   ]
+  },
+  "hsa": {
+   "groups": [
+    {
+     "id": "HSA",
+     "name": "Lớp HSA",
+     "start": "Học từ tháng 7/2026",
+     "now": "Đã qua chuyên đề hàm số; đang học nguyên hàm - tích phân.",
+     "covered": {
+      "T12-01": -8,
+      "T12-02": -7,
+      "T12-03": -7,
+      "T12-04": -6,
+      "T12-05": -5,
+      "T12-10": 5,
+      "T12-11": 7,
+      "HSA-05": -5
+     }
+    },
+    {
+     "id": "HSA2",
+     "name": "Lớp HSA.2",
+     "start": "Khai giảng 01/10/2026",
+     "now": "Đang học đơn điệu, tham số m và hàm hợp (tuần 3 lộ trình 33 tuần).",
+     "covered": {
+      "T12-01": 6
+     }
+    }
+   ]
+  }
+ }
+}
