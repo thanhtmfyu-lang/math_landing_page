@@ -8,3 +8,4 @@
 @media(max-width:600px){.mtm-migration.r106-site .native-ui .ne-catalog .ne-search-row>*{flex-basis:100%;width:100%;min-width:0}}
 .ne-hsa-mock{margin:14px 0 4px;padding:12px 16px;border:1px solid #d8e3f2;border-radius:12px;background:#fff;font-size:14px;line-height:1.6;color:#213269}
 .ne-hsa-mock a{font-weight:700;color:#1a4796;text-decoration:underline;text-underline-offset:3px}
+.mtm-migration.r106-site .native-ui .ne-online-hint a{display:inline-flex;align-items:center;min-height:44px;font-weight:800;color:#c8344a;text-decoration:underline;text-underline-offset:3px}
