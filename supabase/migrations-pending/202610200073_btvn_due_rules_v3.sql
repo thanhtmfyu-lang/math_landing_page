@@ -57,12 +57,12 @@ begin
     raise exception 'DUNG: sync_due tren DB da doi so voi ban doc 00:20 20/10 (md5 % ), khong sua. Doc lai ham gui ve.', md5(src);
   end if;
   ln := string_to_array(src, E'\n');
-  if btrim(ln[68]) <> 'if r.lesson_day::date between date ''2026-10-19'' and date ''2026-10-25'' then' or btrim(ln[126]) <> 'continue;' or btrim(ln[127]) <> 'end if;'
+  if btrim(ln[68], E' \t\r') <> 'if r.lesson_day::date between date ''2026-10-19'' and date ''2026-10-25'' then' or btrim(ln[126], E' \t\r') <> 'continue;' or btrim(ln[127], E' \t\r') <> 'end if;'
      or position('xps_slot' in array_to_string(ln[68:127], E'\n')) = 0 then
     raise exception 'DUNG: khoi dong 68-127 cua sync_due khong dung nhu da doc. Khong sua.';
   end if;
   -- dòng 67 là dòng chú thích của nhánh cũ (nếu là chú thích thuần) thì bỏ luôn; dòng lệnh thì giữ
-  rest := array_to_string(ln[1:(case when btrim(ln[67]) like '--%' then 66 else 67 end)] || ln[128:array_length(ln, 1)], E'\n');
+  rest := array_to_string(ln[1:(case when btrim(ln[67], E' \t\r') like '--%' then 66 else 67 end)] || ln[128:array_length(ln, 1)], E'\n');
   if position('xps_slot' in rest) > 0 or position('LENH-CODEX' in rest) > 0 or position('2026-10-19' in rest) > 0 then
     raise exception 'DUNG: sau khi bo dong 68-127 van con xps_slot/LENH-CODEX/2026-10-19 o cho khac. Khong sua, bao ve.';
   end if;
@@ -117,7 +117,7 @@ begin
   src := pg_get_functiondef('public.mtm_btvn_sync_due(jsonb,boolean)'::regprocedure);
   if md5(src) <> 'c748541a5bf88fcc8cb6ff5c4f660020' then raise exception 'DUNG: sync_due vua bi doi giua chung'; end if;
   ln := string_to_array(src, E'\n');
-  fixed := array_to_string(ln[1:(case when btrim(ln[67]) like '--%' then 66 else 67 end)] || ln[128:array_length(ln, 1)], E'\n');
+  fixed := array_to_string(ln[1:(case when btrim(ln[67], E' \t\r') like '--%' then 66 else 67 end)] || ln[128:array_length(ln, 1)], E'\n');
   foreach a slice 1 in array array[
     array['planned=mtm_hw_private.btvn_planned_due(r.label,r.lesson_day::date,slot_day,rules);',
      'planned=mtm_hw_private.btvn_planned_due(r.label,r.lesson_day::date,slot_day,rules)+interval ''30 minutes''; /*00-han-30: planned = gio bat dau buoi, han luu = gio bat dau - 30 phut*/'],
