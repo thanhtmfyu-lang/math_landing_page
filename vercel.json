@@ -99,6 +99,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/btvn/tai-lieu",
+      "destination": "/index.html"
+    },
+    {
       "source": "/quan-tri/btvn",
       "destination": "/index.html"
     },
