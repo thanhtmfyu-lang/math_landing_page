@@ -11,6 +11,12 @@ export function lessonDay(value:string){
 const weekday=(d:Date)=>d.getUTCDay()||7;
 const shift=(d:Date,n:number)=>new Date(d.getTime()+n*86400000);
 const iso=(d:Date,time:string)=>d.toISOString().slice(0,10)+'T'+time+':00+07:00';
+/** Hạn nộp = giờ bắt đầu buổi hạn − 30 phút (luật trung tâm, khớp btvn_planned_due 073). Lùi qua 00:00 thì lùi cả ngày. */
+const DUE_LEAD_MINUTES=30;
+const dueIso=(d:Date,start:string)=>{
+ const [h,m]=start.split(':').map(Number),total=h*60+m-DUE_LEAD_MINUTES,day=Math.floor(total/1440),mins=total-day*1440;
+ return iso(shift(d,day),String(Math.floor(mins/60)).padStart(2,'0')+':'+String(mins%60).padStart(2,'0'));
+};
 const slot=(r:Rule,day:number)=>r.sessions.filter(s=>s.weekday===day).sort((a,b)=>a.start.localeCompare(b.start)).at(-1);
 /** ISO giờ VN; lịch ngoài khung đã biết vẫn khóa tới 21:30, không tự mở sớm. */
 export function opensAt(label:string,lessonDate:string):string{
@@ -19,7 +25,7 @@ export function opensAt(label:string,lessonDate:string):string{
  const sourceDay=r.open.days?.[String(w)]??w,source=rules[r.open.sourceLabel??label];
  return iso(shift(d,sourceDay-w),slot(source,sourceDay)?.end??'21:30');
 }
-/** attendedSlot là thứ 1..7 (hoặc slot). Không đoán ca T6/CN khi chưa có điểm danh. */
+/** attendedSlot là thứ 1..7 (hoặc slot). Không đoán ca T6/CN khi chưa có điểm danh. Trả hạn = giờ bắt đầu buổi hạn − 30 phút. */
 export function plannedDueAt(label:string,lessonDate:string,attendedSlot?:number|Slot):string|null{
  const d=lessonDay(lessonDate),w=weekday(d),r=rules[label];if(!r)return null;
  let target=w,days=7;
@@ -40,5 +46,5 @@ export function plannedDueAt(label:string,lessonDate:string,attendedSlot?:number
   case 'same_weekday_next_week':break;
   default:throw Error('INVALID_DUE_RULE');
  }
- const next=slot(r,target);return next?iso(shift(d,days),next.start):null;
+ const next=slot(r,target);return next?dueIso(shift(d,days),next.start):null;
 }
