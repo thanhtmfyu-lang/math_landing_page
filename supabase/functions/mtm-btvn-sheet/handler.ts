@@ -1,4 +1,4 @@
-type SheetConfig = { databaseUrl: string; serviceKey: string; scriptToken: string; ownerEmail: string };
+type SheetConfig = { databaseUrl: string; serviceKey: string; scriptToken: string; ownerEmail: string; legacyToken?: string };
 type Fetcher = typeof fetch;
 const TABS = new Set(["diem", "xephang", "diemdanh", "zoom", "vantay", "chuyenbuoi", "cahomnay", "cachitiet", "tongquan", "hocsinh", "phanhoi"]);
 const PRIVATE = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
@@ -54,11 +54,12 @@ export function createSheetHandler(config: SheetConfig, fetcher: Fetcher = fetch
 
   return async (req: Request): Promise<Response> => {
     const url = new URL(req.url);
-    // Từ chối cả URL cũ dù người gọi có đồng thời gửi header hợp lệ.
-    if (url.searchParams.has("t")) return new Response("forbidden", { status: 403, headers: PRIVATE });
     if (req.method !== "GET" && req.method !== "POST") return new Response("method not allowed", { status: 405, headers: { ...PRIVATE, Allow: "GET, POST" } });
     const hasHeader = equalSecret(req.headers.get("x-mtm-sheet-token") ?? "", config.scriptToken);
-    if (!hasHeader && !(req.method === "POST" && await isFeedbackOwner(req))) return new Response("forbidden", { status: 403, headers: PRIVATE });
+    // Lùi tạm H3 ngày 19/10/2026 để IMPORTDATA cũ hoạt động trong lúc chuyển Apps Script.
+    // Mã URL cũ chỉ đọc CSV bằng GET, tách khỏi mã header và quyền POST phản hồi.
+    const hasLegacyToken = req.method === "GET" && equalSecret(url.searchParams.get("t") ?? "", config.legacyToken ?? "");
+    if (!hasHeader && !hasLegacyToken && !(req.method === "POST" && await isFeedbackOwner(req))) return new Response("forbidden", { status: 403, headers: PRIVATE });
     if (!config.databaseUrl || !config.serviceKey) return new Response("unavailable", { status: 503, headers: PRIVATE });
     try {
       if (req.method === "POST") return await feedback(req);

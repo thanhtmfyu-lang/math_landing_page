@@ -4,7 +4,7 @@ import { join } from 'node:path';
 import { runInNewContext } from 'node:vm';
 import { createSheetHandler } from '../supabase/functions/mtm-btvn-sheet/handler';
 
-const config = { databaseUrl: 'https://database.invalid', serviceKey: 'test-service', scriptToken: 'test-script-secret', ownerEmail: 'owner@example.invalid' };
+const config = { databaseUrl: 'https://database.invalid', serviceKey: 'test-service', scriptToken: 'test-script-secret', ownerEmail: 'owner@example.invalid', legacyToken: 'test-old-url-secret' };
 let calls: Array<{ url: string; init?: RequestInit }> = [];
 const fakeFetch = async (input: string | URL | Request, init?: RequestInit) => {
   calls.push({ url: String(input), init });
@@ -12,10 +12,10 @@ const fakeFetch = async (input: string | URL | Request, init?: RequestInit) => {
 };
 const handler = createSheetHandler(config, fakeFetch as typeof fetch);
 const req = (suffix: string, headers: Record<string, string> = {}) => new Request('https://edge.invalid/' + suffix, { headers });
-for (const request of [req('?tab=diem'), req('?tab=diem&t=test-old-url-secret'), req('?tab=diem', { 'x-mtm-sheet-token': 'test-old-url-secret' }), req('?tab=diem&t=test-script-secret', { 'x-mtm-sheet-token': config.scriptToken })]) {
+for (const request of [req('?tab=diem'), req('?tab=diem&t=wrong-secret'), req('?tab=diem&t='), req('?tab=diem&t=test-script-secret'), req('?tab=diem', { 'x-mtm-sheet-token': config.legacyToken })]) {
   assert.equal((await handler(request)).status, 403);
 }
-assert.equal(calls.length, 0, 'Yêu cầu không có header đúng không được gọi kho dữ liệu');
+assert.equal(calls.length, 0, 'Yêu cầu không có mã header hoặc mã URL đúng không được gọi kho dữ liệu');
 const response = await handler(req('?tab=hocsinh', { 'x-mtm-sheet-token': config.scriptToken }));
 assert.equal(response.status, 200);
 assert.equal(response.headers.get('cache-control'), 'no-store');
@@ -39,6 +39,21 @@ assert.equal((await googleIdentity(new Request('https://edge.invalid/?tab=diem',
 const badIdentity = createSheetHandler(config, (async () => { throw new Error('network unavailable'); }) as typeof fetch);
 assert.equal((await badIdentity(new Request('https://edge.invalid/', { method: 'POST', headers: { Authorization: 'Bearer ' + 'x'.repeat(120) }, body: '{}' }))).status, 403);
 assert.equal((await handler(new Request('https://edge.invalid/', { method: 'POST', headers: { 'x-mtm-sheet-token': config.scriptToken }, body: JSON.stringify({ op: 'feedback', after: -1 }) }))).status, 400);
+
+for (const tab of ['tongquan', 'cahomnay', 'cachitiet', 'hocsinh', 'diem', 'xephang', 'chuyenbuoi', 'zoom', 'vantay']) {
+  const legacyResponse = await handler(req(`?tab=${tab}&t=${config.legacyToken}`));
+  assert.equal(legacyResponse.status, 200, `IMPORTDATA cũ của ${tab} phải đọc được CSV`);
+  assert.equal(legacyResponse.headers.get('content-type'), 'text/csv; charset=utf-8');
+  assert.equal(legacyResponse.headers.get('cache-control'), 'no-store');
+  assert.match(await legacyResponse.text(), /Dữ liệu thử/);
+  assert.deepEqual(JSON.parse(String(calls.at(-1)!.init?.body)), { p_tab: tab });
+}
+assert.equal((await handler(req('?tab=diem&t=wrong-secret', { 'x-mtm-sheet-token': config.scriptToken }))).status, 200, 'Header đúng giữ hoạt động kể cả URL có mã cũ sai');
+assert.equal((await handler(req(`?tab=not-a-tab&t=${config.legacyToken}`))).status, 400);
+const beforeDeniedLegacy = calls.length;
+assert.equal((await handler(new Request(`https://edge.invalid/?t=${config.legacyToken}`, { method: 'POST', body: JSON.stringify({ op: 'feedback', after: 0 }) }))).status, 403, 'Mã URL cũ không cấp quyền POST');
+assert.equal((await createSheetHandler({ ...config, legacyToken: '' }, fakeFetch as typeof fetch)(req(`?tab=diem&t=${config.legacyToken}`))).status, 403, 'Secret URL rỗng phải khóa đường cũ');
+assert.equal(calls.length, beforeDeniedLegacy, 'Yêu cầu legacy bị từ chối không được gọi kho dữ liệu');
 
 const root = process.env.MTM_ROOT || process.cwd();
 const script = readFileSync(join(root, 'supabase/functions/mtm-btvn-sheet/apps-script-csv.gs.txt'), 'utf8');
@@ -72,4 +87,4 @@ const migration = readFileSync(join(root, 'supabase/migrations-pending/202610180
 assert.ok(!migration.includes('mtm_hw_private.guardians'));
 assert.ok(!migration.includes('Phụ huynh (Zalo)'));
 assert.match(migration, /revoke all on function public\.mtm_btvn_sheet_csv6\(text\) from public,anon,authenticated/);
-console.log('H3: header bắt buộc, URL cũ bị chặn, POST phản hồi giữ hoạt động, Script Properties và kiểm kê công thức không lộ mã.');
+console.log('Lùi tạm H3: 9 URL cũ đọc CSV, header và POST phản hồi giữ hoạt động, mã URL không cấp quyền POST, Script Properties và kiểm kê không lộ mã.');
