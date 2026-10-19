@@ -12,3 +12,5 @@
 #register .mtm-register-lead a{color:#1a4796;font-weight:700;text-decoration:underline;text-underline-offset:3px}
 #register .mtm-data-after{margin-top:22px;font-size:13px}
 #register .mtm-data-after summary{font-weight:700;color:#1d2c5e}
+.r106-photo-tabs>button[aria-pressed=true],.r106-photo-tabs>button.selected{color:#213269}
+@media(max-width:640px){#timetable .mtm-timetable-days{grid-template-columns:1fr 1fr;gap:8px}#timetable .mtm-timetable-days article{padding:10px 12px;border-radius:12px}#timetable .mtm-timetable-days h3{font-size:15px;margin-bottom:4px}#timetable .mtm-timetable-days ul{display:block}#timetable .mtm-timetable-days li{display:flex;flex-direction:column;gap:0;padding:4px 0;font-size:12px;line-height:1.35}#timetable .mtm-timetable-days li strong{font-size:12px}}
