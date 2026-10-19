@@ -42,3 +42,22 @@
 @media(max-width:1000px){.mtm-roadmap-consult ol{grid-template-columns:repeat(2,minmax(0,1fr))}}
 @media(max-width:700px){.mtm-roadmap{padding:18px 16px;border-radius:16px}.mtm-roadmap h2{font-size:20px}.mtm-roadmap-head,.mtm-roadmap-grid,.mtm-roadmap-stages,.mtm-roadmap-consult ol{grid-template-columns:1fr}}
 @media(max-width:700px){.mtm-course-advice{margin:16px 12px 20px}}
+.mig-catalogue .mig-course-grid:has(>.mig-course-reveal:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+.mtm-step-badge{margin:0 0 8px!important;font-size:11px!important;line-height:1.4!important;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:#287481!important}
+.mtm-step-card h2{font-size:16px!important;line-height:1.45!important;margin-bottom:10px!important}
+.mtm-step-facts{margin:0 0 12px;display:grid;gap:6px}
+.mtm-step-facts div{display:grid;grid-template-columns:72px 1fr;gap:8px;align-items:baseline}
+.mtm-step-facts dt{font-size:11px;font-weight:700;color:#7a879c}
+.mtm-step-facts dd{margin:0;font-size:13px;line-height:1.5;color:#1d2c5e;font-weight:600}
+.mtm-step-content{display:flex;align-items:center;gap:6px;margin:auto 0 12px!important;font-size:12px!important;color:#61718b!important}
+.mtm-step-card .mig-course-bottom small{color:#9b7500;font-weight:700}
+.ne-course-card .mtm-step-badge,.ne-course-card .mtm-step-facts,.ne-course-card .mtm-step-next{margin-left:8px;margin-right:8px}
+.ne-course-card .mtm-step-next{margin-top:auto;padding-top:10px;border-top:1px solid #eaf0f6;font-size:12px;font-weight:700;color:#9b7500}
+@media(max-width:1100px){.mig-catalogue .mig-course-grid:has(>.mig-course-reveal:nth-child(4):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:640px){.mig-catalogue .mig-course-grid:has(>.mig-course-reveal:nth-child(4):last-child){grid-template-columns:1fr}}
+.native-ui .ne-course-card>.mtm-step-badge{flex:none;margin:10px 8px 8px!important}
+.native-ui .ne-course-card>.mtm-step-next{flex:none;margin:auto 8px 0!important}
+.native-ui .ne-course-card h2{margin-bottom:2px}
+.native-ui .ne-course-grid:has(>.ne-course-card:nth-child(4):last-child){grid-template-columns:repeat(4,minmax(0,1fr));gap:18px}
+@media(max-width:1100px){.native-ui .ne-course-grid:has(>.ne-course-card:nth-child(4):last-child){grid-template-columns:repeat(2,minmax(0,1fr))}}
+@media(max-width:600px){.native-ui .ne-course-grid:has(>.ne-course-card:nth-child(4):last-child){grid-template-columns:1fr}}

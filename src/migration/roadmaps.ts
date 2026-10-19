@@ -110,6 +110,16 @@ export const isHsaCourse=(c:Course)=>step(c)>4;
 export const courseTrack=(c:Course)=>TRACKS.find(t=>t.id===(isHsaCourse(c)?'hsa':String(c.grade)))!;
 
 export type CourseAdvice={role:string;forWho:string;when:string;next:string};
+export type CourseCardInfo={step:string;fit:string;period:string;next:string};
+// Nội dung ngắn trên thẻ khóa học: dành cho ai, học lúc nào, học xong sang đâu.
+export function courseCard(c:Course):CourseCardInfo{
+ const n=step(c),g=c.grade,y12=g===12;
+ if(n>4)return{step:'HSA · ĐGNL',fit:'2K9 xét tuyển bằng HSA',period:'10/2026 - 05/2027',next:'Sau khi thi: Step 4 lớp 12'};
+ if(n===1)return{step:'Bước 1 · Nền tảng',fit:'Điểm dưới 6,5 hoặc còn hổng nền',period:y12?'Đến hết 02/2027':'Theo tiến độ trường',next:'Tiếp theo: Step 2 Vận dụng'};
+ if(n===2)return{step:'Bước 2 · Vận dụng',fit:'Điểm 6,5-8, muốn lên 8+',period:y12?'Đến hết 02/2027':'Theo tiến độ trường',next:'Tiếp theo: Step 3 hoặc Step 4'};
+ if(n===3)return{step:'Bước 3 · Vận dụng cao',fit:'Từ 8 điểm, mục tiêu 9+',period:y12?'Đến hết 02/2027':'Theo tiến độ trường',next:'Tiếp theo: Step 4 Tổng ôn'};
+ return{step:'Bước 4 · Tổng ôn & luyện đề',fit:'Mọi mức, sau khi học xong kiến thức',period:y12?'03/2027 đến ngày thi':'3-4 tuần trước kỳ thi học kỳ',next:y12?'Giữ nhịp đề đến ngày thi':'Lên lớp '+(g+1)+' theo lộ trình'};
+}
 export function courseAdvice(c:Course):CourseAdvice{
  const n=step(c),g=c.grade;
  if(n>4)return{role:'Khóa HSA',forWho:'2K9 xét tuyển bằng đánh giá năng lực HSA. Nên vững Toán 12 ở mức vận dụng; nếu còn hổng, học song song Step 1 hoặc Step 2 lớp 12.',when:'Học từ tháng 10/2026, làm đề 75 phút từ cuối tháng 1/2027, luyện đề theo ca thi từ tháng 3/2027.',next:'Sau khi thi HSA, em tiếp tục Step 4 lớp 12 để ôn tốt nghiệp THPT.'};
