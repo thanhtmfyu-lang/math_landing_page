@@ -6,3 +6,4 @@
 .native-ui .course-score-goal summary{min-height:48px;padding:12px 4px;font-size:16px;font-weight:700;cursor:pointer;overflow-wrap:anywhere}
 .native-ui .course-score-goal summary:focus-visible{outline:3px solid #b07a00;outline-offset:3px;border-radius:8px}
 @media(max-width:600px){.mtm-migration.r106-site .native-ui .ne-catalog .ne-search-row>*{flex-basis:100%;width:100%;min-width:0}}
+.mtm-migration.r106-site .native-ui .ne-online-hint a{display:inline-flex;align-items:center;min-height:44px;font-weight:800;color:#c8344a;text-decoration:underline;text-underline-offset:3px}
