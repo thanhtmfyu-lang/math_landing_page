@@ -51,6 +51,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/kiem-tra-dau-vao",
+      "destination": "/index.html"
+    },
+    {
       "source": "/de-giua-ky-1",
       "destination": "/index.html"
     },
@@ -179,6 +183,9 @@
     },
     "api/bang-tin.ts": {
       "includeFiles": "server/bang-tin/bai.json"
+    },
+    "api/kiem-tra-dau-vao.ts": {
+      "includeFiles": "server/dau-vao/ngan-hang.bin"
     }
   }
 }
