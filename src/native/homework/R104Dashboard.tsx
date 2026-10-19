@@ -6,6 +6,7 @@ import {homeworkServerNow} from './asset-renewal';
 import {homeworkPriorityDeadline,homeworkPriorityReason,isHomeworkLocked,nextHomework} from './homework-priority';
 import {displayClassName,lessonCaption,lessonHomeworkTitle} from './presentation';
 import {LessonVideo} from './LessonCards';
+import CenterBoard from './CenterBoard';
 import './r104-homework.css';
 import './leaderboard-refresh.css';
 import {requestLeaderboard,subscribeLeaderboardRefresh} from './leaderboard-refresh';
@@ -101,6 +102,7 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
     requestAnimationFrame(()=>preview.current?.scrollIntoView({block:'nearest'}));
   };
   return <div className="r104-homework">
+    <CenterBoard onSkip={()=>document.querySelector('.r104-hw-today')?.scrollIntoView({behavior:'smooth',block:'start'})}/>
     <header className="r104-hw-heading"><p>Học tập <span aria-hidden="true">/</span> Bài tập về nhà</p><h1>Góc học tập của em<span>.</span></h1><p>Việc hôm nay, kết quả và những bước tiếp theo.</p></header>
     <div className="r104-hw-profile"><div>{profileControl}<span><strong>{state.fullName}</strong><small>{displayClassName(state)}</small><StudentSchool identity={state.fullName+'|'+state.className}/></span></div>{cohort&&<span className="r104-hw-cohort">Khối {cohort}</span>}</div>
     <div className="r104-hw-workplane">

@@ -168,5 +168,13 @@
         }
       ]
     }
-  ]
+  ],
+  "functions": {
+    "api/bang-tin-anh.ts": {
+      "includeFiles": "server/bang-tin/**"
+    },
+    "api/bang-tin.ts": {
+      "includeFiles": "server/bang-tin/bai.json"
+    }
+  }
 }
