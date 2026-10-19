@@ -1,0 +1,6 @@
+{
+  "source": "sync_due_before068.sql",
+  "sha256": "d55be9239a17882c5f2f4f884ddf06995be90f6a5f76be9933cdd0f1360c6efb",
+  "sourceMethod": "pg_get_functiondef",
+  "description": "Định nghĩa hàm live trước 068; chỉ mã nguồn, không có dữ liệu học sinh."
+}

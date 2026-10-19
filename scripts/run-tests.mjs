@@ -14,7 +14,7 @@ const root = fileURLToPath(new URL('../', import.meta.url));
 const args = process.argv.slice(2);
 const files = args.length
   ? args.map(f => join(root, f))
-  : readdirSync(join(root, 'tests')).filter(f => /^exams-.*\.test\.mts$/.test(f)).sort().map(f => join(root, 'tests', f));
+  : readdirSync(join(root, 'tests')).filter(f => /^(?:exams-|sync-).*\.test\.mts$/.test(f)).sort().map(f => join(root, 'tests', f));
 if (!files.length) { console.error('Không tìm thấy file test nào.'); process.exit(1); }
 
 // Giữ artifact trên T và cho module external tìm node_modules đúng repo.

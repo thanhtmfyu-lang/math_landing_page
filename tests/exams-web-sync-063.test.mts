@@ -1,0 +1,27 @@
+import assert from 'node:assert/strict';
+import {HomeworkService,HomeworkError} from '../server/btvn/service';
+import {MemoryHomeworkRepository} from '../server/btvn/repository';
+import {pipelineFixture} from './btvn-pipeline-fixture';
+const fixture=pipelineFixture(),T=Date.parse('2026-10-19T12:00:00+07:00');
+let now=T;const material={...fixture.material,date:'2026-10-15'},other={...material,lessonCode:'qa-other-063'};
+const actual=T-60000,due=T+60000;
+const repo=new MemoryHomeworkRepository([{studentCode:'QA-063',fullName:'Học sinh GIẢ 063',phone:'0900000000',className:material.classNames[0],nextActualClassAt:actual,effectiveDueAt:due}]);
+const service=new HomeworkService(repo,fixture.exam,0,'qa',material.lessonCode,()=>now,[material,other],{[other.lessonCode]:{...fixture.exam,id:fixture.exam.id+'-other'}});
+const token=service.login({studentCode:'QA-063'},'qa');
+assert.equal(service.state(token).dueAt,due);
+assert.equal(service.state(token).lessons!.find(l=>l.lessonCode===material.lessonCode)!.dueAt,due);
+let state=service.start(token);now+=1000;state=service.submit(token,state.draft!.attemptId,{});
+assert.equal(state.receipts[0].late,false,'Hạn riêng ưu tiên hơn ca thật cũ');
+assert.equal(repo.get('QA-063')!.student.nextActualClassAt,actual,'Không ghi đè ca thật bằng hạn riêng');
+const score=state.receipts[0].score;service.reconcileActualClass('QA-063',actual-1000);
+assert.equal(service.state(token).receipts[0].late,false,'Đối soát ca không làm mất hạn riêng');
+assert.equal(service.state(token).receipts[0].score,score,'Hạn riêng không đổi điểm');
+const another=service.select(token,other.lessonCode);assert.equal(another.dueAt,null,'Ngoại lệ không lan sang bài khác');
+state=service.start(token);now+=1000;state=service.submit(token,state.draft!.attemptId,{});assert.equal(state.receipts[0].late,null);
+service.select(token,material.lessonCode);now=due;
+state=service.start(token);state=service.submit(token,state.draft!.attemptId,{});assert.equal(state.receipts.at(-1)!.late,true,'Bằng hạn riêng tính là muộn');
+for(let i=3;i<=5;i++){state=service.start(token);state=service.submit(token,state.draft!.attemptId,{});}
+assert.equal(state.attemptsUsed,5);assert.equal(state.maxAttempts,5);
+assert.throws(()=>service.start(token),(e:unknown)=>e instanceof HomeworkError&&e.status===409,'Gia hạn không cho lượt thứ sáu');
+assert.equal(state.receipts[0].score,score,'Biên nhận đầu giữ nguyên điểm');
+console.log('WEB-SYNC-063: 13/13 kiểm tra hạn riêng, ca thật, điểm, cách ly bài, mốc muộn và tối đa năm lượt đạt.');

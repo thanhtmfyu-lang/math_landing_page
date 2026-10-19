@@ -29,6 +29,7 @@ export class HomeworkService {
   private sessions=new Map<string,Session>();
   private limits=new Map<string,Limit>();
   private maxAttemptsFor(token:string){return this.monthly(token)?1:5;}
+  private effectiveDue(token:string){const student=this.lessonWork(token).student;return student.effectiveDueAt??student.nextActualClassAt;}
   private monthly(token:string){const m=this.materials.find(l=>l.lessonCode===this.selected(token));return m?.kind==='kiem-tra-thang'?m:undefined;}
   constructor(readonly repo:HomeworkRepository,readonly exam:PracticeExam,readonly dueAt:number,
     readonly classKey='lop-test-12',readonly lessonCode='buoi-mau-01',private clock=Date.now,readonly materials:LessonMaterial[]=[],readonly lessonExams:Record<string,PracticeExam>={}){
@@ -83,10 +84,10 @@ export class HomeworkService {
     if(!ready.valid)throw new HomeworkError(409,'Gói đề MTM chưa sẵn sàng chấm: '+ready.errors.join('; '));
   }
   private lessonWork(token:string){const work=this.work(token),code=this.selected(token);if(code===this.lessonCode)return work;
-    const entry=work.lessons?.[code]??{drafts:[],receipts:[]};return {...work,drafts:entry.drafts,receipts:entry.receipts,student:{...work.student,nextActualClassAt:entry.nextActualClassAt}};
+    const entry=work.lessons?.[code]??{drafts:[],receipts:[]};return {...work,drafts:entry.drafts,receipts:entry.receipts,student:{...work.student,nextActualClassAt:entry.nextActualClassAt,effectiveDueAt:entry.effectiveDueAt}};
   }
   private putLesson(token:string,entry:StudentWork){if(this.selected(token)===this.lessonCode){this.repo.put(entry);return;}
-    const work=this.work(token);work.lessons={...work.lessons,[this.selected(token)]:{drafts:entry.drafts,receipts:entry.receipts,nextActualClassAt:entry.student.nextActualClassAt}};this.repo.put(work);
+    const work=this.work(token);work.lessons={...work.lessons,[this.selected(token)]:{drafts:entry.drafts,receipts:entry.receipts,nextActualClassAt:entry.student.nextActualClassAt,effectiveDueAt:entry.student.effectiveDueAt}};this.repo.put(work);
   }
   select(token:string,code:string){const work=this.work(token);const material=this.materials.find(l=>l.lessonCode===code&&l.classNames.includes(work.student.className));
     if(!material||!(code===this.lessonCode||this.lessonExams[code]))throw new HomeworkError(404,'BTVN buổi này đang chờ chuẩn bị.');
@@ -95,26 +96,26 @@ export class HomeworkService {
   state(token:string):HomeworkState {
     const now=this.clock(),root=this.work(token),work=this.lessonWork(token),scores=receiptScores(work.receipts);
     const lessons=this.materials.filter(l=>l.classNames.includes(root.student.className)).sort((a,b)=>b.date.localeCompare(a.date)).map(l=>{
-      const entry=l.lessonCode===this.lessonCode?{...root,nextActualClassAt:root.student.nextActualClassAt}:root.lessons?.[l.lessonCode];
+      const entry=l.lessonCode===this.lessonCode?{...root,nextActualClassAt:root.student.nextActualClassAt,effectiveDueAt:root.student.effectiveDueAt}:root.lessons?.[l.lessonCode];
       const receipts=entry?.receipts??[],scores=receiptScores(receipts),best=scores.length?Math.max(...scores):null;
       const receipt=receipts.filter(r=>r.score===best).at(-1);
       const lessonExam=l.lessonCode===this.lessonCode?this.exam:this.lessonExams[l.lessonCode];
-      return homeworkLessonCard(l,root.student.className,now,{pendingGrading:receipts.length>0&&!!lessonExam&&requiresManualHomeworkGrade(lessonExam,l),dueAt:entry?.nextActualClassAt??null,bestScore:best,late:receipt?.late??null,submittedAt:receipt?.submittedAt??null,available:l.lessonCode===this.lessonCode||!!this.lessonExams[l.lessonCode]});
+      return homeworkLessonCard(l,root.student.className,now,{pendingGrading:receipts.length>0&&!!lessonExam&&requiresManualHomeworkGrade(lessonExam,l),dueAt:entry?.effectiveDueAt??entry?.nextActualClassAt??null,bestScore:best,late:receipt?.late??null,submittedAt:receipt?.submittedAt??null,available:l.lessonCode===this.lessonCode||!!this.lessonExams[l.lessonCode]});
     });
     const opensAt=this.opening(token),monthly=this.monthly(token),draft=work.drafts.at(-1)??null;
     const hidden=!!monthly&&now<(monthly.closesAt??Infinity);
-    if(now<opensAt)return {serverNow:now,exam:null,opensAt,canStart:false,solutionsAvailable:false,fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:work.student.nextActualClassAt??null,maxAttempts:this.maxAttemptsFor(token),attemptsUsed:0,draft:null,receipts:[],bestScore:null,demo:true,lessons};
+    if(now<opensAt)return {serverNow:now,exam:null,opensAt,canStart:false,solutionsAvailable:false,fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:this.effectiveDue(token)??null,maxAttempts:this.maxAttemptsFor(token),attemptsUsed:0,draft:null,receipts:[],bestScore:null,demo:true,lessons};
     const graded=!!draft&&draft.submittedAt!==null&&work.receipts.some(r=>r.attemptId===draft.attemptId);
     const solutionsAvailable=graded&&(!monthly||now>=(monthly.closesAt??Infinity));
-    return {serverNow:now,exam:solutionsAvailable?this.examFor(token):concealMonthlySolutions(this.examFor(token)),opensAt,canStart:!monthly||now<(monthly.closesAt??Infinity),solutionsAvailable,...(monthly?{kind:'kiem-tra-thang' as const,closesAt:monthly.closesAt}:{}),fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:work.student.nextActualClassAt??null,maxAttempts:this.maxAttemptsFor(token),
+    return {serverNow:now,exam:solutionsAvailable?this.examFor(token):concealMonthlySolutions(this.examFor(token)),opensAt,canStart:!monthly||now<(monthly.closesAt??Infinity),solutionsAvailable,...(monthly?{kind:'kiem-tra-thang' as const,closesAt:monthly.closesAt}:{}),fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:this.effectiveDue(token)??null,maxAttempts:this.maxAttemptsFor(token),
       attemptsUsed:work.drafts.length,draft,receipts:hidden?work.receipts.map(receiptWithoutScore):work.receipts.map(receipt=>requiresManualHomeworkGrade(this.examFor(token),this.materials.find(l=>l.lessonCode===this.selected(token)))?{...receipt,gradingPending:true}:receipt),bestScore:hidden?null:scores.length?Math.max(...scores):null,demo:true,lessons};
   }
   /** Chỉ phía vận hành gọi sau khi xác minh ca thực học, không mở API học sinh. */
   reconcileActualClass(studentCode:string,startsAt:number,lessonCode=this.lessonCode){
     if(!Number.isFinite(startsAt)||startsAt<=0)throw new Error('Giờ ca không hợp lệ');
     const work=this.repo.get(studentCode);if(!work)throw new Error('Không có mã nội bộ');
-    if(lessonCode!==this.lessonCode){const entry=work.lessons?.[lessonCode];if(!entry)throw new Error('Chưa có lượt của buổi');entry.nextActualClassAt=startsAt;entry.receipts=entry.receipts.map(r=>({...r,late:r.submittedAt>=startsAt}));this.repo.put(work);return;}
-    work.student.nextActualClassAt=startsAt;work.receipts=work.receipts.map(r=>({...r,late:r.submittedAt>=startsAt}));this.repo.put(work);
+    if(lessonCode!==this.lessonCode){const entry=work.lessons?.[lessonCode];if(!entry)throw new Error('Chưa có lượt của buổi');entry.nextActualClassAt=startsAt;entry.receipts=entry.receipts.map(r=>({...r,late:r.submittedAt>=(entry.effectiveDueAt??startsAt)}));this.repo.put(work);return;}
+    work.student.nextActualClassAt=startsAt;work.receipts=work.receipts.map(r=>({...r,late:r.submittedAt>=(work.student.effectiveDueAt??startsAt)}));this.repo.put(work);
   }
   start(token:string){
     this.assertOpen(token);
@@ -156,7 +157,8 @@ export class HomeworkService {
     work.drafts[work.drafts.length-1]=submitted.value;
     // Bản nộp và biên nhận dùng cùng mốc server đã chuẩn hóa, kể cả khi đồng hồ lùi sau lần lưu trước.
     const mtm=result.mtm;
-    work.receipts.push({attemptId:id,attemptNumber:work.drafts.length,submittedAt:submitted.value.submittedAt!,elapsedSeconds:Math.min(exam.durationMinutes*60,Math.floor((Math.min(now,this.monthly(token)?.closesAt??Infinity)-draft.startedAt)/1000)),score:mtm?(mtm.officialDisplayTotal===null?null:Number(mtm.officialDisplayTotal)):result.score.earnedMillipoints/1000,...(mtm?{rubricVersion:MTM_SCORING_VERSION,mtm}:{}),late:work.student.nextActualClassAt===undefined?null:now>=work.student.nextActualClassAt,timedOut});
+    const effectiveDue=this.effectiveDue(token);
+    work.receipts.push({attemptId:id,attemptNumber:work.drafts.length,submittedAt:submitted.value.submittedAt!,elapsedSeconds:Math.min(exam.durationMinutes*60,Math.floor((Math.min(now,this.monthly(token)?.closesAt??Infinity)-draft.startedAt)/1000)),score:mtm?(mtm.officialDisplayTotal===null?null:Number(mtm.officialDisplayTotal)):result.score.earnedMillipoints/1000,...(mtm?{rubricVersion:MTM_SCORING_VERSION,mtm}:{}),late:effectiveDue===undefined?null:now>=effectiveDue,timedOut});
     this.putLesson(token,work);return this.state(token);
   }
 }

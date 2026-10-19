@@ -8,3 +8,4 @@ src/native/chapters/generated-bank/
 .qa-build/
 .qa-kt06-*.log
 .qa-temp/
+supabase/.temp/
