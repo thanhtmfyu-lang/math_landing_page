@@ -89,3 +89,18 @@
  .mtm-migration header,.mtm-migration footer,.dv-again,.dv-suggest .hsa-actions,.r106-page-intro{display:none!important}
  .hsa-card{box-shadow:none;break-inside:avoid}
 }
+/* Phiếu thông tin học thử */
+.dv-form-lead{margin:0;font-size:14px;line-height:1.55;color:var(--hsa-muted)}
+.dv-req{color:#c8344a;font-weight:700}
+.dv-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px 16px}
+.dv-start select,.dv-start textarea{min-height:46px;padding:10px 12px;border:1px solid #c5d4ea;border-radius:10px;background:#fff;color:var(--hsa-navy);font:inherit;font-size:16px;width:100%;box-sizing:border-box}
+.dv-start textarea{resize:vertical;min-height:64px}
+.dv-start select:focus-visible,.dv-start textarea:focus-visible{outline:3px solid #9cb8e6;outline-offset:1px}
+.dv-chips-field{gap:8px}
+.dv-chips{display:flex;flex-wrap:wrap;gap:8px}
+.dv-chip{position:relative;display:inline-flex;align-items:center;min-height:40px;padding:8px 14px;border:1px solid #c5d4ea;border-radius:999px;background:#fff;font-size:14px;cursor:pointer;color:var(--hsa-navy)}
+.dv-chip.is-day{min-width:48px;justify-content:center}
+.dv-chip input{position:absolute;opacity:0;pointer-events:none}
+.dv-chip.is-on{border-color:var(--hsa-navy);background:#213269;color:#fff}
+.dv-chip:has(input:focus-visible){outline:3px solid #9cb8e6;outline-offset:1px}
+@media (max-width:640px){.dv-grid{grid-template-columns:1fr}}

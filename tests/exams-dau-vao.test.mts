@@ -1,6 +1,11 @@
 import assert from 'node:assert/strict';
 import {assemble,grade,schoolWeek,DV_TRACKS,type Bank,type Banks,type Progress} from '../server/dau-vao/engine';
 import mau from './fixtures/dau-vao-mau.json';
+import {randomBytes} from 'node:crypto';
+import {validateHoSo} from '../server/dau-vao/ho-so';
+import {hoSoSummary} from '../server/dau-vao/phieu';
+import {saveHoSo,saveKetQua,validSig} from '../server/dau-vao/lead';
+import {createDauVaoApi} from '../api/kiem-tra-dau-vao';
 import {handleDauVao,dauVaoKey,loadBanks,PROGRESS} from '../server/dau-vao/handler';
 
 // Kho mã công khai: ngân hàng thật chỉ có dạng mã hóa. Có MTM_DAU_VAO_KEY thì kiểm ngân hàng thật; không có thì dùng bộ câu mẫu giả cùng cấu trúc chủ đề.
@@ -60,5 +65,48 @@ if(REAL)for(const khoi of DV_TRACKS){const b=BANKS[khoi] as Bank;const ids=new S
  for(const t of b.topics){const lv=new Set(b.questions.filter(q=>q.topic===t.id).map(q=>q.level));for(const l of [1,2,3,4])assert.ok(lv.has(l as 1),`${t.id} thiếu mức ${l}`);}
  for(const id of Object.keys(PROGRESS.khoi[khoi].groups.flatMap(g=>Object.keys(g.covered)).reduce((a,k)=>({...a,[k]:1}),{}))){const all=khoi==='hsa'?new Set([...ids,...(BANKS['12'] as Bank).topics.map(t=>t.id)]):ids;assert.ok(all.has(id),'sổ tiến độ trỏ chủ đề lạ '+id);}
 }
+
+// Phiếu thông tin học thử: bắt buộc đủ ô quản lý lớp cần, đồng ý của phụ huynh, ngày sinh khớp khối.
+const today='2026-10-20';
+const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'THPT Kim Liên',lopTruong:'10A1',phuHuynh:'Nguyễn Văn Bình',sdtPh:'+84 912 345 678',sdtHs:'',hinhThuc:'truc-tiep',ngayRanh:['T5','T3','T3'],caRanh:['toi-20'],mucTieu:'diem-cao',nguon:'facebook',ghiChu:'',dongY:true,leadSource:'Nguồn: facebook'};
+{const h=validateHoSo(HS,today);assert.ok(typeof h!=='string',String(h));if(typeof h!=='string'){assert.equal(h.hoTen,'Nguyễn Văn An');assert.equal(h.sdtPh,'0912345678');assert.deepEqual(h.ngayRanh,['T3','T5']);assert.match(hoSoSummary(h),/T3, T5 · Tối 20h–22h/);}
+ assert.match(validateHoSo({...HS,dongY:false},today) as string,/đồng ý/);
+ assert.match(validateHoSo({...HS,sdtPh:'12345'},today) as string,/phụ huynh/);
+ assert.match(validateHoSo({...HS,truong:''},today) as string,/trường/);
+ assert.match(validateHoSo({...HS,ngaySinh:'2016-01-01'},today) as string,/khớp/);
+ assert.match(validateHoSo({...HS,ngaySinh:'2011-02-30'},today) as string,/ngày sinh/);
+ assert.match(validateHoSo({...HS,hinhThuc:undefined},today) as string,/trực tiếp/);
+ assert.match(validateHoSo({...HS,extra:1},today) as string,/không hợp lệ/);
+ assert.ok(typeof validateHoSo({...HS,khoi:'6',ngaySinh:'2015-03-01'},today)!=='string');
+ assert.ok(typeof validateHoSo({...HS,khoi:'hsa',ngaySinh:'2009-03-01'},today)!=='string');}
+
+// Kho lead: chưa bật thì enabled:false; bật thì ghi RPC, trả mã phiếu có chữ ký; nộp bài gắn kết quả đúng phiếu, chữ ký sai không ghi.
+{const k=randomBytes(32),calls:{name:string;args:any}[]=[];
+ const transport=(async(url:string,init:any)=>{const name=url.split('/rpc/')[1],args=JSON.parse(init.body);calls.push({name,args});
+  return new Response(JSON.stringify(name==='mtm_lead_dau_vao_add'?{status:'accepted',id:args.p_id}:true),{status:200});}) as unknown as typeof fetch;
+ const env={MTM_LEAD_ENABLED:'1',SUPABASE_URL:'https://x.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'k'};
+ assert.deepEqual((await saveHoSo(HS,k,today,{},transport)).body,{enabled:false});
+ assert.equal((await saveHoSo({...HS,dongY:false},k,today,env,transport)).status,400);
+ const out=await saveHoSo(HS,k,today,env,transport);assert.equal(out.status,200);const {id,sig}=out.body as any;
+ assert.ok(validSig(k,id,sig));assert.ok(!validSig(k,id,'0'.repeat(64)));assert.ok(!validSig(randomBytes(32),id,sig));
+ const add=calls[0].args;assert.equal(add.p_phone,'0912345678');assert.equal(add.p_grade,'10');assert.equal(add.p_ho_so.ngay_sinh,'2011-05-04');assert.match(add.p_notes,/Học thử mới/);assert.match(add.p_lead_source,/^Kiểm tra đầu vào web/);
+ const {paper,picks}=assemble('10','2026-10-19',77,BANKS,PROGRESS);const res=grade(paper,picks,{},PROGRESS.khoi['10'].groups);
+ assert.equal(await saveKetQua(id,sig,res,{name:'An',school:'Kim Liên'},k,env,transport),'saved');
+ const kq=calls[1];assert.equal(kq.name,'mtm_lead_dau_vao_ket_qua');assert.equal(kq.args.p_id,id);assert.equal(kq.args.p_ket_qua.diem,0);assert.match(kq.args.p_text,/Gợi ý lớp/);
+ assert.equal(await saveKetQua(id,'f'.repeat(64),res,{name:'',school:''},k,env,transport),'error');assert.equal(calls.length,2);
+ assert.equal(await saveKetQua(id,sig,res,{name:'',school:''},k,{},transport),'off');
+ const limited=(async()=>new Response(JSON.stringify({status:'limit'}),{status:200})) as unknown as typeof fetch;
+ assert.equal((await saveHoSo(HS,k,today,env,limited)).status,429);
+ const down=(async()=>new Response('x',{status:500})) as unknown as typeof fetch;
+ assert.equal((await saveHoSo(HS,k,today,env,down)).status,503);}
+
 const _p:Progress=PROGRESS;void _p;
 console.log('dau-vao: ok');
+// API: phiếu đi nhánh hoSo, nguồn gửi lạ bị chặn, nộp bài có mã phiếu trả thêm trạng thái lead.
+{const call=async(env:Record<string,string>,req:any)=>{let st=0,body:any;await createDauVaoApi(()=>env)(req,{setHeader(){},status:n=>{st=n;return {json:v=>{body=v;}};}});return {st,body};};
+ const h={origin:'https://minhthanhmath.vn',host:'minhthanhmath.vn'};
+ assert.equal((await call({},{method:'POST',headers:{origin:'https://evil.vn',host:'evil.vn'},body:{hoSo:HS}})).st,403);
+ const r=await call({},{method:'POST',headers:h,body:JSON.stringify({hoSo:HS})});assert.equal(r.st,200);assert.deepEqual(r.body,{enabled:false});
+ assert.equal((await call({},{method:'POST',headers:h,body:{hoSo:HS,x:1}})).st,400);
+ assert.equal((await call({},{method:'GET',query:{khoi:'10'}})).st,503);}
+console.log('dau-vao api: ok');
