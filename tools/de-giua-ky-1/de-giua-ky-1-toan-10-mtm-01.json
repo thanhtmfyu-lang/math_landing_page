@@ -1,0 +1,890 @@
+{
+  "ma_de": "mtm-toan10-gk1-01",
+  "ten": "Đề ôn luyện giữa kỳ I – Toán 10 – MTM số 01",
+  "thoi_gian_phut": 90,
+  "don_vi_soan": "Trung tâm Toán Minh Thành MTM – Xưởng ý tưởng / tổ Toán 10",
+  "ngay_soan": "2026-10-19",
+  "lien_he": "Hotline/Zalo 0967 365 413",
+  "cau_truc": {
+    "nam_hoc": "2026–2027",
+    "mo_ta": "Cấu trúc đề kiểm tra định kỳ theo định dạng mới (áp dụng từ 2025): 3 phần, thang 10 điểm",
+    "tong_so_cau": 22,
+    "phan": [
+      {
+        "phan": 1,
+        "dang": "mcq",
+        "ten": "Trắc nghiệm nhiều phương án lựa chọn (4 phương án, 1 đúng)",
+        "so_cau": 12,
+        "diem_moi_cau": 0.25,
+        "tong_diem": 3.0
+      },
+      {
+        "phan": 2,
+        "dang": "dung_sai",
+        "ten": "Trắc nghiệm đúng sai (mỗi câu 4 ý a, b, c, d)",
+        "so_cau": 4,
+        "cach_cham": "đúng 1 ý 0,1; 2 ý 0,25; 3 ý 0,5; 4 ý 1,0 điểm",
+        "tong_diem": 4.0
+      },
+      {
+        "phan": 3,
+        "dang": "dien_so",
+        "ten": "Trắc nghiệm trả lời ngắn (đáp số tối đa 4 ký tự)",
+        "so_cau": 6,
+        "diem_moi_cau": 0.5,
+        "tong_diem": 3.0
+      }
+    ],
+    "phan_bo_chu_de": {
+      "Mệnh đề và tập hợp": {
+        "so_cau": 7,
+        "diem": 3.0,
+        "ti_le_diem": "30%"
+      },
+      "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn": {
+        "so_cau": 6,
+        "diem": 2.75,
+        "ti_le_diem": "27,5%"
+      },
+      "Hệ thức lượng trong tam giác": {
+        "so_cau": 9,
+        "diem": 4.25,
+        "ti_le_diem": "42,5%"
+      }
+    },
+    "ma_tran_chu_de_muc_do": {
+      "Mệnh đề và tập hợp": {
+        "NB": [
+          "I.1",
+          "I.3"
+        ],
+        "TH": [
+          "I.2",
+          "I.4"
+        ],
+        "VD": [
+          "II.1",
+          "III.1",
+          "III.2"
+        ],
+        "VDC": []
+      },
+      "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn": {
+        "NB": [
+          "I.5"
+        ],
+        "TH": [
+          "I.6"
+        ],
+        "VD": [
+          "I.7",
+          "II.2",
+          "III.3"
+        ],
+        "VDC": [
+          "III.4"
+        ]
+      },
+      "Hệ thức lượng trong tam giác": {
+        "NB": [
+          "I.8"
+        ],
+        "TH": [
+          "I.9",
+          "I.10",
+          "I.11",
+          "II.3"
+        ],
+        "VD": [
+          "I.12",
+          "III.5"
+        ],
+        "VDC": [
+          "II.4",
+          "III.6"
+        ]
+      }
+    },
+    "phan_bo_muc_do": {
+      "NB": {
+        "so_cau": 4,
+        "ti_le": "18%"
+      },
+      "TH": {
+        "so_cau": 7,
+        "ti_le": "32%"
+      },
+      "VD": {
+        "so_cau": 8,
+        "ti_le": "36%"
+      },
+      "VDC": {
+        "so_cau": 3,
+        "ti_le": "14%"
+      }
+    },
+    "phan_bo_dap_an_phan_I": {
+      "B": 3,
+      "D": 3,
+      "A": 3,
+      "C": 3
+    },
+    "cau_thuc_te": [
+      "I.7",
+      "I.12",
+      "II.2",
+      "II.4",
+      "III.1",
+      "III.3",
+      "III.5"
+    ],
+    "khong_gom": "vectơ, hàm số bậc hai"
+  },
+  "tong_hop_kiem_dinh": {
+    "so_cau_khop": 22,
+    "tong_so_cau": 22,
+    "ghi_chu": "Mỗi câu được tính lại độc lập bằng Python (sympy/numpy) trong kiem_dinh.py, không dùng lại lời giải: tập hợp bằng sympy Interval và vét cạn số nguyên; tối ưu tuyến tính bằng vét đỉnh + quét lưới + vét nghiệm nguyên; hệ thức lượng bằng sympy chính xác và dựng tọa độ numpy; Ven bằng vét cạn 7 miền; cực trị bằng quét số. Phần I: mỗi câu đúng 1 phương án khớp, 4 phương án đôi một khác nhau. Phần II: kiểm riêng 16 ý. Phần III: đáp số khớp sau làm tròn, không quá 4 ký tự.",
+    "doi_chieu_them": "Wolfram Language đối chiếu 7 câu: I.7, II.2, II.4, III.3, III.4, III.5, III.6 – tất cả KHỚP.",
+    "lenh_chay": "python3 kiem_dinh.py --ghi",
+    "ngay_kiem": "2026-10-19"
+  },
+  "cau_hoi": [
+    {
+      "id": "MTM10-GK1-01-P1-01",
+      "stt": 1,
+      "phan": 1,
+      "chu_de": "Mệnh đề và tập hợp – phủ định mệnh đề chứa lượng từ",
+      "lop": 10,
+      "muc_do": "NB",
+      "dang": "mcq",
+      "de_bai": "Cho mệnh đề $P$: “$\\forall x\\in\\mathbb{R},\\ x^2+x+1>0$”. Mệnh đề phủ định của $P$ và tính đúng sai của mệnh đề phủ định đó là",
+      "lua_chon": {
+        "A": "“$\\exists x\\in\\mathbb{R},\\ x^2+x+1<0$”; đây là mệnh đề sai.",
+        "B": "“$\\exists x\\in\\mathbb{R},\\ x^2+x+1\\le 0$”; đây là mệnh đề sai.",
+        "C": "“$\\exists x\\in\\mathbb{R},\\ x^2+x+1\\le 0$”; đây là mệnh đề đúng.",
+        "D": "“$\\forall x\\in\\mathbb{R},\\ x^2+x+1\\le 0$”; đây là mệnh đề sai."
+      },
+      "dap_an": "B",
+      "loi_giai": "Bước 1 (lập phủ định). Phủ định của “$\\forall x\\in X,\\ Q(x)$” là “$\\exists x\\in X,\\ \\overline{Q(x)}$”; phủ định của “$>0$” là “$\\le 0$”. Do đó $\\overline{P}$: “$\\exists x\\in\\mathbb{R},\\ x^2+x+1\\le 0$”.\nBước 2 (xét tính đúng sai). Với mọi $x\\in\\mathbb{R}$: $x^2+x+1=\\left(x+\\dfrac12\\right)^2+\\dfrac34\\ge\\dfrac34>0$. Vậy $P$ đúng, nên $\\overline{P}$ sai.\nChọn B.",
+      "phan_tich_nhieu": {
+        "A": "Phủ định “$>0$” thành “$<0$” (quên trường hợp bằng $0$). Kết luận “sai” tuy đúng nhưng mệnh đề viết ra không phải phủ định của $P$.",
+        "C": "Lập phủ định đúng nhưng đánh giá sai tính đúng sai (không biến đổi $\\left(x+\\frac12\\right)^2+\\frac34$).",
+        "D": "Giữ nguyên lượng từ $\\forall$, chỉ đổi dấu bất đẳng thức – lỗi phổ biến khi phủ định mệnh đề có lượng từ."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Phủ định của ∀x, f>0 là ∃x, f<=0; sympy min f = 3/4 > 0 nên P đúng, phủ định sai.",
+        "gia_tri_tinh_lai": "('exists', '<=', False)",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-02",
+      "stt": 2,
+      "phan": 1,
+      "chu_de": "Mệnh đề và tập hợp – điều kiện cần, điều kiện đủ",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho $x,a,b$ là các số thực. Khẳng định nào sau đây là **đúng**?",
+      "lua_chon": {
+        "A": "“$x>1$” là điều kiện cần để “$x^2>1$”.",
+        "B": "“$a+b$ là số hữu tỉ” là điều kiện đủ để “$a$ và $b$ đều là số hữu tỉ”.",
+        "C": "“$ab>0$” là điều kiện cần và đủ để “$a>0$ và $b>0$”.",
+        "D": "Điều kiện đủ để “$x^2>1$” là “$x>1$”."
+      },
+      "dap_an": "D",
+      "loi_giai": "Nhắc lại: “$P$ là điều kiện đủ để có $Q$” và “$Q$ là điều kiện cần để có $P$” cùng có nghĩa $P\\Rightarrow Q$ đúng.\n- A: phát biểu “$x>1$ là điều kiện cần để $x^2>1$” nghĩa là $x^2>1\\Rightarrow x>1$. Với $x=-2$: $x^2=4>1$ nhưng $x=-2<1$. Sai.\n- B: nghĩa là “$a+b\\in\\mathbb{Q}\\Rightarrow a\\in\\mathbb{Q}$ và $b\\in\\mathbb{Q}$”. Với $a=\\sqrt2,\\ b=-\\sqrt2$: $a+b=0\\in\\mathbb{Q}$ nhưng $a\\notin\\mathbb{Q}$. Sai.\n- C: cần cả hai chiều. Chiều “$ab>0\\Rightarrow a>0$ và $b>0$” sai với $a=b=-1$ ($ab=1>0$). Sai.\n- D: nghĩa là $x>1\\Rightarrow x^2>1$. Thật vậy, nếu $x>1$ thì $x>0$ nên $x^2=x\\cdot x>1\\cdot x>1$. Đúng.\nChọn D.",
+      "phan_tich_nhieu": {
+        "A": "Nhầm chiều kéo theo: coi “điều kiện cần” như “điều kiện đủ”, bỏ sót trường hợp $x<-1$.",
+        "B": "Nhầm mệnh đề đảo: $a,b\\in\\mathbb{Q}\\Rightarrow a+b\\in\\mathbb{Q}$ đúng, nhưng chiều ngược lại sai.",
+        "C": "Chỉ kiểm chiều $a>0,b>0\\Rightarrow ab>0$, quên trường hợp $a,b$ cùng âm."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Quét lưới số + sympy: A=False (phản ví dụ x=-2), B=False (phản ví dụ √2,-√2), C=False (phản ví dụ a=b=-1), D=True ((1;+∞) ⊂ tập nghiệm x²>1).",
+        "gia_tri_tinh_lai": "chỉ D đúng",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-03",
+      "stt": 3,
+      "phan": 1,
+      "chu_de": "Mệnh đề và tập hợp – các phép toán trên khoảng, đoạn",
+      "lop": 10,
+      "muc_do": "NB",
+      "dang": "mcq",
+      "de_bai": "Cho hai tập hợp $A=[-4;2)$ và $B=(-1;5]$. Tập hợp $(A\\setminus B)\\cup(B\\setminus A)$ là",
+      "lua_chon": {
+        "A": "$[-4;-1]\\cup[2;5]$",
+        "B": "$[-4;-1)\\cup(2;5]$",
+        "C": "$[-4;-1)\\cup[2;5]$",
+        "D": "$(-4;-1]\\cup(2;5]$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Bước 1. $A\\setminus B$ gồm các $x$ thuộc $[-4;2)$ nhưng không thuộc $(-1;5]$, tức $-4\\le x<2$ và ($x\\le -1$ hoặc $x>5$). Suy ra $-4\\le x\\le -1$, hay $A\\setminus B=[-4;-1]$ (điểm $-1\\notin B$ vì $B$ mở tại $-1$, nên $-1\\in A\\setminus B$).\nBước 2. $B\\setminus A$ gồm các $x$ thuộc $(-1;5]$ nhưng không thuộc $[-4;2)$, tức $-1<x\\le 5$ và ($x<-4$ hoặc $x\\ge 2$). Suy ra $2\\le x\\le 5$, hay $B\\setminus A=[2;5]$ (điểm $2\\notin A$ vì $A$ mở tại $2$).\nBước 3. $(A\\setminus B)\\cup(B\\setminus A)=[-4;-1]\\cup[2;5]$. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Lấy “ngược” đầu mút: cho rằng đầu mở của $B$ tại $-1$ thì kết quả cũng mở tại $-1$, đầu mở của $A$ tại $2$ thì kết quả mở tại $2$.",
+        "C": "Xử lý đúng đầu mút $2$ nhưng sai đầu mút $-1$ (không nhận ra $-1\\notin B$).",
+        "D": "Sai cả hai đầu mút trái: mở tại $-4$ (dù $-4\\in A$) và mở tại $2$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "sympy Interval: (A\\B)∪(B\\A) = Union(Interval(-4, -1), Interval(2, 5)).",
+        "gia_tri_tinh_lai": "Union(Interval(-4, -1), Interval(2, 5))",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-04",
+      "stt": 4,
+      "phan": 1,
+      "chu_de": "Mệnh đề và tập hợp – tập hợp chứa tham số",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho hai tập hợp $A=(m-1;\\,2m+3]$ (với $m$ là tham số thực) và $B=[-3;4)$. Tập hợp tất cả các giá trị của $m$ để $A\\cap B\\neq\\varnothing$ là",
+      "lua_chon": {
+        "A": "$(-3;5)$",
+        "B": "$(-4;5)$",
+        "C": "$[-3;5)$",
+        "D": "$[-3;5]$"
+      },
+      "dap_an": "C",
+      "loi_giai": "Bước 1 (điều kiện để $A$ là một nửa khoảng khác rỗng). $A\\ne\\varnothing\\Leftrightarrow m-1<2m+3\\Leftrightarrow m>-4$. Nếu $m\\le -4$ thì $A=\\varnothing$ nên $A\\cap B=\\varnothing$.\nBước 2. Với $m>-4$: $A\\cap B\\neq\\varnothing$ khi và chỉ khi đồng thời\n (i) đầu trái của $A$ nhỏ hơn đầu phải của $B$: $m-1<4\\Leftrightarrow m<5$ (nếu $m-1\\ge 4$ thì mọi $x\\in A$ đều $>4$, không thuộc $B$);\n (ii) đầu phải của $A$ không nhỏ hơn đầu trái của $B$: $2m+3\\ge -3\\Leftrightarrow m\\ge -3$ (dấu “=” được nhận vì $2m+3\\in A$ và $-3\\in B$).\nBước 3. Kết hợp $m>-4$, $m<5$, $m\\ge -3$ ta được $m\\in[-3;5)$. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Loại nhầm $m=-3$: không thấy khi $m=-3$ thì $A=(-4;-3]$ và $A\\cap B=\\{-3\\}\\neq\\varnothing$.",
+        "B": "Chỉ dùng điều kiện $A\\neq\\varnothing$ ($m>-4$) và $m<5$, bỏ quên điều kiện (ii).",
+        "D": "Nhận nhầm $m=5$: khi đó $A=(4;13]$, mà $4\\notin B$ nên $A\\cap B=\\varnothing$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Quét 83 giá trị m hữu tỉ (bước 1/4, thêm sát đầu mút): A∩B≠∅ đúng khi m∈[-3;5) – khớp toàn bộ (True); min m tốt = -3, m=5 bị loại.",
+        "gia_tri_tinh_lai": "Interval.Ropen(-3, 5)",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-05",
+      "stt": 5,
+      "phan": 1,
+      "chu_de": "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn – điểm thuộc miền nghiệm",
+      "lop": 10,
+      "muc_do": "NB",
+      "dang": "mcq",
+      "de_bai": "Điểm nào sau đây thuộc miền nghiệm của hệ bất phương trình $\\begin{cases}x-2y+3>0\\\\ 2x+y-1\\le 0\\end{cases}$?",
+      "lua_chon": {
+        "A": "$(-1;1)$",
+        "B": "$(1;0)$",
+        "C": "$(0;1)$",
+        "D": "$(-3;0)$"
+      },
+      "dap_an": "C",
+      "loi_giai": "Thay tọa độ từng điểm vào hai bất phương trình:\n- $(-1;1)$: $-1-2\\cdot1+3=0$, không thỏa mãn $>0$. Loại.\n- $(1;0)$: $1-0+3=4>0$ (thỏa mãn); $2\\cdot1+0-1=1$, không thỏa mãn $\\le 0$. Loại.\n- $(0;1)$: $0-2+3=1>0$ (thỏa mãn); $0+1-1=0\\le 0$ (thỏa mãn). Nhận.\n- $(-3;0)$: $-3-0+3=0$, không thỏa mãn $>0$. Loại.\nChọn C.",
+      "phan_tich_nhieu": {
+        "A": "Coi bất phương trình thứ nhất là “$\\ge 0$” (nhận điểm nằm trên đường thẳng biên $x-2y+3=0$).",
+        "B": "Chỉ kiểm tra bất phương trình thứ nhất, quên kiểm tra bất phương trình thứ hai.",
+        "D": "Giống A: nhận điểm nằm trên biên $x-2y+3=0$ trong khi bất phương trình là bất đẳng thức chặt."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Thay trực tiếp từng điểm vào hệ.",
+        "gia_tri_tinh_lai": "{'A': False, 'B': False, 'C': True, 'D': False}",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-06",
+      "stt": 6,
+      "phan": 1,
+      "chu_de": "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn – xác định hệ từ miền nghiệm",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Trong mặt phẳng tọa độ $Oxy$, cho tam giác $ABC$ với $A(0;3)$, $B(-2;-1)$, $C(4;0)$. Miền tam giác $ABC$ (kể cả các cạnh) là miền nghiệm của hệ bất phương trình nào sau đây?",
+      "lua_chon": {
+        "A": "$\\begin{cases}2x-y+3\\ge 0\\\\ x-6y-4\\ge 0\\\\ 3x+4y-12\\le 0\\end{cases}$",
+        "B": "$\\begin{cases}2x-y+3\\le 0\\\\ x-6y-4\\le 0\\\\ 3x+4y-12\\le 0\\end{cases}$",
+        "C": "$\\begin{cases}2x-y+3\\ge 0\\\\ x-6y-4\\le 0\\\\ 3x+4y-12\\ge 0\\end{cases}$",
+        "D": "$\\begin{cases}2x-y+3\\ge 0\\\\ x-6y-4\\le 0\\\\ 3x+4y-12\\le 0\\end{cases}$"
+      },
+      "dap_an": "D",
+      "loi_giai": "Bước 1 (phương trình ba cạnh).\n- $AB$ qua $A(0;3)$, $B(-2;-1)$: hệ số góc $\\dfrac{-1-3}{-2-0}=2$, nên $y=2x+3$, hay $2x-y+3=0$.\n- $BC$ qua $B(-2;-1)$, $C(4;0)$: hệ số góc $\\dfrac{0-(-1)}{4-(-2)}=\\dfrac16$, nên $y+1=\\dfrac16(x+2)$, hay $x-6y-4=0$.\n- $CA$ qua $C(4;0)$, $A(0;3)$: $\\dfrac x4+\\dfrac y3=1$, hay $3x+4y-12=0$.\nBước 2 (xác định dấu bằng đỉnh đối diện).\n- Thay $C(4;0)$ vào $2x-y+3$: $8-0+3=11>0$, nên miền tam giác ứng với $2x-y+3\\ge 0$.\n- Thay $A(0;3)$ vào $x-6y-4$: $0-18-4=-22<0$, nên ứng với $x-6y-4\\le 0$.\n- Thay $B(-2;-1)$ vào $3x+4y-12$: $-6-4-12=-22<0$, nên ứng với $3x+4y-12\\le 0$.\nBước 3. Hệ cần tìm: $\\begin{cases}2x-y+3\\ge 0\\\\ x-6y-4\\le 0\\\\ 3x+4y-12\\le 0\\end{cases}$. Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Sai dấu bất phương trình ứng với cạnh $BC$ (thử bằng gốc $O$ thay vì đỉnh đối diện rồi kết luận ngược).",
+        "B": "Sai dấu ứng với cạnh $AB$ (thử bằng gốc $O$: $3>0$ nhưng chọn nhầm nửa mặt phẳng).",
+        "C": "Sai dấu ứng với cạnh $CA$: gốc $O$ cho $-12<0$, lẽ ra giữ “$\\le$” nhưng lại đổi chiều."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Lưới 241×241 + 3 đỉnh: so sánh tập nghiệm từng hệ với phép thử điểm-trong-tam-giác (tích có hướng).",
+        "gia_tri_tinh_lai": "hệ D trùng miền tam giác",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-07",
+      "stt": 7,
+      "phan": 1,
+      "chu_de": "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn – bài toán tối ưu thực tế",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Một xưởng may sản xuất áo sơ mi và quần âu. Mỗi chiếc áo cần $1$ giờ ở khâu cắt và $3$ giờ ở khâu may; mỗi chiếc quần cần $2$ giờ ở khâu cắt và $2$ giờ ở khâu may. Trong một tuần, khâu cắt làm việc tối đa $40$ giờ, khâu may làm việc tối đa $60$ giờ; theo đơn đặt hàng, số quần sản xuất không quá $18$ chiếc. Tiền lãi mỗi chiếc áo là $200$ nghìn đồng, mỗi chiếc quần là $300$ nghìn đồng. Tiền lãi lớn nhất xưởng có thể thu được trong một tuần là",
+      "lua_chon": {
+        "A": "$6{,}2$ triệu đồng.",
+        "B": "$6{,}5$ triệu đồng.",
+        "C": "$6{,}0$ triệu đồng.",
+        "D": "$4{,}0$ triệu đồng."
+      },
+      "dap_an": "B",
+      "loi_giai": "Bước 1 (lập mô hình). Gọi $x,y$ lần lượt là số áo và số quần sản xuất trong tuần ($x,y\\ge 0$). Ta có hệ\n$\\begin{cases}x+2y\\le 40 & \\text{(khâu cắt)}\\\\ 3x+2y\\le 60 & \\text{(khâu may)}\\\\ y\\le 18\\\\ x\\ge 0,\\ y\\ge 0\\end{cases}$\nTiền lãi (nghìn đồng): $F=200x+300y$.\nBước 2 (các đỉnh của miền nghiệm).\n- $O(0;0)$; giao của $3x+2y=60$ với $y=0$: $(20;0)$.\n- Giao của $x+2y=40$ và $3x+2y=60$: trừ vế được $2x=20\\Rightarrow x=10,\\ y=15$: $(10;15)$.\n- Giao của $x+2y=40$ và $y=18$: $x=4$: $(4;18)$.\n- Giao của $x=0$ và $y=18$: $(0;18)$.\n(Kiểm tra: $(10;15)$ có $y=15\\le18$; $(4;18)$ có $3\\cdot4+36=48\\le 60$.)\nBước 3 (tính $F$ tại các đỉnh). $F(0;0)=0$; $F(20;0)=4000$; $F(10;15)=2000+4500=6500$; $F(4;18)=800+5400=6200$; $F(0;18)=5400$.\nBước 4. Giá trị lớn nhất là $6500$ nghìn đồng $=6{,}5$ triệu đồng, đạt khi sản xuất $10$ áo và $15$ quần. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Chỉ xét đỉnh $(4;18)$ – nghĩ rằng “làm tối đa quần (lãi cao hơn)” là tối ưu.",
+        "C": "Bỏ ràng buộc $y\\le 18$ và quên đỉnh $(10;15)$, chỉ so sánh hai đỉnh trên trục: $(0;20)$ cho $6000$.",
+        "D": "Chỉ sản xuất áo: đỉnh $(20;0)$ cho $4000$ nghìn đồng."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Vét đỉnh [(10, 15), (4, 18), (20, 0), (0, 18), (0, 0)]: max F = 6500; quét lưới max ≈ 6500.0; vét nghiệm nguyên max = 6500 (nghìn đồng).",
+        "gia_tri_tinh_lai": "13/2",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: Maximize → 6500 tại (10;15) – KHỚP"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-08",
+      "stt": 8,
+      "phan": 1,
+      "chu_de": "Hệ thức lượng trong tam giác – giá trị lượng giác của góc từ 0° đến 180°",
+      "lop": 10,
+      "muc_do": "NB",
+      "dang": "mcq",
+      "de_bai": "Giá trị của biểu thức $P=\\sin 30^\\circ\\cos 60^\\circ+\\sin 150^\\circ\\cos 120^\\circ+\\tan 135^\\circ$ bằng",
+      "lua_chon": {
+        "A": "$-1$",
+        "B": "$\\dfrac32$",
+        "C": "$1$",
+        "D": "$-\\dfrac12$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Ta có $\\sin30^\\circ=\\dfrac12$, $\\cos60^\\circ=\\dfrac12$; $\\sin150^\\circ=\\sin(180^\\circ-30^\\circ)=\\sin30^\\circ=\\dfrac12$; $\\cos120^\\circ=-\\cos60^\\circ=-\\dfrac12$; $\\tan135^\\circ=-\\tan45^\\circ=-1$.\nSuy ra $P=\\dfrac12\\cdot\\dfrac12+\\dfrac12\\cdot\\left(-\\dfrac12\\right)+(-1)=\\dfrac14-\\dfrac14-1=-1$. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Quên đổi dấu cả $\\cos120^\\circ$ (lấy $\\frac12$) và $\\tan135^\\circ$ (lấy $1$): $\\frac14+\\frac14+1=\\frac32$.",
+        "C": "Lấy $\\tan135^\\circ=1$: $\\frac14-\\frac14+1=1$.",
+        "D": "Lấy $\\cos120^\\circ=\\frac12$: $\\frac14+\\frac14-1=-\\frac12$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "sympy: P = -1.",
+        "gia_tri_tinh_lai": "-1",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-09",
+      "stt": 9,
+      "phan": 1,
+      "chu_de": "Hệ thức lượng trong tam giác – hệ thức giữa các giá trị lượng giác",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho góc $\\alpha$ với $0^\\circ<\\alpha<180^\\circ$ và $\\tan\\alpha=-2$. Giá trị của $\\sin\\alpha\\cos\\alpha$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac25$",
+        "B": "$-\\dfrac45$",
+        "C": "$-\\dfrac15$",
+        "D": "$-\\dfrac25$"
+      },
+      "dap_an": "D",
+      "loi_giai": "Bước 1. Vì $\\tan\\alpha=-2<0$ và $0^\\circ<\\alpha<180^\\circ$ nên $90^\\circ<\\alpha<180^\\circ$, suy ra $\\sin\\alpha>0$, $\\cos\\alpha<0$.\nBước 2. Từ $1+\\tan^2\\alpha=\\dfrac{1}{\\cos^2\\alpha}$ ta có $\\cos^2\\alpha=\\dfrac{1}{1+4}=\\dfrac15$, nên $\\cos\\alpha=-\\dfrac{1}{\\sqrt5}$.\nBước 3. $\\sin\\alpha=\\tan\\alpha\\cdot\\cos\\alpha=(-2)\\cdot\\left(-\\dfrac1{\\sqrt5}\\right)=\\dfrac{2}{\\sqrt5}$.\nBước 4. $\\sin\\alpha\\cos\\alpha=\\dfrac{2}{\\sqrt5}\\cdot\\left(-\\dfrac1{\\sqrt5}\\right)=-\\dfrac25$.\n(Cách khác: $\\sin\\alpha\\cos\\alpha=\\tan\\alpha\\cos^2\\alpha=\\dfrac{\\tan\\alpha}{1+\\tan^2\\alpha}=\\dfrac{-2}{5}$.) Chọn D.",
+      "phan_tich_nhieu": {
+        "A": "Lấy $\\cos\\alpha=\\frac1{\\sqrt5}>0$ (không xét góc tù) nên mất dấu âm.",
+        "B": "Tính nhầm $2\\sin\\alpha\\cos\\alpha$ (thừa hệ số $2$).",
+        "C": "Dùng nhầm $\\cos^2\\alpha=\\frac{1}{1+\\tan^2\\alpha}$ rồi lấy $\\sin\\alpha\\cos\\alpha=-\\cos^2\\alpha=-\\frac15$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "sympy: α = π − arctan 2 ∈ (0;π); sinα·cosα = {-2/5}.",
+        "gia_tri_tinh_lai": "-2/5",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "D"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-10",
+      "stt": 10,
+      "phan": 1,
+      "chu_de": "Hệ thức lượng trong tam giác – định lý côsin, định lý sin",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho tam giác $ABC$ có $AB=3$, $AC=5$, $BC=7$. Bán kính đường tròn ngoại tiếp tam giác $ABC$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac{7\\sqrt3}{6}$",
+        "B": "$\\dfrac{7\\sqrt3}{3}$",
+        "C": "$\\dfrac72$",
+        "D": "$\\dfrac{14\\sqrt3}{3}$"
+      },
+      "dap_an": "B",
+      "loi_giai": "Bước 1 (định lý côsin). $\\cos A=\\dfrac{AB^2+AC^2-BC^2}{2\\cdot AB\\cdot AC}=\\dfrac{9+25-49}{2\\cdot3\\cdot5}=\\dfrac{-15}{30}=-\\dfrac12$, nên $A=120^\\circ$ và $\\sin A=\\dfrac{\\sqrt3}{2}$.\nBước 2 (định lý sin). $\\dfrac{BC}{\\sin A}=2R\\Rightarrow R=\\dfrac{BC}{2\\sin A}=\\dfrac{7}{2\\cdot\\frac{\\sqrt3}{2}}=\\dfrac{7}{\\sqrt3}=\\dfrac{7\\sqrt3}{3}$. Chọn B.",
+      "phan_tich_nhieu": {
+        "A": "Dùng nhầm $R=\\dfrac{a}{4\\sin A}$.",
+        "C": "Coi tam giác vuông tại $A$ ($\\sin A=1$), hoặc nhầm $R=\\frac{a}{2}$.",
+        "D": "Quên hệ số $2$: lấy $R=\\dfrac{a}{\\sin A}=\\dfrac{14\\sqrt3}{3}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "cosA=-1/2, R=a/(2sinA)=7*sqrt(3)/3; đối chiếu R=abc/(4S) với S Heron = 7*sqrt(3)/3.",
+        "gia_tri_tinh_lai": "7*sqrt(3)/3",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "B"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-11",
+      "stt": 11,
+      "phan": 1,
+      "chu_de": "Hệ thức lượng trong tam giác – định lý sin, định lý côsin",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "mcq",
+      "de_bai": "Cho tam giác $ABC$ thỏa mãn $\\sin A:\\sin B:\\sin C=4:5:6$. Côsin của góc lớn nhất của tam giác $ABC$ bằng",
+      "lua_chon": {
+        "A": "$\\dfrac18$",
+        "B": "$-\\dfrac18$",
+        "C": "$\\dfrac34$",
+        "D": "$\\dfrac{9}{16}$"
+      },
+      "dap_an": "A",
+      "loi_giai": "Bước 1 (định lý sin). $a=2R\\sin A,\\ b=2R\\sin B,\\ c=2R\\sin C$ nên $a:b:c=\\sin A:\\sin B:\\sin C=4:5:6$. Đặt $a=4k,\\ b=5k,\\ c=6k$ ($k>0$).\nBước 2. Cạnh lớn nhất là $c$ nên góc lớn nhất là $C$ (đối diện cạnh lớn nhất).\nBước 3 (định lý côsin). $\\cos C=\\dfrac{a^2+b^2-c^2}{2ab}=\\dfrac{16k^2+25k^2-36k^2}{2\\cdot4k\\cdot5k}=\\dfrac{5k^2}{40k^2}=\\dfrac18$. Chọn A.",
+      "phan_tich_nhieu": {
+        "B": "Sai dấu khi khai triển tử số (lấy $c^2-a^2-b^2$).",
+        "C": "Tính côsin của góc nhỏ nhất $A$: $\\cos A=\\frac{25+36-16}{60}=\\frac34$.",
+        "D": "Tính côsin của góc $B$: $\\cos B=\\frac{16+36-25}{48}=\\frac{9}{16}$."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Cạnh 4:5:6; cos các góc {'A': 3/4, 'B': 9/16, 'C': 1/8}; góc lớn nhất C ≈ 82.82°.",
+        "gia_tri_tinh_lai": "1/8",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "A"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P1-12",
+      "stt": 12,
+      "phan": 1,
+      "chu_de": "Hệ thức lượng trong tam giác – ứng dụng đo đạc (thực tế)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "mcq",
+      "de_bai": "Từ nóc $T$ của một tòa nhà cao $24$ m, một người nhìn đỉnh $P$ của một cột ăng-ten với góc nâng $35^\\circ$ và nhìn chân $Q$ của cột với góc hạ $20^\\circ$. Biết chân tòa nhà và chân cột cùng nằm trên một mặt đất nằm ngang, cột ăng-ten thẳng đứng. Chiều cao $PQ$ của cột ăng-ten (làm tròn đến hàng phần mười của mét) xấp xỉ bằng",
+      "lua_chon": {
+        "A": "$46{,}2$ m",
+        "B": "$65{,}9$ m",
+        "C": "$70{,}2$ m",
+        "D": "$94{,}2$ m"
+      },
+      "dap_an": "C",
+      "loi_giai": "Mô tả hình: gọi $H$ là chân tòa nhà ($TH=24$ m, $TH\\perp HQ$); kẻ $TK\\perp PQ$ tại $K$ ($K$ nằm trên cột, $KQ=TH=24$ m). Theo đề $\\widehat{PTK}=35^\\circ$ (góc nâng), $\\widehat{KTQ}=20^\\circ$ (góc hạ).\nBước 1. Trong tam giác vuông $THQ$ (vuông tại $H$), $\\widehat{TQH}=\\widehat{KTQ}=20^\\circ$ (so le trong), nên $TQ=\\dfrac{TH}{\\sin20^\\circ}=\\dfrac{24}{\\sin20^\\circ}$.\nBước 2 (các góc của tam giác $TPQ$). $\\widehat{PTQ}=35^\\circ+20^\\circ=55^\\circ$. Góc giữa $QT$ và $QP$ (thẳng đứng) là $\\widehat{TQP}=90^\\circ-20^\\circ=70^\\circ$. Suy ra $\\widehat{TPQ}=180^\\circ-55^\\circ-70^\\circ=55^\\circ$.\nBước 3 (định lý sin). $\\dfrac{PQ}{\\sin\\widehat{PTQ}}=\\dfrac{TQ}{\\sin\\widehat{TPQ}}\\Rightarrow PQ=TQ\\cdot\\dfrac{\\sin55^\\circ}{\\sin55^\\circ}=TQ=\\dfrac{24}{\\sin20^\\circ}\\approx\\dfrac{24}{0{,}34202}\\approx 70{,}17$ (m).\n(Kiểm tra bằng cách khác: $TK=\\dfrac{24}{\\tan20^\\circ}\\approx65{,}94$ m, $PK=TK\\tan35^\\circ\\approx46{,}17$ m, $PQ=PK+24\\approx70{,}17$ m.)\nVậy $PQ\\approx70{,}2$ m. Chọn C.",
+      "phan_tich_nhieu": {
+        "A": "Chỉ tính phần $PK=TK\\tan35^\\circ\\approx46{,}2$ m, quên cộng thêm $KQ=24$ m.",
+        "B": "Nhầm khoảng cách ngang $TK=\\frac{24}{\\tan20^\\circ}\\approx65{,}9$ m là chiều cao cột.",
+        "D": "Cộng thừa chiều cao tòa nhà: $TQ+24\\approx94{,}2$ m."
+      },
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Dựng tọa độ: góc nâng 35.0000°, góc hạ 20.0000°; PQ = 70.17131 m → 70.2.",
+        "gia_tri_tinh_lai": "70.2",
+        "so_phuong_an_dung": 1,
+        "phuong_an_khop": [
+          "C"
+        ],
+        "bon_phuong_an_khac_nhau": true,
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P2-01",
+      "stt": 13,
+      "phan": 2,
+      "chu_de": "Mệnh đề và tập hợp – mệnh đề, khoảng/đoạn, tham số",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dung_sai",
+      "de_bai": "Cho hai tập hợp $A=[-2;5)$ và $B=(m;\\,m+4]$, với $m$ là tham số thực.",
+      "y": [
+        {
+          "ky_hieu": "a",
+          "noi_dung": "Mệnh đề “$\\forall x\\in A,\\ x^2<25$” là mệnh đề đúng.",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "b",
+          "noi_dung": "Khi $m=2$ thì $A\\cup B=[-2;6)$.",
+          "dap_an": false
+        },
+        {
+          "ky_hieu": "c",
+          "noi_dung": "Có đúng $4$ giá trị nguyên của $m$ để $B\\subset A$.",
+          "dap_an": false
+        },
+        {
+          "ky_hieu": "d",
+          "noi_dung": "Có đúng $2$ giá trị nguyên của $m$ để tập hợp $A\\cap B$ chứa đúng $3$ số nguyên.",
+          "dap_an": true
+        }
+      ],
+      "loi_giai": "a) Với $x\\in A$ thì $-2\\le x<5$.\n - Nếu $0\\le x<5$ thì $0\\le x^2<25$.\n - Nếu $-2\\le x<0$ thì $0<x^2\\le 4<25$.\n Vậy $x^2<25$ với mọi $x\\in A$ (điểm $5\\notin A$ nên không xảy ra $x^2=25$). **Đúng.**\nb) Khi $m=2$: $B=(2;6]$. $A\\cup B=[-2;5)\\cup(2;6]=[-2;6]$ (số $6\\in B$). Khẳng định $A\\cup B=[-2;6)$ **Sai.**\nc) $B\\subset A\\Leftrightarrow\\begin{cases}m\\ge -2 \\ (\\text{vì } B \\text{ mở tại } m \\text{ nên cho phép } m=-2)\\\\ m+4<5\\ (\\text{vì } m+4\\in B \\text{ mà } 5\\notin A)\\end{cases}\\Leftrightarrow -2\\le m<1$.\n Các giá trị nguyên: $m\\in\\{-2;-1;0\\}$, tức có $3$ giá trị. Khẳng định “đúng $4$ giá trị” **Sai.**\nd) Với $m$ nguyên, các số nguyên thuộc $B$ là $m+1,\\ m+2,\\ m+3,\\ m+4$ (4 số liên tiếp); các số nguyên thuộc $A$ là $-2,-1,0,1,2,3,4$.\n Số nguyên của $A\\cap B$ là số phần tử chung của $\\{m+1;\\dots;m+4\\}$ và $\\{-2;\\dots;4\\}$. Để có đúng $3$ phần tử chung, dãy $4$ số của $B$ phải “lệch” ra ngoài đúng $1$ số ở một đầu:\n - lệch trái: $m+1=-3\\Rightarrow m=-4$, khi đó $B=(-4;0]$, $A\\cap B=[-2;0]$ chứa $-2,-1,0$;\n - lệch phải: $m+4=5\\Rightarrow m=1$, khi đó $B=(1;5]$, $A\\cap B=(1;5)$ chứa $2,3,4$.\n (Nếu dãy nằm trọn trong $\\{-2;\\dots;4\\}$, tức $-3\\le m\\le 0$, thì có $4$ số chung; nếu lệch từ $2$ số trở lên thì có không quá $2$ số chung.)\n Vậy có đúng $2$ giá trị nguyên $m\\in\\{-4;1\\}$. **Đúng.**",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "sympy Interval + vét cạn m nguyên ∈[-30;30] và số nguyên k∈[-40;40].",
+        "gia_tri_tinh_lai": "a: True; A∪B(m=2)=Interval(-2, 6); m để B⊂A: [-2, -1, 0]; m để A∩B có đúng 3 số nguyên: [-4, 1]",
+        "tung_y": {
+          "a": "KHỚP",
+          "b": "KHỚP",
+          "c": "KHỚP",
+          "d": "KHỚP"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P2-02",
+      "stt": 14,
+      "phan": 2,
+      "chu_de": "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn – bài toán tối ưu thực tế (khẩu phần)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dung_sai",
+      "de_bai": "Một trang trại cần pha trộn hai loại thức ăn $X$ và $Y$ cho đàn gà. Mỗi kg thức ăn $X$ chứa $3$ đơn vị chất đạm và $1$ đơn vị chất khoáng; mỗi kg thức ăn $Y$ chứa $1$ đơn vị chất đạm và $2$ đơn vị chất khoáng. Mỗi ngày đàn gà cần ít nhất $12$ đơn vị chất đạm và ít nhất $9$ đơn vị chất khoáng. Kho chỉ cung cấp được tối đa $5$ kg thức ăn $X$ và $6$ kg thức ăn $Y$ mỗi ngày. Giá $1$ kg thức ăn $X$ là $20$ nghìn đồng, $1$ kg thức ăn $Y$ là $15$ nghìn đồng. Gọi $x,y$ lần lượt là số kg thức ăn $X$, $Y$ dùng trong một ngày.",
+      "y": [
+        {
+          "ky_hieu": "a",
+          "noi_dung": "$x,y$ thỏa mãn hệ $\\begin{cases}3x+y\\ge 12\\\\ x+2y\\ge 9\\\\ 0\\le x\\le 5\\\\ 0\\le y\\le 6\\end{cases}$",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "b",
+          "noi_dung": "Dùng $4$ kg thức ăn $X$ và $1$ kg thức ăn $Y$ mỗi ngày thì đáp ứng đủ nhu cầu dinh dưỡng của đàn gà.",
+          "dap_an": false
+        },
+        {
+          "ky_hieu": "c",
+          "noi_dung": "Chi phí thức ăn mỗi ngày thấp nhất là $105$ nghìn đồng.",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "d",
+          "noi_dung": "Nếu giá thức ăn $X$ tăng lên $50$ nghìn đồng/kg (giá $Y$ không đổi) thì để chi phí thấp nhất, trang trại vẫn nên dùng $3$ kg $X$ và $3$ kg $Y$ mỗi ngày.",
+          "dap_an": false
+        }
+      ],
+      "loi_giai": "a) Lượng đạm: $3x+y\\ge 12$; lượng khoáng: $x+2y\\ge 9$; giới hạn kho: $0\\le x\\le 5$, $0\\le y\\le 6$. **Đúng.**\nb) Với $(x;y)=(4;1)$: đạm $3\\cdot4+1=13\\ge 12$ (đủ) nhưng khoáng $4+2\\cdot1=6<9$ (thiếu). **Sai.**\nc) Chi phí (nghìn đồng): $F=20x+15y$. Các đỉnh của miền nghiệm:\n - Giao của $3x+y=12$ và $x+2y=9$: từ $y=12-3x$ thế vào: $x+24-6x=9\\Rightarrow x=3,\\ y=3$: $M(3;3)$.\n - Giao của $3x+y=12$ và $y=6$: $x=2$: $N(2;6)$.\n - Giao của $x+2y=9$ và $x=5$: $y=2$: $K(5;2)$.\n - Giao của $x=5$ và $y=6$: $L(5;6)$.\n (Kiểm tra: $N$: $2+12=14\\ge9$; $K$: $15+2=17\\ge 12$; $M$: $0\\le3\\le5$, $0\\le 3\\le 6$.) Miền nghiệm là tứ giác $NMKL$.\n $F(M)=60+45=105$; $F(N)=40+90=130$; $F(K)=100+30=130$; $F(L)=100+90=190$.\n Chi phí nhỏ nhất là $105$ nghìn đồng (dùng $3$ kg $X$, $3$ kg $Y$). **Đúng.**\nd) Với giá mới: $G=50x+15y$. $G(M)=150+45=195$; $G(N)=100+90=190$; $G(K)=250+30=280$; $G(L)=250+90=340$.\n Giá trị nhỏ nhất là $190$ tại $N(2;6)$, nhỏ hơn $195$ tại $M(3;3)$. Vậy phương án tối ưu chuyển thành $2$ kg $X$ và $6$ kg $Y$. **Sai.**\n (Nhận xét: với giá $X$ là $p$ nghìn/kg, $M$ còn tối ưu khi $3p+45\\le 2p+90$ và $3p+45\\le 5p+30$, tức $7{,}5\\le p\\le 45$.)",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Vét đỉnh [(3, 3), (2, 6), (5, 2), (5, 6)]; min F=105, lưới min≈105.00; với giá X=50: G tại đỉnh [((3, 3), 195), ((2, 6), 190), ((5, 2), 280), ((5, 6), 340)].",
+        "gia_tri_tinh_lai": "(4;1) khả thi: False; min chi phí 105; tối ưu mới (2, 6)",
+        "tung_y": {
+          "a": "KHỚP",
+          "b": "KHỚP",
+          "c": "KHỚP",
+          "d": "KHỚP"
+        },
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: Minimize → 105 tại (3;3) – KHỚP"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P2-03",
+      "stt": 15,
+      "phan": 2,
+      "chu_de": "Hệ thức lượng trong tam giác – giải tam giác, diện tích, bán kính, phân giác",
+      "lop": 10,
+      "muc_do": "TH",
+      "dang": "dung_sai",
+      "de_bai": "Cho tam giác $ABC$ có $AB=5$, $AC=8$ và $\\widehat{BAC}=60^\\circ$. Gọi $AD$ là đường phân giác trong của góc $A$ ($D$ thuộc cạnh $BC$).",
+      "y": [
+        {
+          "ky_hieu": "a",
+          "noi_dung": "$BC=7$.",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "b",
+          "noi_dung": "Diện tích tam giác $ABC$ bằng $20\\sqrt3$.",
+          "dap_an": false
+        },
+        {
+          "ky_hieu": "c",
+          "noi_dung": "Bán kính đường tròn nội tiếp tam giác $ABC$ bằng $\\sqrt3$.",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "d",
+          "noi_dung": "$AD=\\dfrac{40\\sqrt3}{13}$.",
+          "dap_an": true
+        }
+      ],
+      "loi_giai": "a) Định lý côsin: $BC^2=AB^2+AC^2-2\\cdot AB\\cdot AC\\cos60^\\circ=25+64-2\\cdot5\\cdot8\\cdot\\dfrac12=49$, nên $BC=7$. **Đúng.**\nb) $S=\\dfrac12\\cdot AB\\cdot AC\\cdot\\sin60^\\circ=\\dfrac12\\cdot5\\cdot8\\cdot\\dfrac{\\sqrt3}{2}=10\\sqrt3\\neq 20\\sqrt3$. **Sai.**\nc) Nửa chu vi $p=\\dfrac{5+8+7}{2}=10$. Từ $S=pr$: $r=\\dfrac{S}{p}=\\dfrac{10\\sqrt3}{10}=\\sqrt3$. **Đúng.**\nd) Đặt $AD=\\ell$. Vì $AD$ là phân giác nên $\\widehat{BAD}=\\widehat{DAC}=30^\\circ$. Ta có $S_{ABD}+S_{ADC}=S_{ABC}$:\n $\\dfrac12\\cdot5\\cdot\\ell\\cdot\\sin30^\\circ+\\dfrac12\\cdot8\\cdot\\ell\\cdot\\sin30^\\circ=10\\sqrt3\\ \\Leftrightarrow\\ \\dfrac{13\\ell}{4}=10\\sqrt3\\ \\Leftrightarrow\\ \\ell=\\dfrac{40\\sqrt3}{13}$. **Đúng.**",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "sympy: định lý côsin + dựng tọa độ B(5;0), C(8cos60°;8sin60°), D chia BC theo tỉ lệ 5:8.",
+        "gia_tri_tinh_lai": "BC=7, S=10*sqrt(3), r=sqrt(3), AD=40*sqrt(3)/13",
+        "tung_y": {
+          "a": "KHỚP",
+          "b": "KHỚP",
+          "c": "KHỚP",
+          "d": "KHỚP"
+        },
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P2-04",
+      "stt": 16,
+      "phan": 2,
+      "chu_de": "Hệ thức lượng trong tam giác – ứng dụng thực tế (chuyển động của hai tàu)",
+      "lop": 10,
+      "muc_do": "VDC",
+      "dang": "dung_sai",
+      "de_bai": "Hai tàu cùng xuất phát lúc 7 giờ sáng từ cảng $P$ và chạy thẳng theo hai hướng hợp với nhau một góc $60^\\circ$. Tàu thứ nhất chạy với vận tốc không đổi $30$ km/h, tàu thứ hai chạy với vận tốc không đổi $40$ km/h. Lúc 9 giờ sáng, tàu thứ nhất ở vị trí $A$, tàu thứ hai ở vị trí $B$ (coi mặt biển là mặt phẳng, các tàu là các điểm).",
+      "y": [
+        {
+          "ky_hieu": "a",
+          "noi_dung": "Lúc 9 giờ, khoảng cách giữa hai tàu xấp xỉ $72{,}1$ km (làm tròn đến hàng phần mười).",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "b",
+          "noi_dung": "Góc $\\widehat{PBA}$ nhỏ hơn $45^\\circ$.",
+          "dap_an": false
+        },
+        {
+          "ky_hieu": "c",
+          "noi_dung": "Khoảng cách từ cảng $P$ đến đường thẳng $AB$ xấp xỉ $57{,}6$ km (làm tròn đến hàng phần mười).",
+          "dap_an": true
+        },
+        {
+          "ky_hieu": "d",
+          "noi_dung": "Lúc 9 giờ 45 phút cùng ngày, khoảng cách giữa hai tàu đã vượt quá $100$ km.",
+          "dap_an": false
+        }
+      ],
+      "loi_giai": "Lúc 9 giờ, mỗi tàu đã chạy $2$ giờ: $PA=30\\cdot2=60$ km, $PB=40\\cdot2=80$ km, $\\widehat{APB}=60^\\circ$.\na) $AB^2=PA^2+PB^2-2\\cdot PA\\cdot PB\\cos60^\\circ=3600+6400-2\\cdot60\\cdot80\\cdot\\dfrac12=5200$, nên $AB=\\sqrt{5200}=20\\sqrt{13}\\approx72{,}11$ km. **Đúng.**\nb) $\\cos\\widehat{PBA}=\\dfrac{PB^2+AB^2-PA^2}{2\\cdot PB\\cdot AB}=\\dfrac{6400+5200-3600}{2\\cdot80\\cdot20\\sqrt{13}}=\\dfrac{8000}{3200\\sqrt{13}}=\\dfrac{5}{2\\sqrt{13}}\\approx0{,}6934$.\n Vì $\\cos45^\\circ=\\dfrac{\\sqrt2}{2}\\approx0{,}7071>0{,}6934$ và hàm côsin nghịch biến trên $[0^\\circ;180^\\circ]$ nên $\\widehat{PBA}>45^\\circ$ (thực tế $\\widehat{PBA}\\approx46{,}1^\\circ$). **Sai.**\n (So sánh chính xác: $\\left(\\dfrac{5}{2\\sqrt{13}}\\right)^2=\\dfrac{25}{52}<\\dfrac12=\\cos^2 45^\\circ$.)\nc) $S_{PAB}=\\dfrac12\\cdot60\\cdot80\\cdot\\sin60^\\circ=1200\\sqrt3$ (km²). Khoảng cách từ $P$ đến $AB$ là đường cao $h=\\dfrac{2S}{AB}=\\dfrac{2400\\sqrt3}{20\\sqrt{13}}=\\dfrac{120\\sqrt3}{\\sqrt{13}}=\\dfrac{120\\sqrt{39}}{13}\\approx57{,}65$ km, làm tròn $57{,}6$ km. **Đúng.**\nd) Sau $t$ giờ ($t>0$): $PA=30t$, $PB=40t$ nên $AB^2=900t^2+1600t^2-1200t^2=1300t^2$, tức $AB=10\\sqrt{13}\\,t$ (khoảng cách tăng tỉ lệ thuận với thời gian).\n Lúc 9 giờ 45 phút: $t=2{,}75$ giờ, $AB=10\\sqrt{13}\\cdot2{,}75=27{,}5\\sqrt{13}\\approx99{,}15$ km $<100$ km.\n (So sánh chính xác: $(27{,}5\\sqrt{13})^2=9831{,}25<10000$.) Khoảng cách đạt $100$ km khi $t=\\dfrac{100}{10\\sqrt{13}}\\approx2{,}774$ giờ, tức khoảng 9 giờ 46 phút 24 giây. **Sai.**",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "numpy: dựng tọa độ P(0;0), tàu 1 trên Ox, tàu 2 trên tia 60°; tính khoảng cách, góc, khoảng cách điểm–đường thẳng.",
+        "gia_tri_tinh_lai": "AB=72.1110; góc PBA=46.1021°; h=57.6461; AB lúc 9h45=99.1527",
+        "tung_y": {
+          "a": "KHỚP",
+          "b": "KHỚP",
+          "c": "KHỚP",
+          "d": "KHỚP"
+        },
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: AB=72.1110; ∠PBA=46.1021°; h=57.6461; AB(2,75h)=99.1527 – KHỚP"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P3-01",
+      "stt": 17,
+      "phan": 3,
+      "chu_de": "Mệnh đề và tập hợp – bài toán đếm bằng biểu đồ Ven (thực tế)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Lớp 10A có $45$ học sinh, trong đó có $5$ học sinh không tham gia câu lạc bộ nào trong ba câu lạc bộ Toán, Tin học và Tiếng Anh của trường. Câu lạc bộ Toán có $25$ học sinh của lớp, câu lạc bộ Tin học có $20$ học sinh, câu lạc bộ Tiếng Anh có $19$ học sinh. Biết rằng có đúng $14$ học sinh của lớp tham gia đúng hai trong ba câu lạc bộ trên. Hỏi có bao nhiêu học sinh của lớp 10A tham gia cả ba câu lạc bộ?",
+      "dap_an": "5",
+      "dap_an_so": 5,
+      "loi_giai": "Gọi $T, I, E$ lần lượt là tập học sinh tham gia CLB Toán, Tin học, Tiếng Anh. Gọi $x_1, x_2, x_3$ lần lượt là số học sinh tham gia đúng $1$, đúng $2$, cả $3$ câu lạc bộ (ba miền rời nhau của biểu đồ Ven).\nBước 1. Số học sinh tham gia ít nhất một CLB: $|T\\cup I\\cup E|=45-5=40$, nên $x_1+x_2+x_3=40$. $\\quad(1)$\nBước 2. Khi cộng $|T|+|I|+|E|$, mỗi học sinh tham gia đúng $1$ CLB được đếm $1$ lần, đúng $2$ CLB được đếm $2$ lần, cả $3$ CLB được đếm $3$ lần:\n $x_1+2x_2+3x_3=25+20+19=64$. $\\quad(2)$\nBước 3. Lấy $(2)-(1)$: $x_2+2x_3=24$. Thay $x_2=14$: $2x_3=10\\Rightarrow x_3=5$.\n(Kiểm tra tồn tại: chẳng hạn chỉ Toán – Tin $6$, chỉ Toán – Anh $4$, chỉ Tin – Anh $4$, chỉ Toán $10$, chỉ Tin $5$, chỉ Anh $6$, cả ba $5$ thỏa mãn mọi dữ kiện.)\nĐáp số: $5$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Vét cạn 7 miền Ven nguyên không âm: 120 cấu hình thỏa mãn, mọi cấu hình đều có số HS tham gia cả ba = 5.",
+        "gia_tri_tinh_lai": "5",
+        "lam_tron": "5",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P3-02",
+      "stt": 18,
+      "phan": 3,
+      "chu_de": "Mệnh đề và tập hợp – tập hợp chứa tham số",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Cho hai tập hợp $A=[m-1;\\,m+2)$ và $B=(-\\infty;-3)\\cup[5;+\\infty)$, với $m$ là tham số. Có bao nhiêu số nguyên $m\\in[-20;20]$ để $A\\cap B\\neq\\varnothing$?",
+      "dap_an": "35",
+      "dap_an_so": 35,
+      "loi_giai": "Bước 1. Ta có $m-1<m+2$ với mọi $m$ nên $A\\neq\\varnothing$. Phần bù của $B$ trong $\\mathbb{R}$ là $\\mathbb{R}\\setminus B=[-3;5)$.\nBước 2 (xét điều kiện ngược). $A\\cap B=\\varnothing\\Leftrightarrow A\\subset\\mathbb{R}\\setminus B=[-3;5)\\Leftrightarrow\\begin{cases}m-1\\ge -3\\\\ m+2\\le 5\\end{cases}$ (vì $A$ mở tại $m+2$ nên cho phép $m+2=5$) $\\Leftrightarrow -2\\le m\\le 3$.\nBước 3. Do đó $A\\cap B\\ne\\varnothing\\Leftrightarrow m<-2$ hoặc $m>3$.\nBước 4 (đếm). Trên đoạn $[-20;20]$ có $41$ số nguyên; trong đó có $6$ số nguyên thuộc $[-2;3]$ là $-2,-1,0,1,2,3$. Số giá trị cần tìm: $41-6=35$.\nĐáp số: $35$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "sympy Interval: duyệt 41 số nguyên m∈[-20;20], đếm A∩B≠∅.",
+        "gia_tri_tinh_lai": "35",
+        "lam_tron": "35",
+        "ngay_kiem": "2026-10-19"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P3-03",
+      "stt": 19,
+      "phan": 3,
+      "chu_de": "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn – bài toán tối ưu thực tế",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Một trung tâm dự định mở trong tháng tới $x$ lớp nhóm nhỏ và $y$ lớp nhóm lớn. Mỗi tuần, một lớp nhóm nhỏ cần $6$ giờ dạy, một lớp nhóm lớn cần $4$ giờ dạy; tổng số giờ dạy của đội ngũ giáo viên không vượt quá $60$ giờ/tuần. Trung tâm chỉ bố trí được tối đa $12$ lớp (do số phòng học) và tối đa $8$ lớp nhóm lớn (do số phòng lớn). Lợi nhuận mỗi tháng của một lớp nhóm nhỏ là $8$ triệu đồng, của một lớp nhóm lớn là $10$ triệu đồng. Lợi nhuận lớn nhất trung tâm có thể đạt được trong một tháng là bao nhiêu triệu đồng?",
+      "dap_an": "112",
+      "dap_an_so": 112,
+      "loi_giai": "Bước 1 (mô hình). $x,y$ là các số nguyên không âm thỏa mãn $\\begin{cases}6x+4y\\le 60\\\\ x+y\\le 12\\\\ y\\le 8\\\\ x\\ge0,\\ y\\ge0\\end{cases}\\Leftrightarrow\\begin{cases}3x+2y\\le 30\\\\ x+y\\le 12\\\\ 0\\le y\\le 8\\\\ x\\ge 0\\end{cases}$; lợi nhuận (triệu đồng) $F=8x+10y$.\nBước 2 (đỉnh của miền nghiệm).\n- $O(0;0)$; giao của $3x+2y=30$ với $y=0$: $(10;0)$.\n- Giao của $3x+2y=30$ và $x+y=12$: lấy $(3x+2y)-2(x+y)=30-2\\cdot12\\Rightarrow x=6$, suy ra $y=6$: $(6;6)$.\n- Giao của $x+y=12$ và $y=8$: $(4;8)$; kiểm tra $3\\cdot4+2\\cdot8=28\\le30$.\n- Giao của $x=0$ và $y=8$: $(0;8)$.\nBước 3. $F(0;0)=0$; $F(10;0)=80$; $F(6;6)=48+60=108$; $F(4;8)=32+80=112$; $F(0;8)=80$.\nBước 4. GTLN của $F$ trên miền là $112$, đạt tại $(4;8)$ có tọa độ nguyên nên là phương án thực hiện được: mở $4$ lớp nhỏ và $8$ lớp lớn.\nĐáp số: $112$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Vét đỉnh [(6, 6), (10, 0), (4, 8), (0, 8), (0, 0)]: max=112; vét nghiệm nguyên: max=112; lưới ≈112.00.",
+        "gia_tri_tinh_lai": "112",
+        "lam_tron": "112",
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: Maximize trên Integers → 112 tại (4;8) – KHỚP"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P3-04",
+      "stt": 20,
+      "phan": 3,
+      "chu_de": "Bất phương trình và hệ bất phương trình bậc nhất hai ẩn – giá trị lớn nhất của biểu thức chứa tham số",
+      "lop": 10,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Cho các số thực $x,y$ thỏa mãn hệ $\\begin{cases}x\\ge 0,\\ y\\ge 0\\\\ x+y\\le 5\\\\ 2x-y\\le 4\\end{cases}$. Biết rằng giá trị lớn nhất của biểu thức $F=x+my$ (với $m$ là tham số thực) bằng $8$. Tìm $m$ (viết kết quả dưới dạng số thập phân).",
+      "dap_an": "1,6",
+      "dap_an_so": 1.6,
+      "loi_giai": "Bước 1 (miền nghiệm). Miền nghiệm $D$ là tứ giác có các đỉnh:\n- $O(0;0)$; giao của $2x-y=4$ với $y=0$: $(2;0)$;\n- giao của $x+y=5$ và $2x-y=4$: cộng vế $3x=9\\Rightarrow x=3,\\ y=2$: $(3;2)$;\n- giao của $x+y=5$ với $x=0$: $(0;5)$.\nBước 2. $F$ là biểu thức bậc nhất nên GTLN trên miền đa giác đạt tại một đỉnh:\n$\\max_D F=\\max\\{F(0;0);F(2;0);F(3;2);F(0;5)\\}=\\max\\{0;\\,2;\\,3+2m;\\,5m\\}$.\nBước 3 (xét các khả năng để GTLN bằng $8$). Vì $0<8$ và $2<8$, cần có $3+2m=8$ hoặc $5m=8$, đồng thời giá trị còn lại không vượt quá $8$.\n- Nếu $3+2m=8$ thì $m=2{,}5$, khi đó $5m=12{,}5>8$: loại.\n- Nếu $5m=8$ thì $m=1{,}6$, khi đó $3+2m=6{,}2\\le8$: thỏa mãn.\nBước 4 (thử lại). Với $m=1{,}6$: $F$ tại các đỉnh lần lượt là $0;\\ 2;\\ 6{,}2;\\ 8$, nên $\\max F=8$.\nĐáp số: $1{,}6$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Vét đỉnh [(0, 0), (0, 5), (2, 0), (3, 2)]; giải max_D(x+my)=8 theo từng đỉnh: nghiệm {8/5}; quét m∈[-10;10] bước 1e-4: các m có max≈8 nằm trong [1.5998;1.6001]; lưới với m=1,6: max≈8.0000.",
+        "gia_tri_tinh_lai": "1.600000",
+        "lam_tron": "1,6",
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: Reduce[max{0,2,3+2m,5m}==8] → m=8/5 – KHỚP"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P3-05",
+      "stt": 21,
+      "phan": 3,
+      "chu_de": "Hệ thức lượng trong tam giác – ứng dụng đo chiều cao (thực tế)",
+      "lop": 10,
+      "muc_do": "VD",
+      "dang": "dien_so",
+      "de_bai": "Để đo chiều cao của một ngọn đồi, một người đứng tại điểm $A$ nhìn đỉnh đồi $T$ với góc nâng $32^\\circ$, sau đó đi thẳng thêm $150$ m về phía chân đồi đến điểm $B$ thì nhìn đỉnh $T$ với góc nâng $48^\\circ$. Biết mắt người quan sát cách mặt đất $1{,}6$ m; $A$, $B$ và hình chiếu vuông góc của $T$ trên mặt đất thẳng hàng; mặt đất nằm ngang. Chiều cao của ngọn đồi so với mặt đất bằng bao nhiêu mét (làm tròn đến hàng đơn vị)?",
+      "dap_an": "216",
+      "dap_an_so": 216,
+      "loi_giai": "Mô tả hình: gọi $A', B'$ là vị trí mắt người tại $A$, $B$ (ở độ cao $1{,}6$ m), $H$ là giao của đường thẳng $A'B'$ với đường thẳng đứng qua $T$. Khi đó $A'B'=150$ m, $\\widehat{TA'H}=32^\\circ$, $\\widehat{TB'H}=48^\\circ$, chiều cao đồi $=TH+1{,}6$.\nBước 1 (các góc của tam giác $TA'B'$). $\\widehat{TA'B'}=32^\\circ$; $\\widehat{A'B'T}=180^\\circ-48^\\circ=132^\\circ$; suy ra $\\widehat{A'TB'}=180^\\circ-32^\\circ-132^\\circ=16^\\circ$.\nBước 2 (định lý sin trong tam giác $TA'B'$). $\\dfrac{B'T}{\\sin32^\\circ}=\\dfrac{A'B'}{\\sin16^\\circ}\\Rightarrow B'T=\\dfrac{150\\sin32^\\circ}{\\sin16^\\circ}\\approx\\dfrac{150\\cdot0{,}52992}{0{,}27564}\\approx288{,}38$ (m).\nBước 3 (tam giác vuông $TB'H$). $TH=B'T\\sin48^\\circ\\approx288{,}38\\cdot0{,}74314\\approx214{,}31$ (m).\nBước 4. Chiều cao ngọn đồi $\\approx214{,}31+1{,}6=215{,}91\\approx216$ (m).\n(Kiểm tra: $TH\\left(\\cot32^\\circ-\\cot48^\\circ\\right)=150\\Rightarrow TH=\\dfrac{150}{1{,}60033-0{,}90040}\\approx214{,}31$ m.)\nĐáp số: $216$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Tọa độ hóa: TH = 214.30700 m (đối chiếu định lý sin 214.30700); chiều cao = 215.90700 m.",
+        "gia_tri_tinh_lai": "216",
+        "lam_tron": "216",
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: 215.90700 → 216 – KHỚP"
+      }
+    },
+    {
+      "id": "MTM10-GK1-01-P3-06",
+      "stt": 22,
+      "phan": 3,
+      "chu_de": "Hệ thức lượng trong tam giác – cực trị trong tam giác",
+      "lop": 10,
+      "muc_do": "VDC",
+      "dang": "dien_so",
+      "de_bai": "Cho tam giác $ABC$ có $BC=6$ và $\\widehat{BAC}=120^\\circ$. Giá trị lớn nhất của chu vi tam giác $ABC$ bằng bao nhiêu (làm tròn đến hàng phần mười)?",
+      "dap_an": "12,9",
+      "dap_an_so": 12.9,
+      "loi_giai": "Đặt $AB=c$, $AC=b$ ($b,c>0$).\nBước 1 (định lý côsin). $BC^2=b^2+c^2-2bc\\cos120^\\circ=b^2+c^2+bc$, nên $36=b^2+c^2+bc=(b+c)^2-bc$.\nBước 2 (đánh giá). Vì $(b-c)^2\\ge0$ nên $bc\\le\\dfrac{(b+c)^2}{4}$. Do đó $36=(b+c)^2-bc\\ge(b+c)^2-\\dfrac{(b+c)^2}{4}=\\dfrac34(b+c)^2$.\nSuy ra $(b+c)^2\\le48$, tức $b+c\\le4\\sqrt3$.\nBước 3 (dấu bằng). Dấu “=” xảy ra khi $b=c$; khi đó $3b^2=36\\Rightarrow b=c=2\\sqrt3$ (tam giác cân tại $A$), thỏa mãn $b+c=4\\sqrt3$.\nBước 4. Chu vi lớn nhất là $6+4\\sqrt3\\approx6+6{,}928=12{,}928\\approx12{,}9$.\nĐáp số: $12{,}9$.",
+      "kiem_dinh": {
+        "ket_qua": "KHỚP",
+        "cong_cu": "Python 3.13.16 (sympy 1.14.0, numpy 2.5.3)",
+        "cach_kiem": "Quét b (400001 điểm), giải c từ định lý côsin: chu vi max ≈ 12.928203 tại b≈3.4641, c≈3.4641; công thức 6+4√3 = 12.928203.",
+        "gia_tri_tinh_lai": "12.928203",
+        "lam_tron": "12,9",
+        "ngay_kiem": "2026-10-19",
+        "doi_chieu_wolfram": "Wolfram Language: Maximize → 6+4√3 tại b=c=2√3 – KHỚP"
+      }
+    }
+  ]
+}
