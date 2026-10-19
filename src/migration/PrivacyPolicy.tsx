@@ -13,7 +13,7 @@ export default function PrivacyPolicy(){
    <section><h2>4. Chia sẻ thông tin</h2><p>MTM không bán, không cho thuê và không trao đổi thông tin của bạn cho bên khác. Thông tin chỉ đi qua các dịch vụ dùng để chuyển biểu mẫu tới trung tâm: dịch vụ gửi email EmailJS (biểu mẫu trên website) và Meta (biểu mẫu trên Facebook, Instagram).</p></section>
    <section><h2>5. Lưu giữ và bảo vệ</h2><p>Chỉ người phụ trách tư vấn của MTM được xem thông tin đăng ký. MTM giữ thông tin trong thời gian cần để tư vấn và theo dõi việc đăng ký, và xóa khi bạn yêu cầu.</p></section>
    <section><h2>6. Học sinh dưới 16 tuổi</h2><p>Nếu học sinh dưới 16 tuổi, MTM đề nghị phụ huynh điền biểu mẫu hoặc đồng ý trước khi học sinh gửi thông tin.</p></section>
-   <section><h2>7. Xem, sửa hoặc xóa thông tin</h2><p>Bạn có thể yêu cầu xem, sửa hoặc xóa thông tin đã gửi bất cứ lúc nào qua:</p><ul><li>Hotline: <a href="tel:0964345413">0964 345 413</a></li><li>Zalo: <a href={ZALO_ASSISTANT_URL}>0967 365 413</a></li><li>Email: <a href="mailto:quanlytoanminhthanhmath@gmail.com">quanlytoanminhthanhmath@gmail.com</a></li></ul></section>
+   <section><h2>7. Xem, sửa hoặc xóa thông tin</h2><p>Bạn có thể yêu cầu xem, sửa hoặc xóa thông tin đã gửi bất cứ lúc nào qua:</p><ul><li>Điện thoại và Zalo: <a href="tel:0967365413">0967 365 413</a> (<a href={ZALO_ASSISTANT_URL}>nhắn Zalo</a>)</li><li>Email: <a href="mailto:quanlytoanminhthanhmath@gmail.com">quanlytoanminhthanhmath@gmail.com</a></li></ul></section>
    <section><h2>8. Thay đổi chính sách</h2><p>Khi có thay đổi, MTM cập nhật trang này và ghi ngày cập nhật ở đầu trang.</p></section>
   </article></div>;
 }
