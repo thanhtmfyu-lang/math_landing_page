@@ -64,8 +64,8 @@ export const TRACKS:Track[]=[
    {name:'Nhóm XPS 8+ và XPS 9+',start:'Học từ tháng 7/2026',now:'Đã xong mệnh đề - tập hợp, bất phương trình bậc nhất hai ẩn, hệ thức lượng; đang học vectơ và ôn thi giữa kỳ I.',fit:'Nhóm học từ hè. Học sinh mới chỉ xếp vào nhóm này khi chưa thể vào nhóm XPT, lớp còn chỗ và em theo kịp tiến độ sau kiểm tra đầu vào.'},
   ],
   stages:[
-   {period:'10/2026-01/2027',title:'Nửa đầu lớp 10',detail:'Mệnh đề - tập hợp, bất phương trình và hệ bất phương trình bậc nhất hai ẩn, hàm số bậc hai, hệ thức lượng trong tam giác, vectơ, thống kê theo trường.',courses:'Step 1, 2 hoặc 3 theo mức của em'},
-   {period:'02-05/2027',title:'Hoàn thiện lớp 10',detail:'Tọa độ trong mặt phẳng, tổ hợp, xác suất. Từ tháng 3 làm bài có giờ theo phần đã học, ôn thi cuối năm.',courses:'Step 4: Tổng ôn và luyện đề toán 10'},
+   {period:'10/2026-01/2027',title:'Nửa đầu lớp 10',detail:'Mệnh đề - tập hợp, bất phương trình và hệ bất phương trình bậc nhất hai ẩn, hệ thức lượng trong tam giác, vectơ, thống kê theo trường.',courses:'Step 1, 2 hoặc 3 theo mức của em'},
+   {period:'02-05/2027',title:'Hoàn thiện lớp 10',detail:'Hàm số bậc hai và đồ thị, tọa độ trong mặt phẳng, tổ hợp, xác suất. Từ tháng 3 làm bài có giờ theo phần đã học, ôn thi cuối năm.',courses:'Step 4: Tổng ôn và luyện đề toán 10'},
    {period:'06-08/2027',title:'Hè: vá nền trước lớp 11',detail:'Ôn lại 2-3 mảng dễ quên, luyện đọc đề và trình bày lời giải đủ bước.',courses:'Tư vấn theo kết quả cuối năm'},
    {period:'2027-2029',title:'Lớp 11, lớp 12 và năm thi',detail:'Đi tiếp lộ trình lớp 11 rồi lớp 12 của MTM; năm 2029 luyện đề theo lịch chính thức khi được công bố.',courses:'Lộ trình lớp 11 → lớp 12'},
   ],
