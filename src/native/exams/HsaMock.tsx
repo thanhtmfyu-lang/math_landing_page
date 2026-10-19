@@ -3,6 +3,7 @@ import {Link} from '../../migration/navigation';
 import R106PageIntro from '../../migration/R106PageIntro';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
 import {describeLeadSource,storedLeadSource} from '../../components/lead-source';
+import {postLead} from '../../components/lead-client';
 import PracticeAttempt from './PracticeAttempt';
 import {localStore} from './local-store';
 import {readDraft,type Draft} from './store';
@@ -11,7 +12,7 @@ import {readRemote,type RemoteAttempt,type RemoteResult} from './server-attempt'
 import type {PracticeExam} from './data';
 import {QuestionReader,ExtraSolution,rich} from '../chapters/ChapterPractice';
 import HsaPaperReader,{HsaSolutionExtra,hsaRich,type HsaGroup,type HsaTables} from './HsaPaperReader';
-import {HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,normalizeHsaPhone,type HsaMockExam} from './hsa-mock';
+import {HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,hsaLeadRegistration,normalizeHsaPhone,type HsaMockExam} from './hsa-mock';
 import {hsaCertificateDate,hsaCertificateFileName,hsaCertificateRank,renderHsaCertificate,type HsaCertificateData} from './hsa-certificate';
 import {HSA_GRADES,HSA_GRADE_LABEL,formatHsaDuration,formatHsaScore,hsaStatusMessage,isHsaGrade,sanitizeDisplayName,type HsaGrade,type HsaRankRow,type HsaSubmitStatus} from '../../../server/hsa/rank';
 import './exams.css';
@@ -147,9 +148,12 @@ function HsaMockRoom({cfg}:{cfg:HsaMockExam}){
  },[cfg.examId,refresh]);
  const sendLead=useCallback(async(o:Outcome)=>{
   const e=entryRef.current;if(!e?.phone)return;if(read(leadKey(cfg.examId)))return setLead('sent');
+  const lead={name:e.name,grade:e.grade,phone:e.phone,scoreText:scoreText(o.score)+' trong '+formatHsaDuration(o.elapsedMs/1000),examTitle:cfg.title,leadSource:describeLeadSource(storedLeadSource())};
+  try{write(leadKey(cfg.examId),o.attemptId);if(await postLead('thi-thu-hsa',hsaLeadRegistration(lead))==='saved')return setLead('sent');}
+  catch{try{window.localStorage.removeItem(leadKey(cfg.examId));}catch{/* bỏ qua */}return setLead('error');}
   if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)return setLead('skipped');
-  try{write(leadKey(cfg.examId),o.attemptId);const emailjs=(await import('@emailjs/browser')).default;
-   await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...hsaLeadPayload({name:e.name,grade:e.grade,phone:e.phone,scoreText:scoreText(o.score)+' trong '+formatHsaDuration(o.elapsedMs/1000),examTitle:cfg.title,leadSource:describeLeadSource(storedLeadSource())}),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);setLead('sent');}
+  try{const emailjs=(await import('@emailjs/browser')).default;
+   await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...hsaLeadPayload(lead),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);setLead('sent');}
   catch{try{window.localStorage.removeItem(leadKey(cfg.examId));}catch{/* bỏ qua */}setLead('error');}
  },[cfg.examId,cfg.title,scoreText]);
  const finished=useCallback((o:Outcome,remote?:RemoteAttempt)=>{
