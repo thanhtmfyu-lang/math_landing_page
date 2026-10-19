@@ -1,4 +1,4 @@
--- 070 (19/10/2026): Thi thử HSA, đề thi thử HSA số 02 (mtm-hsa-thi-thu-02) cho /thi-thu-hsa?de=de-02. CHƯA ÁP.
+-- 070 (19/10/2026): Thi thử HSA, đề thi thử HSA số 02 (mtm-hsa-thi-thu-02) cho /thi-thu-hsa?de=de-02. ĐÃ ÁP (Claude, 19/10 qua luồng công ty).
 -- Phụ thuộc 069 (schema mtm_hsa_rank, RPC xếp hạng). Thứ tự: 060 -> (062) -> 069 -> 070. Không sửa 069.
 -- Đề: 50 câu / 75 phút của tổ Học liệu MTM (tools/hsa-papers/de-thi-thu-hsa-02.json), chuyển nguyên văn bằng
 -- scripts/convert-hsa-paper.mjs; JSON dưới đây đúng bằng src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json.

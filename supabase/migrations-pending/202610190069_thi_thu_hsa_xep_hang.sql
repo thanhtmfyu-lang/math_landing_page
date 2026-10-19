@@ -1,4 +1,4 @@
--- 069 (19/10/2026): Thi thử HSA miễn phí (/thi-thu-hsa): bảng xếp hạng công khai theo từng đề. CHƯA ÁP.
+-- 069 (19/10/2026): Thi thử HSA miễn phí (/thi-thu-hsa): bảng xếp hạng công khai theo từng đề. ĐÃ ÁP (Claude, 19/10 qua luồng công ty).
 -- Phụ thuộc 060 (mtm_exam_private.attempts, mtm_exam_start/mtm_exam_submit chấm trên máy chủ). Thứ tự: 060 -> (062) -> 069.
 -- Điểm chỉ lấy từ lượt thi máy chủ đã chấm (attempt id + token băm), không bao giờ nhận điểm từ trình duyệt.
 -- Luật chống spam: (1) mỗi lượt thi vào bảng tối đa một lần; (2) mỗi đề chỉ tính lượt nộp ĐẦU TIÊN của một thiết bị
