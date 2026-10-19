@@ -85,3 +85,36 @@
 .hsa-page .ep-solution .ep-math-text .katex .katex-base,.hsa-line .katex .katex-base{margin:3px 0}
 /* Sau khi nộp: khung "Đọc lại toàn bộ đề bài" nằm yên theo dòng, không dính trên đầu và đè lên lời giải khi cuộn. */
 .hsa-page .ep-chapter-submitted .ep-pdf-pane{position:static;max-height:none;overflow:visible}
+/* Màu nhấn (anh Thành 19/10): khối đầu trang nền xanh đậm pha đỏ HSA, ô số liệu mỗi ô một màu, nút chính vàng, bảng xếp hạng có dải màu. */
+.hsa-page{--hsa-red:#c8344a;--hsa-orange:#d9822b;--hsa-teal:#0e9f8f}
+.hsa-page .r106-page-intro.hsa-intro{position:relative;overflow:hidden;padding:28px 26px;border-radius:20px;color:#fff;background:radial-gradient(80% 120% at 100% 0%,rgba(200,52,74,.55) 0,rgba(200,52,74,0) 60%),radial-gradient(60% 90% at 0% 100%,rgba(217,130,43,.35) 0,rgba(217,130,43,0) 60%),linear-gradient(150deg,#1d2c5e 0%,#14204a 100%);box-shadow:0 24px 48px -32px rgba(20,32,74,.8)}
+.hsa-page .hsa-intro .r106-page-arc{display:none}
+.hsa-page .hsa-intro h1{color:#fff}
+.hsa-page .hsa-intro .r106-page-eyebrow{color:#ffcf24}
+.hsa-page .hsa-intro .r106-page-eyebrow span{background:#ffcf24}
+.hsa-page .hsa-intro .r106-page-description p{color:rgba(255,255,255,.9)}
+.hsa-page .hsa-intro .r106-page-description p+p{color:rgba(255,255,255,.75);font-size:14px;border-left:3px solid #ffcf24;padding-left:10px}
+.hsa-page .hsa-facts li{border:0;color:#fff;box-shadow:0 10px 20px -14px rgba(0,0,0,.6)}
+.hsa-page .hsa-facts li:nth-child(1){background:var(--hsa-red)}
+.hsa-page .hsa-facts li:nth-child(2){background:var(--hsa-orange)}
+.hsa-page .hsa-facts li:nth-child(3){background:var(--hsa-teal)}
+.hsa-page .hsa-facts strong{color:#fff}
+.hsa-page .hsa-facts span{color:rgba(255,255,255,.9)}
+.hsa-page .hsa-entry{border-top:5px solid var(--hsa-red)}
+.hsa-page .hsa-entry h2,.hsa-page .hsa-board-head h2{display:flex;align-items:center;gap:8px}
+.hsa-page .hsa-entry h2:before,.hsa-page .hsa-board-head h2:before{content:"";flex:none;width:10px;height:10px;border-radius:3px;background:var(--hsa-red)}
+.hsa-page .hsa-board{border-top:5px solid #ffcf24}
+.hsa-page .hsa-board-head h2:before{background:#ffcf24}
+.hsa-page .hsa-grade.is-on{border-color:var(--hsa-red);background:#fbe6e9;color:#8a1f2f}
+.hsa-page .hsa-grade input,.hsa-page .hsa-consent input{accent-color:var(--hsa-red)}
+.hsa-page .hsa-primary{background:#ffcf24!important;border-color:#ffcf24!important;color:#1d2c5e!important;font-weight:800;box-shadow:0 10px 22px -12px rgba(217,160,0,.9)}
+.hsa-page .hsa-primary:hover{background:#ffc400!important}
+.hsa-page .hsa-soon{background:#fff8dc;border:1px dashed #e8c95a;color:#5a4300}
+.hsa-page .hsa-result{border-color:#f0c2ca;border-top:5px solid var(--hsa-red);background:linear-gradient(180deg,#fff4f6,#fff 70%)}
+.hsa-page .hsa-result-score strong{color:var(--hsa-red)}
+.hsa-page .hsa-rows li.is-top-1{background:linear-gradient(90deg,#fff6d6,transparent)}
+.hsa-page .hsa-rows li.is-top-1 .hsa-rank{background:#ffcf24;color:#1d2c5e}
+.hsa-page .hsa-rows li.is-top-2 .hsa-rank{background:#c9d3e3}
+.hsa-page .hsa-rows li.is-top-3 .hsa-rank{background:#e8b98a}
+.hsa-page .hsa-score strong{color:var(--hsa-red)}
+@media(max-width:600px){.hsa-page .r106-page-intro.hsa-intro{padding:20px 16px;border-radius:16px}}
