@@ -1,6 +1,6 @@
 -- 068: Giảm vòng quét đồng bộ hạn, không đổi luật hạn/điểm/receipt/cap/override.
 -- Chỉ chuẩn hóa ghép roster một lần, gom buổi theo học sinh/lớp và lọc phạm vi sớm.
--- CHƯA ÁP. Bị 074 (luật hạn v3, hạn − 30 phút) thay chỗ: sau khi 074 áp, kiểm băm sync_due dưới đây tự dừng ("068 sync_due source changed"). Không áp 068 nguyên trạng; muốn giữ phần tối ưu thì làm lại trên bản sync_due sau 074.
+-- CHƯA ÁP. Bị 075 (luật hạn v3, hạn − 30 phút) thay chỗ: sau khi 075 áp, kiểm băm sync_due dưới đây tự dừng ("068 sync_due source changed"). Không áp 068 nguyên trạng; muốn giữ phần tối ưu thì làm lại trên bản sync_due sau 075.
 begin;
 do $guard$
 begin

@@ -1,6 +1,6 @@
--- 074 (20/10/2026): Luật hạn BTVN v3: hạn = giờ bắt đầu buổi hạn − 30 phút; gỡ nhánh LENH-CODEX-2 tuần 19–25/10. ĐÃ ÁP (bản v3.1 sha 7c657dbb, 20/10/2026 ~01:00 qua luồng công ty, anh Thành duyệt; 248 dòng hạn đã sửa).
+-- 075 (20/10/2026): Luật hạn BTVN v3: hạn = giờ bắt đầu buổi hạn − 30 phút; gỡ nhánh LENH-CODEX-2 tuần 19–25/10. ĐÃ ÁP (bản v3.1 sha 7c657dbb, 20/10/2026 ~01:00 qua luồng công ty, anh Thành duyệt; 248 dòng hạn đã sửa).
 -- Áp qua luồng Công ty AI theo workflow-btvn/sua-han-tuan-19-25/HUONG_DAN.md (tệp 00 v3, diễn tập rollback trước). Không chạy trực tiếp từ repo.
--- Nguồn: bản chép 202610190071_btvn_due_rules_v2.sql (= 00_migration_ham_luat_han.sql v3), đổi số thành 074 vì repo đã có 071 khác. Khớp server/btvn/class-rules.ts (plannedDueAt − 30 phút).
+-- Nguồn: bản chép 202610190071_btvn_due_rules_v2.sql (= 00_migration_ham_luat_han.sql v3), đổi số thành 075 vì repo đã có 071 khác. Khớp server/btvn/class-rules.ts (plannedDueAt − 30 phút).
 -- Gắn với sync_due md5 c748541a5bf88fcc8cb6ff5c4f660020 trên DB thật: phát lại trên DB khác (PGlite) sẽ dừng ở Bước 1, đúng thiết kế.
 --
 -- =====================================================================================
