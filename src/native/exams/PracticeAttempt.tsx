@@ -13,6 +13,7 @@ import type {PracticeAttemptProps} from './attempt-types';
 import AttemptHeader from './AttemptHeader';
 import AttemptAnswerSheet from './AttemptAnswerSheet';
 import AttemptResult from './AttemptResult';
+import {formatAttemptDeadline} from './deadline-label';
 import './r106-assessment.css';
 export {localStore};
 const QuestionPdf=lazy(()=>import('./QuestionPdf'));
@@ -46,7 +47,7 @@ export default function PracticeAttempt({onServerStart,onServerSubmit,serverScor
     <AttemptHeader {...props}/>
     {/* LT-15 (Đợt 4): trên điện thoại phiếu trả lời (có nút Bắt đầu) bị ẩn sau thẻ "Đọc câu hỏi"; nút này đưa việc bắt đầu lên màn đầu.
         Cùng điều kiện và cùng hàm begin() với nút trong phiếu; chỉ hiện ở màn hẹp (exams.css). */}
-    {!draft&&<div className="ep-mobile-start"><button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button><p>{persisted.current?`Hạn nộp bài đang làm: ${new Date(persisted.current.deadline).toLocaleString('vi-VN')}.`:`Đồng hồ ${exam.durationMinutes} phút chỉ chạy khi bấm nút. Có thể đọc đề trước ở mục bên dưới.`}{erratum&&!acceptedErratum?' Hãy đọc và đánh dấu điều kiện đính chính ở ngay dưới trước khi bắt đầu.':''}</p></div>}
+    {!draft&&<div className="ep-mobile-start"><button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button><p>{persisted.current?`Hạn nộp bài đang làm: ${formatAttemptDeadline(persisted.current.deadline)}.`:`Đồng hồ ${exam.durationMinutes} phút chỉ chạy khi bấm nút. Có thể đọc đề trước ở mục bên dưới.`}{erratum&&!acceptedErratum?' Hãy đọc và đánh dấu điều kiện đính chính ở ngay dưới trước khi bắt đầu.':''}</p></div>}
     {exam.preAttemptNotice&&<div className="ep-notice"><strong>Điều kiện đính chính của bản MTM</strong><p>{exam.preAttemptNotice}</p><p>Bản nguồn và lịch sử cũ được giữ riêng.</p></div>}
     {newAttemptsClosed&&<div className="ep-notice" role="status"><strong>Tạm chưa mở lượt mới</strong><p>{newAttemptsClosed}</p></div>}
     {notice&&<p className="ep-notice" role="alert">{notice}</p>}
@@ -71,7 +72,7 @@ export default function PracticeAttempt({onServerStart,onServerSubmit,serverScor
         {!draft?<section className="ep-card">
           <h2>Phiếu trả lời</h2><p>{isHomework?homeworkStorageNotice:storeOverride?'Bản xem thử chỉ giữ trong bộ nhớ của trang quản trị, không ghi lịch sử học sinh.':'Bài làm và kết quả lưu trên trình duyệt này. Thời gian tiếp tục tính khi bạn rời trang.'}</p>
           <p>{sections.map(s=>`${s.name}: ${s.count} câu`).join(' · ')}</p>
-          {persisted.current&&<p>Đã có bài đang làm. Hạn nộp: {new Date(persisted.current.deadline).toLocaleString('vi-VN')}.</p>}
+          {persisted.current&&<p>Đã có bài đang làm. Hạn nộp: {formatAttemptDeadline(persisted.current.deadline)}.</p>}
           <button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button>
         </section>:<>
           <div className="ep-toolbar ep-answer-toolbar">

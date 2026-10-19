@@ -259,6 +259,11 @@ export function readFilters(search: string): Filters {
   };
 }
 export function filterSearch(filters: Filters): string {
-  return '?' + new URLSearchParams({lop: filters.lop, ky: filters.ky, q: filters.q}).toString();
+  const params = new URLSearchParams();
+  if (filters.lop !== 'all') params.set('lop', filters.lop);
+  if (filters.ky !== 'all') params.set('ky', filters.ky);
+  if (filters.q.trim()) params.set('q', filters.q);
+  const text = params.toString();
+  return text ? '?' + text : '';
 }
 export const titleTerm = (text: string) => text.normalize('NFD').replace(/[\u0300-\u036f]/g, '').replace(/đ/g, 'd').replace(/Đ/g, 'D').toLocaleLowerCase('vi').trim();

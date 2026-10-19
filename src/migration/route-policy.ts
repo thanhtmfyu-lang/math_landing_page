@@ -2,6 +2,7 @@ import {displayTitle} from '../components/display-text';
 import examMetadata from '../native/exams/public-metadata.json';
 import {resolveNativeLesson,nativeLessonUrl,publicSnapshot,HIDDEN_SNAPSHOT_EXAMS} from '../native/model';
 import {courses,findCourse,courseSummary,lessonCount} from './catalogue';
+import {legacyLearningAlias} from './legacy-alias';
 export const OFFICIAL_ORIGIN='https://www.minhthanhmath.vn';
 export const PUBLIC_PATHS=['/','/khoa-hoc','/thi-thu','/luyen-tap','/xep-hang','/so-tay','/tai-lieu','/huong-dan','/san-choi',...courses.map(c=>'/khoa-hoc/'+c.slug)];
 export type CatalogState={grade:'10'|'11'|'12'|'all';query:string;order:'roadmap'|'name'};
@@ -12,6 +13,8 @@ export function parseCatalogQuery(search:string):CatalogState{
 export function catalogURL(state:CatalogState){const p=new URLSearchParams({lop:state.grade});if(state.query)p.set('q',state.query);if(state.order!=='roadmap')p.set('sort',state.order);return'/khoa-hoc?'+p.toString();}
 export function normalizePublicPath(path:string){if(!path.startsWith('/')||path.includes('\\'))return'/not-found';return path.replace(/\/+$/,'')||'/';}
 export function routeMetadata(pathname:string,hostname:string,search=''){
+ const alias=legacyLearningAlias(normalizePublicPath(pathname),search);
+ if(alias){const dest=alias.startsWith('/btvn')?'/btvn':'/xep-hang';return{known:true,path:normalizePublicPath(pathname),title:(dest==='/btvn'?'Bài tập về nhà':'Đấu trường xếp hạng')+' | Minh Thành Math',description:dest==='/btvn'?'Góc học tập nằm ở trang BTVN. Vào bằng mã lớp sau khi đăng nhập.':'Bảng điểm công khai là bảng xếp hạng. Điểm riêng của từng em nằm trong BTVN sau khi đăng nhập.',url:OFFICIAL_ORIGIN+dest,ogImage:OFFICIAL_ORIGIN+'/mtm-original-logo.png',robots:'noindex, follow'};}
  if(pathname==='/btvn'||/^\/btvn\/[^/]+\/[^/]+$/.test(pathname))return{known:true,path:pathname,title:'Bài tập về nhà | Minh Thành Math',description:'Bài tập theo buổi dành cho lớp được cấp quyền.',url:OFFICIAL_ORIGIN+pathname,ogImage:OFFICIAL_ORIGIN+'/mtm-original-logo.png',robots:'noindex, nofollow'};
  const publicExam=examMetadata.find(e=>pathname==='/thi-thu/'+e.id);
  if(publicExam)return{known:true,path:pathname,title:displayTitle(publicExam.title)+' | Minh Thành Math',description:'Thi thử Toán tại Minh Thành Math. Xem thông tin đề, làm bài và đọc lời giải sau khi nộp. MTM sưu tầm và biên soạn.',url:OFFICIAL_ORIGIN+pathname,ogImage:OFFICIAL_ORIGIN+'/mtm-original-logo.png',robots:'noindex, follow'};

@@ -120,7 +120,7 @@ test('TT-12: URL cũ ?lop=12&ky=CK1 vẫn đọc được bộ lọc, ô đang c
   const filters = readFilters('?lop=12&ky=CK1&q=');
   assert.equal(filters.ky, 'CK1');
   assert.equal(filters.lop, '12');
-  assert.equal(filterSearch(filters), '?lop=12&ky=CK1&q=');
+  assert.equal(filterSearch(filters), '?lop=12&ky=CK1');
   const ready = readyExams(PRACTICE_EXAMS);
   const zero = ready.filter(e => e.grade === 12 && e.period === 'CK1').length;
   const shown = visibleBuckets(ready, GRADES, PERIODS, {grade: 12, period: 'CK1'});

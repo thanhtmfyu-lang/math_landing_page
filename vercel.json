@@ -7,6 +7,22 @@
   "outputDirectory": "build",
   "rewrites": [
     {
+      "source": "/goc-hoc-tap",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/goc-hoc-tap/",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/bang-diem",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/bang-diem/",
+      "destination": "/index.html"
+    },
+    {
       "source": "/__preview/:path*",
       "destination": "/api/preview-disabled"
     },
