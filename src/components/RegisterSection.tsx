@@ -63,7 +63,7 @@ export function RegisterSection() {
               Đăng ký học thử, tư vấn
             </h2>
 
-            <p id="data-notice" className="mtm-register-lead">Để lại thông tin, MTM gọi lại để tư vấn lộ trình và hẹn buổi học thử, kiểm tra đầu vào cho em. Không muốn điền? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>.</p><form aria-describedby="data-notice" onSubmit={handleSubmit} className="space-y-6"><fieldset disabled={isPending || isSubmitted} className="space-y-6">
+            <p id="data-notice" className="mtm-register-lead">Để lại thông tin, MTM gọi lại để tư vấn lộ trình và hẹn lịch cho em. Kiểm tra đầu vào miễn phí; học thử buổi đầu, không học tiếp thì không tính phí. Không muốn điền? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>.</p><form aria-describedby="data-notice" onSubmit={handleSubmit} className="space-y-6"><fieldset disabled={isPending || isSubmitted} className="space-y-6">
               {/* Họ tên */}
               <div className="space-y-2">
                 <Label htmlFor="student-name">Họ và tên học sinh *</Label>
