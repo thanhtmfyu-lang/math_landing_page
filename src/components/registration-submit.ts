@@ -1,4 +1,4 @@
-export type Registration={studentName:string;phone:string;grade:string;message:string;notes?:string;groupSize?:string;groupInterest?:boolean};
+export type Registration={studentName:string;phone:string;grade:string;message:string;notes?:string;groupSize?:string;groupInterest?:boolean;trial?:boolean;leadSource?:string};
 export function normalizeRegistration(value:Registration){
  const data=Object.fromEntries(Object.entries(value).map(([k,v])=>[k,typeof v==='string'?v.trim():v])) as Registration;
  if(!data.studentName||!data.phone||!data.grade||!data.message)throw new Error('Vui lòng điền tên, số điện thoại, lớp và hình thức học.');
@@ -20,4 +20,4 @@ export function createRegistrationGate(){
  };
 }
 
-export function emailRegistration(data:Registration){const mode=data.message==='online'?'Online':'Trực tiếp';return {...data,study_mode:mode,notes:data.notes||'',group_size:data.groupSize||'',group_interest:!!data.groupInterest,message:[mode,data.groupSize?'Nhóm: '+data.groupSize+' bạn (tính cả người đăng ký)':data.groupInterest?'Quan tâm đăng ký nhóm · chưa chốt số bạn':'',data.notes?'Lời nhắn: '+data.notes:''].filter(Boolean).join('\n')}}
+export function emailRegistration(data:Registration){const mode=data.message==='online'?'Online':'Trực tiếp';return {...data,study_mode:mode,notes:data.notes||'',group_size:data.groupSize||'',group_interest:!!data.groupInterest,trial:data.trial?'Có':'',lead_source:data.leadSource||'',message:[mode,data.trial?'Muốn học thử / kiểm tra đầu vào':'',data.groupSize?'Nhóm: '+data.groupSize+' bạn (tính cả người đăng ký)':data.groupInterest?'Quan tâm đăng ký nhóm · chưa chốt số bạn':'',data.notes?'Lời nhắn: '+data.notes:'',data.leadSource?'— '+data.leadSource:''].filter(Boolean).join('\n')}}

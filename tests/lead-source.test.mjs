@@ -1,0 +1,12 @@
+import assert from 'node:assert/strict';
+import {readLeadSource,describeLeadSource} from '../src/components/lead-source.ts';
+import {emailRegistration,normalizeRegistration} from '../src/components/registration-submit.ts';
+const ad=readLeadSource('?lop=12&utm_source=facebook&utm_medium=paid&utm_campaign=tuyen-sinh-12&fbclid=abc','https://l.facebook.com/','/khoa-hoc');
+assert.deepEqual(ad,{source:'facebook',medium:'paid',campaign:'tuyen-sinh-12',ad:'Facebook/Instagram',referrer:'l.facebook.com',landing:'/khoa-hoc'});
+assert.equal(readLeadSource('','https://www.minhthanhmath.vn/khoa-hoc','/'),null);
+assert.equal(readLeadSource('?fbclid=x','','/').source,'facebook');
+assert.equal(describeLeadSource(null),'Vào thẳng web (không rõ nguồn)');
+const text=describeLeadSource(ad);assert(text.includes('chiến dịch: tuyen-sinh-12'));assert(!text.includes('abc'));
+const mail=emailRegistration(normalizeRegistration({studentName:'Synthetic',phone:'0912345678',grade:'12',message:'online',notes:'',groupSize:'',trial:true,leadSource:text}));
+assert.equal(mail.trial,'Có');assert(mail.message.includes('Muốn học thử'));assert(mail.message.includes('tuyen-sinh-12'));assert.equal(mail.lead_source,text);
+console.log('PASS lead source capture, no fbclid value leaked, trial + source reach the email message');
