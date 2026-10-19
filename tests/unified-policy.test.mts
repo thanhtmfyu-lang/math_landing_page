@@ -1,5 +1,5 @@
 import assert from 'node:assert/strict';import {writeFileSync} from 'node:fs';
-import {parseCatalogQuery,catalogURL,routeMetadata,normalizePublicPath,PUBLIC_PATHS} from '../src/migration/route-policy';import {courses,filterCourses} from '../src/migration/catalogue';
+import {parseCatalogQuery,catalogURL,routeMetadata,normalizePublicPath,PUBLIC_PATHS} from '../src/migration/route-policy';import {courses,filterCourses,displayCourseTitle} from '../src/migration/catalogue';
 const rows:{name:string;pass:boolean;error?:string}[]=[];const test=(name:string,f:()=>void)=>{try{f();rows.push({name,pass:true});}catch(e){rows.push({name,pass:false,error:e instanceof Error?e.message:String(e)});}};
 test('Default catalogue state is explicit',()=>assert.deepEqual(parseCatalogQuery(''),{grade:'12',query:'',order:'roadmap'}));
 test('Reloaded class, search and sorting read from one URL',()=>assert.deepEqual(parseCatalogQuery('?lop=11&q=nen+tang&sort=name'),{grade:'11',query:'nen tang',order:'name'}));
@@ -10,7 +10,7 @@ test('Encoded Vietnamese values survive URL serialization',()=>{const s={grade:'
 test('Clearing query removes stale q parameter',()=>assert.equal(new URL(catalogURL({grade:'10',query:'',order:'name'}),'https://mtm.invalid').searchParams.has('q'),false));
 test('Default sorting produces no redundant sort parameter',()=>assert.ok(!catalogURL({grade:'12',query:'',order:'roadmap'}).includes('sort=')));
 test('Class/search/sort state is reproducible in actual filtering',()=>{const s=parseCatalogQuery('?lop=all&q=nen+tang&sort=name');assert.equal(filterCourses(s.grade,s.query,s.order).length,3);});
-test('All 13 course detail routes resolve unique canonical and original image',()=>{const seen=new Set();for(const c of courses){const m=routeMetadata('/khoa-hoc/'+c.slug,'www.minhthanhmath.vn');assert.ok(m.known);assert.ok(m.title.includes(c.title));assert.ok(m.description.includes(c.sections.length+' chương'));assert.ok(m.ogImage.endsWith(c.image));seen.add(m.url);}assert.equal(seen.size,13);});
+test('All 13 course detail routes resolve unique canonical and original image',()=>{const seen=new Set();for(const c of courses){const m=routeMetadata('/khoa-hoc/'+c.slug,'www.minhthanhmath.vn');assert.ok(m.known);assert.ok(m.title.includes(displayCourseTitle(c)));assert.ok(m.description.includes(c.sections.length+' chương'));assert.ok(m.ogImage.endsWith(c.image));seen.add(m.url);}assert.equal(seen.size,13);});
 test('All public routes are mapped and have descriptions',()=>{for(const p of PUBLIC_PATHS){const m=routeMetadata(p,'www.minhthanhmath.vn');assert.ok(m.known);assert.ok(m.description.length>30);}});
 test('Notebook is not indexed as public account content',()=>assert.equal(routeMetadata('/so-tay','www.minhthanhmath.vn').robots,'noindex, follow'));
 test('Unknown path is not indexed or canonicalized as a real course',()=>{const m=routeMetadata('/khoa-hoc/unknown','www.minhthanhmath.vn');assert.equal(m.known,false);assert.equal(m.robots,'noindex, follow');assert.equal(m.url,'https://www.minhthanhmath.vn/404');});

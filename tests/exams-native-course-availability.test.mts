@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {courses,consultationUrl} from '../src/migration/catalogue';
+import {courses,consultationUrl,displayCourseTitle,step} from '../src/migration/catalogue';
 import {nativeLessonUrl,resolveNativeLesson} from '../src/native/model';
 import {routeMetadata} from '../src/migration/route-policy';
 
@@ -47,7 +47,7 @@ try{
       const hrefs=links(html);assert.ok(hrefs.includes(consultationUrl(course)));
       const contact=new URL(consultationUrl(course),origin);
       assert.equal(contact.origin,origin);assert.equal(contact.pathname,'/');assert.equal(contact.hash,'#register');
-      assert.equal(contact.searchParams.get('lop'),String(course.grade));assert.equal(contact.searchParams.get('quan-tam'),course.title);
+      assert.equal(contact.searchParams.get('lop'),step(course)>4?'hsa':String(course.grade));assert.equal(contact.searchParams.get('quan-tam'),displayCourseTitle(course));
       assert.equal(routeMetadata('/khoa-hoc/'+course.slug,'www.minhthanhmath.vn').known,true);
       const first=course.sections.flatMap(section=>section.lessons)[0];
       if(first){

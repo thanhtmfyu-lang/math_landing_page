@@ -11,8 +11,8 @@ interface SEOProps {
 }
 
 export function SEO({
-  title = "Minh Thành Math - Toán THCS, THPT, HSA & TSA",
-  description = "Học Toán THCS, THPT, HSA và TSA tại Minh Thành Math, 82 Chùa Láng, Hà Nội. Tư vấn lớp học và truy cập cổng học tập.",
+  title = "Minh Thành Math - Toán THCS, THPT và HSA",
+  description = "Học Toán THCS, THPT và HSA tại Minh Thành Math, 82 Chùa Láng, Hà Nội. Tư vấn lớp học và truy cập cổng học tập.",
   keywords = "dạy toán cấp 3, trung tâm toán THPT, luyện thi THPT Quốc gia, học toán lớp 10, học toán lớp 11, học toán lớp 12, gia sư toán, Minh Thành Math, toán Hà Nội",
   ogImage = "https://minhthanhmath.vn/mtm-original-logo.png",
   url = "https://minhthanhmath.vn",
