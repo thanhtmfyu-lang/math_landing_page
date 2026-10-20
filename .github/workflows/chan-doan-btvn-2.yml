@@ -6,13 +6,13 @@ jobs:
   do:
     runs-on: ubuntu-latest
     steps:
-      - name: Do dang nhap that (khong PIN, khong ton luot)
+      - name: Do dang nhap that (khong PIN, khong ton luot, lan 2)
         run: |
           set +e
           for B in https://www.minhthanhmath.vn https://minhthanhmath.vn; do
             echo "=== $B"
-            curl -sS -m 90 -L --post301 --post302 --post303 -w "\nclasses HTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"classes"}' $B/api/btvn | cut -c1-120
-            curl -sS -m 90 -L --post301 --post302 --post303 -w "\nlogin-nopin HTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"quan tri mtm","phone":"0900000099","className":"2K9 8+"}}' $B/api/btvn | cut -c1-300
+            curl -sS -m 40 -L --post301 --post302 --post303 -w "\nclasses HTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"classes"}' $B/api/btvn | cut -c1-120
+            curl -sS -m 40 -L --post301 --post302 --post303 -w "\nlogin-nopin HTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"quan tri mtm","phone":"0900000099","className":"2K9 8+"}}' $B/api/btvn | cut -c1-300
           done
           echo "=== login HS gia"
-          curl -sS -m 90 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"Thu Nghiem","phone":"0900000000","className":"2K9 8+"}}' https://www.minhthanhmath.vn/api/btvn | cut -c1-200
+          curl -sS -m 40 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"Thu Nghiem","phone":"0900000000","className":"2K9 8+"}}' https://www.minhthanhmath.vn/api/btvn | cut -c1-200
