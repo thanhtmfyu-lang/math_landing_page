@@ -1,0 +1,9 @@
+{
+  "about": "Gói luyện đề Phòng thi thử cho người ngoài trung tâm (học sinh MTM vào miễn phí bằng mã học sinh). gia null = chưa duyệt giá, moBan false = chưa hiện. Giá do anh Thành duyệt; thanh toán thật bật bằng MTM_PHONG_THI_THANH_TOAN=1 khi công ty xuất được hóa đơn. Mã gói dùng chung với gói luyện đề của dự án Kinh tế vàng (không làm hai hệ thống).",
+  "goi": [
+    {"id": "luyen-de-thang", "ten": "Luyện đề 1 tháng", "loai": ["thpt", "hsa", "tsa"], "soNgay": 31, "gia": null, "moBan": false, "moTa": "Mở toàn bộ đề tầng trả phí của cả ba kỳ thi trong 31 ngày."},
+    {"id": "luyen-de-hoc-ky", "ten": "Luyện đề học kỳ", "loai": ["thpt", "hsa", "tsa"], "soNgay": 150, "gia": null, "moBan": false, "moTa": "Mở toàn bộ đề tầng trả phí trong 150 ngày."},
+    {"id": "mua-thi-thpt-2027", "ten": "Mùa thi THPT 2027", "loai": ["thpt"], "soNgay": 270, "gia": null, "moBan": false, "moTa": "Đề tốt nghiệp THPT đến hết kỳ thi 2027."},
+    {"id": "mua-thi-hsa-2027", "ten": "Mùa thi HSA 2027", "loai": ["hsa"], "soNgay": 240, "gia": null, "moBan": false, "moTa": "Đề HSA phần Toán và xử lý số liệu đến hết các đợt HSA 2027."}
+  ]
+}
