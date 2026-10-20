@@ -87,7 +87,7 @@ await test('Đích công khai trong dialog/footer nằm trên MTM, menu có Hư�
     assert.match(html,/href="\/btvn"/);assert.match(html,/href="\/huong-dan\?cho=phu-huynh"/);assert.doesNotMatch(html,/chatgpt\.site|audience=|VITE_MTM_PORTAL_URL/);
   }
   assert.match(dialog,/Chưa được kết nối/);
-  assert.match(render(MigrationHeader,{pathname:'/huong-dan'}),/<a(?=[^>]*href="\/huong-dan")(?=[^>]*aria-current="page")[^>]*>/);
+  assert.match(render(MigrationHeader,{pathname:'/huong-dan'}),/<a(?=[^>]*href="\/huong-dan\?cho=phu-huynh")(?=[^>]*aria-current="page")[^>]*>/);
 });
 await test('FAQ, lợi ích và lịch phân biệt chức năng hiện có với phần chưa tích hợp',()=>{
   const faq=render(load('src/components/FAQSection.tsx').FAQSection),benefits=render(load('src/components/BenefitsSection.tsx').BenefitsSection);
