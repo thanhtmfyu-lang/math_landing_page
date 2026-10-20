@@ -24,7 +24,7 @@ const summer=schoolWeek('2027-07-15',PROGRESS);assert.equal(summer.summer,true);
 const dates=['2026-07-10','2026-09-10','2026-10-19','2026-12-20','2027-02-20','2027-04-15','2027-05-25'];
 for(const khoi of DV_TRACKS)for(const ngay of dates)for(const seed of [7,123456,2**31-2]){
  const {paper,picks}=assemble(khoi,ngay,seed,BANKS,PROGRESS);
- const want=khoi==='hsa'?25:20;
+ const want=khoi==='hsa'?25:khoi==='12'&&BANKS['12-tn']?24:20;
  assert.equal(paper.questions.length,want,`${khoi} ${ngay} ${seed}: ${paper.questions.length} câu`);
  assert.equal(new Set(paper.questions.map(q=>q.id)).size,want,'trùng câu');
  const text=JSON.stringify(paper);assert.ok(!/"answer"|"explain"|"check"/.test(text),'đề lộ đáp án');
@@ -42,9 +42,42 @@ assert.notDeepEqual(new Set(early.questions.map(q=>q.topic)),new Set(late.questi
 // Chấm: đúng hết 10/10, bỏ trống 0, số thập phân dùng dấu phẩy vẫn đúng.
 {const {paper,picks}=assemble('12','2026-10-19',4242,BANKS,PROGRESS);const groups=PROGRESS.khoi['12'].groups;
  const all=Object.fromEntries(picks.map(p=>[p.q.id,p.q.kind==='num'?String(p.q.answer).replace('.',','):p.q.answer]));
- const full=grade(paper,picks,all,groups);assert.equal(full.score,10);assert.equal(full.correct,20);assert.ok(full.topics.every(t=>t.status==='vung'));
+ const full=grade(paper,picks,all,groups);assert.equal(full.score,10);assert.equal(full.correct,picks.length);assert.ok(full.topics.every(t=>t.status==='vung'));
  const none=grade(paper,picks,{},groups);assert.equal(none.score,0);assert.ok(none.topics.every(t=>t.status==='hong'));
  assert.match(none.suggestion.level,/Step 1/);assert.match(full.suggestion.level,/Step 3/);}
+
+// Mini đề kiểu tốt nghiệp lớp 12 (bộ câu giả, chỉ kiểm máy ghép và máy chấm): 14 câu chẩn đoán + 6 NLC, 2 đúng sai, 2 trả lời ngắn.
+{const TOPICS=['T10-16','T10-03','T10-18','T11-17','T12-01','T12-02','T12-05','T12-17','T12-18','T12-13'];
+ const qs=TOPICS.flatMap((topic,ti)=>(['mc','mc','tf','num'] as const).map((kind,k)=>({id:`TN-${ti}-${k}`,topic,level:(k%3+1) as 1|2|3,kind,prompt:'Câu mẫu',dang:'Dạng '+topic,
+  ...(kind==='mc'?{choices:['A','B','C','D'],answer:k%4}:kind==='tf'?{statements:['a','b','c','d'],answer:[true,false,true,false]}:{answer:'1.5'})})));
+ const banks:Banks={...BANKS,'12-tn':{khoi:'12-tn',topics:[],questions:qs as any}};
+ for(const [ngay,learned] of [['2026-10-19',['T12-01']],['2027-04-26',['T12-01','T12-13','T12-17','T12-18']]] as const)for(const seed of [3,77,2**31-2]){
+  const {paper,picks}=assemble('12',ngay,seed,banks,PROGRESS);
+  const tn=paper.questions.filter(q=>q.section==='tot-nghiep');
+  assert.equal(paper.questions.length,24);assert.equal(tn.length,10);assert.equal(paper.durationMinutes,75);
+  assert.deepEqual(tn.map(q=>q.part),['I','I','I','I','I','I','II','II','III','III']);
+  assert.ok(tn.every(q=>q.kind!=='tf'||q.statements?.length===4));
+  assert.ok(!/"answer"|"explain"|"check"/.test(JSON.stringify(paper)),'mini đề lộ đáp án');
+  const ids=tn.map(q=>q.topic);
+  assert.ok(ids.includes('T10-16'),'thiếu tổ hợp đếm');assert.ok(ids.some(t=>['T12-02','T12-05','T10-03'].includes(t)),'thiếu tối ưu');
+  assert.ok(ids.some(t=>['T12-18','T12-17','T10-18','T11-17'].includes(t)),'thiếu xác suất');
+  // Không vượt tiến độ: Bayes, mặt phẳng chỉ ra khi đã học; đã học Bayes thì ưu tiên Bayes.
+  for(const t of ['T12-13','T12-17','T12-18'])if(!(learned as readonly string[]).includes(t))assert.ok(!ids.includes(t),`${ngay}: ${t} chưa học`);
+  if((learned as readonly string[]).includes('T12-18'))assert.ok(ids.includes('T12-18'));
+  assert.deepEqual(assemble('12',ngay,seed,banks,PROGRESS).paper,paper);
+  // Chấm: đúng sai theo số ý (0,1/0,25/0,5/1), mini đề chấm riêng, không đổi điểm chẩn đoán.
+  const groups=PROGRESS.khoi['12'].groups;
+  const right=Object.fromEntries(picks.map(p=>[p.q.id,p.q.kind==='num'?String(p.q.answer).replace('.',','):p.q.answer]));
+  const full=grade(paper,picks,right,groups);assert.equal(full.score,10);assert.equal(full.tn!.score,10);assert.equal(full.tn!.max,4.5);
+  const tfs=picks.filter(p=>p.q.kind==='tf');
+  const partial={...right,[tfs[0].q.id]:[true,false,true,true],[tfs[1].q.id]:[false,null,null,null]};
+  const r=grade(paper,picks,partial,groups);assert.equal(r.score,10);
+  assert.deepEqual(r.tn!.parts.find(x=>x.part==='II'),{part:'II',label:'Phần II. Trắc nghiệm đúng sai',earned:0.5,max:2});
+  assert.equal(r.tn!.score,Math.round(3/4.5*100)/10);
+  assert.equal(r.items.find(i=>i.no===paper.questions.find(q=>q.id===tfs[0].q.id)!.no)!.hits,3);
+  assert.ok(r.tn!.byDang.some(d=>d.correct<d.total));
+  const none=grade(paper,picks,{},groups);assert.equal(none.tn!.score,0);assert.equal(none.items.filter(i=>i.answered).length,0);
+ }}
 
 // API: GET trả đề không đáp án; POST chấm lại đúng đề; ngày quá xa bị từ chối; khối sai bị từ chối.
 {const now=Date.parse('2026-10-19T03:00:00Z');

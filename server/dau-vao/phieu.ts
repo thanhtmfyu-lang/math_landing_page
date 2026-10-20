@@ -8,6 +8,7 @@ export function resultSummary({name,khoi,school,result:r}:{name:string;khoi:DvTr
   `Học sinh: ${name}${school?' · '+school:''}`,
   `Điểm: ${r.score.toLocaleString('vi-VN')}/10 · đúng ${r.correct}/${r.total} câu`,
   ...r.bySection.map(s=>`- ${s.label}: ${s.correct}/${s.total} (${s.percent}%)`),
+  ...(r.tn?[`Mini đề kiểu tốt nghiệp: ${r.tn.score.toLocaleString('vi-VN')}/10 (${r.tn.parts.map(x=>x.part+' '+x.earned.toLocaleString('vi-VN')+'/'+x.max.toLocaleString('vi-VN')).join(', ')}) · dạng còn sai: ${r.tn.byDang.filter(d=>d.correct<d.total).map(d=>d.dang).join('; ')||'không có'}`]:[]),
   `Theo mức: ${r.byLevel.map(l=>`${l.label} ${l.correct}/${l.total}`).join(', ')}`,
   `Gợi ý lớp: ${r.suggestion.group} · ${r.suggestion.level}`,
   ...r.suggestion.extra.map(x=>'* '+x),

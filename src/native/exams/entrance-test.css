@@ -104,3 +104,14 @@
 .dv-chip.is-on{border-color:var(--hsa-navy);background:#213269;color:#fff}
 .dv-chip:has(input:focus-visible){outline:3px solid #9cb8e6;outline-offset:1px}
 @media (max-width:640px){.dv-grid{grid-template-columns:1fr}}
+.dv-part{margin:0 0 10px;font-weight:700;color:var(--hsa-ink,#213269);font-size:14px}
+.dv-tf{display:grid;gap:8px}
+.dv-tf-row{display:grid;grid-template-columns:minmax(0,1fr) auto auto;gap:8px;align-items:center;padding:8px 10px;border:1px solid #dbe5f4;border-radius:10px}
+.dv-tf-btn{display:inline-flex;align-items:center;justify-content:center;min-width:64px;min-height:40px;padding:0 12px;border:1px solid #cdddf4;border-radius:9px;cursor:pointer;font-weight:600;font-size:13px}
+.dv-tf-btn input{position:absolute;opacity:0;pointer-events:none}
+.dv-tf-btn.is-on{background:#213269;border-color:#213269;color:#fff}
+.dv-tf-btn:focus-within{outline:2px solid #ffcf24;outline-offset:2px}
+.dv-dang{list-style:none;padding:0;margin:0 0 10px;display:grid;gap:6px}
+.dv-dang li{display:flex;justify-content:space-between;gap:12px;padding:8px 10px;border-radius:9px;background:#f3f6fc}
+.dv-dang li.is-hong{background:#fdecec}
+@media(max-width:560px){.dv-tf-row{grid-template-columns:1fr 1fr}.dv-tf-row>span{grid-column:1/-1}.dv-tf-btn{min-width:0}}
