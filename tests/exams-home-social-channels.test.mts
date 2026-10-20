@@ -50,9 +50,9 @@ assert.match(homeConsultation,/>Tư vấn lớp học qua Zalo<\/span>/);
 checkChannels(homeConsultation);
 const footer=render(load('src/components/Footer.tsx').exports.Footer),footerGroups=socialGroups(footer);
 assert.equal(footerGroups.length,1);checkChannels(footerGroups[0]);
-// 20/10: BTVN và hướng dẫn phụ huynh ở chân trang là dòng chữ thường, không còn ô viền bị thanh liên hệ che.
-assert.doesNotMatch(footer,/mtm-portal-links/);
-for(const href of ['/btvn','/huong-dan?cho=phu-huynh'])assert.equal(anchors(footer).filter(link=>attribute(link.attributes,'href')===href).length,1,href);
+// 20/10: anh Thành muốn mọi nút chức năng ở đầu trang; chân trang chỉ 1 dòng thương hiệu + hotline, không còn khối 3 cột.
+assert.doesNotMatch(footer,/mtm-portal-links|mtm-footer-map/);assert.match(footer,/0967 365 413/);
+for(const href of ['/btvn','/huong-dan?cho=phu-huynh','/phu-huynh','/xep-hang'])assert.equal(anchors(footer).filter(link=>attribute(link.attributes,'href')===href).length,0,href);
 // 20/10: anh Thành muốn BTVN và Hướng dẫn phụ huynh lên đầu menu cho dễ tìm; menu giữ 7 mục.
 const menu=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{pathname:'/huong-dan'}),menuNav=menu.slice(menu.indexOf('id="mig-nav-links"'));
 const menuHrefs=anchors(menuNav).map(link=>attribute(link.attributes,'href')).filter(href=>href!=='/#register');
@@ -60,7 +60,8 @@ assert.deepEqual(menuHrefs.slice(0,3),['/','/btvn','/huong-dan?cho=phu-huynh']);
 assert.match(menuNav,/<a(?=[^>]*href="\/huong-dan\?cho=phu-huynh")(?=[^>]*aria-current="page")[^>]*>Hướng dẫn phụ huynh<\/a>/);
 // 20/10: hàng lối tắt ở đầu mọi trang công khai, ẩn ở trang làm bài/quản trị.
 const {QuickLinks}=load('src/components/QuickLinks.tsx').exports,quick=render(QuickLinks,{pathname:'/khoa-hoc'});
-assert.deepEqual(anchors(quick).map(link=>attribute(link.attributes,'href')),['/btvn','/huong-dan?cho=phu-huynh','/kiem-tra-dau-vao','/#timetable','/hoc-online','/thi-thu']);
+assert.deepEqual(anchors(quick).map(link=>attribute(link.attributes,'href')),['/btvn','/huong-dan?cho=phu-huynh','/kiem-tra-dau-vao','/#timetable','/hoc-online','/thi-thu','/khoa-hoc','/luyen-tap','/so-tay','/tai-lieu','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang','/phu-huynh']);
+assert.match(quick,/<a(?=[^>]*href="\/khoa-hoc")(?=[^>]*aria-current="page")[^>]*>/);
 for(const pathname of ['/btvn','/quan-tri','/thi-thu/de-thu'])assert.equal(render(QuickLinks,{pathname}),'');
 const r106Site=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/migration/r106-site.css'),'utf8');
 assert.match(r106Site,/:not\(\.r106-home-page\) \.mig-header\{[^}]*background:#fff;/,'Thanh đầu trang dính phải nền đặc');

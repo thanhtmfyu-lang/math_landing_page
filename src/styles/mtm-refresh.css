@@ -94,3 +94,4 @@
 .cp-route-group>p{margin:0 0 .75rem;opacity:.8}
 
 .mtm-footer-map{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:20px 32px;margin:32px 0 8px;padding-top:24px;border-top:1px solid #ffffff26}.mtm-footer-map a{display:block;color:#fff;line-height:1.6;padding:6px 0;opacity:.88}.mtm-footer-map a:hover{opacity:1;text-decoration:underline}@media(max-width:767px){.mtm-footer-map{grid-template-columns:repeat(2,minmax(0,1fr))}}
+.mtm-footer.is-compact{padding:18px 0}.mtm-footer-line{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:8px 20px;font-size:14px}.mtm-footer-line b{font-weight:700}.mtm-footer-line>a{color:#fff}.mtm-footer-line>a:hover{text-decoration:underline}.mtm-footer.is-compact .mtm-social-links{margin-top:0}.mtm-footer.is-compact .mtm-social-links a{min-width:38px;min-height:38px;padding:6px}
