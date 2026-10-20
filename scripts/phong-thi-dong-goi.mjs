@@ -2,13 +2,13 @@
 // Kho mã công khai nên đề, đáp án, lời giải KHÔNG được để dạng đọc được: kiểm từng đề (validateDe), gộp, nén gzip rồi mã hóa AES-256-GCM
 // bằng khóa MTM_PHONG_THI_KEY (base64 32 byte, đặt trên Vercel). Chỉ /api/phong-thi giải mã để phát đề và chấm.
 // Dùng: MTM_PHONG_THI_KEY=... node scripts/phong-thi-dong-goi.mjs <thư mục kho-de ngoài kho mã>
-// Chỉ đóng gói đề có kiemTra.ketQua = "dat"; đề lỗi cấu trúc thì dừng cả lô và in lỗi.
+// Thêm --kiem để chỉ kiểm cấu trúc (không cần khóa, không ghi kho). Chỉ đóng gói đề có kiemTra.ketQua = "dat"; đề lỗi cấu trúc thì dừng cả lô và in lỗi.
 import {build} from 'esbuild';
 import {readFileSync,writeFileSync,readdirSync} from 'node:fs';
 import {join} from 'node:path';
-const key=Buffer.from(process.env.MTM_PHONG_THI_KEY??'','base64');
-if(key.length!==32)throw Error('Cần MTM_PHONG_THI_KEY (base64 32 byte).');
-const dir=process.argv[2];if(!dir)throw Error('Cần thư mục kho đề.');
+const chiKiem=process.argv.includes('--kiem'),key=Buffer.from(process.env.MTM_PHONG_THI_KEY??'','base64');
+if(!chiKiem&&key.length!==32)throw Error('Cần MTM_PHONG_THI_KEY (base64 32 byte).');
+const dir=process.argv.slice(2).find(a=>a!=='--kiem');if(!dir)throw Error('Cần thư mục kho đề.');
 const out=await build({entryPoints:['server/phong-thi/handler.ts'],bundle:true,platform:'node',format:'esm',write:false,loader:{'.json':'json'},logLevel:'error'});
 const {dongGoi,moGoi}=await import('data:text/javascript;base64,'+Buffer.from(out.outputFiles[0].text).toString('base64'));
 const eng=await build({entryPoints:['server/phong-thi/engine.ts'],bundle:true,platform:'node',format:'esm',write:false,logLevel:'error'});
@@ -22,6 +22,7 @@ for(const f of readdirSync(dir).filter(f=>f.endsWith('.json')).sort()){
  de.push(d);
 }
 if(loi.length){console.error(loi.join('\n'));process.exit(1);}
+if(chiKiem){console.log(`Hợp lệ ${de.length} đề đạt; bỏ qua ${bo.length}: ${bo.join(', ')}`);process.exit(0);}
 if(!de.length)throw Error('Không có đề nào đạt để đóng gói.');
 const kho={version:1,dongGoi:new Date().toISOString(),de};
 const bin=dongGoi(kho,key);
