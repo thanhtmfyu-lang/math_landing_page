@@ -4,7 +4,7 @@
 .mtm-migration.r106-site:not(.r106-home-page){background:var(--r106-soft);font-family:'Be Vietnam Pro',system-ui,-apple-system,'Segoe UI',Arial,sans-serif;color:var(--r106-navy)}
 
 /* Header dock, same language as Home without changing its height or menu offsets. */
-.mtm-migration.r106-site:not(.r106-home-page) .mig-header{max-width:1600px;width:calc(100% - 64px);margin:14px auto 0;border:1px solid #dbe4f2;border-radius:19px;background:#ffffffed;box-shadow:0 12px 35px -30px #21326966}
+.mtm-migration.r106-site:not(.r106-home-page) .mig-header{max-width:1600px;width:calc(100% - 64px);margin:14px auto 0;border:1px solid #dbe4f2;border-radius:19px;background:#fff;box-shadow:0 12px 35px -30px #21326966}
 .mtm-migration.r106-site:not(.r106-home-page) .mig-nav-links>a{min-height:44px;display:flex;align-items:center}
 .mtm-migration.r106-site:not(.r106-home-page) .mig-preview{background:transparent;color:var(--r106-muted);border:0;font-size:11px}
 .mtm-migration.r106-site:not(.r106-home-page) .mtm-footer{border-top:1px solid var(--r106-line)}
