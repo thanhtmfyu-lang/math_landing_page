@@ -56,12 +56,18 @@ for(const href of ['/btvn','/huong-dan?cho=phu-huynh','/phu-huynh','/xep-hang'])
 // 20/10: anh Thành muốn BTVN và Hướng dẫn phụ huynh lên đầu menu cho dễ tìm; menu giữ 7 mục.
 const menu=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{pathname:'/huong-dan'}),menuNav=menu.slice(menu.indexOf('id="mig-nav-links"'));
 const menuHrefs=anchors(menuNav).map(link=>attribute(link.attributes,'href')).filter(href=>href!=='/#register');
-assert.deepEqual(menuHrefs.slice(0,3),['/','/btvn','/huong-dan?cho=phu-huynh']);assert.equal(menuHrefs.length,7);
-assert.match(menuNav,/<a(?=[^>]*href="\/huong-dan\?cho=phu-huynh")(?=[^>]*aria-current="page")[^>]*>Hướng dẫn phụ huynh<\/a>/);
+// 20/10 anh Thành (lần 2): ít cửa, mỗi loại một mối: "Thi" gom mọi kỳ thi, "Phụ huynh" gom mọi thứ cho phụ huynh.
+assert.deepEqual(menuHrefs.slice(0,4),['/','/btvn','/thi-thu','/phu-huynh']);assert.equal(menuHrefs.length,7);
+const menuAt=(pathname:string)=>{const h=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{pathname});return h.slice(h.indexOf('id="mig-nav-links"'));};
+assert.match(menuAt('/de-giua-ky-1'),/<a(?=[^>]*href="\/thi-thu")(?=[^>]*aria-current="page")[^>]*>Thi<\/a>/);
+assert.match(menuAt('/phu-huynh'),/<a(?=[^>]*href="\/phu-huynh")(?=[^>]*aria-current="page")[^>]*>Phụ huynh<\/a>/);
 // 20/10: hàng lối tắt ở đầu mọi trang công khai, ẩn ở trang làm bài/quản trị.
 const {QuickLinks}=load('src/components/QuickLinks.tsx').exports,quick=render(QuickLinks,{pathname:'/khoa-hoc'});
-assert.deepEqual(anchors(quick).map(link=>attribute(link.attributes,'href')),['/btvn','/huong-dan?cho=phu-huynh','/kiem-tra-dau-vao','/#timetable','/hoc-online','/thi-thu','/khoa-hoc','/luyen-tap','/so-tay','/tai-lieu','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang','/phu-huynh']);
-assert.match(quick,/<a(?=[^>]*href="\/khoa-hoc")(?=[^>]*aria-current="page")[^>]*>/);
+assert.deepEqual(anchors(quick).map(link=>attribute(link.attributes,'href')),['/btvn','/thi-thu','/phu-huynh','/kiem-tra-dau-vao']);
+const hubHrefs=(pathname:string,search='')=>anchors(render(QuickLinks,{pathname,search})).map(link=>attribute(link.attributes,'href'));
+for(const p of ['/thi-thu','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang'])assert.deepEqual(hubHrefs(p),['/thi-thu','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang'],p);
+for(const [p,q] of [['/phu-huynh',''],['/huong-dan','?cho=phu-huynh']])assert.deepEqual(hubHrefs(p,q),['/phu-huynh','/huong-dan?cho=phu-huynh','/#timetable'],p);
+assert.match(render(QuickLinks,{pathname:'/de-giua-ky-1'}),/<a(?=[^>]*href="\/de-giua-ky-1")(?=[^>]*aria-current="page")[^>]*>Giữa kỳ I<\/a>/);
 for(const pathname of ['/btvn','/quan-tri','/thi-thu/de-thu'])assert.equal(render(QuickLinks,{pathname}),'');
 const r106Site=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/migration/r106-site.css'),'utf8');
 assert.match(r106Site,/:not\(\.r106-home-page\) \.mig-header\{[^}]*background:#fff;/,'Thanh đầu trang dính phải nền đặc');

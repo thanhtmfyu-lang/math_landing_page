@@ -1,0 +1,56 @@
+# Kiểm web thật sau mỗi lần Vercel đưa bản mới lên (luật W01–W02):
+# chụp trang chủ 390 và 1366 px, kiểm 4 nút mối ở đầu trang, chân trang gọn,
+# mối Thi gom mọi kỳ thi, các trang chính mở được và không lỗi JS.
+# Lỗi thì mở (hoặc ghi thêm vào) issue nhãn "web-loi" như Canh web 24/7.
+name: Kiểm sau deploy
+
+on:
+  deployment_status:
+  workflow_dispatch:
+  schedule:
+    - cron: '7 * * * *'
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: kiem-sau-deploy
+  cancel-in-progress: true
+
+jobs:
+  kiem:
+    if: github.event_name != 'deployment_status' || (github.event.deployment_status.state == 'success' && github.event.deployment.environment == 'Production')
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - name: Cài trình duyệt
+        run: |
+          mkdir -p /tmp/pw && cd /tmp/pw && npm init -y >/dev/null && npm i -s playwright@1.56.1 >/dev/null
+          npx playwright install --with-deps chromium >/dev/null
+      - name: Kiểm web thật
+        id: kt
+        run: |
+          sleep 20; loi=0
+          cp scripts/kiem-sau-deploy.mjs /tmp/pw/kiem.mjs
+          (cd /tmp/pw && MTM_ANH_DIR="$GITHUB_WORKSPACE/anh-sau-deploy" node kiem.mjs) > ket-qua.md || loi=1
+          echo "loi=$loi" >> "$GITHUB_OUTPUT"; cat ket-qua.md; cat ket-qua.md >> "$GITHUB_STEP_SUMMARY"
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with: {name: anh-sau-deploy, path: anh-sau-deploy/*.png, retention-days: 14}
+      - name: Mở hoặc đóng issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOI: ${{ steps.kt.outputs.loi }}
+        run: |
+          gh label create web-loi --color d73a4a --description "Canh web 24/7 thấy lỗi" 2>/dev/null || true
+          so=$(gh issue list --label web-loi --state open --search "Kiểm sau deploy" --json number --jq '.[0].number // empty')
+          if [ "$LOI" != "0" ]; then
+            if [ -z "$so" ]; then gh issue create --title "Kiểm sau deploy: web thiếu nút hoặc trang lỗi" --label web-loi --body-file ket-qua.md
+            else gh issue comment "$so" --body-file ket-qua.md; fi
+          elif [ -n "$so" ]; then
+            gh issue close "$so" --comment "Kiểm sau deploy đạt lại lúc $(TZ=Asia/Ho_Chi_Minh date '+%H:%M %d/%m/%Y')."
+          fi
