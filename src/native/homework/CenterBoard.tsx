@@ -38,7 +38,7 @@ export default function CenterBoard({onSkip,initial,guest}:{onSkip?:()=>void;ini
    </button>}
    <div className="mtm-board-side">
     {guest&&<a className="mtm-board-login" href="/btvn"><strong>Ảnh, video thật ở lớp</strong><span>Học sinh MTM đăng nhập BTVN để xem <span aria-hidden="true">→</span></span></a>}
-    {events.length>0&&<div className="mtm-board-events" aria-labelledby="mtm-board-events-title"><h3 id="mtm-board-events-title">Sắp tới ở trung tâm</h3><ol>{events.map(e=><li key={e.date}><span className="mtm-board-date"><b>{e.date.slice(8,10)}</b><i>Th{Number(e.date.slice(5,7))}</i></span><span><strong>{e.title}</strong><small>{e.note}</small></span><em className={e.daysLeft<=1?'is-soon':''}>{countdownLabel(e.daysLeft)}</em></li>)}</ol></div>}
+    {events.length>0&&<div className="mtm-board-events" aria-labelledby="mtm-board-events-title"><h3 id="mtm-board-events-title">Sắp tới ở trung tâm</h3><ol>{events.map(e=><li key={e.date+e.title}><span className="mtm-board-date"><b>{e.date.slice(8,10)}</b><i>Th{Number(e.date.slice(5,7))}</i></span><span><strong>{e.href?<a href={e.href}>{e.title}</a>:e.title}</strong><small>{e.note}</small></span><em className={e.daysLeft<=1?'is-soon':''}>{countdownLabel(e.daysLeft)}</em></li>)}</ol></div>}
     {rest.length>0&&<div className="mtm-board-list"><h3>Bài trước</h3><ul>{rest.map(p=><li key={p.id}><button type="button" className={'mtm-board-item mtm-board-kind--'+p.kind} onClick={()=>setViewer({post:p,index:0})}><img src={small(p.photos[0])} alt="" loading="lazy" decoding="async"/><span><b>{kindLabels[p.kind]} · {dayLabel(p.date)}</b><strong>{p.title}</strong><small>{mediaCount(p)}</small></span></button></li>)}</ul></div>}
    </div>
   </div>}

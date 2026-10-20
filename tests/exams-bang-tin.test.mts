@@ -16,7 +16,7 @@ assert.equal(visiblePosts([{...live,date:'2026-10-21'},{...staticPosts[0],pinned
 assert.equal(visiblePosts([{...live,date:'2026-10-24'},...staticPosts],at('2026-10-24T10:00:00+07:00'))[0].id,'2026-10-31-lop');
 // Lịch: 23:30 ngày 19/10 giờ VN (16:30Z) thì 20/10 là "Ngày mai".
 const next=upcomingEvents(boardEvents,at('2026-10-19T16:30:00Z'));
-assert.equal(next[0].date,'2026-10-20');assert.equal(countdownLabel(next[0].daysLeft),'Ngày mai');assert.equal(next.length,3);
+assert.equal(next[0].date,'2026-10-20');assert.equal(countdownLabel(next[0].daysLeft),'Ngày mai');assert.equal(next.length,4);assert.equal(next[1].href,'/de-giua-ky-1');
 assert.equal(upcomingEvents(boardEvents,at('2026-10-20T01:00:00+07:00'))[0].daysLeft,0);
 // Máy chủ: bỏ bài sai khuôn hoặc ảnh không phải https.
 assert.ok(parseServerPost({...live}));
