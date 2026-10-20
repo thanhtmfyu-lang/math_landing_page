@@ -53,6 +53,11 @@ assert.equal(footerGroups.length,1);checkChannels(footerGroups[0]);
 // 20/10: BTVN và hướng dẫn phụ huynh ở chân trang là dòng chữ thường, không còn ô viền bị thanh liên hệ che.
 assert.doesNotMatch(footer,/mtm-portal-links/);
 for(const href of ['/btvn','/huong-dan?cho=phu-huynh'])assert.equal(anchors(footer).filter(link=>attribute(link.attributes,'href')===href).length,1,href);
+// 20/10: anh Thành muốn BTVN và Hướng dẫn phụ huynh lên đầu menu cho dễ tìm; menu giữ 7 mục.
+const menu=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{pathname:'/huong-dan'}),menuNav=menu.slice(menu.indexOf('id="mig-nav-links"'));
+const menuHrefs=anchors(menuNav).map(link=>attribute(link.attributes,'href')).filter(href=>href!=='/#register');
+assert.deepEqual(menuHrefs.slice(0,3),['/','/btvn','/huong-dan?cho=phu-huynh']);assert.equal(menuHrefs.length,7);
+assert.match(menuNav,/<a(?=[^>]*href="\/huong-dan\?cho=phu-huynh")(?=[^>]*aria-current="page")[^>]*>Hướng dẫn phụ huynh<\/a>/);
 const r106Site=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/migration/r106-site.css'),'utf8');
 assert.match(r106Site,/:not\(\.r106-home-page\) \.mig-header\{[^}]*background:#fff;/,'Thanh đầu trang dính phải nền đặc');
 
