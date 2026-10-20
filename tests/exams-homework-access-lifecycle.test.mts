@@ -22,7 +22,8 @@ class Runtime{
  dispose(){this.slots.forEach(s=>s?.cleanup?.());}
 }
 const all=(t:any,p:(n:any)=>boolean):any[]=>!t||typeof t!=='object'?[]:Array.isArray(t)?t.flatMap(n=>all(n,p)):[...(p(t)?[t]:[]),...all(t.props?.children,p)];
-const text=(t:any):string=>t==null||typeof t==='boolean'?'':Array.isArray(t)?t.map(text).join(''):typeof t==='object'?text(t.props?.children):String(t);
+// Gate hiện thông báo trong từng form qua prop notice (18/10), không còn ở cha.
+const text=(t:any):string=>t==null||typeof t==='boolean'?'':Array.isArray(t)?t.map(text).join(''):typeof t==='object'?text(t.props?.children)+(typeof t.type==='function'&&typeof t.props?.onLogin==='function'?String(t.props.notice??''):''):String(t);
 const microtasks=async()=>{for(let n=0;n<30;n++)await Promise.resolve();};
 class Events extends EventTarget{removeEventListener(type:string,listener:any,options?:any){super.removeEventListener(type,listener,typeof options==='boolean'?{capture:options}:options);}}
 const win=new Events(),doc=new Events();

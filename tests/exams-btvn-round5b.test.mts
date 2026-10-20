@@ -7,7 +7,8 @@ const require=createRequire(root+'/package.json');
 const {build}=require('esbuild');
 const out=root+'/.qa-temp/round5b';mkdirSync(out,{recursive:true});
 // Render và gọi handler của component thật, chỉ dùng thông tin tổng hợp.
-const entry=`import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import assert from 'node:assert/strict';import HomeworkGate from './src/native/homework/HomeworkGate';
+const entry=`import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import assert from 'node:assert/strict';import GateComponent from './src/native/homework/HomeworkGate';import {mount} from './tests/daily19-ui-harness.mts';
+const HomeworkGate=props=>mount('src/native/homework/HomeworkGate.tsx',props).tree;
 const calls=[],identity={fullName:'Học sinh giả',phone:'0900000000',className:'Lớp giả'};
 const props={studentCode:'FAKE-CODE',identity,classNames:[identity.className],busy:false,onCode:()=>{},onIdentity:()=>{},onLogin:input=>calls.push(input)};
 const walk=node=>Array.isArray(node)?node.flatMap(walk):React.isValidElement(node)?[node,...walk(node.props.children)]:[];
@@ -25,10 +26,10 @@ const inputs=forms.map(f=>walk(f).filter(n=>n.type==='input'||n.type==='select')
 let changed;const editing=HomeworkGate({...props,onCode:value=>changed=value,onIdentity:value=>changed=value});
 walk(formsOf(editing)[0]).find(n=>n.type==='input').props.onChange({target:{value:'NEW-CODE'}});assert.equal(changed,'NEW-CODE');
 walk(formsOf(editing)[1]).filter(n=>n.type==='input')[1].props.onChange({target:{value:'0900000001'}});assert.deepEqual(changed,{...identity,phone:'0900000001'});
-export const html=renderToStaticMarkup(<HomeworkGate {...props}/>);
+export const html=renderToStaticMarkup(<GateComponent {...props}/>);
 assert.ok(html.indexOf('id="btvn-code-title"')<html.indexOf('id="btvn-identity-title"'));assert.ok(!html.includes('Quên mã'));assert.equal((html.match(/type="submit"/g)||[]).length,2);
 `;
-const bundle=await build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'}});
+const bundle=await build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external'});
 writeFileSync(out+'/gate.cjs',bundle.outputFiles[0].text);
 const rendered=(await import(pathToFileURL(out+'/gate.cjs').href)).default;
 const session=readFileSync(root+'/src/native/homework/HomeworkSession.tsx','utf8');

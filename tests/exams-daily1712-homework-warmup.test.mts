@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+// PIN (18/10) thêm một useState trước room; giữ đủ ca checking, ngoài phòng và trong phòng.
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {checkWarmupAnswer,HOMEWORK_WARMUP_CARDS,HOMEWORK_WARMUP_TOPICS,warmupCards} from '../src/native/homework/warmup';
@@ -98,7 +99,7 @@ test('Tải lười sau khi mở, thu gọn giữ phiên, boundary chỉ thử l
 });
 
 test('Tiện ích và lối vào sân chơi chỉ ngoài lượt đang làm, không nhận dữ liệu học sinh, không mạng hoặc storage',()=>{
-  const render=(state:any,room:boolean,checking=false)=>{let index=0;const View=load('src/native/homework/HomeworkSession.tsx',{useState:(initial:any)=>{const at=index++;return [at===0?state:at===6?room:at===10?checking:typeof initial==='function'?initial():initial,()=>{}];},useRef:(initial:any)=>({current:initial}),useMemo:(fn:()=>unknown)=>fn(),useEffect:()=>{}}).default;const tree=View({pathname:'/btvn'});return {tree,tools:all(tree,n=>n.type?.name==='HomeworkWarmupTool'),links:all(tree,n=>n.props?.href==='/san-choi')};};
+  const render=(state:any,room:boolean,checking=false)=>{let index=0;const View=load('src/native/homework/HomeworkSession.tsx',{useState:(initial:any)=>{const at=index++;return [at===0?state:at===7?room:at===11?checking:typeof initial==='function'?initial():initial,()=>{}];},useRef:(initial:any)=>({current:initial}),useMemo:(fn:()=>unknown)=>fn(),useEffect:()=>{}}).default;const tree=View({pathname:'/btvn'});return {tree,tools:all(tree,n=>n.type?.name==='HomeworkWarmupTool'),links:all(tree,n=>n.props?.href==='/san-choi')};};
   assert.equal(render(null,false,true).tools.length,0);assert.equal(render(null,false,true).links.length,0);
   const entry=render(null,false);assert.equal(entry.tools.length,1);assert.deepEqual(entry.tools[0].props,{});assert.equal(entry.links.length,1);assert.equal(text(entry.links[0]),'Đổi nhịp với Sân chơi Toán');assert.equal(entry.links[0].props.className,'btvn-btn');assert.match(text(entry.tree),/Luyện riêng.*không tính điểm BTVN/);
   const synthetic={lessonCode:'gia',lessons:[],draft:null};assert.equal(render(synthetic,false).tools.length,1);assert.equal(render(synthetic,false).links.length,1);assert.equal(render(synthetic,true).tools.length,0);assert.equal(render(synthetic,true).links.length,0);
