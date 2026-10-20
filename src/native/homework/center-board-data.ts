@@ -29,7 +29,7 @@ export const staticPosts:BoardPost[]=[
 // Rút từ /mnt/project-files/cong-ty-ai/LICH_SU_KIEN_NAM_HOC_2026_2027.md (phần dành cho học sinh, phụ huynh).
 export const boardEvents:BoardEvent[]=[
  {date:'2026-10-20',title:'Ngày Phụ nữ Việt Nam',note:'Lời chúc các bạn nữ, các mẹ'},
- {date:'2026-10-23',title:'Mở thi thử giữa kỳ I lớp 10–12',note:'Online, miễn phí, chấm ngay và chỉ ra 3 chỗ cần vá',href:'/de-giua-ky-1'},
+ {date:'2026-10-31',title:'Thi thử giữa kỳ I lớp 10–12 đang mở',note:'Online, miễn phí, nên làm trước 31/10; chấm ngay, chỉ ra 3 chỗ cần vá',href:'/de-giua-ky-1'},
  {date:'2026-10-31',title:'Halloween ở lớp',note:'Mini game Toán, trang trí nhẹ'},
  {date:'2026-11-15',title:'Thi thử HSA miễn phí',note:'Giấy khen điện tử top 10'},
  {date:'2026-11-01',title:'Mở đăng ký kỳ khảo sát MTM',note:'Miễn phí, mời cả bạn ngoài trung tâm, nhận số báo danh ngay',href:'/ky-khao-sat'},
