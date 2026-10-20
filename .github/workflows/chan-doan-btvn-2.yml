@@ -6,16 +6,25 @@ jobs:
   do:
     runs-on: ubuntu-latest
     steps:
-      - name: Kiem Goc phu huynh tren web that (khong du lieu that)
+      - name: Chup dau trang web that
         run: |
-          set +e
-          B=https://www.minhthanhmath.vn; O="Origin: https://www.minhthanhmath.vn"; J='Content-Type: application/json'
-          for i in 1 2 3 4 5 6 7 8 9 10; do
-            c=$(curl -s -o /tmp/p.html -w "%{http_code}" $B/phu-huynh); grep -q ParentCorner /tmp/p.html; echo "page $c"
-            r=$(curl -sS -m 40 -X POST -H "$O" -H "$J" -d '{"ph":"classes"}' $B/api/btvn); echo "classes: $(echo "$r" | cut -c1-160)"
-            echo "$r" | grep -q '"classes"' && break; sleep 30
-          done
-          curl -sS -m 40 -w "\nchildren-khong-cookie HTTP %{http_code}\n" -X POST -H "$O" -H "$J" -d '{"ph":"children"}' $B/api/btvn | cut -c1-200
-          curl -sS -m 40 -w "\nlink-sai HTTP %{http_code}\n" -X POST -H "$O" -H "$J" -d '{"ph":"link","parentName":"Kiem Thu","parentPhone":"0900000098","childName":"Khong Co Ai","childPhone":"0900000097","className":"2K9 XPT"}' $B/api/btvn | cut -c1-200
-          curl -sS -m 40 -w "\nreport-khong-cookie HTTP %{http_code}\n" -X POST -H "$O" -H "$J" -d '{"ph":"report","childId":"aaaaaaaa-0000-4000-8000-000000000001"}' $B/api/btvn | cut -c1-200
-          curl -sS -m 40 -w "\nbtvn-classes HTTP %{http_code} %{time_total}s\n" -X POST -H "$O" -H "$J" -d '{"action":"classes"}' $B/api/btvn | cut -c1-80
+          mkdir -p shots && cd shots && npm init -y >/dev/null && npm i -s playwright@1.56.1 >/dev/null && npx playwright install --with-deps chromium >/dev/null
+          cat > s.mjs <<'JS'
+          import {chromium} from 'playwright';
+          const b=await chromium.launch();
+          for(const [w,h,t] of [[1366,800,'may-tinh'],[390,844,'dien-thoai']]){
+            const p=await b.newPage({viewport:{width:w,height:h},deviceScaleFactor:w<500?2:1});
+            for(const [path,n] of [['/','trang-chu'],['/khoa-hoc','khoa-hoc']]){
+              await p.goto('https://www.minhthanhmath.vn'+path+'?nguon=kiem-dau-trang',{waitUntil:'networkidle'});await p.waitForTimeout(1500);
+              const d=p.getByRole('button',{name:'Đã xem, vào trang chủ'});if(await d.count())await d.click();await p.waitForTimeout(500);
+              const n6=await p.locator('.mtm-quick-row a').count(),more=await p.locator('.mtm-quick-more a').count(),map=await p.locator('.mtm-footer-map').count();
+              console.log(t,path,'nut-lon',n6,'nut-nhom',more,'khoi-3-cot-chan-trang',map);
+              await p.screenshot({path:`${t}-${n}.png`});
+            }
+            await p.evaluate(()=>scrollTo(0,document.body.scrollHeight));await p.waitForTimeout(800);await p.screenshot({path:`${t}-chan-trang.png`});
+          }
+          await b.close();
+          JS
+          node s.mjs
+      - uses: actions/upload-artifact@v4
+        with: {name: anh-dau-trang, path: shots/*.png}
