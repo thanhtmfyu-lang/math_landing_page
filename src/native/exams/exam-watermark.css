@@ -3,7 +3,7 @@
    Độ mờ logo đã nằm sẵn trong public/mtm-watermark.png để chữ chân trang giữ đủ đậm. */
 :is(.fr-paper, .pt-questions, .dv-questions) { position: relative; padding-bottom: 56px; }
 :is(.fr-paper, .pt-questions, .dv-questions)::after {
-  content: 'Giáo viên Tô Minh Thành · ĐT/Zalo 0967 365 413 · Địa chỉ lớp học: 82 Chùa Láng';
+  content: 'Giáo viên Tô Minh Thành · ĐT/Zalo 0967 365 413 · Địa chỉ lớp học: 18 ngách 23 ngõ 82 Chùa Láng · Minh Thành Math – minhthanhmath.vn';
   position: absolute;
   inset: 0;
   z-index: 2;
