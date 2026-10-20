@@ -9,7 +9,7 @@ jobs:
       - name: Do trang va API BTVN
         run: |
           set +e
-          B=https://minhthanhmath.vn
+          B=https://www.minhthanhmath.vn; curl -sSI https://minhthanhmath.vn/btvn | grep -i location
           curl -sS -m 30 -o /dev/null -w "btvn page %{http_code} %{time_total}s\n" $B/btvn
           for a in state classes; do
             echo "== action $a"
