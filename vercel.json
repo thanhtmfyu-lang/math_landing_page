@@ -59,6 +59,14 @@
       "destination": "/index.html"
     },
     {
+      "source": "/phong-thi-thu",
+      "destination": "/index.html"
+    },
+    {
+      "source": "/api/phong-thi",
+      "destination": "/api/exam?muc=phong-thi"
+    },
+    {
       "source": "/de-giua-ky-1",
       "destination": "/index.html"
     },
@@ -203,6 +211,9 @@
     },
     "api/kiem-tra-dau-vao.ts": {
       "includeFiles": "server/dau-vao/ngan-hang.bin"
+    },
+    "api/exam.ts": {
+      "includeFiles": "server/phong-thi/kho-de.bin"
     }
   }
 }

@@ -1,0 +1,11 @@
+{
+  "about": "Lịch đợt thi của Phòng thi thử (không bí mật: chỉ mã đề trong kho và giờ mở/đóng, giờ Việt Nam +07:00). de null = chưa gán đề (sảnh hiện 'sắp công bố đề'); de \"chua-gan\" = ẩn đợt. Đợt khảo sát theo khối dùng khoi {10,11,12} và tiền tố sbd; thí sinh đăng ký lấy SBD. Nguồn lịch: KE_HOACH_PHONG_THI_THU.md mục 3b.",
+  "dot": [
+    {"ma": "ks-hk1-2026", "ten": "Khảo sát Toán 10–12 cuối kỳ I", "loai": "thpt", "de": null, "khoi": {"10": null, "11": null, "12": null}, "sbd": "KS26",
+     "mo": "2026-12-05T07:00:00+07:00", "dong": "2026-12-06T22:00:00+07:00", "moTa": "Đề theo cấu trúc THPT 2025, 90 phút. Đăng ký nhận số báo danh, làm bài trong hai ngày 05–06/12."},
+    {"ma": "hsa-thu-2026-12", "ten": "Thi thử HSA phần Toán · đợt tháng 12", "loai": "hsa", "de": null, "mo": "2026-12-12T07:00:00+07:00", "dong": "2026-12-13T22:00:00+07:00"},
+    {"ma": "hsa-thu-2027-01a", "ten": "Thi thử HSA phần Toán · đợt 09–10/01", "loai": "hsa", "de": null, "mo": "2027-01-09T07:00:00+07:00", "dong": "2027-01-10T22:00:00+07:00"},
+    {"ma": "hsa-thu-2027-01b", "ten": "Thi thử HSA phần Toán · đợt 30–31/01", "loai": "hsa", "de": null, "mo": "2027-01-30T07:00:00+07:00", "dong": "2027-01-31T22:00:00+07:00"},
+    {"ma": "hsa-thu-2027-02", "ten": "Thi thử HSA phần Toán · đợt 27–28/02", "loai": "hsa", "de": null, "mo": "2027-02-27T07:00:00+07:00", "dong": "2027-02-28T22:00:00+07:00"}
+  ]
+}
