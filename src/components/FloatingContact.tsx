@@ -5,7 +5,7 @@ import {ZALO_ASSISTANT_URL} from './mtm-contact';
 import {ZaloIcon} from './SocialLinks';
 import './home-consultation.css';
 export function contactAllowed(pathname:string,search=''){
- return !(pathname==='/btvn'||pathname.startsWith('/btvn/')||pathname==='/quan-tri'||pathname.startsWith('/quan-tri/')||pathname==='/admin'||pathname.startsWith('/admin/')||pathname.startsWith('/thi-thu/')||(pathname==='/luyen-tap'&&['id','luot'].some(key=>new URLSearchParams(search).has(key))));
+ return !(pathname==='/btvn'||pathname==='/phu-huynh'||pathname.startsWith('/btvn/')||pathname==='/quan-tri'||pathname.startsWith('/quan-tri/')||pathname==='/admin'||pathname.startsWith('/admin/')||pathname.startsWith('/thi-thu/')||(pathname==='/luyen-tap'&&['id','luot'].some(key=>new URLSearchParams(search).has(key))));
 }
 export function FloatingContact({pathname,search=''}:{pathname:string;search?:string}){
  const [nearForm,setNearForm]=useState(false),[pastHero,setPastHero]=useState(false),allowed=contactAllowed(pathname,search);

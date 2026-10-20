@@ -59,6 +59,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/phu-huynh",
+      "destination": "/index.html"
+    },
+    {
       "source": "/phong-thi-thu",
       "destination": "/index.html"
     },

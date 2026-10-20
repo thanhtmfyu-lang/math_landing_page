@@ -108,6 +108,7 @@ export default function Guide(){const [who,setWho]=useState<Audience>(readAudien
    <button type="button" role="tab" id="mg-tab-ph" tabIndex={parent?0:-1} aria-selected={parent} aria-controls="mg-panel" onKeyDown={tabKey} onClick={()=>pick('phu-huynh')}>Phụ huynh</button>
   </div>
   <nav className="mg-quick-nav" aria-label="Đi nhanh trong hướng dẫn">
+   {parent&&<a href="/phu-huynh">Vào Góc phụ huynh: điểm danh, BTVN, điểm của con →</a>}
    <a href="#mg-homework-help" onClick={()=>document.getElementById('mg-homework-help')?.focus()}>Cách vào BTVN ↓</a>
    <a href="#mg-troubleshooting" onClick={()=>document.getElementById('mg-troubleshooting')?.focus()}>Đang gặp lỗi? Xem cách xử lý ↓</a>
   </nav>
