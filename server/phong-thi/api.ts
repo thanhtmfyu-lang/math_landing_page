@@ -160,7 +160,8 @@ export function createPhongThiApi(getEnv=()=>process.env as Record<string,string
     p_diem:k.diem,p_thang:k.thangDiem,p_dung:k.dung,p_tong:k.tong,p_giay:b.giay,p_qua_gio:b.quaGio,
     p_chi_tiet:{phan:k.theoPhan,cau:k.cau.map((c:any)=>[c.ma,c.dung?1:0,c.daLam?1:0,c.giay??null]),...(b.thoiGian?{coThoiGian:true}:{})},p_ten:b.sbd?null:ten,p_dot:b.dot??null,p_sbd:b.sbd??null});
    b.xepHang=r.ok?await r.json():{status:'loi'};}catch{b.xepHang={status:'loi'};}
-  if(b.sbd&&thiSinh?.sbd===b.sbd)try{const r=await rpc('mtm_pt_khao_sat',{p_dot:thiSinh.dot,p_khoi:Number(thiSinh.khoi),p_sbd:thiSinh.sbd,p_limit:1});
+  const ts=thiSinh as PtThiSinh|null;
+  if(b.sbd&&ts&&ts.sbd===b.sbd)try{const r=await rpc('mtm_pt_khao_sat',{p_dot:ts.dot,p_khoi:Number(ts.khoi),p_sbd:ts.sbd,p_limit:1});
    if(r.ok){const x=await r.json();b.khaoSat={thiSinh:thiSinhDu,em:x?.em??null,n:x?.n??0,cau:x?.cau??{}};}}catch{/* báo cáo vẫn hiện phần điểm */}
  }
  if(out.status===200&&action==='nop')delete (out.body as any).nonce;
