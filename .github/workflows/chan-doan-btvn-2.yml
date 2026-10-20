@@ -6,7 +6,7 @@ jobs:
   do:
     runs-on: ubuntu-latest
     steps:
-      - name: Do dang nhap that (khong PIN, khong ton luot, lan 4 sau Pro 19:00)
+      - name: Do dang nhap that (khong PIN, khong ton luot, lan 5 20:30)
         run: |
           set +e
           for B in https://www.minhthanhmath.vn https://minhthanhmath.vn; do
