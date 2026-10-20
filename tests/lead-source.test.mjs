@@ -9,4 +9,7 @@ assert.equal(describeLeadSource(null),'Vào thẳng web (không rõ nguồn)');
 const text=describeLeadSource(ad);assert(text.includes('chiến dịch: tuyen-sinh-12'));assert(!text.includes('abc'));
 const mail=emailRegistration(normalizeRegistration({studentName:'Synthetic',phone:'0912345678',grade:'12',message:'online',notes:'',groupSize:'',trial:true,leadSource:text}));
 assert.equal(mail.trial,'Có');assert(mail.message.includes('Muốn học thử'));assert(mail.message.includes('tuyen-sinh-12'));assert.equal(mail.lead_source,text);
-console.log('PASS lead source capture, no fbclid value leaked, trial + source reach the email message');
+// 20/10 W1: mã ?nguon=<chương trình>-<kênh> của phòng marketing đi vào lead.
+const mk=readLeadSource('?nguon=Ky-Khao-Sat-zalo','','/ky-khao-sat');assert.equal(mk.ma,'ky-khao-sat-zalo');assert(describeLeadSource(mk).startsWith('Mã nguồn: ky-khao-sat-zalo'));
+assert.equal(readLeadSource('?nguon=<script>','','/'),null);
+console.log('PASS ?nguon= vào lead; PASS lead source capture, no fbclid value leaked, trial + source reach the email message');
