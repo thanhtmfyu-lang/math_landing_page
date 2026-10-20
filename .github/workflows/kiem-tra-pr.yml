@@ -1,6 +1,6 @@
 # Kiểm tra mỗi PR và mỗi lần đẩy lên main: build phải xanh mới được merge.
-# Bộ test chạy đầy đủ và báo số file lỗi; khi main hết test lỗi sẵn thì đổi
-# continue-on-error thành false để test cũng chặn merge.
+# Bộ test chạy đầy đủ và báo số file lỗi thành cảnh báo; khi main hết test
+# lỗi sẵn thì để test cũng chặn merge (xem bước "Chạy test").
 name: Kiểm tra PR
 
 on:
@@ -41,7 +41,6 @@ jobs:
   test:
     runs-on: ubuntu-latest
     timeout-minutes: 20
-    continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with:
@@ -55,4 +54,12 @@ jobs:
           node-version: 22
           cache: npm
       - run: npm ci --no-audit --no-fund
-      - run: npm test
+      # Chưa chặn merge: main còn test lỗi sẵn. Số file lỗi hiện thành cảnh báo
+      # và ghi vào tóm tắt job. Main xanh thì bỏ "|| ..." để test chặn merge.
+      - name: Chạy test
+        run: |
+          npm test 2>&1 | tee test.log || true
+          dong=$(grep -E "file test (lỗi|đạt)" test.log | tail -1)
+          echo "Kết quả test: ${dong:-không đọc được}" >> "$GITHUB_STEP_SUMMARY"
+          grep -E "^LỖI " test.log >> "$GITHUB_STEP_SUMMARY" || true
+          case "$dong" in *lỗi*) echo "::warning::$dong (lỗi sẵn trên main, chưa chặn merge)";; esac
