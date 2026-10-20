@@ -88,15 +88,8 @@ const sql=readSecret(root,'supabase/migrations-pending/202610190069_thi_thu_hsa_
 if(sql==null)console.log('BỎ QUA so seed 069/070: thiếu bản gốc (đặt MTM_DE_THI_DIR).');else{
 const b64=/values\('mtm-hsa-thi-thu-01',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql)?.[1];
 assert.ok(b64);
-// Khóa hiện hành của 2 đề nằm ở 092 (sửa câu điền theo quy chế HSA); 069/070 giữ bản đầu cho lịch sử.
-const sql92=readSecret(root,'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql')!;
-const key92=(id:string)=>{const end=sql92.indexOf("$mtmkey$::jsonb where id='"+id+"';");assert.ok(end>0,'092 thiếu '+id);const start=sql92.lastIndexOf('set exam=$mtmkey$',end)+'set exam=$mtmkey$'.length;return JSON.parse(sql92.slice(start,end));};
-const seeded=key92('mtm-hsa-thi-thu-01');
-assert.deepEqual(seeded,secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.key.json'));
-assert.equal(seeded.versionHash,paper01.versionHash);
-assert.ok(JSON.parse(Buffer.from(b64!,'base64').toString('utf8')).id==='mtm-hsa-thi-thu-01');
-assert.match(sql92,/insert into mtm_exam_private\.exam_keys_bak_092 select \* from mtm_exam_private\.exam_keys where id in\('mtm-hsa-thi-thu-01','mtm-hsa-thi-thu-02'\)/);
-assert.ok(!sql92.replace(/--.*$/gm,'').includes('mtm_hsa_rank'),'092 không đụng bảng xếp hạng');
+// 069/070 giữ khóa bản đầu; khóa hiện hành do 092 (kho công khai, không đáp án) thay khi áp.
+assert.equal(JSON.parse(Buffer.from(b64!,'base64').toString('utf8')).id,'mtm-hsa-thi-thu-01');
 assert.match(sql,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-01',false\)/);
 assert.ok(!sql.replace(/--.*$/gm,'').includes('mtm-preview-practice-hsa-01-v1'),'069 không seed đề mẫu');
 assert.ok(!/phone|sdt|so_dien_thoai/i.test(sql.replace(/--.*$/gm,'')));
@@ -107,7 +100,6 @@ const sql70=readSecret(root,'supabase/migrations-pending/202610190070_thi_thu_hs
 const b64b=/values\('mtm-hsa-thi-thu-02',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql70)?.[1];
 assert.ok(b64b);
 assert.equal(JSON.parse(Buffer.from(b64b!,'base64').toString('utf8')).id,'mtm-hsa-thi-thu-02');
-assert.deepEqual(key92('mtm-hsa-thi-thu-02'),secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json'));
 assert.match(sql70,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-02',false\)/);
 assert.match(sql70,/to_regclass\('mtm_hsa_rank\.exams'\) is null/);
 assert.ok(!sql.includes('mtm-hsa-thi-thu-02'),'069 giữ nguyên, không seed đề 02');
@@ -167,3 +159,24 @@ const meta=routeMetadata('/thi-thu-hsa','www.minhthanhmath.vn');
 assert.equal(meta.title,'Thi thử HSA miễn phí | Minh Thành Math');assert.equal(meta.robots,'index, follow');
 assert.ok(json('vercel.json').rewrites.some((x:any)=>x.source==='/thi-thu-hsa'&&x.destination==='/index.html'));
 console.log('Đạt route /thi-thu-hsa: PUBLIC_PATHS, tiêu đề, mô tả, rewrite Vercel.');
+
+// 5. Migration 092: 16 câu điền theo quy chế HSA. Tệp nằm trong kho công khai nên KHÔNG có đáp số;
+// chỉ có đề bài mới (trùng bản web), versionHash/sourceHash của bản web và hàm áp nhận đáp số lúc chạy.
+{
+ const sql92=readFileSync(join(root,'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql'),'utf8');
+ let soCau=0;
+ for(const n of ['01','02']){
+  const pub=JSON.parse(readFileSync(join(root,'src/native/exams/hsa-papers/mtm-hsa-thi-thu-'+n+'.public.json'),'utf8')).exam;
+  assert.ok(sql92.includes(`'mtm-hsa-thi-thu-${n}' then '${pub.versionHash}'`),'092 đặt versionHash đề '+n+' trùng bản web');
+  assert.ok(sql92.includes(`'mtm-hsa-thi-thu-${n}' then '${pub.sourceHash}'`),'092 đặt sourceHash đề '+n);
+  for(const q of pub.questions){const m=sql92.includes(`('mtm-hsa-thi-thu-${n}','${q.id}',$cau$`);if(!m)continue;soCau++;
+   assert.ok(sql92.includes(`('mtm-hsa-thi-thu-${n}','${q.id}',$cau$${q.prompt}$cau$)`),q.id+': đề bài trong 092 trùng bản web');assert.equal(q.kind,'short');}
+ }
+ assert.equal(soCau,16,'092 sửa đúng 16 câu điền');
+ const code=sql92.replace(/--.*$/gm,'');
+ assert.ok(!/acceptedAnswers',jsonb_build_array\('/.test(code)&&!/"HSA0[12]-\d\d"\s*:/.test(code),'092 không chứa đáp số');
+ assert.ok(!code.includes('mtm_hsa_rank'),'092 không đụng bảng xếp hạng');
+ assert.match(code,/insert into mtm_exam_private\.exam_keys_bak_092 select \* from mtm_exam_private\.exam_keys where id in\('mtm-hsa-thi-thu-01','mtm-hsa-thi-thu-02'\)/);
+ assert.match(code,/revoke all on function mtm_exam_private\.hsa092_ap\(jsonb\) from public;/);
+ console.log('Đạt migration 092: 16 đề bài trùng bản web, không chứa đáp số, sao lưu khóa cũ, không đụng bảng xếp hạng.');
+}
