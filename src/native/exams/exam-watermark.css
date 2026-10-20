@@ -1,0 +1,16 @@
+/* Dấu chìm logo màu Minh Thành Math trên mọi đề, tài liệu công khai (luật anh Thành 20/10/2026).
+   Phủ lên trên đề, không bắt chuột; ảnh chụp màn hình đề vẫn mang logo trung tâm. */
+:is(.fr-paper, .pt-questions, .dv-questions) { position: relative; }
+:is(.fr-paper, .pt-questions, .dv-questions)::after {
+  content: '';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  background-image: url('/mtm-watermark.png'), url('/mtm-watermark.png'), url('/mtm-watermark.png');
+  background-position: center 14%, center 50%, center 86%;
+  background-size: min(64%, 520px) auto;
+  background-repeat: no-repeat;
+  opacity: 0.08;
+}
+@media print { :is(.fr-paper, .pt-questions, .dv-questions)::after { opacity: 0.1; } }

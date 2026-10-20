@@ -49,3 +49,4 @@ return <SEOProvider><SEO {...metadata}/><StructuredData/><div className={'mtm-mi
 }
 
 import './migration/r106-chrome.css';
+import './native/exams/exam-watermark.css';
