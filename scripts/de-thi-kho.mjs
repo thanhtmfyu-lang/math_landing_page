@@ -37,6 +37,7 @@ export const FILES=[
  'supabase/migrations-pending/202610190070_thi_thu_hsa_de_02.sql',
  'supabase/migrations-pending/202610190072_de_giua_ky_1.sql',
  'supabase/migrations-pending/202610200078_de_giua_ky_1_ma_02_03.sql',
+ 'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql',
 ];
 export const privateDir=(env=process.env)=>env.MTM_DE_THI_DIR||'/mnt/project-files/lo-trinh-web/dap-an-goc';
 /** Đọc một tệp đáp án: bản rõ trong máy nếu có, không thì bản gốc ở thư mục riêng; không có thì null (test chỉ chạy phần công khai). */

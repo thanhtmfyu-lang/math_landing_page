@@ -88,9 +88,15 @@ const sql=readSecret(root,'supabase/migrations-pending/202610190069_thi_thu_hsa_
 if(sql==null)console.log('BỎ QUA so seed 069/070: thiếu bản gốc (đặt MTM_DE_THI_DIR).');else{
 const b64=/values\('mtm-hsa-thi-thu-01',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql)?.[1];
 assert.ok(b64);
-const seeded=JSON.parse(Buffer.from(b64!,'base64').toString('utf8'));
+// Khóa hiện hành của 2 đề nằm ở 092 (sửa câu điền theo quy chế HSA); 069/070 giữ bản đầu cho lịch sử.
+const sql92=readSecret(root,'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql')!;
+const key92=(id:string)=>{const m=new RegExp("values\\('"+id+"',convert_from\\(decode\\('([A-Za-z0-9+/=]+)','base64'\\)").exec(sql92)?.[1];assert.ok(m,'092 thiếu '+id);return JSON.parse(Buffer.from(m!,'base64').toString('utf8'));};
+const seeded=key92('mtm-hsa-thi-thu-01');
 assert.deepEqual(seeded,secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.key.json'));
 assert.equal(seeded.versionHash,paper01.versionHash);
+assert.ok(JSON.parse(Buffer.from(b64!,'base64').toString('utf8')).id==='mtm-hsa-thi-thu-01');
+assert.match(sql92,/on conflict\(id\) do update set exam=excluded\.exam;/);
+assert.ok(!sql92.replace(/--.*$/gm,'').includes('mtm_hsa_rank'),'092 không đụng bảng xếp hạng');
 assert.match(sql,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-01',false\)/);
 assert.ok(!sql.replace(/--.*$/gm,'').includes('mtm-preview-practice-hsa-01-v1'),'069 không seed đề mẫu');
 assert.ok(!/phone|sdt|so_dien_thoai/i.test(sql.replace(/--.*$/gm,'')));
@@ -100,7 +106,8 @@ console.log('Đạt migration 069: seed đúng đề HSA số 01, không seed đ
 const sql70=readSecret(root,'supabase/migrations-pending/202610190070_thi_thu_hsa_de_02.sql')!;
 const b64b=/values\('mtm-hsa-thi-thu-02',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql70)?.[1];
 assert.ok(b64b);
-assert.deepEqual(JSON.parse(Buffer.from(b64b!,'base64').toString('utf8')),secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json'));
+assert.equal(JSON.parse(Buffer.from(b64b!,'base64').toString('utf8')).id,'mtm-hsa-thi-thu-02');
+assert.deepEqual(key92('mtm-hsa-thi-thu-02'),secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json'));
 assert.match(sql70,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-02',false\)/);
 assert.match(sql70,/to_regclass\('mtm_hsa_rank\.exams'\) is null/);
 assert.ok(!sql.includes('mtm-hsa-thi-thu-02'),'069 giữ nguyên, không seed đề 02');

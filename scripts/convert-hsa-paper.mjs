@@ -55,9 +55,16 @@ export function convertHsaPaper(sourceText,{id,title,grade=12,period='CK2',sourc
    out={...base,kind:'mc',choices,answer:q.dap_an};
   }else{
    if('lua_chon' in q)fail(where+': câu điền số có lua_chon');
+   const ps=/^([+-]?\d+)\/(\d+)$/.exec(String(q.dap_an).trim());
+   if(ps){// Quy chế HSA: điền số nguyên hoặc phân số tối giản; chấm đúng giá trị (bộ chấm rational).
+    const n=Number(ps[1]),d=Number(ps[2]),g=(a,b)=>b?g(b,a%b):Math.abs(a);if(d<2||g(n,d)!==1)fail(where+': phân số "'+q.dap_an+'" chưa tối giản');
+    if(typeof q.dap_an_so!=='number'||Math.abs(q.dap_an_so-n/d)>1e-9)fail(where+': dap_an và dap_an_so không khớp');
+    out={...base,kind:'short',mode:'rational',acceptedAnswers:[q.dap_an]};
+   }else{
    const c=canonicalDecimal(q.dap_an);if(c===null)fail(where+': đáp án điền "'+q.dap_an+'" không phải số thập phân');
    if(typeof q.dap_an_so!=='number'||canonicalDecimal(String(q.dap_an_so))!==c)fail(where+': dap_an và dap_an_so không khớp');
    out={...base,kind:'short',mode:'numeric',acceptedAnswers:[q.dap_an]};
+   }
   }
   out={...out,maxMillipoints:milli,solution:text(q.loi_giai,where+' loi_giai')};
   if(q.chum!==undefined){

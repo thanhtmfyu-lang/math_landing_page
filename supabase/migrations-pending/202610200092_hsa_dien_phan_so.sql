@@ -1,0 +1,5 @@
+-- ĐÃ GỠ ĐÁP ÁN KHỎI KHO CÔNG KHAI (20/10/2026). Kho mã công khai không chứa phần seed (đáp án, lời giải).
+-- Bản gốc đầy đủ để áp: $MTM_DE_THI_DIR/supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql (mặc định /mnt/project-files/lo-trinh-web/dap-an-goc), sinh bằng scripts/convert-hsa-paper.mjs; xem scripts/de-thi-kho.mjs.
+-- Phần đầu gốc giữ để tra cứu:
+-- 092 (20/10/2026): Đề thi thử HSA MTM 01, 02 sửa 16 câu điền theo quy chế HSA (chỉ nhập số nguyên hoặc phân số tối giản). CHƯA ÁP.
+-- Thay khóa 2 đề trong mtm_exam_private.exam_keys (đề mới, versionHash mới); câu phân số chấm bằng mode rational. Không đụng bảng xếp hạng, không xóa lượt cũ.

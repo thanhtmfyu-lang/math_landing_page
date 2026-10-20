@@ -102,11 +102,20 @@ export function validateDe(input:unknown):string[]{
 export function normShort(raw:unknown):string{
  if(typeof raw!=='string'&&typeof raw!=='number')return '';
  let s=String(raw).trim().replace(/\s+/g,'').replace(/\./g,',');
+ const ps=/^([+-]?)(\d{1,15})\/(\d{1,15})$/.exec(s);// HSA: phân số a/b, rút gọn về dạng tối giản
+ if(ps){let n=BigInt(ps[2]),d=BigInt(ps[3]);if(d===0n)return '';let a=n,b=d;while(b){[a,b]=[b,a%b];}if(a>1n){n/=a;d/=a;}const neg=ps[1]==='-'&&n!==0n;return (neg?'-':'')+n+(d===1n?'':'/'+d);}
  if(!/^[+-]?(?:\d+(?:,\d*)?|,\d+)$/.test(s))return '';
  let neg=s.startsWith('-');s=s.replace(/^[+-]/,'');
  let [i,f='']=s.split(',');i=i.replace(/^0+(?=\d)/,'')||'0';f=f.replace(/0+$/,'');
  const out=i+(f?','+f:'');if(out==='0')neg=false;
  return (neg?'-':'')+out;
+}
+
+/** Giá trị đúng của đáp số đã chuẩn hóa (phân số tối giản n/d) để 1,25 và 5/4 cùng một giá trị. */
+export function giaTriShort(v:string):string{
+ if(!v||v.includes("/"))return v;
+ const neg=v.startsWith('-'),[i,f='']=v.replace('-','').split(',');let n=BigInt(i+f),d=10n**BigInt(f.length);let a=n,b=d;while(b){[a,b]=[b,a%b];}if(a>1n){n/=a;d/=a;}
+ return (neg&&n!==0n?'-':'')+n+(d===1n?'':'/'+d);
 }
 
 export type PtTraLoi=Record<string,unknown>;
@@ -135,7 +144,7 @@ export function cham(de:PtDe,traLoi:PtTraLoi):PtKetQua{
    if(v){daLam=true;traLoiSach=v;if(v===c.dapAn)milli=max;}}
   else if(c.kieu==='ds'){const arr=Array.isArray(a)?a.slice(0,4):[];const v=[0,1,2,3].map(j=>typeof arr[j]==='boolean'?arr[j] as boolean:null);
    daLam=v.some(x=>x!==null);traLoiSach=v;yDung=v.filter((x,j)=>x!==null&&x===(c.dapAn as boolean[])[j]).length;milli=Math.round(DS_BAC[yDung]*max/1000);}
-  else if(c.kieu==='ngan'){const v=normShort(a as string);if(v){daLam=true;traLoiSach=v;const ok=[c.dapAn as string,...(c.chapNhan??[])].map(normShort);if(ok.includes(v))milli=max;}}
+  else if(c.kieu==='ngan'){const v=normShort(a as string);if(v){daLam=true;traLoiSach=v;const ok=[c.dapAn as string,...(c.chapNhan??[])].map(normShort).map(giaTriShort);if(ok.includes(giaTriShort(v)))milli=max;}}
   else if(c.kieu==='nhieu'){const v=Array.isArray(a)?[...new Set(a.filter(x=>typeof x==='string'&&/^[A-F]$/.test(x)))].sort():[];
    if(v.length){daLam=true;traLoiSach=v;if(v.join()===[...(c.dapAn as string[])].sort().join())milli=max;}}
   else if(c.kieu==='keo-tha'){const n=c.o?.length??0,arr=Array.isArray(a)?a.slice(0,n):[];const v=Array.from({length:n},(_,j)=>Number.isSafeInteger(arr[j])?arr[j] as number:null);
