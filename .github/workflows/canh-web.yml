@@ -1,0 +1,47 @@
+# Canh web minhthanhmath.vn 24/7: 10 phút một lần mở các trang và API chính.
+# Lỗi thì mở (hoặc ghi thêm vào) issue có nhãn "web-loi"; web sống lại thì
+# đóng issue. Javis đọc issue nhãn "web-loi" để báo nhóm Zalo quản lý.
+name: Canh web 24/7
+
+on:
+  schedule:
+    - cron: '*/10 * * * *'
+  workflow_dispatch:
+
+permissions:
+  issues: write
+  contents: read
+
+concurrency:
+  group: canh-web
+  cancel-in-progress: false
+
+jobs:
+  canh:
+    runs-on: ubuntu-latest
+    timeout-minutes: 8
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: scripts
+      - name: Kiểm tra web
+        id: kt
+        run: |
+          loi=0; node scripts/canh-web.mjs > ket-qua.md || loi=1
+          echo "loi=$loi" >> "$GITHUB_OUTPUT"; cat ket-qua.md
+      - name: Mở hoặc đóng issue
+        env:
+          GH_TOKEN: ${{ github.token }}
+          LOI: ${{ steps.kt.outputs.loi }}
+        run: |
+          gh label create web-loi --color d73a4a --description "Canh web 24/7 thấy lỗi" 2>/dev/null || true
+          so=$(gh issue list --label web-loi --state open --json number --jq '.[0].number // empty')
+          if [ "$LOI" != "0" ]; then
+            if [ -z "$so" ]; then
+              gh issue create --title "Web minhthanhmath.vn đang lỗi" --label web-loi --body-file ket-qua.md
+            else
+              gh issue comment "$so" --body-file ket-qua.md
+            fi
+          elif [ -n "$so" ]; then
+            gh issue close "$so" --comment "Web đã chạy lại bình thường lúc $(TZ=Asia/Ho_Chi_Minh date '+%H:%M %d/%m/%Y')."
+          fi
