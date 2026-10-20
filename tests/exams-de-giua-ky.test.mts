@@ -8,11 +8,14 @@ import {validateMtmAssessment} from '../src/native/exams/mtm-profile';
 import {scorePracticeAssessment} from '../src/native/exams/flexible-profile';
 import {GK1_PAPERS,GK1_GRADES,parseGk1Grade,gk1Gaps,gk1Interest,formatGk1Score,gk1Url} from '../src/native/exams/de-giua-ky';
 import {routeMetadata,PUBLIC_PATHS} from '../src/migration/route-policy';
+import {readSecret} from '../scripts/de-thi-kho.mjs';
 // Đề ôn giữa kỳ I Toán 10/11/12 (Quyết định số 8): tệp của tổ soạn đề chuyển nguyên văn sang định dạng đề web. Không sửa đề, đáp án, lời giải.
 const root=process.env.MTM_ROOT!;
 const require=createRequire(join(root,'package.json'));
 const read=(p:string)=>readFileSync(join(root,p),'utf8');
 const json=(p:string)=>JSON.parse(read(p));
+// Đáp án, lời giải, tệp đề gốc và migration seed không còn trong kho công khai (20/10): đọc bản gốc ở thư mục riêng (MTM_DE_THI_DIR).
+const secret=(p:string)=>{const t=readSecret(root,p);if(t==null){console.log('BỎ QUA phần đáp án: thiếu bản gốc '+p+' (đặt MTM_DE_THI_DIR).');process.exit(0);}return t;};
 const React=require('react'),{renderToStaticMarkup}=require('react-dom/server'),{buildSync}=require('esbuild');
 const code=buildSync({entryPoints:[join(root,'src/native/exams/GiuaKyReader.tsx')],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',loader:{'.css':'empty','.json':'json'},logLevel:'silent'}).outputFiles[0].text;
 const mod={exports:{} as any};new Function('require','module','exports',code)((id:string)=>id.endsWith('.css')?{}:require(id),mod,mod.exports);
@@ -20,17 +23,17 @@ const {GkText,default:GiuaKyReader}=mod.exports;
 const html=(c:any,p:any)=>renderToStaticMarkup(React.createElement(c,p));
 const earnedOf=(key:any,a:unknown)=>{const r=scorePracticeAssessment(key,a,'qa');assert.ok(r.ok,JSON.stringify(r));return (r as any).finalMillipoints??(r as any).earnedMillipoints;};
 const fullAnswers=(key:any,dot=false)=>Object.fromEntries(key.questions.map((q:any)=>[q.id,q.kind==='short'?(dot?q.acceptedAnswers[0].replace(',','.'):q.acceptedAnswers[0]):q.answer]));
-const sql=read(GK1_MIGRATION);
+const sql=secret(GK1_MIGRATION);
 
 for(const p of SOURCES){
  const tag='[lớp '+p.grade+'] ';
- const sourceText=read('tools/de-giua-ky-1/'+p.file),src=JSON.parse(sourceText);
+ const sourceText=secret('tools/de-giua-ky-1/'+p.file),src=JSON.parse(sourceText);
  const delivered=`/mnt/project-files/cong-ty-ai/xuong-y-tuong/de-giua-ky-1/lop-${p.grade}/${p.file}`;
  if(existsSync(delivered))assert.equal(readFileSync(delivered,'utf8'),sourceText,'Bản trong repo phải trùng byte với tệp tổ soạn đề giao.');
  // 0. Kiểm định của tổ soạn đề: đủ 22/22 câu KHỚP (từng ý Đ/S nếu có ghi riêng).
  assert.equal(src.tong_hop_kiem_dinh.so_cau_khop,22);assert.equal(src.tong_hop_kiem_dinh.tong_so_cau,22);
  assert.ok(src.cau_hoi.every((q:any)=>q.kiem_dinh?.ket_qua==='KHỚP'&&(!q.kiem_dinh.tung_y||Object.values(q.kiem_dinh.tung_y).every(v=>v==='KHỚP'))));
- const key=json('src/native/exams/de-giua-ky/'+p.id+'.key.json'),pub=json('src/native/exams/de-giua-ky/'+p.id+'.public.json');
+ const key=JSON.parse(secret('src/native/exams/de-giua-ky/'+p.id+'.key.json')),pub=json('src/native/exams/de-giua-ky/'+p.id+'.public.json');
  assert.equal(GK1_PAPERS[p.grade as 10|11|12].examId,p.id);
 
  // 1. Tệp sinh ra đúng bằng kết quả chạy lại bộ chuyển (không ai sửa tay).
