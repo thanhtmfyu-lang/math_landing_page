@@ -22,7 +22,7 @@ export function createSupabaseRepository(env:{SUPABASE_URL:string;SUPABASE_SERVI
 }
 // 20/10: CSDL quá tải không được báo thành sai thông tin hay thử nhiều lần.
 export const BUSY='Hệ thống đang bận, chưa kiểm được thông tin. Em chờ 1–2 phút rồi bấm Vào bài lại.';
-export const READ_RPC_MS=8000,READ_RPCS=new Set(['mtm_btvn_read','mtm_btvn_assets','mtm_btvn_classes']);
+export const READ_RPC_MS=25000,READ_RPCS=new Set(['mtm_btvn_read','mtm_btvn_assets','mtm_btvn_classes']);
 /** Ký URL ảnh cũng có hạn chờ: quá hạn coi như ảnh chưa sẵn sàng, HS được báo thử lại. */
 export function withTimeout<T>(work:PromiseLike<T>,ms:number):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;
