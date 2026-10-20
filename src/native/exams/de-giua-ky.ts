@@ -9,10 +9,15 @@ export const GK1_PAPERS:Readonly<Record<Gk1Grade,Gk1Paper>>={
  11:{grade:11,examId:'mtm-gk1-toan-11-01',scope:'Hàm số lượng giác, phương trình lượng giác · Dãy số, cấp số cộng, cấp số nhân',tone:'coral'},
  12:{grade:12,examId:'mtm-gk1-toan-12-01',scope:'Ứng dụng đạo hàm, khảo sát hàm số · Vectơ trong không gian',tone:'mint'},
 };
+/** Mã đề mỗi lớp (01 mở 19/10; 02, 03 thêm 20/10). Đề mã 01 giữ đường dẫn cũ ?lop=1x; mã khác thêm &de=0y. */
+export const GK1_MA=['01','02','03'] as const;
+export type Gk1Ma=typeof GK1_MA[number];
+export const gk1Paper=(grade:Gk1Grade,ma:Gk1Ma):Gk1Paper=>({...GK1_PAPERS[grade],examId:`mtm-gk1-toan-${grade}-${ma}`});
+export function parseGk1Ma(search:string):Gk1Ma{const raw=new URLSearchParams(search).get('de');return (GK1_MA as readonly string[]).includes(raw??'')?raw as Gk1Ma:'01';}
 export type Gk1Topic={chuDe:string;mucDo:'NB'|'TH'|'VD'|'VDC'};
 /** ?lop=10|11|12 (deep link từ bài đăng, Zalo); giá trị khác trả null để trang hiện phần chọn lớp. */
 export function parseGk1Grade(search:string):Gk1Grade|null{const raw=new URLSearchParams(search).get('lop');return raw==='10'||raw==='11'||raw==='12'?Number(raw) as Gk1Grade:null;}
-export const gk1Url=(grade:Gk1Grade)=>GK1_PATH+'?lop='+grade;
+export const gk1Url=(grade:Gk1Grade,ma:Gk1Ma='01')=>GK1_PATH+'?lop='+grade+(ma==='01'?'':'&de='+ma);
 /** Điểm thang 10 từ phần nghìn: 7350 -> "7,35". */
 export const formatGk1Score=(millipoints:number)=>(Math.round(millipoints)/1000).toLocaleString('vi-VN',{maximumFractionDigits:3});
 /** "Chỗ cần vá": chủ đề của các câu chưa đủ điểm, ưu tiên câu mức Vận dụng / Vận dụng cao, rồi câu mất nhiều điểm hơn,

@@ -21,9 +21,22 @@ export const FILES=[
  'tools/de-giua-ky-1/de-giua-ky-1-toan-10-mtm-01.json',
  'tools/de-giua-ky-1/de-giua-ky-1-toan-11-mtm-01.json',
  'tools/de-giua-ky-1/de-giua-ky-1-toan-12-mtm-01.json',
+ 'src/native/exams/de-giua-ky/mtm-gk1-toan-10-02.key.json',
+ 'src/native/exams/de-giua-ky/mtm-gk1-toan-11-02.key.json',
+ 'src/native/exams/de-giua-ky/mtm-gk1-toan-12-02.key.json',
+ 'src/native/exams/de-giua-ky/mtm-gk1-toan-10-03.key.json',
+ 'src/native/exams/de-giua-ky/mtm-gk1-toan-11-03.key.json',
+ 'src/native/exams/de-giua-ky/mtm-gk1-toan-12-03.key.json',
+ 'tools/de-giua-ky-1/de-giua-ky-1-toan-10-mtm-02.json',
+ 'tools/de-giua-ky-1/de-giua-ky-1-toan-11-mtm-02.json',
+ 'tools/de-giua-ky-1/de-giua-ky-1-toan-12-mtm-02.json',
+ 'tools/de-giua-ky-1/de-giua-ky-1-toan-10-mtm-03.json',
+ 'tools/de-giua-ky-1/de-giua-ky-1-toan-11-mtm-03.json',
+ 'tools/de-giua-ky-1/de-giua-ky-1-toan-12-mtm-03.json',
  'supabase/migrations-pending/202610190069_thi_thu_hsa_xep_hang.sql',
  'supabase/migrations-pending/202610190070_thi_thu_hsa_de_02.sql',
  'supabase/migrations-pending/202610190072_de_giua_ky_1.sql',
+ 'supabase/migrations-pending/202610200078_de_giua_ky_1_ma_02_03.sql',
 ];
 export const privateDir=(env=process.env)=>env.MTM_DE_THI_DIR||'/mnt/project-files/lo-trinh-web/dap-an-goc';
 /** Đọc một tệp đáp án: bản rõ trong máy nếu có, không thì bản gốc ở thư mục riêng; không có thì null (test chỉ chạy phần công khai). */

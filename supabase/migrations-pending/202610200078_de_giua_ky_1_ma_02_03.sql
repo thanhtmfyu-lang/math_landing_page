@@ -1,0 +1,12 @@
+-- ĐÃ GỠ ĐÁP ÁN KHỎI KHO CÔNG KHAI (20/10/2026). Kho mã công khai không chứa phần seed (đáp án, lời giải).
+-- Bản gốc đầy đủ để áp: $MTM_DE_THI_DIR/supabase/migrations-pending/202610200078_de_giua_ky_1_ma_02_03.sql (mặc định /mnt/project-files/lo-trinh-web/dap-an-goc), sinh bằng scripts/convert-de-giua-ky.mjs; xem scripts/de-thi-kho.mjs.
+-- Phần đầu gốc giữ để tra cứu:
+-- 078 (20/10/2026): Đề ôn giữa kỳ I Toán 10, 11, 12 mã 02 và 03 cho trang /de-giua-ky-1 (?lop=1x&de=0y). CHƯA ÁP.
+-- Cùng khuôn 072 (đã áp): chỉ thêm 6 khóa đề mới; 077 là phòng thi thử nên file này dùng 078.
+-- Phụ thuộc 060 (mtm_exam_private.exam_keys, mtm_exam_start/mtm_exam_submit, bộ chấm mtm_exam_private.grade). Không cần 069/070/071.
+-- Không đổi bộ chấm: grade() của 060 đã chấm câu đúng/sai theo pointsByCorrectCount [0,100,250,500,1000]
+-- (đúng 1 ý 0,1; 2 ý 0,25; 3 ý 0,5; 4 ý 1 điểm), trắc nghiệm 250, trả lời ngắn 500 (nhận dấu phẩy hoặc chấm thập phân);
+-- mtm_exam_start của 060 nhận rubric MTM-THPT-3PART-2025-v1. Migration này chỉ seed 6 khóa đề (static_visible=true để mở lượt máy chủ).
+-- JSON dưới đây đúng bằng src/native/exams/de-giua-ky/<id>.key.json, sinh bằng: node scripts/convert-de-giua-ky.mjs
+-- Đáp án và lời giải chỉ trả về sau khi nộp (public_exam(e,true) của 060). Trang không có bảng xếp hạng nên không seed mtm_hsa_rank.
+-- Tạm đóng một đề: update mtm_exam_private.exam_keys set static_visible=false where id='<id>';

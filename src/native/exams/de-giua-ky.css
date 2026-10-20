@@ -28,6 +28,11 @@
 .gk1-picker.is-compact .gk1-grade-text{gap:2px}
 .gk1-picker.is-compact .gk1-grade-text strong{font-size:16px}
 .gk1-picker.is-compact .gk1-grade-text em{font-size:12.5px}
+.gk1-ma{display:flex;flex-wrap:wrap;gap:10px;margin:-6px 0 20px}
+.gk1-ma-link{padding:9px 18px;border:1px solid var(--gk-line);border-radius:999px;background:#fff;color:var(--gk-navy);font-size:15px;font-weight:800;text-decoration:none}
+.gk1-ma-link:hover{border-color:var(--gk-navy)}
+.gk1-ma-link:focus-visible{outline:3px solid #9cb8e6;outline-offset:2px}
+.gk1-ma-link[aria-current=page]{background:var(--gk-navy);border-color:var(--gk-navy);color:var(--gk-yellow)}
 
 .gk1-card{margin:0 0 18px;padding:20px;border:1px solid var(--gk-line);border-radius:16px;background:#fff;box-shadow:0 16px 36px -32px #21326973}
 .gk1-card h2{margin:0 0 12px;font-size:18px;line-height:1.35;font-weight:800}

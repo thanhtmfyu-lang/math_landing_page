@@ -2,11 +2,11 @@ import assert from 'node:assert/strict';
 import {readFileSync,existsSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {join} from 'node:path';
-import {convertGiuaKy,gk1Points,GK1_PAPERS as SOURCES,GK1_MIGRATION,GK1_RUBRIC} from '../scripts/convert-de-giua-ky.mjs';
+import {convertGiuaKy,gk1Points,GK1_PAPERS as SOURCES,GK1_MIGRATION,GK1_MIGRATION_0203,GK1_RUBRIC} from '../scripts/convert-de-giua-ky.mjs';
 import {validatePracticeExam,validateQuestionOnlyPracticeExam} from '../src/native/exams/data';
 import {validateMtmAssessment} from '../src/native/exams/mtm-profile';
 import {scorePracticeAssessment} from '../src/native/exams/flexible-profile';
-import {GK1_PAPERS,GK1_GRADES,parseGk1Grade,gk1Gaps,gk1Interest,formatGk1Score,gk1Url} from '../src/native/exams/de-giua-ky';
+import {GK1_GRADES,GK1_MA,parseGk1Grade,parseGk1Ma,gk1Paper,gk1Gaps,gk1Interest,formatGk1Score,gk1Url} from '../src/native/exams/de-giua-ky';
 import {routeMetadata,PUBLIC_PATHS} from '../src/migration/route-policy';
 import {readSecret} from '../scripts/de-thi-kho.mjs';
 // Đề ôn giữa kỳ I Toán 10/11/12 (Quyết định số 8): tệp của tổ soạn đề chuyển nguyên văn sang định dạng đề web. Không sửa đề, đáp án, lời giải.
@@ -23,21 +23,21 @@ const {GkText,default:GiuaKyReader}=mod.exports;
 const html=(c:any,p:any)=>renderToStaticMarkup(React.createElement(c,p));
 const earnedOf=(key:any,a:unknown)=>{const r=scorePracticeAssessment(key,a,'qa');assert.ok(r.ok,JSON.stringify(r));return (r as any).finalMillipoints??(r as any).earnedMillipoints;};
 const fullAnswers=(key:any,dot=false)=>Object.fromEntries(key.questions.map((q:any)=>[q.id,q.kind==='short'?(dot?q.acceptedAnswers[0].replace(',','.'):q.acceptedAnswers[0]):q.answer]));
-const sql=secret(GK1_MIGRATION);
+const sql=secret(GK1_MIGRATION),sql0203=secret(GK1_MIGRATION_0203);
 
 for(const p of SOURCES){
- const tag='[lớp '+p.grade+'] ';
+ const tag='[lớp '+p.grade+' mã '+p.ma+'] ',seed=p.ma==='01'?sql:sql0203;
  const sourceText=secret('tools/de-giua-ky-1/'+p.file),src=JSON.parse(sourceText);
- const delivered=`/mnt/project-files/cong-ty-ai/xuong-y-tuong/de-giua-ky-1/lop-${p.grade}/${p.file}`;
+ const delivered=p.ma==='01'?`/mnt/project-files/cong-ty-ai/xuong-y-tuong/de-giua-ky-1/lop-${p.grade}/${p.file}`:'/khong-co';
  if(existsSync(delivered))assert.equal(readFileSync(delivered,'utf8'),sourceText,'Bản trong repo phải trùng byte với tệp tổ soạn đề giao.');
  // 0. Kiểm định của tổ soạn đề: đủ 22/22 câu KHỚP (từng ý Đ/S nếu có ghi riêng).
  assert.equal(src.tong_hop_kiem_dinh.so_cau_khop,22);assert.equal(src.tong_hop_kiem_dinh.tong_so_cau,22);
  assert.ok(src.cau_hoi.every((q:any)=>q.kiem_dinh?.ket_qua==='KHỚP'&&(!q.kiem_dinh.tung_y||Object.values(q.kiem_dinh.tung_y).every(v=>v==='KHỚP'))));
  const key=JSON.parse(secret('src/native/exams/de-giua-ky/'+p.id+'.key.json')),pub=json('src/native/exams/de-giua-ky/'+p.id+'.public.json');
- assert.equal(GK1_PAPERS[p.grade as 10|11|12].examId,p.id);
+ assert.equal(gk1Paper(p.grade as 10|11|12,p.ma as '01').examId,p.id);
 
  // 1. Tệp sinh ra đúng bằng kết quả chạy lại bộ chuyển (không ai sửa tay).
- const fresh=convertGiuaKy(sourceText,{id:p.id,grade:p.grade});
+ const fresh=convertGiuaKy(sourceText,{id:p.id,grade:p.grade,ma:p.ma});
  assert.deepEqual(key,fresh.full);assert.deepEqual(pub,fresh.public);
  console.log(tag+'Đạt: tệp đề web đúng bằng kết quả chạy lại scripts/convert-de-giua-ky.mjs; kiểm định 22/22 KHỚP.');
 
@@ -113,10 +113,10 @@ for(const p of SOURCES){
  console.log(tag+`Đạt hiển thị: ${formulas} công thức dựng được, 22 câu, 4 câu Đ/S đủ 16 ý.`);
 
  // 8. Migration 072 seed đúng khóa đề client đang dùng (cùng versionHash), mở lượt máy chủ.
- const b64=new RegExp(`values\\('${p.id}',convert_from\\(decode\\('([A-Za-z0-9+/=]+)','base64'\\),'UTF8'\\)::jsonb,true\\) on conflict\\(id\\) do nothing;`).exec(sql)?.[1];
- assert.ok(b64,'072 thiếu đề '+p.id);
+ const b64=new RegExp(`values\\('${p.id}',convert_from\\(decode\\('([A-Za-z0-9+/=]+)','base64'\\),'UTF8'\\)::jsonb,true\\) on conflict\\(id\\) do nothing;`).exec(seed)?.[1];
+ assert.ok(b64,'migration thiếu đề '+p.id);
  assert.deepEqual(JSON.parse(Buffer.from(b64!,'base64').toString('utf8')),key);
- console.log(tag+'Đạt migration 072: seed đúng khóa đề, static_visible=true.');
+ console.log(tag+'Đạt migration '+(p.ma==='01'?'072':'078')+': seed đúng khóa đề, static_visible=true.');
 }
 
 // 9. Migration 072: chỉ seed exam_keys, có chặn khi chưa áp 060, không đụng bảng xếp hạng hay bộ chấm.
@@ -127,10 +127,20 @@ assert.ok(!/mtm_hsa_rank|create |drop |alter |grant |revoke |update |delete /i.t
 assert.equal((body.match(/insert into mtm_exam_private\.exam_keys/g)??[]).length,3);
 assert.ok(!/phone|sdt|so_dien_thoai/i.test(body));
 console.log('Đạt migration 072: 3 khóa đề, chặn khi thiếu 060, không tạo/sửa/cấp quyền gì khác.');
+// 9b. Migration 078 (mã 02, 03): cùng khuôn, 6 khóa đề mới, không đụng 3 đề mã 01 đã áp.
+assert.match(sql0203,/^-- 078 /);assert.match(sql0203,/raise exception '078 cần áp 060/);assert.match(sql0203,/\nbegin;\n[\s\S]*\ncommit;\n$/);
+const body2=sql0203.replace(/--.*$/gm,'');
+assert.ok(!/mtm_hsa_rank|create |drop |alter |grant |revoke |update |delete /i.test(body2));
+assert.equal((body2.match(/insert into mtm_exam_private\.exam_keys/g)??[]).length,6);assert.ok(!/-01'/.test(body2));
+assert.ok(read(GK1_MIGRATION_0203).startsWith('-- ĐÃ GỠ ĐÁP ÁN'),'kho công khai chỉ giữ bản STUB của 078');
+console.log('Đạt migration 078: 6 khóa đề mã 02/03, không đụng mã 01; kho công khai chỉ có STUB.');
 
 // 10. Chỗ cần vá, ghi chú đăng ký, đường dẫn lớp.
 assert.equal(parseGk1Grade('?lop=11'),11);assert.equal(parseGk1Grade('?lop=9'),null);assert.equal(parseGk1Grade(''),null);assert.equal(parseGk1Grade('?lop=hsa'),null);
 assert.deepEqual(GK1_GRADES,[10,11,12]);assert.equal(gk1Url(12),'/de-giua-ky-1?lop=12');
+assert.deepEqual(GK1_MA,['01','02','03']);assert.equal(gk1Url(10,'03'),'/de-giua-ky-1?lop=10&de=03');assert.equal(gk1Url(11,'01'),'/de-giua-ky-1?lop=11');
+assert.equal(parseGk1Ma('?lop=10&de=02'),'02');assert.equal(parseGk1Ma('?lop=10'),'01');assert.equal(parseGk1Ma('?lop=10&de=09'),'01');
+assert.equal(gk1Paper(12,'02').examId,'mtm-gk1-toan-12-02');
 assert.equal(formatGk1Score(7350),'7,35');assert.equal(formatGk1Score(10000),'10');
 const topics={a:{chuDe:'Mệnh đề',mucDo:'NB'},b:{chuDe:'Tập hợp',mucDo:'VD'},c:{chuDe:'Tam giác',mucDo:'TH'},d:{chuDe:'Tập hợp',mucDo:'VDC'},e:{chuDe:'Bất phương trình',mucDo:'VDC'},f:{chuDe:'Cosin',mucDo:'TH'}} as const;
 const rows=[{id:'a',earnedMillipoints:0,maxMillipoints:250},{id:'b',earnedMillipoints:100,maxMillipoints:1000},{id:'c',earnedMillipoints:0,maxMillipoints:500},{id:'d',earnedMillipoints:0,maxMillipoints:500},{id:'e',earnedMillipoints:500,maxMillipoints:500},{id:'f',earnedMillipoints:null,maxMillipoints:250}];

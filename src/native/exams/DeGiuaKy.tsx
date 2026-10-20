@@ -11,7 +11,7 @@ import {resultFor} from './result';
 import {readRemote,type RemoteResult} from './server-attempt';
 import type {PracticeExam} from './data';
 import GiuaKyReader,{gkRich} from './GiuaKyReader';
-import {GK1_GRADES,GK1_PAPERS,formatGk1Score,gk1Gaps,gk1Interest,gk1Url,parseGk1Grade,type Gk1Grade,type Gk1Paper,type Gk1Topic} from './de-giua-ky';
+import {GK1_GRADES,GK1_MA,GK1_PAPERS,formatGk1Score,gk1Gaps,gk1Interest,gk1Paper,gk1Url,parseGk1Grade,parseGk1Ma,type Gk1Grade,type Gk1Ma,type Gk1Paper,type Gk1Topic} from './de-giua-ky';
 import './exams.css';
 import './de-giua-ky.css';
 const ServerExamAttempt=lazy(()=>import('./ServerExamAttempt'));
@@ -34,6 +34,12 @@ function localOutcome(exam:PracticeExam,draft:Draft|null):Outcome|null{
 const remoteOutcome=(r:RemoteResult):Outcome=>({score:r.score.ok?r.score.finalMillipoints??r.score.earnedMillipoints:0,elapsedMs:Math.max(0,Math.min(r.submittedAt,r.deadline)-r.startedAt),rows:r.score.ok?r.score.rows:[]});
 const LEVEL:Record<Gk1Topic['mucDo'],string>={NB:'Nhận biết',TH:'Thông hiểu',VD:'Vận dụng',VDC:'Vận dụng cao'};
 const scrollToRegister=()=>document.getElementById('register')?.scrollIntoView({behavior:window.matchMedia('(prefers-reduced-motion: reduce)').matches?'auto':'smooth',block:'start'});
+
+function MaPicker({grade,current}:{grade:Gk1Grade;current:Gk1Ma}){
+ return <nav className="gk1-ma" aria-label="Chọn mã đề">
+  {GK1_MA.map(m=><Link key={m} href={gk1Url(grade,m)} className="gk1-ma-link" aria-current={current===m?'page':undefined}>Đề {m}</Link>)}
+ </nav>;
+}
 
 function GradePicker({current}:{current:Gk1Grade|null}){
  return <nav className={'gk1-picker'+(current?' is-compact':'')} aria-label="Chọn lớp">
@@ -92,13 +98,14 @@ function Room({paper}:{paper:Gk1Paper}){
 }
 
 export default function DeGiuaKy({search}:{search:string}){
- const grade=parseGk1Grade(search);
+ const grade=parseGk1Grade(search),ma=parseGk1Ma(search);
  return <div className="gk1-page ep-root">
   <R106PageIntro className="gk1-intro" eyebrow="MINH THÀNH MATH · MIỄN PHÍ" title={<>Đề giữa kỳ I Toán 10, 11, 12 <span className="gk1-hl">có lời giải</span></>} description={<><p>Đề ôn luyện giữa kỳ I năm học 2026–2027 do MTM biên soạn theo cấu trúc đề kiểm tra mới: 22 câu, 90 phút, thang 10 điểm. Làm ngay trên web, nộp bài là có điểm, lời giải chi tiết từng câu và 3 chỗ cần vá.</p><p>Mỗi câu đã được tổ soạn đề tính lại độc lập trước khi phát.</p></>}>
    <ul className="gk1-facts"><li><strong>22</strong><span>câu</span></li><li><strong>90</strong><span>phút</span></li><li><strong>10</strong><span>điểm</span></li></ul>
   </R106PageIntro>
   <GradePicker current={grade}/>
-  {grade?<Room key={grade} paper={GK1_PAPERS[grade]}/>:<Overview/>}
+  {grade&&<MaPicker grade={grade} current={ma}/>}
+  {grade?<Room key={grade+'-'+ma} paper={gk1Paper(grade,ma)}/>:<Overview/>}
   <p className="gk1-more">Ôn thêm: <Link href="/thi-thu">Thi thử Toán theo lớp</Link> · <Link href="/luyen-tap">Luyện tập theo chương</Link> · Hotline và Zalo <a href="tel:0967365413">0967 365 413</a></p>
   <RegisterSection/>
  </div>;
