@@ -1,5 +1,6 @@
 import {DV_TRACK_LABEL,type DvTrack,type Result} from './engine';
 import {HS_GOAL_LABEL,HS_HEARD_LABEL,lichRanhText,type HoSo} from './ho-so';
+import {THU_LABEL,buoiFromId,buoiGanNhat} from './lich-lop';
 // Phiếu dạng chữ: học sinh xem/in ở trang kết quả; máy chủ lưu kèm lead để bot báo quản lý lớp đúng một mẫu.
 const STATUS={vung:'vững','cung-co':'cần củng cố',hong:'hổng'} as const;
 const vn=(iso:string)=>iso.split('-').reverse().join('/');
@@ -16,13 +17,15 @@ export function resultSummary({name,khoi,school,result:r}:{name:string;khoi:DvTr
  ].join('\n');
 }
 /** Phiếu học thử mới theo thứ tự cột danh sách "Học sinh mới" (Lớp, Họ tên, Trường, Ngày sinh, SĐT, Lịch học, NOTE). */
-export function hoSoSummary(h:HoSo){
+export function hoSoSummary(h:HoSo,now=Date.now()){
+ const gan=buoiGanNhat(h.lichChon,now),gb=gan&&buoiFromId(gan.id);
  return [`Học thử mới qua kiểm tra đầu vào web · ${DV_TRACK_LABEL[h.khoi]}`,
   `Họ tên: ${h.hoTen} · sinh ${vn(h.ngaySinh)}`,
   `Trường: ${h.truong}${h.lopTruong?' · lớp '+h.lopTruong:''}`,
-  `Phụ huynh: ${h.phuHuynh} · ${h.sdtPh}${h.sdtHs?' · SĐT học sinh '+h.sdtHs:''}`,
+  `Phụ huynh: ${h.phuHuynh} · ${h.sdtPh} · SĐT học sinh ${h.sdtHs}`,
   `Hình thức: ${h.hinhThuc==='online'?'Online':'Trực tiếp tại trung tâm'}`,
-  `Lịch rảnh: ${lichRanhText(h)}`,
+  `Buổi em đi học được: ${lichRanhText(h)}`,
+  gan&&gb&&`Buổi học thử gần nhất: ${THU_LABEL[gb.thu]} ${vn(gan.ngay)} lúc ${gan.gio}, lớp ${gb.lop}`,
   h.mucTieu&&`Mục tiêu: ${HS_GOAL_LABEL[h.mucTieu as keyof typeof HS_GOAL_LABEL]}`,
   h.nguon&&`Biết MTM qua: ${HS_HEARD_LABEL[h.nguon as keyof typeof HS_HEARD_LABEL]}`,
   h.ghiChu&&`Ghi chú: ${h.ghiChu}`,

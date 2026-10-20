@@ -5,7 +5,8 @@ import {Link} from '../../migration/navigation';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
 import {describeLeadSource,storedLeadSource} from '../../components/lead-source';
 import {DV_TRACKS,DV_TRACK_LABEL,LEVEL_LABEL,PART_LABEL,isDvTrack,type DvTrack,type Paper,type Result} from '../../../server/dau-vao/engine';
-import {HS_DAYS,HS_GOALS,HS_GOAL_LABEL,HS_HEARD,HS_HEARD_LABEL,HS_SLOTS,HS_SLOT_LABEL,validateHoSo,type HoSo} from '../../../server/dau-vao/ho-so';
+import {CHON_BUOI,HS_GOALS,HS_GOAL_LABEL,HS_HEARD,HS_HEARD_LABEL,validateHoSo,type HoSo} from '../../../server/dau-vao/ho-so';
+import {LICH_CHUP,THU_LABEL,buoiCuaKhoi,type Buoi} from '../../../server/dau-vao/lich-lop';
 import {entranceLeadPayload,resultSummary} from './entrance-test';
 import './hsa-mock.css';
 import './entrance-test.css';
@@ -36,19 +37,27 @@ export default function EntranceTest({search}:{search:string}){
  </div>;
 }
 
-type Form={hoTen:string;ngaySinh:string;truong:string;lopTruong:string;phuHuynh:string;sdtPh:string;sdtHs:string;hinhThuc:''|'truc-tiep'|'online';ngayRanh:string[];caRanh:string[];mucTieu:string;nguon:string;ghiChu:string};
-const EMPTY:Form={hoTen:'',ngaySinh:'',truong:'',lopTruong:'',phuHuynh:'',sdtPh:'',sdtHs:'',hinhThuc:'',ngayRanh:[],caRanh:[],mucTieu:'',nguon:'',ghiChu:''};
+type Form={hoTen:string;ngaySinh:string;truong:string;lopTruong:string;phuHuynh:string;sdtPh:string;sdtHs:string;hinhThuc:''|'truc-tiep'|'online';lichChon:string[];mucTieu:string;nguon:string;ghiChu:string};
+const EMPTY:Form={hoTen:'',ngaySinh:'',truong:'',lopTruong:'',phuHuynh:'',sdtPh:'',sdtHs:'',hinhThuc:'',lichChon:[],mucTieu:'',nguon:'',ghiChu:''};
 // Bản nháp phiếu chỉ giữ trong phiên này (sessionStorage) để lỡ tải lại không phải gõ lại; không lưu lâu trên máy dùng chung.
-const loadForm=():Form=>{try{return {...EMPTY,...JSON.parse(sessionStorage.getItem(FORM_KEY)??'{}')};}catch{return EMPTY;}};
+const loadForm=():Form=>{try{const {ngayRanh:_d,caRanh:_c,...f}=JSON.parse(sessionStorage.getItem(FORM_KEY)??'{}');return {...EMPTY,...f,lichChon:Array.isArray(f.lichChon)?f.lichChon:[]};}catch{return EMPTY;}};
 function Start({initial,onStart}:{initial:DvTrack;onStart:(s:Saved)=>void}){
  const [khoi,setKhoi]=useState<DvTrack>(initial),[f,setF]=useState<Form>(loadForm),[consent,setConsent]=useState(false);
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
  const summer=[6,7,8].includes(new Date().getMonth()+1);
  const set=<K extends keyof Form>(k:K,v:Form[K])=>{setError('');setF(o=>{const n={...o,[k]:v};try{sessionStorage.setItem(FORM_KEY,JSON.stringify(n));}catch{/* bỏ qua */}return n;});};
- const toggle=(k:'ngayRanh'|'caRanh',v:string)=>set(k,f[k].includes(v)?f[k].filter(x=>x!==v):[...f[k],v]);
+ const toggle=(id:string)=>set('lichChon',f.lichChon.includes(id)?f.lichChon.filter(x=>x!==id):[...f.lichChon,id]);
+ // Thời khóa biểu các lớp của khối: hiện ngay bản chụp, rồi thay bằng lịch máy chủ đọc từ tab Lich_lop.
+ const [buoi,setBuoi]=useState<Buoi[]>(()=>buoiCuaKhoi(LICH_CHUP,initial,vnToday()));
+ useEffect(()=>{let live=true;setBuoi(buoiCuaKhoi(LICH_CHUP,khoi,vnToday()));
+  fetch(API+'?lich='+khoi,{headers:{Accept:'application/json'}}).then(r=>r.ok?r.json():null).then(d=>{if(live&&Array.isArray(d?.buoi)&&d.buoi.length)setBuoi(d.buoi);}).catch(()=>{/* giữ bản chụp */});
+  return ()=>{live=false;};},[khoi]);
+ useEffect(()=>{const ok=new Set(buoi.map(b=>b.id));if(f.lichChon.some(x=>!ok.has(x)))set('lichChon',f.lichChon.filter(x=>ok.has(x)));},[buoi]); // eslint-disable-line react-hooks/exhaustive-deps
+ const lop=useMemo(()=>{const m=new Map<string,Buoi[]>();for(const b of buoi)m.set(b.lop,[...(m.get(b.lop)??[]),b]);return [...m];},[buoi]);
  const submit=async(e:React.FormEvent)=>{e.preventDefault();setError('');
   const h=validateHoSo({...f,khoi,hinhThuc:f.hinhThuc||undefined,dongY:consent,leadSource:describeLeadSource(storedLeadSource())},vnToday());
   if(typeof h==='string'){setError(h);return;}
+  if(buoi.length&&!h.lichChon.length){setError(CHON_BUOI);return;}
   setBusy(true);
   try{
    let link:Saved['link'];
@@ -75,14 +84,16 @@ function Start({initial,onStart}:{initial:DvTrack;onStart:(s:Saved)=>void}){
    {field('lopTruong','Lớp trên trường',{opt:true,placeholder:'Ví dụ: 10A1',max:20})}
    {field('phuHuynh','Họ tên phụ huynh')}
    {field('sdtPh','SĐT phụ huynh (có Zalo)',{mode:'tel',auto:'tel',max:15})}
-   {field('sdtHs','SĐT của em',{opt:true,mode:'tel',max:15})}
+   {field('sdtHs','SĐT của em',{mode:'tel',max:15})}
   </div>
   <fieldset className="hsa-field dv-chips-field"><legend>Hình thức học<b className="dv-req" aria-hidden="true"> *</b></legend><div className="dv-chips">
    {([['truc-tiep','Trực tiếp tại trung tâm (Chùa Láng, Đống Đa)'],['online','Online qua Zoom cùng lớp thật']] as const).map(([v,l])=><label key={v} className={'dv-chip'+(f.hinhThuc===v?' is-on':'')}><input type="radio" name="hinhThuc" checked={f.hinhThuc===v} onChange={()=>set('hinhThuc',v)}/>{l}</label>)}
   </div></fieldset>
-  <fieldset className="hsa-field dv-chips-field"><legend>Lịch có thể đi học<em className="dv-opt"> (không bắt buộc, chọn nhiều)</em></legend>
-   <div className="dv-chips" role="group" aria-label="Ngày trong tuần">{HS_DAYS.map(d=><label key={d} className={'dv-chip is-day'+(f.ngayRanh.includes(d)?' is-on':'')}><input type="checkbox" checked={f.ngayRanh.includes(d)} onChange={()=>toggle('ngayRanh',d)}/>{d}</label>)}</div>
-   <div className="dv-chips" role="group" aria-label="Ca học">{HS_SLOTS.map(c=><label key={c} className={'dv-chip'+(f.caRanh.includes(c)?' is-on':'')}><input type="checkbox" checked={f.caRanh.includes(c)} onChange={()=>toggle('caRanh',c)}/>{HS_SLOT_LABEL[c]}</label>)}</div>
+  <fieldset className="hsa-field dv-chips-field dv-tkb"><legend>Chọn buổi em đi học được<b className="dv-req" aria-hidden="true"> *</b><em className="dv-opt"> (chọn ít nhất 1, chọn nhiều càng dễ xếp)</em></legend>
+   <p className="dv-tkb-note">Đây là thời khóa biểu các lớp {khoi==='hsa'?'HSA':'khối '+khoi} hiện tại của trung tâm. Những lớp học cùng bài thì em có thể chọn lịch so le giữa các lớp (ví dụ buổi thứ 3 của lớp này và buổi chủ nhật của lớp kia), miễn khớp lịch của em nhất. Thầy cô sẽ xác nhận lại khi xếp lớp và mời em học thử vào buổi gần nhất em đã chọn.</p>
+   {lop.length?lop.map(([ten,bs])=><div key={ten} className="dv-tkb-row"><strong>Lớp {ten}</strong><div className="dv-chips" role="group" aria-label={'Lớp '+ten}>
+    {bs.map(b=><label key={b.id} className={'dv-chip'+(f.lichChon.includes(b.id)?' is-on':'')}><input type="checkbox" checked={f.lichChon.includes(b.id)} onChange={()=>toggle(b.id)}/>{THU_LABEL[b.thu]} · {b.bat}–{b.ket}</label>)}
+   </div></div>):<p className="dv-tkb-note">Khối này đang xếp lịch lớp mới. Em ghi giờ rảnh vào ô ghi chú, thầy cô sẽ gọi lại xếp lịch.</p>}
   </fieldset>
   <div className="dv-grid">
    <label className="hsa-field"><span>Mục tiêu<em className="dv-opt"> (không bắt buộc)</em></span><select value={f.mucTieu} onChange={e=>set('mucTieu',e.target.value)}><option value="">Chọn mục tiêu</option>{HS_GOALS.map(g=><option key={g} value={g}>{HS_GOAL_LABEL[g]}</option>)}</select></label>
