@@ -20,7 +20,7 @@ export function createSupabaseRepository(env:{SUPABASE_URL:string;SUPABASE_SERVI
     if(!response.ok)throw new HomeworkError(response.status,response.status===429?'Em đã thử nhiều lần. Chờ 15 phút rồi thử lại.':response.status===401?GATE_ERROR:'Chưa kết nối được máy chủ. Em thử lại sau.');return response.json();
   },Date.now,batchSigner(path=>withTimeout(db.storage.from('mtm-btvn').createSignedUrls(path,SIGNED_ASSET_SECONDS),READ_RPC_MS)));
 }
-export const READ_RPC_MS=8000,READ_RPCS=new Set(['mtm_btvn_read','mtm_btvn_assets','mtm_btvn_classes']);
+export const READ_RPC_MS=25000,READ_RPCS=new Set(['mtm_btvn_read','mtm_btvn_assets','mtm_btvn_classes']);
 /** Ký URL ảnh cũng có hạn chờ: quá hạn coi như ảnh chưa sẵn sàng, HS được báo thử lại. */
 export function withTimeout<T>(work:PromiseLike<T>,ms:number):Promise<T>{
   let timer:ReturnType<typeof setTimeout>|undefined;
