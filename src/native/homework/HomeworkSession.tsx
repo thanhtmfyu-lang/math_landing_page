@@ -70,6 +70,8 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef}:{state:
       questionReader={<HomeworkReader exam={state.exam}/>}/>
   </>;
 }
+const READ_ACTIONS=new Set(['state','select','login','logout']),READ_TIMEOUT_MS=15000;
+const SLOW_SERVER='Máy chủ đang chậm nên chưa tải được bài. Em đăng nhập lại hoặc tải lại trang sau ít phút.';
 export default function HomeworkSession({pathname,profileControl}:{pathname:string;profileControl?:(state:HomeworkState)=>ReactNode}){
   const parts=/^\/btvn\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(pathname);
   const [state,setState]=useState<HomeworkState|null>(null),[gate,setGate]=useState({fullName:'',phone:'',className:''});
@@ -116,8 +118,10 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   const gateway=useMemo<HomeworkGateway>(()=>({async call(action,body={}){
     const generation=sessionGeneration.current;
     const current=()=>mounted.current&&sessionGeneration.current===generation;
-    const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},
-      body:JSON.stringify({action,classKey:parts?.[1],lessonCode:action==='login'?parts?.[2]:selectedLesson.current,...body})}).catch(()=>{throw new Error('Chưa kết nối được máy chủ. Em thử lại sau.');});
+    // Chỉ lệnh đọc có hạn chờ: máy chủ chậm thì báo và cho thử lại, không đứng mãi. Lệnh ghi bài giữ nguyên để không cắt giữa lúc lưu.
+    const abort=READ_ACTIONS.has(action)?new AbortController():null,timer=abort?setTimeout(()=>abort.abort(),READ_TIMEOUT_MS):undefined;
+    const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:abort?.signal,
+      body:JSON.stringify({action,classKey:parts?.[1],lessonCode:action==='login'?parts?.[2]:selectedLesson.current,...body})}).catch(()=>{throw new Error(abort?.signal.aborted?SLOW_SERVER:'Chưa kết nối được máy chủ. Em thử lại sau.');}).finally(()=>clearTimeout(timer));
     if(!current())throw new Error(ACCESS_ENDED);
     // 401/403 là từ chối quyền thật, không phải lỗi mạng để tiếp tục giữ nội dung riêng.
     // Kiểm trước JSON vì cổng từ chối có thể trả HTML hoặc thân rỗng.
@@ -135,7 +139,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     if(action==='login'||action==='logout'){sessionGeneration.current++;studentSessionChanged();}
     return {...data,clientReceivedAt:Date.now()} as HomeworkState;
   }}),[pathname]);
-  useEffect(()=>{mounted.current=true;void gateway.call('state').then(next=>{if(mounted.current){setState(next);setRoom(!!next.draft&&next.draft.submittedAt===null);}}).catch(()=>{}).finally(()=>{if(mounted.current)setChecking(false);});return()=>{mounted.current=false;sessionGeneration.current++;};},[gateway]);
+  useEffect(()=>{mounted.current=true;void gateway.call('state').then(next=>{if(mounted.current){setState(next);setRoom(!!next.draft&&next.draft.submittedAt===null);}}).catch(error=>{if(mounted.current&&error instanceof Error&&error.message!==ACCESS_ENDED)setNotice(error.message);}).finally(()=>{if(mounted.current)setChecking(false);});return()=>{mounted.current=false;sessionGeneration.current++;};},[gateway]);
   const refreshingReceipt=useRef(false);
   const refreshReceipt=async()=>{
     if(busy||refreshingReceipt.current||!state?.draft||state.draft.submittedAt===null||remotePending.current)return;
