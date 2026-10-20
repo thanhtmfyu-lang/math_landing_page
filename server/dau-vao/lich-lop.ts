@@ -46,6 +46,21 @@ export function buoiCuaKhoi(all:Buoi[],khoi:DvTrack,today:string){
  const end=+today.slice(0,4)+(+today.slice(5,7)>=6?1:0),k='2K'+(end-6-+khoi)%100;
  return all.filter(b=>(b.lop===k||b.lop.startsWith(k+' '))&&!/hsa/i.test(b.lop)).sort((a,c)=>a.lop.localeCompare(c.lop)||ORDER(a)-ORDER(c));
 }
+export type Nhom={id:string;ten:string;ghiChu:string;buoi:{so:number;lua:Buoi[]}[]};
+/** Gom lớp học cùng bài: các lớp XPS (8+, 9+) cùng khóa và các lớp HSA là một chương trình; buổi thứ k trong tuần của mỗi lớp là "Buổi k",
+ * học sinh chọn mỗi buổi học ở lớp nào. Lớp còn lại (XPT, cấp 2) mỗi lớp một chương trình, buổi cố định. */
+export function nhomTuBuoi(bs:Buoi[]):Nhom[]{
+ const key=(lop:string)=>/hsa/i.test(lop)?'HSA':/\bXPS\b/i.test(lop)?lop.replace(/\s*XPS.*$/i,'')+' XPS':lop;
+ const m=new Map<string,Map<string,Buoi[]>>();
+ for(const b of [...bs].sort((a,c)=>ORDER(a)-ORDER(c))){const k=key(b.lop),g=m.get(k)??new Map<string,Buoi[]>();g.set(b.lop,[...(g.get(b.lop)??[]),b]);m.set(k,g);}
+ return [...m].sort(([a],[c])=>a.localeCompare(c)).map(([id,g])=>{const lops=[...g.keys()].sort(),n=Math.max(...[...g.values()].map(x=>x.length)),nhieu=lops.length>1;
+  const ten=id==='HSA'?'Lớp luyện thi HSA':id.endsWith(' XPS')?'Xuất phát sớm (XPS)':/\bXPT\b/i.test(id)?'Xuất phát thường (XPT)':'Lớp '+id;
+  return {id,ten,ghiChu:nhieu?`Các lớp ${lops.join(' và ')} học cùng bài. Mỗi buổi em chọn học ngày nào cũng được, xếp so le giữa các lớp cho khớp lịch của em nhất.`:`Lớp ${lops[0]}, lịch cố định.`,
+   buoi:Array.from({length:n},(_,i)=>({so:i+1,lua:lops.map(l=>g.get(l)![i]).filter(Boolean).sort((a,c)=>ORDER(a)-ORDER(c))}))};});
+}
+export const nhomCuaKhoi=(all:Buoi[],khoi:DvTrack,today:string)=>nhomTuBuoi(buoiCuaKhoi(all,khoi,today));
+/** ids theo thứ tự Buổi 1, 2, …: hợp lệ khi chọn đủ mỗi buổi đúng một lựa chọn trong cùng một chương trình. */
+export const kiemLuaChon=(nhom:Nhom[],ids:string[])=>nhom.find(n=>ids.length===n.buoi.length&&n.buoi.every((b,i)=>b.lua.some(x=>x.id===ids[i])))??null;
 const ID_RE=/^[^|]{2,30}\|(T[2-7]|CN)\|\d{2}:\d{2}\|\d{2}:\d{2}$/;
 export const validBuoiId=(v:unknown):v is string=>typeof v==='string'&&ID_RE.test(v);
 export function buoiFromId(id:string):Buoi{const [lop,t,bat,ket]=id.split('|');return {id,lop,thu:t as Thu,bat,ket};}

@@ -1,7 +1,7 @@
 import {createHmac,randomUUID,timingSafeEqual} from 'node:crypto';
 import {DV_TRACK_LABEL,type Result} from './engine';
 import {CHON_BUOI,validateHoSo,lichRanhText,HS_GOAL_LABEL,HS_HEARD_LABEL,type HoSo} from './ho-so';
-import {buoiCuaKhoi,buoiFromId,buoiGanNhat,buoiText,loadLich} from './lich-lop';
+import {kiemLuaChon,nhomCuaKhoi,buoiFromId,buoiGanNhat,buoiText,loadLich} from './lich-lop';
 import {hoSoSummary,resultSummary} from './phieu';
 // Phiếu học thử và kết quả bài kiểm tra đầu vào vào kho lead chung (mtm_lead.leads, migration 073 + 074).
 // Bật cùng cờ MTM_LEAD_ENABLED=1 của kho lead; chưa bật thì trả enabled:false để trang gửi đường EmailJS cũ.
@@ -23,10 +23,9 @@ const grade=(h:HoSo)=>['10','11','12'].includes(h.khoi)?h.khoi:h.khoi==='hsa'?'h
 /** Ghi phiếu học thử trước khi làm bài. */
 export async function saveHoSo(raw:unknown,key:Buffer|null,today:string,env:Env,transport:typeof fetch=fetch,now=Date.now()):Promise<LeadOut>{
  const h=validateHoSo(raw,today);if(typeof h==='string')return {status:400,body:{message:h}};
- // Buổi chọn phải còn trong thời khóa biểu hiện hành của khối (lịch đổi giữa lúc mở trang và lúc gửi thì báo chọn lại).
- const lich=new Set(buoiCuaKhoi(await loadLich(env,transport),h.khoi,today).map(b=>b.id));
- if(lich.size&&!h.lichChon.length)return {status:400,body:{message:CHON_BUOI}};
- if(h.lichChon.some(x=>!lich.has(x)))return {status:400,body:{message:'Thời khóa biểu vừa cập nhật, em tải lại trang và chọn lại buổi học.'}};
+ // Buổi chọn phải đủ một chương trình trong thời khóa biểu hiện hành của khối (lịch đổi giữa lúc mở trang và lúc gửi thì báo chọn lại).
+ const nhom=nhomCuaKhoi(await loadLich(env,transport),h.khoi,today);
+ if(nhom.length&&!kiemLuaChon(nhom,h.lichChon))return {status:400,body:{message:h.lichChon.length?CHON_BUOI+' Nếu đã chọn đủ, em tải lại trang vì thời khóa biểu vừa cập nhật.':CHON_BUOI}};
  if(env.MTM_LEAD_ENABLED!=='1'||!key)return {status:200,body:{enabled:false}};
  const id=randomUUID(),gan=buoiGanNhat(h.lichChon,now);
  try{

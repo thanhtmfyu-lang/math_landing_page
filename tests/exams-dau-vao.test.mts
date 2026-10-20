@@ -3,7 +3,7 @@ import {assemble,grade,schoolWeek,DV_TRACKS,type Bank,type Banks,type Progress} 
 import mau from './fixtures/dau-vao-mau.json';
 import {randomBytes} from 'node:crypto';
 import {validateHoSo} from '../server/dau-vao/ho-so';
-import {LICH_CHUP,buoiCuaKhoi,buoiGanNhat,loadLich,parseLichCsv} from '../server/dau-vao/lich-lop';
+import {LICH_CHUP,buoiCuaKhoi,kiemLuaChon,nhomCuaKhoi,buoiGanNhat,loadLich,parseLichCsv} from '../server/dau-vao/lich-lop';
 import {hoSoSummary} from '../server/dau-vao/phieu';
 import {saveHoSo,saveKetQua,validSig} from '../server/dau-vao/lead';
 import {createDauVaoApi} from '../api/kiem-tra-dau-vao';
@@ -102,8 +102,8 @@ if(REAL)for(const khoi of DV_TRACKS){const b=BANKS[khoi] as Bank;const ids=new S
 
 // Phiếu thông tin học thử: bắt buộc đủ ô quản lý lớp cần, đồng ý của phụ huynh, ngày sinh khớp khối.
 const today='2026-10-20';
-const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'THPT Kim Liên',lopTruong:'10A1',phuHuynh:'Nguyễn Văn Bình',sdtPh:'+84 912 345 678',sdtHs:'0987 654 321',hinhThuc:'truc-tiep',lichChon:['2K11 XPT|T4|19:30|21:30','2K11 XPS 8+|CN|15:30|17:30','2K11 XPT|T4|19:30|21:30'],mucTieu:'diem-cao',nguon:'facebook',ghiChu:'',dongY:true,leadSource:'Nguồn: facebook'};
-{const h=validateHoSo(HS,today);assert.ok(typeof h!=='string',String(h));if(typeof h!=='string'){assert.equal(h.hoTen,'Nguyễn Văn An');assert.equal(h.sdtPh,'0912345678');assert.deepEqual(h.lichChon,['2K11 XPT|T4|19:30|21:30','2K11 XPS 8+|CN|15:30|17:30']);assert.match(hoSoSummary(h,Date.parse('2026-10-20T05:00:00Z')),/2K11 XPT Thứ 4 19:30–21:30; 2K11 XPS 8\+ Chủ nhật 15:30–17:30[\s\S]*Buổi học thử gần nhất: Thứ 4 21\/10\/2026 lúc 19:30, lớp 2K11 XPT/);}
+const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'THPT Kim Liên',lopTruong:'10A1',phuHuynh:'Nguyễn Văn Bình',sdtPh:'+84 912 345 678',sdtHs:'0987 654 321',hinhThuc:'truc-tiep',lichChon:['2K11 XPS 9+|T5|19:30|21:30','2K11 XPS 8+|CN|15:30|17:30'],mucTieu:'diem-cao',nguon:'facebook',ghiChu:'',dongY:true,leadSource:'Nguồn: facebook'};
+{const h=validateHoSo(HS,today);assert.ok(typeof h!=='string',String(h));if(typeof h!=='string'){assert.equal(h.hoTen,'Nguyễn Văn An');assert.equal(h.sdtPh,'0912345678');assert.deepEqual(h.lichChon,['2K11 XPS 9+|T5|19:30|21:30','2K11 XPS 8+|CN|15:30|17:30']);assert.match(hoSoSummary(h,Date.parse('2026-10-20T05:00:00Z')),/Buổi 1: 2K11 XPS 9\+ Thứ 5 19:30–21:30; Buổi 2: 2K11 XPS 8\+ Chủ nhật 15:30–17:30[\s\S]*Buổi học thử gần nhất: Thứ 5 22\/10\/2026 lúc 19:30, lớp 2K11 XPS 9\+/);}
  assert.match(validateHoSo({...HS,dongY:false},today) as string,/đồng ý/);
  assert.match(validateHoSo({...HS,sdtPh:'12345'},today) as string,/phụ huynh/);
  assert.match(validateHoSo({...HS,sdtHs:''},today) as string,/của em/);
@@ -125,12 +125,12 @@ const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'TH
  const env={MTM_LEAD_ENABLED:'1',SUPABASE_URL:'https://x.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'k'};
  assert.deepEqual((await saveHoSo(HS,k,today,{},transport)).body,{enabled:false});
  assert.equal((await saveHoSo({...HS,dongY:false},k,today,env,transport)).status,400);
- assert.match(((await saveHoSo({...HS,lichChon:[]},k,today,env,transport)).body as any).message,/ít nhất 1 buổi/);
- assert.match(((await saveHoSo({...HS,lichChon:['2K9 XPT|T2|19:30|21:30']},k,today,env,transport)).body as any).message,/chọn lại buổi/);
+ assert.match(((await saveHoSo({...HS,lichChon:[]},k,today,env,transport)).body as any).message,/chọn đủ ngày học/);
+ assert.match(((await saveHoSo({...HS,lichChon:['2K9 XPT|T2|19:30|21:30']},k,today,env,transport)).body as any).message,/tải lại trang/);
  assert.equal(calls.length,0);
  const out=await saveHoSo(HS,k,today,env,transport);assert.equal(out.status,200);const {id,sig}=out.body as any;
  assert.ok(validSig(k,id,sig));assert.ok(!validSig(k,id,'0'.repeat(64)));assert.ok(!validSig(randomBytes(32),id,sig));
- const add=calls[0].args;assert.equal(add.p_phone,'0912345678');assert.equal(add.p_grade,'10');assert.equal(add.p_ho_so.ngay_sinh,'2011-05-04');assert.equal(add.p_ho_so.sdt_hoc_sinh,'0987654321');assert.equal(add.p_ho_so.lich_chon.length,2);assert.equal(add.p_ho_so.lich_chon[0].lop,'2K11 XPT');assert.equal(add.p_ho_so.buoi_gan_nhat.lop,'2K11 XPT');assert.match(add.p_notes,/Học thử mới/);assert.match(add.p_lead_source,/^Kiểm tra đầu vào web/);
+ const add=calls[0].args;assert.equal(add.p_phone,'0912345678');assert.equal(add.p_grade,'10');assert.equal(add.p_ho_so.ngay_sinh,'2011-05-04');assert.equal(add.p_ho_so.sdt_hoc_sinh,'0987654321');assert.equal(add.p_ho_so.lich_chon.length,2);assert.equal(add.p_ho_so.lich_chon[0].lop,'2K11 XPS 9+');assert.equal(add.p_ho_so.buoi_gan_nhat.lop,'2K11 XPS 9+');assert.match(add.p_notes,/Học thử mới/);assert.match(add.p_lead_source,/^Kiểm tra đầu vào web/);
  const {paper,picks}=assemble('10','2026-10-19',77,BANKS,PROGRESS);const res=grade(paper,picks,{},PROGRESS.khoi['10'].groups);
  assert.equal(await saveKetQua(id,sig,res,{name:'An',school:'Kim Liên'},k,env,transport),'saved');
  const kq=calls[1];assert.equal(kq.name,'mtm_lead_dau_vao_ket_qua');assert.equal(kq.args.p_id,id);assert.equal(kq.args.p_ket_qua.diem,0);assert.match(kq.args.p_text,/Gợi ý lớp/);
@@ -146,6 +146,17 @@ const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'TH
  assert.deepEqual([...new Set(buoiCuaKhoi(LICH_CHUP,'6',today).map(b=>b.lop))],['2K15']);
  assert.deepEqual(buoiCuaKhoi(LICH_CHUP,'hsa',today).map(b=>b.lop),['HSA.2','HSA']);
  assert.ok(buoiCuaKhoi(LICH_CHUP,'12',today).every(b=>!/hsa|tsa/i.test(b.lop)));
+ // Chương trình: XPS 8+ và 9+ cùng khóa gộp, Buổi k là buổi thứ k trong tuần của mỗi lớp; XPT và cấp 2 lịch cố định.
+ const n12=nhomCuaKhoi(LICH_CHUP,'12',today);assert.deepEqual(n12.map(n=>n.ten),['Xuất phát sớm (XPS)','Xuất phát thường (XPT)']);
+ assert.deepEqual(n12[0].buoi.map(b=>b.lua.map(x=>x.lop.slice(-2)+' '+x.thu)),[['9+ T2','8+ T3'],['9+ T4','8+ T5'],['9+ T6','8+ T7']]);
+ assert.deepEqual(n12[1].buoi.map(b=>b.lua.length),[1,1,1]);
+ assert.deepEqual(nhomCuaKhoi(LICH_CHUP,'11',today)[0].buoi.map(b=>b.lua.map(x=>x.thu+' '+x.bat)),[['T3 19:30','T6 19:30'],['CN 08:00','CN 10:00']]);
+ assert.deepEqual(nhomCuaKhoi(LICH_CHUP,'9',today).map(n=>n.ten),['Lớp 2K12']);
+ assert.deepEqual(nhomCuaKhoi(LICH_CHUP,'hsa',today).map(n=>n.buoi.length),[1]);
+ assert.equal(kiemLuaChon(n12,['2K9 XPS 9+|T2|17:30|19:30','2K9 XPS 8+|T5|17:30|19:30','2K9 XPS 9+|T6|17:30|19:30'])?.id,'2K9 XPS');
+ assert.equal(kiemLuaChon(n12,['2K9 XPS 9+|T2|17:30|19:30','2K9 XPS 8+|T5|17:30|19:30']),null,'thiếu buổi 3');
+ assert.equal(kiemLuaChon(n12,['2K9 XPS 8+|T5|17:30|19:30','2K9 XPS 9+|T2|17:30|19:30','2K9 XPS 9+|T6|17:30|19:30']),null,'sai thứ tự buổi');
+ assert.equal(kiemLuaChon(n12,['2K9 XPS 9+|T2|17:30|19:30','2K9 XPT|T3|19:30|21:30','2K9 XPS 9+|T6|17:30|19:30']),null,'trộn chương trình');
  const csv='\uFEFFLớp,Thứ,Bắt đầu,Kết thúc,Ngày khai giảng,Loại lịch,Nguồn,Trạng thái\r\n2K11 XPT,Thứ 4,19:30,21:30,23/09/2026,Lịch tuần,"Thành, xác nhận",ok\r\nTSA,Chủ nhật,14:00,17:00,,,,\r\n2K11 XPT,Chủ nhật,8:00,10:00,,,,\r\nlỗi,Thứ 9,1,2,,,,\r\n';
  const p=parseLichCsv(csv);assert.deepEqual(p.map(b=>b.id),['2K11 XPT|T4|19:30|21:30','2K11 XPT|CN|08:00|10:00']);
  assert.deepEqual(parseLichCsv('a,b\n1,2'),[]);

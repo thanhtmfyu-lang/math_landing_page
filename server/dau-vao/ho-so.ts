@@ -16,7 +16,7 @@ export function normalizeVnPhone(v:string){const p=v.replace(/[\s().-]/g,'').rep
 /** Năm sinh hợp lý theo khối (cho phép lệch 2 năm vì học sớm/muộn); HSA tính như lớp 12. */
 function birthYearOk(khoi:DvTrack,iso:string,today:string){const y=+iso.slice(0,4),school=+today.slice(0,4)-(+today.slice(5,7)<6?1:0),grade=khoi==='hsa'?12:+khoi;const expect=school-grade-5;return y>=expect-2&&y<=expect+2;}
 /** Kiểm phiếu; trả phiếu đã chuẩn hóa hoặc câu lỗi tiếng Việt đúng ô cần sửa. today: yyyy-mm-dd giờ Việt Nam. */
-export const CHON_BUOI='Em chọn ít nhất 1 buổi trong thời khóa biểu mà em đi học được.';
+export const CHON_BUOI='Em chọn chương trình và chọn đủ ngày học cho từng buổi.';
 export function validateHoSo(raw:unknown,today:string):HoSo|string{
  if(!raw||typeof raw!=='object'||Array.isArray(raw)||Object.keys(raw).some(k=>!KEYS.includes(k)&&!OLD_KEYS.includes(k)))return 'Phiếu thông tin không hợp lệ.';
  const b=raw as Record<string,unknown>;
@@ -39,5 +39,5 @@ export function validateHoSo(raw:unknown,today:string):HoSo|string{
  const leadSource=clean(b.leadSource).slice(0,200);
  return {khoi:b.khoi,hoTen,ngaySinh,truong,lopTruong,phuHuynh,sdtPh,sdtHs,hinhThuc:b.hinhThuc,lichChon,mucTieu,nguon,ghiChu,dongY:true,leadSource};
 }
-/** Các buổi đã chọn dạng chữ cho quản lý lớp, ví dụ "2K11 XPT Thứ 4 19:30–21:30; 2K11 XPS 8+ Chủ nhật 15:30–17:30". */
-export function lichRanhText(h:Pick<HoSo,'lichChon'>){return h.lichChon.map(id=>buoiText(buoiFromId(id))).join('; ')||'Chưa chọn';}
+/** Các buổi đã chọn dạng chữ cho quản lý lớp, ví dụ "Buổi 1: 2K11 XPS 9+ Thứ 5 19:30–21:30; Buổi 2: 2K11 XPS 8+ Chủ nhật 15:30–17:30". */
+export function lichRanhText(h:Pick<HoSo,'lichChon'>){const n=h.lichChon.length;return h.lichChon.map((id,i)=>(n>1?`Buổi ${i+1}: `:'')+buoiText(buoiFromId(id))).join('; ')||'Chưa chọn';}
