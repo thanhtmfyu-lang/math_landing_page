@@ -70,7 +70,7 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef}:{state:
       questionReader={<HomeworkReader exam={state.exam}/>}/>
   </>;
 }
-const READ_ACTIONS=new Set(['state','select','login','logout']),READ_TIMEOUT_MS=25000;
+const READ_ACTIONS=new Set(['state','select','login','logout']),READ_TIMEOUT_MS=15000;
 const SLOW_SERVER='Máy chủ đang chậm nên chưa tải được bài. Em đăng nhập lại hoặc tải lại trang sau ít phút.';
 export default function HomeworkSession({pathname,profileControl}:{pathname:string;profileControl?:(state:HomeworkState)=>ReactNode}){
   const parts=/^\/btvn\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(pathname);
