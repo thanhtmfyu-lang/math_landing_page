@@ -36,7 +36,7 @@ export function createHomeworkHandler(deps:GatewayDeps){return async(request:Req
   for(;;){const {done,value}=await reader.read();if(done)break;bytes+=value.byteLength;if(bytes>524288){await reader.cancel();return json(413,'SIZE');}chunks.push(value);}
   const raw=new Uint8Array(bytes);let offset=0;for(const b of chunks){raw.set(b,offset);offset+=b.length;}
   const body=JSON.parse(new TextDecoder().decode(raw));if(!body||typeof body!=='object'||Array.isArray(body))return json(400,'BODY');
-  if(body.operation==='resolve'||body.operation==='forgot'){const key=await deps.networkKey(request),limit=await deps.rpc('mtm_btvn_gateway_rate',{p_network_key:key});if(limit.error||(limit.data as {ok?:boolean})?.ok!==true)return json(429,'RATE');}
+  if(body.operation==='resolve'||body.operation==='forgot'){const key=await deps.networkKey(request),limit=await deps.rpc('mtm_btvn_gateway_rate',{p_network_key:key});if(limit.error)return json(503,'BUSY');if((limit.data as {ok?:boolean})?.ok!==true)return json(429,'RATE');}
   const route=operation(body);if(!route)return json(400,'INPUT');
   const out=await deps.rpc(route.name,route.args);if(out.error)return json(out.error.code==='42501'?401:out.error.code==='40001'?409:400,out.error.code??'RPC');
   if(body.operation!=='pdf')return json(200,'OK',out.data);

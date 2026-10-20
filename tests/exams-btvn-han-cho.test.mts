@@ -1,7 +1,8 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {withTimeout,READ_RPCS,READ_RPC_MS} from '../server/btvn/supabase-transport';
+import {withTimeout,READ_RPCS,READ_RPC_MS,BUSY} from '../server/btvn/supabase-transport';
+import {createHomeworkHandler} from '../supabase/functions/mtm-homework-access/handler';
 
 // 20/10/2026: HS 2K10 9+ đứng mãi ở "Đang kiểm tra phiên". Lệnh đọc phải có hạn chờ, lệnh ghi thì không.
 assert.equal(await withTimeout(Promise.resolve(7),50),7);
@@ -14,4 +15,10 @@ const session=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/native/
 assert.match(session,/READ_ACTIONS=new Set\(\['state','select','login','logout'\]\),READ_TIMEOUT_MS=15000/);
 assert.match(session,/signal:abort\?\.signal/);
 assert.doesNotMatch(session,/gateway\.call\('state'\)\.then\([^;]*\.catch\(\(\)=>\{\}\)/,'Lỗi lần kiểm phiên đầu phải hiện cho HS, không nuốt im.');
+// 20/10 18:14: CSDL lỗi ở bộ đếm lượt không được báo thành "thử nhiều lần" hay sai thông tin.
+const edgeWith=(rate:{data:unknown;error:null|{code?:string}})=>createHomeworkHandler({publishableKey:'k',origins:['https://t.invalid'],networkKey:async()=>'d'.repeat(64),rpc:async name=>name==='mtm_btvn_gateway_rate'?rate:{data:{ok:true},error:null},download:async()=>new Blob()});
+const forgot=(edge:ReturnType<typeof edgeWith>)=>edge(new Request('https://e.invalid',{method:'POST',headers:{Origin:'https://t.invalid',apikey:'k','Content-Type':'application/json'},body:JSON.stringify({operation:'forgot',fullName:'Giả',phone:'0900000001',className:'Giả'})}));
+assert.equal((await forgot(edgeWith({data:null,error:{code:'57014'}}))).status,503);
+assert.equal((await forgot(edgeWith({data:{ok:false},error:null}))).status,429,'Vượt ngưỡng thật vẫn báo 429.');
+assert.match(BUSY,/đang bận/);
 console.log(JSON.stringify({suite:'btvn-han-cho',passed:true}));
