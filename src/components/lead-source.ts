@@ -4,7 +4,7 @@ export type LeadSource={ma?:string;source?:string;medium?:string;campaign?:strin
 const KEY='mtm-lead-source',KEYS:[keyof LeadSource,string][]=[['source','utm_source'],['medium','utm_medium'],['campaign','utm_campaign'],['content','utm_content']];
 const clip=(v:string|null|undefined)=>(v||'').trim().slice(0,120);
 const LOCAL='mtm-nguon',GIU_MS=30*864e5;
-const maNguon=(v:string|null)=>{const m=(v||'').trim().toLowerCase().slice(0,60);return /^[a-z0-9][a-z0-9-]*$/.test(m)?m:'';};
+const maNguon=(v:string|null)=>{const m=(v||'').trim().slice(0,60);return /^[A-Za-z0-9][A-Za-z0-9_-]*$/.test(m)?m:'';};
 export function readLeadSource(search:string,referrer='',path=''):LeadSource|null{
  const p=new URLSearchParams(search),found:LeadSource={};
  const ma=maNguon(p.get('nguon'));if(ma)found.ma=ma;

@@ -1,0 +1,9 @@
+.mtm-share-card{margin-top:18px;padding:16px 18px;border:1px solid #f1d27a;border-radius:14px;background:#fffbea;color:#213269}
+.mtm-share-head{display:flex;flex-direction:column;gap:4px;margin:0 0 10px}.mtm-share-head span{font-size:13px;color:#5b6487}
+.mtm-share-consent{display:flex;align-items:center;gap:8px;font-size:14px;cursor:pointer}
+.mtm-share-name{margin-top:8px;width:100%;max-width:320px;padding:9px 12px;border:1px solid #d8e3f2;border-radius:10px;font:inherit}
+.mtm-share-actions{display:flex;flex-wrap:wrap;gap:8px;margin:12px 0 0}
+.mtm-share-actions button{min-height:44px;padding:9px 18px;border-radius:12px;border:1px solid #213269;background:#213269;color:#fff;font-weight:700;cursor:pointer}
+.mtm-share-actions button.is-ghost{background:#fff;color:#213269}
+.mtm-share-actions button:disabled{opacity:.6;cursor:wait}
+.mtm-share-note{margin:8px 0 0;font-size:13px}

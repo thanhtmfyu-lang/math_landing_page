@@ -1,4 +1,5 @@
 import {lazy,Suspense,useCallback,useEffect,useState} from 'react';
+import {ResultShareCard} from '../../components/ResultShareCard';
 import {Link} from '../../migration/navigation';
 import R106PageIntro from '../../migration/R106PageIntro';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
@@ -67,6 +68,7 @@ function ResultCard({paper,outcome,topics}:{paper:Gk1Paper;outcome:Outcome;topic
  return <section className="gk1-card gk1-result" aria-live="polite" aria-labelledby="gk1-result-title">
   <div className="gk1-result-head"><p className="gk1-score"><strong>{scoreText}</strong><span>/10 điểm</span></p><div><h2 id="gk1-result-title">Kết quả đề giữa kỳ I Toán {paper.grade}</h2><p className="gk1-muted">Thời gian làm: {timeText}. Lời giải chi tiết từng câu nằm ngay bên dưới phần kết quả.</p></div></div>
   {gaps.length?<><h3>3 chỗ cần vá trước ngày kiểm tra</h3><ol className="gk1-gaps">{gaps.map(g=><li key={g.chuDe}><span>{g.chuDe}</span><small>{LEVEL[g.mucDo]}</small></li>)}</ol></>:<p className="gk1-perfect">Em làm đúng toàn bộ đề. Giữ phong độ này đến ngày kiểm tra nhé!</p>}
+  <ResultShareCard dot={'Đề giữa kỳ I Toán '+paper.grade+' · MTM'} scoreText={scoreText} url="https://minhthanhmath.vn/de-giua-ky-1" fileName={'ket-qua-giua-ky-1-toan-'+paper.grade+'.png'}/>
   <div className="gk1-cta"><p><strong>Muốn vá những chỗ này trước ngày thi?</strong> MTM có kiểm tra đầu vào miễn phí và buổi học thử đầu tiên. Gửi điểm qua Zalo để thầy xem bài cùng em.</p>
    <div className="gk1-actions"><button type="button" className="gk1-primary" onClick={register}>Đăng ký kiểm tra đầu vào miễn phí</button><a className="gk1-zalo" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer">Nhắn Zalo 0967 365 413</a></div></div>
  </section>;
