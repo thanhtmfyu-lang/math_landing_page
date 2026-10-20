@@ -1,7 +1,7 @@
 import {randomBytes} from 'node:crypto';
 import {HomeworkService,HomeworkError,GATE_ERROR} from './service';
 import {MemoryHomeworkRepository,scoresCsv,type StudentWork} from './repository';
-import type {HomeworkState,LessonMaterial,GateInput} from '../../src/native/homework/btvn-contract';
+import type {HomeworkState,HomeworkLesson,LessonMaterial,GateInput} from '../../src/native/homework/btvn-contract';
 import type {PracticeExam} from '../../src/native/exams/data';
 import type {Answers} from '../../src/native/exams/store';
 import {publicClassNames} from './class-config';
@@ -9,6 +9,7 @@ import {hydratePrivateAssets,PrivatePdfUnavailableError,SIGNED_ASSET_SECONDS,typ
 import {lessonOpensAt} from './opening-policy';
 import {homeworkLessonCard} from './lesson-card';
 import {validOfficialHomeworkScore} from '../../src/native/homework/grading-policy';
+import {thiThangBlock,visibleThiThangCards} from './thi-thang';
 
 export interface RpcTransport {rpc(name:string,args:Record<string,unknown>):Promise<{data:unknown;error:null|{code?:string}}>}
 export type DurableSnapshot={revision:number;work:StudentWork;exam?:PracticeExam;material?:LessonMaterial;lessons:LessonMaterial[];officialGrades?:Record<string,number>};
@@ -58,7 +59,14 @@ export class SupabaseHomeworkRepository {
     // Hai lần thử lại chỉ khi CAS báo xung đột; mọi lỗi quyền/lưu khác dừng ngay.
     for(let retry=0;retry<3;retry++){
       const snapshot=await this.rpc<DurableSnapshot>('mtm_btvn_read',{p_session:session,p_lesson:lessonCode??null});
-      const now=this.clock(),className=snapshot.work.student.className;
+      const now=this.clock(),className=snapshot.work.student.className,fullName=snapshot.work.student.fullName;
+      // Thi kết thúc tháng: chặn mã đề không phải của HS (cả xem đề), rồi mới lọc thẻ.
+      const blocked=snapshot.material?thiThangBlock(snapshot.material.lessonCode,snapshot.lessons as HomeworkLesson[],fullName,className):null;
+      snapshot.lessons=visibleThiThangCards(snapshot.lessons as HomeworkLesson[],fullName,className);
+      if(blocked){
+        if(lessonCode||action!=='state')throw new HomeworkError(409,blocked);
+        return {serverNow:now,exam:null,fullName,className,lessonCode:'',dueAt:null,maxAttempts:5,attemptsUsed:0,draft:null,receipts:[],bestScore:null,demo:false,lessons:monthlyCards(snapshot.lessons,now,className) as HomeworkState['lessons']};
+      }
       if(snapshot.material&&now<lessonOpensAt(snapshot.material,className)){
         if(action!=='state'&&action!=='select')throw new HomeworkError(409,'Bài chưa mở. BTVN chỉ mở làm sau buổi học.');
         return {serverNow:now,exam:null,kind:snapshot.material.kind,opensAt:lessonOpensAt(snapshot.material,className),closesAt:snapshot.material.closesAt,solutionsAvailable:false,canStart:false,fullName:snapshot.work.student.fullName,className,lessonCode:snapshot.material.lessonCode,dueAt:snapshot.work.student.effectiveDueAt??snapshot.work.student.nextActualClassAt??null,maxAttempts:snapshot.material.kind==='kiem-tra-thang'?1:5,attemptsUsed:0,draft:null,receipts:[],bestScore:null,demo:false,lessons:monthlyCards(snapshot.lessons,now,className) as HomeworkState['lessons']};

@@ -7,6 +7,7 @@ import {homeworkPriorityDeadline,homeworkPriorityReason,isHomeworkLocked,nextHom
 import {displayClassName,lessonCaption,lessonHomeworkTitle} from './presentation';
 import {LessonVideo} from './LessonCards';
 import CenterBoard from './CenterBoard';
+import ThiThangSection from './ThiThangSection';
 import './r104-homework.css';
 import './leaderboard-refresh.css';
 import {requestLeaderboard,subscribeLeaderboardRefresh} from './leaderboard-refresh';
@@ -113,6 +114,7 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
           {priority&&<><div className="r104-hw-today-facts"><span>Đã mở</span><span>{deadline!==null?(priority.kind==='kiem-tra-thang'?'Đóng: ':'Hạn: ')+dateTime(deadline):'Hạn: chờ xác minh'}</span></div><button type="button" className="r104-hw-primary" disabled={busy} onClick={choosePriority}>Xem bài cần làm <span aria-hidden="true">↗</span></button><p className="r104-hw-select-note">Mở thông tin bài, chưa bắt đầu lượt làm.</p></>}
           <div role="status">{priorityNotice}</div>
         </div><div className="r104-hw-class-snapshot"><p>Từng bước tiến bộ</p><h3>Buổi học của em</h3><dl><div><dt>Đang mở, chưa nộp</dt><dd>{count('open')}</dd></div><div><dt>Đã có bài nộp</dt><dd>{count('submitted','scored')}</dd></div><div><dt>Chưa tới giờ mở</dt><dd>{count('locked')}</dd></div></dl></div></div>
+        <ThiThangSection lessons={lessons} now={clock} busy={busy} onSelect={onSelect}/>
         {lessons.length>0&&<section className="r104-hw-lessons" id="r104-lessons" aria-labelledby="r104-lessons-title">
           <div className="r104-hw-lessons-heading"><div><small>{displayClassName(state)}</small><h2 id="r104-lessons-title">Buổi học của em</h2></div>
             <div className="r104-hw-filters" role="group" aria-label="Lọc buổi học"><button type="button" aria-pressed={filter==='all'} onClick={()=>{setFilter('all');setLimit(PAGE);}}>Tất cả</button><button type="button" aria-pressed={filter==='opened'} onClick={()=>{setFilter('opened');setLimit(PAGE);}}>Đã mở</button></div></div>
