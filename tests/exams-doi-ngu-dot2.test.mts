@@ -80,7 +80,9 @@ await test('Cổng có hai hướng dẫn, Zalo đúng số và cách mở từ 
 });
 await test('Đích công khai trong dialog/footer nằm trên MTM, menu có Hướng dẫn',()=>{
   const {AccessDialog,MigrationHeader}=load('src/migration/Experience.tsx');
-  const dialog=render(AccessDialog),footer=render(load('src/components/PortalLinks.tsx').PortalLinks,{footer:true});
+  const dialog=render(AccessDialog),footer=render(load('src/components/Footer.tsx').Footer);
+  // 20/10: chân trang dùng dòng chữ thường như các link khác, không còn ô viền nổi.
+  assert.doesNotMatch(footer,/mtm-portal-links/);
   for(const html of [dialog,footer]){
     assert.match(html,/href="\/btvn"/);assert.match(html,/href="\/huong-dan\?cho=phu-huynh"/);assert.doesNotMatch(html,/chatgpt\.site|audience=|VITE_MTM_PORTAL_URL/);
   }

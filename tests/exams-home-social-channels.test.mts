@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
 import {createRequire} from 'node:module';
 import {join} from 'node:path';
 import {MTM_SOCIAL_CHANNELS,ZALO_ASSISTANT_URL} from '../src/components/mtm-contact';
@@ -49,6 +50,11 @@ assert.match(homeConsultation,/>Tư vấn lớp học qua Zalo<\/span>/);
 checkChannels(homeConsultation);
 const footer=render(load('src/components/Footer.tsx').exports.Footer),footerGroups=socialGroups(footer);
 assert.equal(footerGroups.length,1);checkChannels(footerGroups[0]);
+// 20/10: BTVN và hướng dẫn phụ huynh ở chân trang là dòng chữ thường, không còn ô viền bị thanh liên hệ che.
+assert.doesNotMatch(footer,/mtm-portal-links/);
+for(const href of ['/btvn','/huong-dan?cho=phu-huynh'])assert.equal(anchors(footer).filter(link=>attribute(link.attributes,'href')===href).length,1,href);
+const r106Site=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/migration/r106-site.css'),'utf8');
+assert.match(r106Site,/:not\(\.r106-home-page\) \.mig-header\{[^}]*background:#fff;/,'Thanh đầu trang dính phải nền đặc');
 
 for(const [file,prefix,groups] of [['R104Hero.tsx','r104',2],['R106Hero.tsx','r106',1]] as const){
  const path='src/migration/'+file,hero=render(load(path).exports.default),channels=socialGroups(hero);
