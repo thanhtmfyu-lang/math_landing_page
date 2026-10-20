@@ -3,6 +3,7 @@ import R106PageIntro from '../../migration/R106PageIntro';
 import MathText from '../math/MathText';
 import {Link} from '../../migration/navigation';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
+import {ResultShareCard} from '../../components/ResultShareCard';
 import {PT_LOAI,PT_LOAI_TEN,PT_NHOM_TEN,baoCao,tenChuDe,type PtDeCongKhai,type PtDotCongKhai,type PtKetQua,type PtKhoi,type PtLoai,type PtMucLuc,type PtCauCongKhai} from '../../../server/phong-thi/engine';
 import './hsa-mock.css';
 import './entrance-test.css';
@@ -292,6 +293,9 @@ function KetQua({luot,update}:{luot:Luot;update:(l:Luot|null)=>void}){
    {luot.dot&&luot.xepHang?.status==='luyen-tap'&&<p className="pt-note">Lượt này tính luyện tập: mỗi bạn chỉ tính lượt đầu tiên đúng giờ của đợt.</p>}
    <ul className="dv-sections">{k.theoPhan.map(p=><li key={p.ma}><span>{p.ten}</span><b>{so(p.diem)}/{so(p.toiDa)}</b><i style={{['--p' as string]:(p.toiDa?Math.round(100*p.diem/p.toiDa):0)+'%'}} className={p.diem>=0.7*p.toiDa?'is-good':p.diem>=0.5*p.toiDa?'is-mid':'is-low'}/></li>)}</ul>
    <p className="hsa-actions"><button type="button" className="hsa-primary" onClick={()=>update(null)}>Về phòng chờ</button><a className="hsa-ghost" href="#bao-cao">Báo cáo 1 trang</a></p>
+   {/* W2: thẻ kết quả để khoe + 2 lối cố định (kiểm tra đầu vào mang nguồn, báo cáo qua Zalo phụ huynh mang mã đề). */}
+   <ResultShareCard dot={luot.dot?.ten??de.tieuDe} scoreText={so(k.diem)} scale={'/'+so(k.thangDiem)+' điểm'} percentile={luot.khaoSat?.em?.phanVi} sbd={luot.khaoSat?.thiSinh?.sbd} url="https://minhthanhmath.vn/thi-thu" fileName={'ket-qua-'+k.de+'.png'}/>
+   <p className="hsa-actions pt-next"><Link className="hsa-ghost" href={'/kiem-tra-dau-vao?nguon=ket-qua-'+(luot.dot?.ma??k.de).toLowerCase().replace(/[^a-z0-9-]/g,'-').slice(0,40)}>Kiểm tra đầu vào miễn phí</Link><a className="hsa-ghost" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer">Nhận báo cáo qua Zalo phụ huynh (gửi mã {luot.dot?.ma??k.de})</a></p>
   </section>
   <BaoCao1Trang luot={luot}/>
   {k.theoChuDe.length>0&&<section className="hsa-card pt-topics"><h2>Chủ đề cần ôn</h2><ul>{k.theoChuDe.filter(t=>t.dung<t.tong).slice(0,8).map(t=><li key={t.chuDe}><span>{tenChuDe(t.chuDe)}</span><b>{t.dung}/{t.tong}</b></li>)}</ul>
