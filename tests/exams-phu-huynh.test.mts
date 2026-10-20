@@ -4,7 +4,7 @@ import {handleParent,RpcError} from '../server/phu-huynh/http';
 import {PH_GATE,PH_LOGIN,PH_SESSION,summarize,type Rpc} from '../server/phu-huynh/service';
 import {createBtvnApi} from '../api/btvn';
 
-/** Góc phụ huynh (20/10). Quyền PH→con nằm trong Postgres (supabase/tests/phu_huynh_078_assertions.sql chạy trên DB);
+/** Góc phụ huynh (20/10). Quyền PH→con nằm trong Postgres (supabase/tests/phu_huynh_090_assertions.sql chạy trên DB);
  * ở đây giả lập đúng luật đó để kiểm lớp máy chủ web: không tin childId từ trình duyệt, cùng một câu lỗi, cookie an toàn. */
 const NOW=Date.parse('2026-10-20T20:00:00+07:00');
 const A='aaaaaaaa-0000-4000-8000-000000000001',B='bbbbbbbb-0000-4000-8000-000000000002';
@@ -118,7 +118,7 @@ assert.ok(read('src/App.tsx').includes("path==='/phu-huynh'?<ParentCorner/>"));
 assert.ok(read('src/migration/Experience.tsx').includes('href="/phu-huynh"'));
 assert.ok(read('src/components/Footer.tsx').includes("['/phu-huynh','Góc phụ huynh']"));
 assert.match(read('src/migration/route-policy.ts'),/pathname==='\/phu-huynh'\)return\{[^}]*robots:'noindex, nofollow'/);
-const sql=read('supabase/migrations-pending/202610200078_goc_phu_huynh.sql');
+const sql=read('supabase/migrations-pending/202610200090_goc_phu_huynh.sql');
 assert.ok(sql.includes("crypt(")&&sql.includes("gen_salt('bf'"),'PIN phụ huynh lưu băm bcrypt');
 assert.ok(!/grant[^;]*mtm_ph_[^;]*to (anon|authenticated)/i.test(sql),'RPC phụ huynh chỉ cho service_role');
 console.log('GÓC PHỤ HUYNH: 10/10 nhóm kiểm tra đạt (ghép đúng, sai 1 trường cùng câu, chặn xem chéo, khoá PIN, cookie, Zalo, không SĐT).');

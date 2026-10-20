@@ -1,5 +1,5 @@
 -- Dữ liệu GIẢ cho 078 (Góc phụ huynh). Chạy trong transaction rồi ROLLBACK:
---   begin; \i supabase/tests/phu_huynh_078_assertions.sql; rollback;
+--   begin; \i supabase/tests/phu_huynh_090_assertions.sql; rollback;
 create temporary table ph_qa078(name text primary key,passed boolean not null) on commit drop;
 do $qa$
 declare o uuid=coalesce((select owner_id from mtm_hw_private.classes limit 1),(select id from auth.users limit 1));c1 uuid=gen_random_uuid();a uuid=gen_random_uuid();b uuid=gen_random_uuid();r jsonb;sa text;sb text;net constant text=repeat('a',32);net2 constant text=repeat('b',32);i int;code text;

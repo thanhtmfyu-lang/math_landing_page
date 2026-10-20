@@ -1,4 +1,4 @@
--- 079 (20/10, anh Thành 20:36): chatbot Zalo là hỗ trợ kỹ thuật web. HS nhắn họ tên + SĐT + lớp, bot tự tra, đối chiếu sổ và sửa
+-- 091 (20/10, anh Thành 20:36): chatbot Zalo là hỗ trợ kỹ thuật web. HS nhắn họ tên + SĐT + lớp, bot tự tra, đối chiếu sổ và sửa
 -- tài khoản không chờ xác nhận. Chỉ service_role (khoá bot giữ ở máy chủ, không ở trình duyệt). Mọi lần tra/sửa ghi nhật ký.
 -- Không bao giờ trả PIN hay SĐT trong sổ; chỉ trả "khớp / không khớp". Đặt lại PIN chỉ khi SĐT người nhắn khớp hồ sơ (HS, PH hoặc số phụ đã xác nhận).
 -- Luồng Công ty AI áp. Không đụng bảng cũ ngoài student_pins (xoá khoá/xoá PIN đúng 1 em).

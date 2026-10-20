@@ -1,5 +1,5 @@
 -- Dữ liệu GIẢ cho 079 (bot Zalo hỗ trợ đăng nhập). Chạy trong transaction rồi ROLLBACK:
---   begin; \i supabase/tests/bot_ho_tro_079_assertions.sql; rollback;
+--   begin; \i supabase/tests/bot_ho_tro_091_assertions.sql; rollback;
 do $qa$
 declare o uuid=coalesce((select owner_id from mtm_hw_private.classes limit 1),(select id from auth.users limit 1));c1 uuid=gen_random_uuid();a uuid=gen_random_uuid();r jsonb;
 begin

@@ -1,4 +1,4 @@
--- 078 (20/10, anh Thành giao Góc phụ huynh /phu-huynh). Đặc tả: /mnt/project-files/ra-soat-web/DON_CODEX_GOC_PHU_HUYNH.md
+-- 090 (20/10, anh Thành giao Góc phụ huynh /phu-huynh). Đặc tả: /mnt/project-files/ra-soat-web/DON_CODEX_GOC_PHU_HUYNH.md
 -- Phụ huynh chỉ ghép được con khi khớp ĐỒNG THỜI sổ trung tâm: họ tên con + lớp + SĐT con + SĐT phụ huynh
 -- (parent_phone hoặc số phụ giáo vụ đã xác nhận). Không tự khai. PIN phụ huynh riêng, băm bcrypt.
 -- Khoá 15 phút sau 5 lần sai cho mỗi SĐT phụ huynh và sau 10 lần sai cho mỗi mạng (khoá mạng HMAC từ api/btvn.ts).
