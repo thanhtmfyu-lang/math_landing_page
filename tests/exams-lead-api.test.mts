@@ -13,6 +13,10 @@ assert.equal(typeof leadRpcArgs({...ok,extra:1}),'string');
 assert.equal(typeof leadRpcArgs({...ok,phone:'12345'}),'string');
 assert.equal(typeof leadRpcArgs({...ok,trial:'co'}),'string');
 assert.equal(typeof leadRpcArgs(null),'string');
+// Phiếu kỳ thi (kỳ khảo sát, giữa kỳ) phải có dòng SĐT học sinh hợp lệ trong notes.
+assert.equal(typeof leadRpcArgs({...ok,leadSource:'ky-khao-sat-ck1-2026'}),'string');
+assert.equal(typeof leadRpcArgs({...ok,leadSource:'ky-khao-sat-ck1-2026',notes:'SĐT học sinh: 0123'}),'string');
+assert.equal(typeof leadRpcArgs({...ok,leadSource:'ky-khao-sat-ck1-2026',notes:'Trường: X\nSĐT học sinh: 0912 345 678'}),'object');
 console.log('Kiểm lead: đúng luật form đăng ký.');
 
 // 2. API: chặn sai origin, tắt thì báo enabled:false (trình duyệt dùng đường cũ), bật thì gọi RPC bằng service role.

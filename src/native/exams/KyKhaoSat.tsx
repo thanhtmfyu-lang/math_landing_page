@@ -15,7 +15,7 @@ const ghi=(v:DaDangKy)=>{try{localStorage.setItem(KEY,JSON.stringify(v));}catch{
 
 /** /ky-khao-sat: đăng ký Kỳ khảo sát MTM cuối kỳ I (05–06/12/2026), miễn phí, mở cho cả học sinh ngoài trung tâm. */
 export default function KyKhaoSat(){
- const [f,setF]=useState<KsDangKy>({hoTen:'',lop:'',truong:'',zaloPh:'',dongY:false});
+ const [f,setF]=useState<KsDangKy>({hoTen:'',lop:'',truong:'',sdtHs:'',zaloPh:'',dongY:false});
  const [xong,setXong]=useState<DaDangKy|null>(doc);
  const [loi,setLoi]=useState('');const [dangGui,setDangGui]=useState(false);
  const set=<K extends keyof KsDangKy>(k:K,v:KsDangKy[K])=>{setF(x=>({...x,[k]:v}));setLoi('');};
@@ -54,12 +54,13 @@ export default function KyKhaoSat(){
     <h2>{xong.hoTen} · lớp {xong.lop}</h2>
     <p className="ks-sbd"><span>Số báo danh</span><strong>{xong.sbd}</strong></p>
     <p>Em chụp lại số báo danh này. Thầy sẽ nhắn Zalo phụ huynh trước ngày thi kèm đường vào phòng thi. Ngày 05–06/12 em vào minhthanhmath.vn, nhập số báo danh để làm bài.</p>
-    <div className="hsa-actions"><button type="button" className="hsa-ghost" onClick={()=>{setXong(null);setF({hoTen:'',lop:'',truong:'',zaloPh:'',dongY:false});}}>Đăng ký thêm một bạn</button></div>
+    <div className="hsa-actions"><button type="button" className="hsa-ghost" onClick={()=>{setXong(null);setF({hoTen:'',lop:'',truong:'',sdtHs:'',zaloPh:'',dongY:false});}}>Đăng ký thêm một bạn</button></div>
    </section>:<form className="hsa-card ks-form" onSubmit={gui} noValidate aria-labelledby="ks-form-title">
     <h2 id="ks-form-title">Đăng ký dự thi</h2>
     <label className="hsa-field"><span>Họ và tên học sinh *</span><input value={f.hoTen} onChange={e=>set('hoTen',e.target.value)} maxLength={80} autoComplete="name" required/></label>
     <fieldset className="hsa-field hsa-grades"><legend>Lớp *</legend><div>{KS_LOP.map(l=><label key={l} className={'hsa-grade'+(f.lop===l?' is-on':'')}><input type="radio" name="ks-lop" value={l} checked={f.lop===l} onChange={()=>set('lop',l)}/>Lớp {l}</label>)}</div></fieldset>
     <label className="hsa-field"><span>Trường đang học *</span><input value={f.truong} onChange={e=>set('truong',e.target.value)} maxLength={120} placeholder="Ví dụ: THPT Kim Liên" required/></label>
+    <label className="hsa-field"><span>SĐT của em *</span><input value={f.sdtHs} onChange={e=>set('sdtHs',e.target.value)} inputMode="tel" maxLength={20} required/></label>
     <label className="hsa-field"><span>Số Zalo của phụ huynh *</span><input value={f.zaloPh} onChange={e=>set('zaloPh',e.target.value)} inputMode="tel" autoComplete="tel" maxLength={20} required aria-describedby="ks-zalo-help"/><small id="ks-zalo-help">Để nhận số báo danh, đường vào phòng thi và báo cáo 1 trang. MTM không gọi điện mời chào.</small></label>
     <label className="hsa-consent"><input type="checkbox" checked={f.dongY} onChange={e=>set('dongY',e.target.checked)} required/><span>Em và phụ huynh đồng ý: bảng xếp hạng hiện số báo danh, tên rút gọn và điểm (không hiện trường, số điện thoại); MTM chỉ dùng số Zalo để gửi thông tin kỳ khảo sát và kết quả.</span></label>
     {loi&&<p className="hsa-error" role="alert">{loi}</p>}
