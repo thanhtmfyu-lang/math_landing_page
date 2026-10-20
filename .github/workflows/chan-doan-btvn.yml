@@ -1,0 +1,22 @@
+name: chan-doan-btvn
+on:
+  push:
+    branches: [chan-doan-btvn]
+jobs:
+  do:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Do trang va API BTVN
+        run: |
+          set +e
+          B=https://minhthanhmath.vn
+          curl -sS -m 30 -o /dev/null -w "btvn page %{http_code} %{time_total}s\n" $B/btvn
+          for a in state classes; do
+            echo "== action $a"
+            curl -sS -m 70 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H 'Content-Type: application/json' -d "{\"action\":\"$a\"}" $B/api/btvn | cut -c1-600
+          done
+          echo "== GET"
+          curl -sS -m 70 -w "\nHTTP %{http_code} %{time_total}s\n" "$B/api/btvn" | cut -c1-400
+          for p in /api/bang-tin /api/xep-hang; do curl -sS -m 40 -o /dev/null -w "$p %{http_code} %{time_total}s\n" $B$p; done
+          JS=$(curl -sS $B/btvn | grep -o '/assets/[^"]*\.js' | head -3); echo "$JS"
+          for j in $JS; do curl -sS -o /dev/null -w "$j %{http_code}\n" $B$j; done
