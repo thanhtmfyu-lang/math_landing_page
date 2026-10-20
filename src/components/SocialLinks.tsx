@@ -17,5 +17,5 @@ function SocialIcon({channel}:{channel:MtmSocialChannel}){
 }
 
 export function SocialLinks({label='Kênh của Minh Thành Math',showLabels=false,includeZalo=true}:{label?:string;showLabels?:boolean;includeZalo?:boolean}){
- return <nav className={'mtm-social-links'+(showLabels?' mtm-social-links-labelled':'')} aria-label={label}>{MTM_SOCIAL_CHANNELS.filter(channel=>includeZalo||channel.id!=='zalo').map(channel=><a key={channel.id} href={channel.url} target="_blank" rel="noopener noreferrer" aria-label={`${channel.id==='zalo'?'Zalo chatbot tư vấn lớp học':channel.label+' Minh Thành Math'}, mở tab mới`} title={channel.id==='zalo'?'Tư vấn lớp học qua Zalo':channel.label}><SocialIcon channel={channel.id}/>{showLabels&&<span>{channel.label}</span>}</a>)}</nav>;
+ return <nav className={'mtm-social-links'+(showLabels?' mtm-social-links-labelled':'')} aria-label={label}>{MTM_SOCIAL_CHANNELS.filter(channel=>includeZalo||channel.id!=='zalo').map(channel=><a key={channel.id} href={channel.url} target="_blank" rel="noopener noreferrer" aria-label={`${channel.id==='zalo'?'Zalo Toán Thầy Thành tư vấn lớp học':channel.label+' Minh Thành Math'}, mở tab mới`} title={channel.id==='zalo'?'Tư vấn lớp học qua Zalo':channel.label}><SocialIcon channel={channel.id}/>{showLabels&&<span>{channel.label}</span>}</a>)}</nav>;
 }

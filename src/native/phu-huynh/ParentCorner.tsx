@@ -107,7 +107,7 @@ function Dashboard({parentName,items,onAdd,onLogout,onExpired}:{parentName:strin
    <p>Xin chào {parentName?<strong>phụ huynh {parentName}</strong>:'phụ huynh'}.</p>
    <div className="ph-actions"><button className="ph-ghost" onClick={zaloCode}>Mã ghép Zalo</button><button className="ph-ghost" onClick={onAdd}>Ghép thêm con</button><button className="ph-ghost" onClick={onLogout}>Đăng xuất</button></div>
   </div>
-  {zalo&&<div className="ph-card ph-zalo" role="status"><p>Mã ghép Zalo: <strong className="ph-code">{zalo.code}</strong></p><p className="ph-small">Nhắn mã này cho chatbot Zalo của trung tâm trong 10 phút để nhận tin học tập của con qua Zalo. Mã dùng một lần; không đưa mã cho người khác.</p></div>}
+  {zalo&&<div className="ph-card ph-zalo" role="status"><p>Mã ghép Zalo: <strong className="ph-code">{zalo.code}</strong></p><p className="ph-small">Nhắn mã này cho Zalo Toán Thầy Thành của trung tâm trong 10 phút để nhận tin học tập của con qua Zalo. Mã dùng một lần; không đưa mã cho người khác.</p></div>}
   {items.length>1&&<div className="ph-tabs ph-children" role="tablist">{items.map(c=><button key={c.id} role="tab" aria-selected={c.id===childId} onClick={()=>setChildId(c.id)}>{c.fullName}<small>{c.className}</small></button>)}</div>}
   {!items.length&&<p className="ph-note">Chưa có con nào đang học được ghép. <button className="ph-link" onClick={onAdd}>Ghép con</button></p>}
   {error&&<p className="ph-error" role="alert">{error}</p>}
@@ -132,7 +132,7 @@ function Report({r}:{r:ParentReport}){
    <Stat label="Đi học tháng này" value={s.monthAttendance?`${s.monthAttendance.attended}/${s.monthAttendance.total} buổi`:'Chưa có buổi'} note={s.monthAttendance?Math.round(s.monthAttendance.attended/s.monthAttendance.total*100)+'%':''}/>
    <Stat label="BTVN đã nộp" value={`${s.submitted}/${s.dueTotal} bài`} note={s.dueTotal?Math.round(s.submitted/s.dueTotal*100)+'% đến hạn':''}/>
    <Stat label="Điểm BTVN trung bình" value={score(s.averageScore)} note="điểm cao nhất mỗi bài, thang 10"/>
-   <Stat label="Hạng BTVN tháng trong lớp" value={r.rank?`${r.rank.rank}${r.rank.total?'/'+r.rank.total:''}`:'Chưa xếp'} note={r.rank?.score!==null&&r.rank?.score!==undefined?'điểm '+score(r.rank.score):''}/>
+   <Stat label="Hạng BTVN tháng trong lớp" value={r.rank?'Hạng '+r.rank.rank:'Chưa xếp'} note={r.rank?.score!==null&&r.rank?.score!==undefined?'điểm trung bình tháng '+score(r.rank.score):''}/>
   </div>
   {s.missing.length>0&&<div className="ph-card ph-warn"><h2>Bài chưa nộp</h2><ul>{s.missing.map(m=><li key={m.lessonCode}>{day(m.date)}: {m.title}</li>)}</ul><p className="ph-small">Con vào <a href="/btvn">minhthanhmath.vn/btvn</a> để làm bù. Bài nộp lại vẫn được tính trong báo cáo tối.</p></div>}
   <div className="ph-two">

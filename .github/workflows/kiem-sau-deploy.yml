@@ -33,6 +33,9 @@ jobs:
           npx playwright install --with-deps chromium >/dev/null
       - name: Kiểm web thật
         id: kt
+        env:
+          MTM_PH_KIEM_SDT: ${{ secrets.MTM_PH_KIEM_SDT }}
+          MTM_PH_KIEM_PIN: ${{ secrets.MTM_PH_KIEM_PIN }}
         run: |
           sleep 20; loi=0
           cp scripts/kiem-sau-deploy.mjs /tmp/pw/kiem.mjs

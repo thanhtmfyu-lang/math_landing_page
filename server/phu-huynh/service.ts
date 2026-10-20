@@ -1,7 +1,6 @@
 import {homeworkLessonCard} from '../btvn/lesson-card';
 import {visibleThiThangCards} from '../btvn/thi-thang';
 import {publicClassNames} from '../btvn/class-config';
-import {receiptScores} from '../btvn/repository';
 import type {HomeworkLesson,LessonMaterial} from '../../src/native/homework/btvn-contract';
 import type {ParentChild,ParentReport,ParentHomework,ParentAttendance,ParentPaper} from '../../src/native/phu-huynh/contract';
 
@@ -63,13 +62,10 @@ export async function parentReport(rpc:Rpc,session:string,childId:unknown,now=Da
   const snap:any=await rpc('mtm_btvn_read',{p_session:token,p_lesson:null});
   const className=String(snap?.work?.student?.className??child.className),fullName=String(snap?.work?.student?.fullName??child.fullName);
   const visible=visibleThiThangCards((Array.isArray(snap?.lessons)?snap.lessons:[]) as HomeworkLesson[],fullName,className);
-  // Tiến độ từng buổi lấy từ biên nhận trong work (giống HomeworkService.state), không tin số trên thẻ.
-  const work=snap?.work??{},root=snap?.material?.lessonCode;
-  lessons=visible.map(l=>{
-   const entry=l.lessonCode===root?{receipts:work.receipts,effectiveDueAt:work.student?.effectiveDueAt,nextActualClassAt:work.student?.nextActualClassAt}:work.lessons?.[l.lessonCode];
-   const receipts:any[]=Array.isArray(entry?.receipts)?entry.receipts:[],scores=receiptScores(receipts),best=scores.length?Math.max(...scores):null;
-   const receipt=receipts.filter(r=>r.score===best).at(-1);
-   return homeworkLessonCard(l as LessonMaterial,className,now,{dueAt:entry?.effectiveDueAt??entry?.nextActualClassAt??null,bestScore:best,late:receipt?.late??null,submittedAt:receipt?.submittedAt??null,available:false});
+  // Tiến độ từng buổi lấy từ chính thẻ snapshot (điểm cao nhất, lúc nộp, hạn do RPC tính cho mọi buổi), giống trang BTVN của học sinh.
+  // work chỉ chứa biên nhận của buổi đang chọn, không có work.lessons, nên không dựng lại tiến độ từ work.
+  lessons=visible.map(l=>{const c=l as HomeworkLesson&{expectedDueAt?:number|null};
+   return homeworkLessonCard(l as LessonMaterial,className,now,{dueAt:c.dueAt??c.expectedDueAt??null,bestScore:typeof c.bestScore==='number'?c.bestScore:c.bestScore==null?null:Number(c.bestScore),late:c.late??null,submittedAt:c.submittedAt??null,available:false});
   });
   const cohort=/^2K1?[0-9]/i.exec(className)?.[0].toUpperCase();
   if(cohort)try{
