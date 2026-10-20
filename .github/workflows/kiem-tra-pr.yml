@@ -32,11 +32,27 @@ jobs:
       - run: npm ci --no-audit --no-fund
       - name: Build
         run: npx vite build --outDir "$RUNNER_TEMP/build"
+      - name: Quét bản build (W05 không lộ học phí, không lộ khóa)
+        run: node scripts/quet-cong-khai.mjs --build "$RUNNER_TEMP/build"
       - name: Sitemap có trang chính
         run: |
           for p in /kiem-tra-dau-vao /phong-thi-thu /ky-khao-sat /de-giua-ky-1; do
             grep -q "minhthanhmath.vn$p</loc>" "$RUNNER_TEMP/build/sitemap.xml" || { echo "Thiếu $p trong sitemap"; exit 1; }
           done
+
+  # D05: kho công khai, mỗi PR quét dòng mới thêm: SĐT thật, khóa bí mật, đáp án, tệp dữ liệu học sinh.
+  quet-lo:
+    if: github.event_name == 'pull_request'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+          filter: blob:none
+          sparse-checkout: scripts
+      - name: Quét dòng mới trong PR
+        run: node scripts/quet-cong-khai.mjs --diff "origin/${{ github.base_ref }}"
 
   test:
     runs-on: ubuntu-latest
