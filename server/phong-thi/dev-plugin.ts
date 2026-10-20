@@ -5,9 +5,9 @@ export function phongThiDevPlugin():Plugin{
  return {name:'mtm-phong-thi-dev',apply:'serve',configureServer(server){
   server.middlewares.use(async(req,res,next)=>{
    let path='';try{path=decodeURIComponent(req.url??'').replace(/\\/g,'/');}catch{return next();}
-   if(/(?:^|\/)server\/phong-thi\/(?:kho-de|handler)/i.test(path)){res.statusCode=404;res.end();return;}
+   if(/(?:^|\/)server\/phong-thi\/(?:kho-de|handler|api)/i.test(path)){res.statusCode=404;res.end();return;}
    if(!path.startsWith('/api/phong-thi'))return next();
-   const {createPhongThiApi}=await server.ssrLoadModule('/api/phong-thi.ts') as typeof import('../../api/phong-thi');
+   const {createPhongThiApi}=await server.ssrLoadModule('/server/phong-thi/api.ts') as typeof import('./api');
    let raw='';for await(const chunk of req)raw+=chunk.toString();
    const url=new URL(req.url??'/','http://dev');
    const env={...process.env,VERCEL:'1',VERCEL_ENV:'preview',VERCEL_URL:'mtm-dev.vercel.app',MTM_PHONG_THI_DB:''};

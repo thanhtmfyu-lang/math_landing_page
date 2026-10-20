@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {cham,deCongKhai,normShort,quyenMo,validateDe,type PtDe,type PtKho} from '../server/phong-thi/engine';
 import {docVe,dongGoi,kyVe,moGoi,phongThiKey,loadKho,xuLy} from '../server/phong-thi/handler';
-import {createPhongThiApi,chuanSdt,bamMatKhau,dungMatKhau} from '../api/phong-thi';
+import {createPhongThiApi,chuanSdt,bamMatKhau,dungMatKhau} from '../server/phong-thi/api';
 
 // Đề THPT giả đúng cấu trúc 2025: 12 trắc nghiệm, 4 đúng sai, 6 trả lời ngắn.
 const thpt:PtDe={id:'thpt-mau-01',loai:'thpt',tieuDe:'Đề mẫu THPT kiểm thử',nam:2026,nhom:'mtm',tang:'tra-phi',thoiGian:90,nguon:{ten:'MTM kiểm thử'},

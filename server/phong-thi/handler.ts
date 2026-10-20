@@ -39,7 +39,7 @@ export const GIO_THEM_MS=120000;
 
 export type PtTra={status:number;body:unknown};
 type Body=Record<string,unknown>;
-/** Lõi API không phụ thuộc HTTP: danh mục, mở đề, nộp bài. Người xem đã được api/phong-thi.ts xác định từ cookie. */
+/** Lõi API không phụ thuộc HTTP: danh mục, mở đề, nộp bài. Người xem đã được server/phong-thi/api.ts xác định từ cookie. */
 export function xuLy(action:string,body:Body,ai:PtNguoiXem,kho:{key:Buffer;kho:PtKho}|null,nay=Date.now()):PtTra{
  if(!kho)return {status:503,body:{message:'Phòng thi thử đang cập nhật đề. Em quay lại sau ít phút hoặc nhắn Zalo 0967 365 413.'}};
  if(action==='danh-muc')return {status:200,body:{nguoiXem:congKhaiNguoiXem(ai),de:mucLuc(kho.kho).map(d=>({...d,quyen:quyenMo(d,ai,nay)})),goi:GOI.filter(g=>g.moBan).map(({id,ten,loai,soNgay,gia,moTa})=>({id,ten,loai,soNgay,gia,moTa}))}};

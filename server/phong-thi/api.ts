@@ -1,9 +1,9 @@
 import {createHash,randomBytes,scrypt as scryptCb,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
-import {allowedBtvnOrigin} from '../server/btvn/origin-policy';
-import {sanitizeDisplayName} from '../server/hsa/rank';
-import {PT_LOAI,type PtNguoiXem} from '../server/phong-thi/engine';
-import {GOI,serverKho,xuLy} from '../server/phong-thi/handler';
+import {allowedBtvnOrigin} from '../btvn/origin-policy';
+import {sanitizeDisplayName} from '../hsa/rank';
+import {PT_LOAI,type PtNguoiXem} from './engine';
+import {GOI,serverKho,xuLy} from './handler';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;body?:unknown;headers?:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const scrypt=promisify(scryptCb) as (pw:string,salt:Buffer,len:number)=>Promise<Buffer>;
@@ -118,4 +118,4 @@ async function taiKhoan(token:string,rpc:(n:string,a:Record<string,unknown>)=>Pr
  return {kieu:'tai-khoan',id:x.id,ten:String(x.ten??''),goi:(Array.isArray(x.goi)?x.goi:[]).map((g:any)=>({loai:(Array.isArray(g.loai)?g.loai:[]).filter((l:unknown)=>(PT_LOAI as readonly unknown[]).includes(l)),den:String(g.den)}))};
 }
 export {GOI};
-export default createPhongThiApi();
+// Vercel Hobby giới hạn 12 hàm: phục vụ qua api/exam.ts (rewrite /api/phong-thi -> /api/exam?muc=phong-thi).
