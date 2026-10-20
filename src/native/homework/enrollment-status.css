@@ -1,0 +1,4 @@
+.hw-enrollment-status{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin:.75rem 0;font-weight:600;overflow-wrap:anywhere}
+.hw-enrollment-status select{max-width:100%;min-height:44px;padding:.5rem .75rem;border:1px solid #98a3bb;border-radius:.5rem;background:#fff;color:#213269;font:inherit}
+.hw-enrollment-status select:focus-visible{outline:3px solid #ffcf24;outline-offset:2px}
+.hw-enrollment-status select:disabled{opacity:.65}
