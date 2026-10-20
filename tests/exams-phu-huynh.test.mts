@@ -33,7 +33,11 @@ function fakeDb(){
    case 'mtm_ph_children':{const p=ph();return {parentName:'Phụ huynh giả',children:Object.keys(students).filter(id=>links.has(p+'|'+id)).map(id=>({id,fullName:students[id].fullName,className:students[id].className}))};}
    case 'mtm_ph_child_session':{const p=ph();if(!links.has(p+'|'+a.p_student_id))throw new RpcError('42501','Not your child');const t=token();childTokens.set(t,a.p_student_id);return t;}
    case 'mtm_btvn_read':{const id=childTokens.get(a.p_session);if(!id)throw new RpcError('42501','x');const s=students[id];
-    return {work:{student:{fullName:s.fullName,className:s.className,phone:s.phone,parentPhone:s.parentPhone,effectiveDueAt:null},receipts:[{score:id===A?9:4,submittedAt:NOW-86400e3,late:false}],lessons:{'L1':{receipts:[{score:id===A?5.5:3,submittedAt:NOW-3*86400e3,late:true}]}}},material:material('L2','2026-10-18'),lessons:[material('L2','2026-10-18'),material('L1','2026-10-15'),material('L0','2026-10-11')]};}
+    // Đúng dạng RPC thật (migration 011): mỗi thẻ trong lessons tự mang bestScore/submittedAt/late/hạn; work chỉ có biên nhận buổi đang chọn, không có work.lessons.
+    return {work:{student:{fullName:s.fullName,className:s.className},drafts:[],receipts:[{score:id===A?9:4,submittedAt:NOW-86400e3,late:false}]},material:material('L2','2026-10-18'),
+     lessons:[{...material('L2','2026-10-18'),available:true,dueAt:null,expectedDueAt:null,bestScore:id===A?9:4,submittedAt:NOW-86400e3,late:false},
+      {...material('L1','2026-10-15'),available:true,dueAt:NOW-2*86400e3,bestScore:id===A?5.5:3,submittedAt:NOW-3*86400e3,late:true},
+      {...material('L0','2026-10-11'),available:true,dueAt:null,expectedDueAt:NOW-5*86400e3,bestScore:null,submittedAt:null,late:null}]};}
    case 'mtm_btvn_my_rank':return {rank:2,score:8.1,submitted:3,total:18};
    case 'mtm_btvn_logout':childTokens.delete(a.p_session);return null;
    case 'mtm_ph_extras':{const p=ph();if(!links.has(p+'|'+a.p_student_id))throw new RpcError('42501','Not your child');
@@ -73,7 +77,10 @@ assert.ok(!/hoc.?phi|học phí|tuition/i.test(text));
 assert.equal(db.childTokens.size,0,'Phiên tạm của con phải thu hồi sau khi đọc');
 assert.equal(report.homework.find((h:any)=>h.lessonCode==='L2').bestScore,9);
 assert.equal(report.homework.find((h:any)=>h.lessonCode==='L1').status,'muon');
-assert.equal(report.homework.find((h:any)=>h.lessonCode==='L0').status,'chua-nop');
+assert.equal(report.homework.find((h:any)=>h.lessonCode==='L1').bestScore,5.5,'Điểm buổi cũ lấy từ thẻ snapshot, không từ work.lessons');
+// Hạn dự kiến (expectedDueAt) đã qua mà chưa nộp thì là quá hạn; số liệu tổng không được 0/0 khi con đã nộp bài (lỗi 21/10).
+assert.equal(report.homework.find((h:any)=>h.lessonCode==='L0').status,'qua-han');
+assert.equal(report.summary.submitted,2);assert.equal(report.summary.dueTotal,3);assert.equal(report.summary.averageScore,7.25);
 assert.deepEqual(report.rank,{rank:2,score:8.1,submitted:3,total:18});
 assert.equal(report.attendance.find((a:any)=>a.date==='2026-10-11').label,'Vắng');
 assert.equal(report.upcoming,'2026-10-22');
@@ -121,4 +128,7 @@ assert.match(read('src/migration/route-policy.ts'),/pathname==='\/phu-huynh'\)re
 const sql=read('supabase/migrations-pending/202610200090_goc_phu_huynh.sql');
 assert.ok(sql.includes("crypt(")&&sql.includes("gen_salt('bf'"),'PIN phụ huynh lưu băm bcrypt');
 assert.ok(!/grant[^;]*mtm_ph_[^;]*to (anon|authenticated)/i.test(sql),'RPC phụ huynh chỉ cho service_role');
+const corner=read('src/native/phu-huynh/ParentCorner.tsx');
+assert.ok(!/chatbot/i.test(corner)&&corner.includes('Zalo Toán Thầy Thành'),'Mã ghép gửi Zalo Toán Thầy Thành, không ghi chatbot');
+assert.ok(!corner.includes("'/'+r.rank.total"),'L28: hạng không kèm /y (total là số bài của con, không phải sĩ số)');
 console.log('GÓC PHỤ HUYNH: 10/10 nhóm kiểm tra đạt (ghép đúng, sai 1 trường cùng câu, chặn xem chéo, khoá PIN, cookie, Zalo, không SĐT).');

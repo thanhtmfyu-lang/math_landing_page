@@ -1,4 +1,4 @@
-// Tư vấn và trợ lý lớp học cùng dùng Zalo chatbot MTM.
+// Tư vấn và trợ lý lớp học cùng dùng Zalo Toán Thầy Thành.
 export const ZALO_ASSISTANT_URL='https://zalo.me/0967365413';
 
 // Nguồn duy nhất cho các kênh chính thức của Minh Thành Math.

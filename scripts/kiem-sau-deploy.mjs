@@ -47,6 +47,36 @@ for (const path of TRANG) {
  }
 }
 await b.close();
+// Góc phụ huynh có số liệu và không mâu thuẫn (lỗi 21/10: BTVN 0/0 bài mà hạng vẫn có điểm, "hạng 11/2").
+// Cần tài khoản phụ huynh kiểm thử (secret MTM_PH_KIEM_SDT + MTM_PH_KIEM_PIN, ghép với học sinh QA); kết quả vào issue công khai
+// nên chỉ in đạt/lỗi và lý do, không in tên, điểm hay SĐT.
+function mauThuanPH(r) {
+ const s = r?.summary || {}, hw = Array.isArray(r?.homework) ? r.homework : [], loi = [];
+ if (!hw.length) loi.push('không có bài BTVN nào');
+ if (r?.rank?.submitted > 0 && !s.submitted) loi.push('có hạng/điểm tháng nhưng BTVN đã nộp = 0');
+ if (s.dueTotal < s.submitted) loi.push('số bài đã nộp lớn hơn số bài đến hạn');
+ const coDiem = hw.some(h => typeof h.bestScore === 'number');
+ if (coDiem !== (s.averageScore !== null && s.averageScore !== undefined)) loi.push('điểm trung bình không khớp danh sách bài');
+ if (s.monthAttendance && s.monthAttendance.attended > s.monthAttendance.total) loi.push('số buổi đi học lớn hơn tổng buổi');
+ if (/0[0-9]{9}/.test(JSON.stringify(r))) loi.push('báo cáo có số điện thoại');
+ return loi;
+}
+if (process.env.MTM_PH_KIEM_SDT && process.env.MTM_PH_KIEM_PIN) {
+ const goi = async (body, cookie = '') => {
+  const res = await fetch(GOC + '/api/btvn', {method: 'POST', headers: {'content-type': 'application/json', cookie}, body: JSON.stringify(body), signal: AbortSignal.timeout(30000)});
+  return {status: res.status, body: await res.json().catch(() => null), cookie: (res.headers.get('set-cookie') || '').split(';')[0]};
+ };
+ try {
+  const dn = await goi({ph: 'login', parentPhone: process.env.MTM_PH_KIEM_SDT, pin: process.env.MTM_PH_KIEM_PIN});
+  const con = dn.body?.children || [];
+  if (dn.status !== 200 || !con.length) ghi('Góc phụ huynh: đăng nhập tài khoản kiểm', false, 'mã ' + dn.status + (con.length ? '' : ', không có con'));
+  for (const [i, c] of con.entries()) {
+   const bc = await goi({ph: 'report', childId: c.id}, dn.cookie), loi = bc.status === 200 ? mauThuanPH(bc.body) : ['mã ' + bc.status];
+   ghi(`Góc phụ huynh: số liệu con ${i + 1}`, !loi.length, loi.join('; '));
+  }
+  await goi({ph: 'logout'}, dn.cookie);
+ } catch (e) { ghi('Góc phụ huynh: số liệu', false, String(e?.name || e)); }
+} else ghi('Góc phụ huynh: số liệu', true, 'bỏ qua, chưa có tài khoản phụ huynh kiểm thử');
 const loi = dong.filter(d => !d.dat), gio = new Date().toLocaleString('vi-VN', {timeZone: 'Asia/Ho_Chi_Minh'});
 console.log(loi.length ? `**Kiểm sau deploy: ${loi.length}/${dong.length} mục lỗi** lúc ${gio}\n` : `Kiểm sau deploy: ${dong.length}/${dong.length} mục đạt lúc ${gio}\n`);
 console.log('| Mục | Kết quả |\n|---|---|');
