@@ -4,7 +4,7 @@
 export type BoardKind='ngay-le'|'su-kien'|'tai-lop'|'thong-bao';
 export type BoardPhoto={url:string;alt:string;width?:number;height?:number;thumb?:string;poster?:string;video?:boolean};
 export type BoardPost={id:string;kind:BoardKind;title:string;date:string;summary:string;photos:BoardPhoto[];place?:string;visibleFrom?:string;pinned?:boolean};
-export type BoardEvent={date:string;title:string;note:string};
+export type BoardEvent={date:string;title:string;note:string;href?:string};
 
 export const kindLabels:Record<BoardKind,string>={'ngay-le':'Ngày lễ','su-kien':'Sự kiện','tai-lop':'Ảnh tại lớp','thong-bao':'Thông báo'};
 
@@ -29,9 +29,13 @@ export const staticPosts:BoardPost[]=[
 // Rút từ /mnt/project-files/cong-ty-ai/LICH_SU_KIEN_NAM_HOC_2026_2027.md (phần dành cho học sinh, phụ huynh).
 export const boardEvents:BoardEvent[]=[
  {date:'2026-10-20',title:'Ngày Phụ nữ Việt Nam',note:'Lời chúc các bạn nữ, các mẹ'},
+ {date:'2026-10-23',title:'Mở thi thử giữa kỳ I lớp 10–12',note:'Online, miễn phí, chấm ngay và chỉ ra 3 chỗ cần vá',href:'/de-giua-ky-1'},
  {date:'2026-10-31',title:'Halloween ở lớp',note:'Mini game Toán, trang trí nhẹ'},
  {date:'2026-11-15',title:'Thi thử HSA miễn phí',note:'Giấy khen điện tử top 10'},
+ {date:'2026-11-01',title:'Mở đăng ký kỳ khảo sát MTM',note:'Miễn phí, mời cả bạn ngoài trung tâm, nhận số báo danh ngay',href:'/ky-khao-sat'},
  {date:'2026-11-20',title:'Ngày Nhà giáo Việt Nam',note:'Tri ân thầy cô, giao lưu ở lớp'},
+ {date:'2026-12-05',title:'Kỳ khảo sát MTM cuối kỳ I',note:'Thi 05–06/12, 90 phút, lớp 10–12',href:'/ky-khao-sat'},
+ {date:'2026-12-07',title:'Công bố xếp hạng kỳ khảo sát',note:'20:00, top 20 mỗi khối, quà cho top 15'},
  {date:'2026-12-24',title:'Giáng sinh',note:'Mini game, quà nhỏ cho bạn chăm'},
  {date:'2027-01-01',title:'Tết Dương lịch',note:'Nhìn lại một năm học cùng MTM'},
  {date:'2027-02-06',title:'Tết Nguyên đán',note:'Lịch nghỉ, học bù báo trước'},
@@ -53,7 +57,7 @@ export function visiblePosts(posts:BoardPost[],now:number){
   .sort((a,b)=>top(b)-top(a)||b.date.localeCompare(a.date)||a.id.localeCompare(b.id));
 }
 /** Sự kiện từ hôm nay (giờ Việt Nam) trở đi, kèm số ngày còn lại. */
-export function upcomingEvents(events:BoardEvent[],now:number,limit=3){
+export function upcomingEvents(events:BoardEvent[],now:number,limit=4){
  if(!Number.isFinite(now))return [];
  const today=dayNumber(vnDay(now));
  return events.map(e=>({...e,daysLeft:dayNumber(e.date)-today})).filter(e=>e.daysLeft>=0).sort((a,b)=>a.daysLeft-b.daysLeft).slice(0,limit);
