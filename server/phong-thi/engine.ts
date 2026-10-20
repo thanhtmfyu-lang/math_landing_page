@@ -11,8 +11,14 @@ export const PT_NHOM_TEN:Record<PtNhom,string>={'de-that':'Đề thi thật','mi
 export const PT_TANG=['cong-khai','tra-phi','hoc-sinh-mtm'] as const;
 export type PtTang=typeof PT_TANG[number];
 export type PtKieu='mc'|'ds'|'ngan'|'nhieu'|'keo-tha';
+/** 4 mạch kiến thức phần Toán HSA (QĐ 01/QĐ-ĐTSKT 2026): gắn ở câu bằng nhãn mach để báo cáo gom theo mạch. */
+export const PT_MACH=['so-dai-so','hinh-hoc','do-luong','thong-ke-xac-suat'] as const;
+export type PtMach=typeof PT_MACH[number];
+export const PT_MACH_TEN:Record<PtMach,string>={'so-dai-so':'Số và Đại số','hinh-hoc':'Hình học','do-luong':'Đo lường','thong-ke-xac-suat':'Thống kê, xác suất'};
+/** Nhãn dang, nguon, tangBanQuyen, vanTay chỉ để ghép Ngân hàng câu hỏi: máy chủ giữ, không bao giờ gửi trình duyệt. */
 export type PtCau={ma:string;phan:string;kieu:PtKieu;de:string;luaChon?:string[];y?:string[];o?:string[];the?:string[];
- dapAn:string|boolean[]|string[]|number[];chapNhan?:string[];loiGiai?:string;chuDe?:string;muc?:number;hinh?:string|null;diem?:number};
+ dapAn:string|boolean[]|string[]|number[];chapNhan?:string[];loiGiai?:string;chuDe?:string;muc?:number;mach?:PtMach;hinh?:string|null;diem?:number;
+ dang?:string;nguon?:{ten:string;url?:string};tangBanQuyen?:'ban-duoc'|'noi-bo';vanTay?:string};
 export type PtPhan={ma:string;ten:string;kieu:PtKieu;thoiGian?:number};
 export type PtDe={id:string;loai:PtLoai;tieuDe:string;nam:number;nhom:PtNhom;tang:PtTang;thoiGian:number;nguon:{ten:string;url?:string;ghiChu?:string};
  phan:PtPhan[];cau:PtCau[];kiemTra:{ketQua:string;cach?:string;ngay?:string};thangDiem?:number;moTa?:string;
@@ -63,6 +69,11 @@ export function validateDe(input:unknown):string[]{
   if(!str(c.de))e.push(q+'thiếu đề');
   if(c.hinh!=null&&!(typeof c.hinh==='string'&&(/^data:image\/(png|jpeg|webp|svg\+xml);base64,[A-Za-z0-9+/=]+$/.test(c.hinh)||/^<svg[\s>]/.test(c.hinh.trim()))&&c.hinh.length<=400000))e.push(q+'hinh phải là data URI ảnh hoặc SVG ≤ 400 KB');
   if(c.diem!==undefined&&!(typeof c.diem==='number'&&c.diem>0&&c.diem<=10))e.push(q+'diem 0–10');
+  if(c.muc!==undefined&&!(Number.isSafeInteger(c.muc)&&c.muc>=1&&c.muc<=5))e.push(q+'muc là số nguyên 1–5');
+  if(c.mach!==undefined&&!(PT_MACH as readonly unknown[]).includes(c.mach))e.push(q+'mach phải là '+PT_MACH.join(', '));
+  if(c.tangBanQuyen!==undefined&&c.tangBanQuyen!=='ban-duoc'&&c.tangBanQuyen!=='noi-bo')e.push(q+'tangBanQuyen là ban-duoc hoặc noi-bo');
+  // Câu tài liệu nội bộ (đề sở, trường, sách mua) kéo cả đề về tầng học sinh MTM.
+  if(c.tangBanQuyen==='noi-bo'&&d.tang!=='hoc-sinh-mtm')e.push(q+'câu tangBanQuyen noi-bo nên cả đề phải để tầng hoc-sinh-mtm');
   if(c.kieu==='mc'){
    if(!Array.isArray(c.luaChon)||c.luaChon.length<2||c.luaChon.length>6||!c.luaChon.every(x=>str(x,1,4000)))e.push(q+'luaChon cần 2–6 phương án');
    else if(typeof c.dapAn!=='string'||!/^[A-F]$/.test(c.dapAn)||'ABCDEF'.indexOf(c.dapAn)>=c.luaChon.length)e.push(q+'dapAn phải là một chữ cái trong số phương án');
@@ -111,7 +122,7 @@ export function deCongKhai(de:PtDe):PtDeCongKhai{
    diem:Math.round(maxMilli(de,c)*k*1000)/1000})),chum:(de.chum??[]).map(g=>({ma:g.ma,de:g.de,cau:g.cau,hinh:g.hinh??null}))};
 }
 
-export type PtMucCau={so:number;ma:string;phan:string;kieu:PtKieu;dung:boolean;daLam:boolean;diem:number;toiDa:number;traLoi:unknown;dapAn:unknown;loiGiai:string;chuDe?:string;muc?:number;yDung?:number};
+export type PtMucCau={so:number;ma:string;phan:string;kieu:PtKieu;dung:boolean;daLam:boolean;diem:number;toiDa:number;traLoi:unknown;dapAn:unknown;loiGiai:string;chuDe?:string;muc?:number;mach?:PtMach;yDung?:number;giay?:number};
 export type PtKetQua={de:string;tieuDe:string;loai:PtLoai;diem:number;thangDiem:number;dung:number;tong:number;
  theoPhan:{ma:string;ten:string;diem:number;toiDa:number;dung:number;tong:number}[];theoChuDe:{chuDe:string;dung:number;tong:number}[];cau:PtMucCau[]};
 const LETTERS='ABCDEF';
@@ -130,7 +141,7 @@ export function cham(de:PtDe,traLoi:PtTraLoi):PtKetQua{
   else if(c.kieu==='keo-tha'){const n=c.o?.length??0,arr=Array.isArray(a)?a.slice(0,n):[];const v=Array.from({length:n},(_,j)=>Number.isSafeInteger(arr[j])?arr[j] as number:null);
    daLam=v.some(x=>x!==null);traLoiSach=v;if(v.every((x,j)=>x===(c.dapAn as number[])[j]))milli=max;}
   return {so:i+1,ma:c.ma,phan:c.phan,kieu:c.kieu,dung:milli===max,daLam,diem:Math.round(milli*k*1000)/1000,toiDa:Math.round(max*k*1000)/1000,traLoi:traLoiSach,dapAn:c.dapAn,loiGiai:c.loiGiai??'',
-   ...(c.chuDe?{chuDe:c.chuDe}:{}),...(c.muc?{muc:c.muc}:{}),...(yDung!==undefined?{yDung}:{})};
+   ...(c.chuDe?{chuDe:c.chuDe}:{}),...(c.muc?{muc:c.muc}:{}),...(c.mach?{mach:c.mach}:{}),...(yDung!==undefined?{yDung}:{})};
  });
  const r2=(x:number)=>Math.round(x*100)/100;
  const diemTho=cau.reduce((s,c)=>s+c.diem,0);
@@ -163,3 +174,101 @@ export const CHU_DE_TEN:Record<string,string>={'ham-so':'Hàm số và đồ th�
  'toa-do-oxyz':'Tọa độ Oxyz','vecto':'Vectơ','xac-suat':'Xác suất','to-hop':'Tổ hợp','thong-ke':'Thống kê','luong-giac':'Lượng giác','cap-so':'Dãy số, cấp số','mu-log':'Mũ và logarit',
  'thuc-te':'Toán thực tế','gioi-han':'Giới hạn','hinh-phang':'Hình học phẳng','so-phuc':'Số phức','logic':'Logic, suy luận','xu-ly-so-lieu':'Xử lý số liệu'};
 export const tenChuDe=(ma:string)=>CHU_DE_TEN[ma]??ma;
+
+/** Thời gian từng câu do trình duyệt đo ({mã câu: số giây}). Hợp lệ khi: mã có trong đề, số nguyên ≥ 0, tổng không vượt gioiHan (giây).
+ * Sai thì trả null (bài vẫn chấm, chỉ bỏ số liệu thời gian). Câu không có trong dữ liệu tính 0 giây. */
+export function thoiGianCau(de:PtDe,raw:unknown,gioiHan:number):Record<string,number>|null{
+ if(raw===undefined||raw===null||typeof raw!=='object'||Array.isArray(raw))return null;
+ const ma=new Set(de.cau.map(c=>c.ma)),out:Record<string,number>={};let tong=0;
+ for(const [k,v] of Object.entries(raw as Record<string,unknown>)){if(!ma.has(k)||!Number.isSafeInteger(v)||(v as number)<0)return null;out[k]=v as number;tong+=v as number;}
+ return tong<=gioiHan?out:null;
+}
+
+/** Phổ điểm toàn bài HSA 2026 (thang 150, 116.839 bài), PDF phổ điểm ĐHQGHN: tỉ lệ thí sinh đạt từ mức điểm trở lên.
+ * 105: 5,18%; 100: 10,11%; 90: 26,19%; 80: 48,77%; 75: 61,07%; cao nhất 133. Mốc 113 ≈ 1% theo lịch chương trình MTM;
+ * mốc 60 và 45 suy từ phân phối chuẩn (trung bình 79,39, độ lệch chuẩn 15,0). ĐHQGHN chưa công bố phổ điểm riêng phần Toán. */
+export const HSA_PHO_2026:[number,number][]=[[150,0],[133,0.001],[113,1],[105,5.18],[100,10.11],[90,26.19],[80,48.77],[75,61.07],[60,90],[45,99],[0,100]];
+/** Phân vị ước lượng cho điểm phần Toán HSA (thang 50): quy đổi ×3 sang thang 150 rồi nội suy tuyến tính trên phổ toàn bài.
+ * Trả {quyDoi, top: % thí sinh có điểm từ mức này trở lên, ướcLuong: luôn true}. Chỉ là tham chiếu. */
+export function phanViHsa(diemToan:number,thang=50){
+ const x=Math.max(0,Math.min(150,diemToan*150/thang));let top=100;
+ for(let i=0;i<HSA_PHO_2026.length-1;i++){const [a,pa]=HSA_PHO_2026[i],[b,pb]=HSA_PHO_2026[i+1];if(x<=a&&x>=b){top=a===b?pa:pb+(pa-pb)*(x-b)/(a-b);break;}}
+ return {quyDoi:Math.round(x*10)/10,top:Math.round(top*100)/100,uocLuong:true as const};
+}
+
+/** Báo cáo 1 trang sau khi nộp: gom theo 4 mạch (khi đề có nhãn mach) hoặc theo chủ đề, câu tốn thời gian, câu sai cần xem lại, phân vị HSA. */
+export type PtBaoCao={theo:'mach'|'chu-de';nhom:{ma:string;ten:string;dung:number;tong:number;diem:number;toiDa:number;giay:number}[];
+ lauNhat:{so:number;ma:string;giay:number;dung:boolean}[];canXem:{so:number;ma:string;chuDe?:string;muc?:number;daLam:boolean;giay?:number}[];
+ tongGiay:number;coThoiGian:boolean;phanVi:ReturnType<typeof phanViHsa>|null};
+export function baoCao(k:PtKetQua,soLauNhat=5):PtBaoCao{
+ const coMach=k.cau.some(c=>c.mach),coThoiGian=k.cau.some(c=>(c.giay??0)>0);
+ const m=new Map<string,PtBaoCao['nhom'][number]>();
+ for(const c of k.cau){
+  const ma=coMach?(c.mach??'khac'):(c.chuDe??'khac'),ten=ma==='khac'?'Chưa gắn nhãn':coMach?PT_MACH_TEN[ma as PtMach]:tenChuDe(ma);
+  const o=m.get(ma)??{ma,ten,dung:0,tong:0,diem:0,toiDa:0,giay:0};o.tong++;if(c.dung)o.dung++;o.diem+=c.diem;o.toiDa+=c.toiDa;o.giay+=c.giay??0;m.set(ma,o);
+ }
+ const r2=(x:number)=>Math.round(x*100)/100,thuTu=coMach?(x:{ma:string})=>(PT_MACH as readonly string[]).indexOf(x.ma)+(x.ma==='khac'?99:0):null;
+ const nhom=[...m.values()].map(o=>({...o,diem:r2(o.diem),toiDa:r2(o.toiDa)})).sort(thuTu?(a,b)=>thuTu(a)-thuTu(b):(a,b)=>a.dung/a.tong-b.dung/b.tong||b.tong-a.tong);
+ const lauNhat=coThoiGian?[...k.cau].filter(c=>(c.giay??0)>0).sort((a,b)=>(b.giay??0)-(a.giay??0)||a.so-b.so).slice(0,soLauNhat).map(c=>({so:c.so,ma:c.ma,giay:c.giay??0,dung:c.dung})):[];
+ const canXem=k.cau.filter(c=>!c.dung).map(c=>({so:c.so,ma:c.ma,...(c.chuDe?{chuDe:c.chuDe}:{}),...(c.muc?{muc:c.muc}:{}),daLam:c.daLam,...(c.giay!==undefined?{giay:c.giay}:{})}));
+ return {theo:coMach?'mach':'chu-de',nhom,lauNhat,canXem,tongGiay:k.cau.reduce((s,c)=>s+(c.giay??0),0),coThoiGian,phanVi:k.loai==='hsa'?phanViHsa(k.diem,k.thangDiem):null};
+}
+
+/** Đợt thi có giờ mở: khai báo ở server/phong-thi/dot.json (chỉ mã đề và giờ). de null = chưa công bố đề; "chua-gan" = ẩn hẳn. */
+export const PT_KHOI=['10','11','12'] as const;
+export type PtKhoi=typeof PT_KHOI[number];
+/** Đợt khảo sát theo khối (có khoi): thí sinh đăng ký lấy SBD dạng {sbd}-{khối}-{số thứ tự 4 chữ số}, đề lấy theo khối; de để null. */
+export type PtDot={ma:string;ten:string;de:string|null;mo:string;dong:string;loai:PtLoai;moTa?:string;khoi?:Record<PtKhoi,string|null>;sbd?:string};
+export type PtDotCongKhai={ma:string;ten:string;loai:PtLoai;mo:string;dong:string;moTa?:string;trangThai:'sap-mo'|'dang-mo';de:{id:string;tieuDe:string;thoiGian:number;soCau:number;tang:PtTang}|null;
+ dangKy?:{khoi:Record<PtKhoi,boolean>};cuaEm?:{sbd:string;khoi:PtKhoi;ten:string}};
+const okDotMa=(v:unknown)=>typeof v==='string'&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(v);
+/** Kiểm danh sách đợt (cũng chạy trong test): mã, giờ ISO có múi giờ, đóng sau mở, loại đúng. */
+export function validateDot(ds:unknown):string[]{
+ const e:string[]=[];if(!Array.isArray(ds))return ['dot phải là danh sách'];const ma=new Set<string>();
+ ds.forEach((t:any,i)=>{const at='đợt '+(i+1)+' ('+(t?.ma??'?')+'): ';
+  if(!t||!okDotMa(t.ma))e.push(at+'mã 3–60 ký tự a-z, 0-9, -');else if(ma.has(t.ma))e.push(at+'trùng mã');else ma.add(t.ma);
+  if(!str(t?.ten,3,120))e.push(at+'thiếu tên');
+  if(!(PT_LOAI as readonly unknown[]).includes(t?.loai))e.push(at+'loai không hợp lệ');
+  if(t?.de!==null&&!okId(t?.de))e.push(at+'de là id đề, "chua-gan" hoặc null');
+  if(t?.khoi!==undefined){if(t.de!==null)e.push(at+'đợt khảo sát theo khối để de null');
+   if(!t.khoi||typeof t.khoi!=='object'||!PT_KHOI.every(k=>t.khoi[k]===null||okId(t.khoi[k]))||Object.keys(t.khoi).some(k=>!(PT_KHOI as readonly string[]).includes(k)))e.push(at+'khoi cần id đề hoặc null cho 10, 11, 12');
+   if(typeof t.sbd!=='string'||!/^[A-Z][A-Z0-9]{1,7}$/.test(t.sbd))e.push(at+'sbd là tiền tố số báo danh, ví dụ KS26');}
+  const iso=/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?(Z|[+-]\d\d:\d\d)$/;
+  if(!iso.test(t?.mo??'')||!iso.test(t?.dong??'')||!(Date.parse(t.dong)>Date.parse(t.mo)))e.push(at+'mo, dong là giờ ISO có múi giờ, dong sau mo');
+ });
+ return e;
+}
+/** Đợt đang mở cho đề này lúc nay (để mở đề ở chế độ đợt). */
+export function dotDangMo(ds:PtDot[],ma:unknown,deId:string,nay:number):PtDot|null{
+ const t=ds.find(x=>x.ma===ma);return t&&t.de===deId&&Date.parse(t.mo)<=nay&&nay<Date.parse(t.dong)?t:null;
+}
+/** Thẻ "Đợt thi sắp tới / đang mở" ở sảnh: bỏ đợt đã đóng, đợt "chua-gan" và đợt gán đề không có trong kho. */
+export function dotCongKhai(ds:PtDot[],kho:PtKho,nay:number):PtDotCongKhai[]{
+ return ds.filter(t=>t.de!=='chua-gan'&&Date.parse(t.dong)>nay).flatMap(t=>{
+  const d=t.de?kho.de.find(x=>x.id===t.de):null;if(t.de&&!d)return [];
+  const coDe=(id:string|null)=>!!id&&kho.de.some(x=>x.id===id);
+  return [{ma:t.ma,ten:t.ten,loai:t.loai,mo:t.mo,dong:t.dong,...(t.moTa?{moTa:t.moTa}:{}),trangThai:Date.parse(t.mo)<=nay?'dang-mo' as const:'sap-mo' as const,
+   de:d?{id:d.id,tieuDe:d.tieuDe,thoiGian:d.thoiGian,soCau:d.cau.length,tang:d.tang}:null,
+   ...(t.khoi?{dangKy:{khoi:{'10':coDe(t.khoi['10']),'11':coDe(t.khoi['11']),'12':coDe(t.khoi['12'])}}}:{})}];
+ }).sort((a,b)=>Date.parse(a.mo)-Date.parse(b.mo));
+}
+
+/** Báo lỗi đề: kiểm đề, mã câu có trong kho, nội dung 5–500 ký tự (bỏ ký tự điều khiển). */
+export function kiemBaoLoi(body:Record<string,unknown>,kho:PtKho):{de:string;ma:string;noiDung:string}|string{
+ const de=typeof body.de==='string'?kho.de.find(d=>d.id===body.de):undefined;if(!de)return 'Không tìm thấy đề này.';
+ if(typeof body.ma!=='string'||!de.cau.some(c=>c.ma===body.ma))return 'Không tìm thấy câu này trong đề.';
+ const nd=typeof body.noiDung==='string'?body.noiDung.replace(/[\u0000-\u0008\u000b-\u001f\u007f]/g,'').trim():'';
+ if(nd.length<5)return 'Em ghi rõ lỗi (ít nhất 5 ký tự).';if(nd.length>500)return 'Nội dung tối đa 500 ký tự.';
+ return {de:de.id,ma:body.ma,noiDung:nd};
+}
+
+/** Tên rút gọn cho bảng xếp hạng kỳ khảo sát: "Nguyễn Văn An" thành "N. V. An" (giữ tên, viết tắt họ và đệm). */
+export function tenRutGon(ten:string){const w=ten.trim().split(/\s+/).filter(Boolean);if(w.length<2)return w[0]??'';return w.slice(0,-1).map(x=>x[0].toUpperCase()+'.').join(' ')+' '+w[w.length-1];}
+/** Đăng ký kỳ khảo sát: họ tên chữ cái 2–60, lớp 10/11/12, trường 2–120 (không đường dẫn), SĐT phụ huynh đã chuẩn hóa ở API. */
+export function kiemDangKyDot(body:Record<string,unknown>):{ten:string;khoi:PtKhoi;truong:string}|string{
+ const ten=typeof body.ten==='string'?body.ten.trim().replace(/\s+/g,' '):'',truong=typeof body.truong==='string'?body.truong.trim().replace(/\s+/g,' '):'',khoi=String(body.khoi??'');
+ if(!/^[\p{L}][\p{L} .'-]{1,59}$/u.test(ten)||!/\p{L}.*\s.*\p{L}/u.test(ten))return 'Em ghi đủ họ và tên (chỉ chữ cái).';
+ if(!(PT_KHOI as readonly string[]).includes(khoi))return 'Em chọn lớp 10, 11 hoặc 12.';
+ if(truong.length<2||truong.length>120||/https?:|www\.|[<>]/i.test(truong))return 'Tên trường 2–120 ký tự.';
+ return {ten,khoi:khoi as PtKhoi,truong};
+}
