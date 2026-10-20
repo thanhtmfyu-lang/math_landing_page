@@ -9,3 +9,9 @@ src/native/chapters/generated-bank/
 .qa-kt06-*.log
 .qa-temp/
 supabase/.temp/
+
+# Đáp án đề thi (20/10/2026): bản gốc ở thư mục riêng, xem scripts/de-thi-kho.mjs
+src/native/exams/hsa-papers/*.key.json
+src/native/exams/de-giua-ky/*.key.json
+tools/hsa-papers/de-thi-thu-hsa-*.json
+tools/de-giua-ky-1/*.json

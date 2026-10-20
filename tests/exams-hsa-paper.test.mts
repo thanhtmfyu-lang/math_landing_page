@@ -5,10 +5,13 @@ import {join} from 'node:path';
 import {convertHsaPaper} from '../scripts/convert-hsa-paper.mjs';
 import {validatePracticeExam,validateQuestionOnlyPracticeExam} from '../src/native/exams/data';
 import {scorePracticeAssessment} from '../src/native/exams/flexible-profile';
+import {readSecret} from '../scripts/de-thi-kho.mjs';
 // Đề thi thử HSA số 01 và 02: tệp của tổ Học liệu chuyển nguyên văn sang định dạng đề web. Không sửa đề, đáp án, lời giải.
 const root=process.env.MTM_ROOT!;
 const require=createRequire(join(root,'package.json'));
 const read=(p:string)=>readFileSync(join(root,p),'utf8');
+// Đáp án, lời giải, tệp đề gốc và migration seed không còn trong kho công khai (20/10): đọc bản gốc ở thư mục riêng (MTM_DE_THI_DIR).
+const secret=(p:string)=>{const t=readSecret(root,p);if(t==null){console.log('BỎ QUA phần đáp án: thiếu bản gốc '+p+' (đặt MTM_DE_THI_DIR).');process.exit(0);}return t;};
 const React=require('react'),{renderToStaticMarkup}=require('react-dom/server'),{buildSync}=require('esbuild');
 const code=buildSync({entryPoints:[join(root,'src/native/exams/HsaPaperReader.tsx')],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',loader:{'.css':'empty','.json':'json'},logLevel:'silent'}).outputFiles[0].text;
 const mod={exports:{} as any};new Function('require','module','exports',code)((id:string)=>id.endsWith('.css')?{}:require(id),mod,mod.exports);
@@ -20,11 +23,11 @@ type Spec={n:string;groups:number[][];tables:number[]};
 const PAPERS:Spec[]=[{n:'01',groups:[[31,32,33],[35,36,37]],tables:[]},{n:'02',groups:[[34,35,36],[47,48,49]],tables:[37,40]}];
 for(const {n,groups,tables} of PAPERS){
  const id='mtm-hsa-thi-thu-'+n,tag='[đề '+n+'] ';
- const sourceText=read('tools/hsa-papers/de-thi-thu-hsa-'+n+'.json'),src=JSON.parse(sourceText);
+ const sourceText=secret('tools/hsa-papers/de-thi-thu-hsa-'+n+'.json'),src=JSON.parse(sourceText);
  const delivered='/mnt/project-files/lo-trinh-web/thi-thu-hsa/de-thi-thu-hsa-'+n+'.json';
  if(existsSync(delivered))assert.equal(readFileSync(delivered,'utf8'),sourceText,'Bản trong repo phải trùng byte với tệp tổ Học liệu giao.');
  assert.equal(src.ma_de,n==='01'?'HSA-MTM-01':id);
- const key=JSON.parse(read('src/native/exams/hsa-papers/'+id+'.key.json'));
+ const key=JSON.parse(secret('src/native/exams/hsa-papers/'+id+'.key.json'));
  const pub=JSON.parse(read('src/native/exams/hsa-papers/'+id+'.public.json'));
 
  // 1. Tệp sinh ra đúng bằng kết quả chạy lại bộ chuyển (không ai sửa tay).
@@ -119,7 +122,7 @@ assert.match(css,/\.hsa-table-wrap\{[^}]*overflow-x:auto/);
 console.log('Đạt bảng HTML: tiêu đề ngoài vùng cuộn, thead/tbody, th scope cột/hàng, công thức trong ô, cuộn ngang trên điện thoại.');
 
 // 9. Bộ chuyển dừng thay vì đoán khi tệp nguồn có thứ không biểu diễn được.
-const src1=read('tools/hsa-papers/de-thi-thu-hsa-01.json'),src2=read('tools/hsa-papers/de-thi-thu-hsa-02.json');
+const src1=secret('tools/hsa-papers/de-thi-thu-hsa-01.json'),src2=secret('tools/hsa-papers/de-thi-thu-hsa-02.json');
 const mutate=(text:string,f:(s:any)=>void)=>{const s=JSON.parse(text);f(s);return ()=>convertHsaPaper(JSON.stringify(s),{id:'mtm-hsa-thi-thu-xx'});};
 const mc=(s:any)=>s.cau_hoi.find((q:any)=>q.dang==='mcq'),num=(s:any)=>s.cau_hoi.find((q:any)=>q.dang==='dien_so'),q=(s:any,k:number)=>s.cau_hoi.find((x:any)=>x.stt===k);
 for(const bad of [
