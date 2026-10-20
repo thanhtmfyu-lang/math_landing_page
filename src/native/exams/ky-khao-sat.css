@@ -1,0 +1,16 @@
+/* /ky-khao-sat: dựng trên lớp hsa-* (navy + vàng MTM). */
+.ks-layout{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,440px);gap:24px;align-items:start;margin-bottom:40px}
+.ks-info h2,.ks-form h2,.ks-done h2{margin:0 0 12px;font-size:19px;font-weight:700}
+.ks-rules{display:flex;flex-direction:column;gap:12px;margin:0}
+.ks-rules div{display:grid;grid-template-columns:110px minmax(0,1fr);gap:10px;padding-bottom:12px;border-bottom:1px solid var(--hsa-line)}
+.ks-rules div:last-child{border-bottom:0;padding-bottom:0}
+.ks-rules dt{font-weight:700;font-size:14px}
+.ks-rules dd{margin:0;font-size:14.5px;line-height:1.65;color:#2b3550}
+.ks-form{display:flex;flex-direction:column;gap:14px}
+.ks-done{display:flex;flex-direction:column;gap:12px}
+.ks-done p{margin:0;font-size:14.5px;line-height:1.65}
+.ks-sbd{display:flex;flex-direction:column;align-items:flex-start;gap:4px;padding:14px 16px;border-radius:12px;background:#fff9e3;border-left:4px solid var(--hsa-yellow)}
+.ks-sbd span{font-size:13px;color:var(--hsa-muted)}
+.ks-sbd strong{font:700 26px/1.1 ui-monospace,SFMono-Regular,Menlo,monospace;letter-spacing:.04em;color:var(--hsa-navy)}
+@media (max-width:900px){.ks-layout{grid-template-columns:1fr}}
+@media (max-width:560px){.ks-rules div{grid-template-columns:1fr;gap:4px}}

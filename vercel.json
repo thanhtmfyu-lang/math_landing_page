@@ -55,6 +55,10 @@
       "destination": "/index.html"
     },
     {
+      "source": "/ky-khao-sat",
+      "destination": "/index.html"
+    },
+    {
       "source": "/de-giua-ky-1",
       "destination": "/index.html"
     },
