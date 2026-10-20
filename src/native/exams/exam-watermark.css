@@ -1,0 +1,24 @@
+/* Dấu chìm logo màu Minh Thành Math + chân trang trên mọi đề, tài liệu công khai (luật anh Thành 20/10/2026).
+   Lớp phủ nằm trên đề, không bắt chuột; ảnh chụp màn hình đề vẫn mang logo và thông tin trung tâm.
+   Độ mờ logo đã nằm sẵn trong public/mtm-watermark.png để chữ chân trang giữ đủ đậm. */
+:is(.fr-paper, .pt-questions, .dv-questions) { position: relative; padding-bottom: 56px; }
+:is(.fr-paper, .pt-questions, .dv-questions)::after {
+  content: 'Giáo viên Tô Minh Thành · ĐT/Zalo 0967 365 413 · Địa chỉ lớp học: 18 ngách 23 ngõ 82 Chùa Láng · Minh Thành Math – minhthanhmath.vn';
+  position: absolute;
+  inset: 0;
+  z-index: 2;
+  pointer-events: none;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+  padding: 0 12px 14px;
+  font-size: 15px;
+  font-weight: 700;
+  line-height: 1.3;
+  color: #233468;
+  text-align: center;
+  background-image: url('/mtm-watermark.png'), url('/mtm-watermark.png'), url('/mtm-watermark.png');
+  background-position: center 14%, center 50%, center 82%;
+  background-size: min(64%, 520px) auto;
+  background-repeat: no-repeat;
+}
