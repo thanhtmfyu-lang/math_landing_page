@@ -4,14 +4,15 @@ import MathText from '../math/MathText';
 import {Link} from '../../migration/navigation';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
 import {describeLeadSource,storedLeadSource} from '../../components/lead-source';
-import {DV_TRACKS,DV_TRACK_LABEL,LEVEL_LABEL,isDvTrack,type DvTrack,type Paper,type Result} from '../../../server/dau-vao/engine';
+import {DV_TRACKS,DV_TRACK_LABEL,LEVEL_LABEL,PART_LABEL,isDvTrack,type DvTrack,type Paper,type Result} from '../../../server/dau-vao/engine';
 import {HS_DAYS,HS_GOALS,HS_GOAL_LABEL,HS_HEARD,HS_HEARD_LABEL,HS_SLOTS,HS_SLOT_LABEL,validateHoSo,type HoSo} from '../../../server/dau-vao/ho-so';
 import {entranceLeadPayload,resultSummary} from './entrance-test';
 import './hsa-mock.css';
 import './entrance-test.css';
 
 // Phiếu đã lưu trên máy chủ thì giữ mã phiếu + chữ ký để nộp bài gắn kết quả vào đúng phiếu.
-type Saved={paper:Paper;answers:Record<string,number|string>;startedAt:number;hoSo:HoSo;link?:{id:string;sig:string};result?:Result;lead?:'sent'|'error'};
+type Answer=number|string|(boolean|null)[];
+type Saved={paper:Paper;answers:Record<string,Answer>;startedAt:number;hoSo:HoSo;link?:{id:string;sig:string};result?:Result;lead?:'sent'|'error'};
 type GradeOut=Result&{lead?:'saved'|'off'|'error'};
 const KEY='mtm:dau-vao:v2',API='/api/kiem-tra-dau-vao',FORM_KEY='mtm:dau-vao:phieu';
 const vnToday=()=>new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Saigon'}).format(new Date());
@@ -19,6 +20,7 @@ const load=():Saved|null=>{try{const s=JSON.parse(localStorage.getItem(KEY)??'nu
 const save=(s:Saved|null)=>{try{s?localStorage.setItem(KEY,JSON.stringify(s)):localStorage.removeItem(KEY);}catch{/* trình duyệt chặn lưu thì vẫn làm bài được */}};
 const fmt=(ms:number)=>{const s=Math.max(0,Math.ceil(ms/1000));return String(Math.floor(s/60)).padStart(2,'0')+':'+String(s%60).padStart(2,'0');};
 const TRACK_NOTE:Record<DvTrack,string>={'6':'Nền tiểu học + Toán 6','7':'Nền lớp 6 + Toán 7','8':'Nền lớp 7 + Toán 8','9':'Nền lớp 8 + Toán 9, ôn vào 10','10':'Nền lớp 9 + Toán 10','11':'Nền lớp 10 + Toán 11','12':'Nền lớp 11 + Toán 12','hsa':'Toán và xử lý số liệu HSA'};
+const isAnswered=(a:Answer|undefined)=>Array.isArray(a)?a.some(x=>x!==null):a!==undefined&&a!=='';
 const STATUS_LABEL={vung:'Đã vững','cung-co':'Cần củng cố',hong:'Còn hổng'} as const;
 
 function initialTrack(search:string):DvTrack{const k=new URLSearchParams(search).get('khoi');return isDvTrack(k)?k:'10';}
@@ -104,8 +106,8 @@ function Attempt({saved,update}:{saved:Saved;update:(s:Saved|null)=>void}){
  const {paper,answers}=saved;const deadline=saved.startedAt+paper.durationMinutes*60000;
  const [now,setNow]=useState(Date.now()),[busy,setBusy]=useState(false),[error,setError]=useState(''),[confirm,setConfirm]=useState(false);
  const ref=useRef(saved);ref.current=saved;
- const answered=paper.questions.filter(q=>answers[q.id]!==undefined&&answers[q.id]!=='').length;
- const set=(id:string,v:number|string)=>update({...ref.current,answers:{...ref.current.answers,[id]:v}});
+ const answered=paper.questions.filter(q=>isAnswered(answers[q.id])).length;
+ const set=(id:string,v:Answer)=>update({...ref.current,answers:{...ref.current.answers,[id]:v}});
  const submit=useCallback(async()=>{if(busy)return;setBusy(true);setError('');const s=ref.current;
   try{const r=await fetch(API,{method:'POST',headers:{'Content-Type':'application/json',Accept:'application/json'},body:JSON.stringify({khoi:s.paper.khoi,ngay:s.paper.ngay,seed:s.paper.seed,answers:s.answers,...(s.link?{hoSoId:s.link.id,hoSoSig:s.link.sig,hoTen:s.hoSo.hoTen,truong:s.hoSo.truong}:{})})});
    const data=await r.json() as GradeOut&{message?:string};if(!r.ok)throw Error(data?.message??'');const {lead,...result}=data;update({...s,result:result as Result,lead:lead==='saved'?'sent':undefined});window.scrollTo({top:0});}
@@ -113,7 +115,7 @@ function Attempt({saved,update}:{saved:Saved;update:(s:Saved|null)=>void}){
  },[busy,update]);
  useEffect(()=>{const t=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(t);},[]);
  const late=now>=deadline;useEffect(()=>{if(late)void submit();},[late]);// eslint-disable-line react-hooks/exhaustive-deps
- let lastSection='';
+ let lastSection='',lastPart='';
  return <div className="dv-attempt">
   <div className="hsa-card dv-bar" role="region" aria-label="Thời gian và tiến độ">
    <span><strong>{saved.hoSo.hoTen}</strong> · {DV_TRACK_LABEL[paper.khoi]} · Mã bài {paper.code}</span>
@@ -123,15 +125,19 @@ function Attempt({saved,update}:{saved:Saved;update:(s:Saved|null)=>void}){
   <p className="dv-week">{paper.summer?`Đề dịp hè cho năm học ${paper.schoolYear}: nền lớp dưới và phần lớp MTM đã dạy trước trong hè.`:`Đề theo tiến độ tuần ${paper.week} năm học ${paper.schoolYear}.`} {paper.sections.map(s=>s.label+' '+s.count+' câu').join(' · ')}.</p>
   <ol className="dv-questions">
    {paper.questions.map(q=>{const head=q.section!==lastSection;lastSection=q.section;const sec=paper.sections.find(s=>s.id===q.section);
+    const partHead=!!q.part&&q.part!==lastPart;lastPart=q.part??'';const tf=(answers[q.id] as (boolean|null)[]|undefined)??[null,null,null,null];
     return <li key={q.id} className="hsa-card dv-q" id={'cau-'+q.no}>
      {head&&<p className="dv-section">{sec?.label}</p>}
+     {head&&q.section==='tot-nghiep'&&<p className="dv-note">Làm như đề thi tốt nghiệp: câu đúng sai chọn Đúng hoặc Sai cho từng ý; câu trả lời ngắn ghi số, tối đa 4 ký tự.</p>}
+     {partHead&&<p className="dv-part">{PART_LABEL[q.part!]}</p>}
      <p className="dv-q-head"><strong>Câu {q.no}</strong><span>{q.topicName}</span></p>
      <div className="dv-prompt"><MathText text={q.prompt}/></div>
      {q.kind==='mc'?<div className="dv-choices" role="radiogroup" aria-label={'Câu '+q.no}>{q.choices!.map((c,i)=><label key={i} className={'dv-choice'+(answers[q.id]===i?' is-on':'')}><input type="radio" name={q.id} checked={answers[q.id]===i} onChange={()=>set(q.id,i)}/><b>{'ABCD'[i]}</b><span><MathText text={c}/></span></label>)}</div>
+     :q.kind==='tf'?<div className="dv-tf">{q.statements!.map((st,i)=><div key={i} className="dv-tf-row" role="radiogroup" aria-label={'Câu '+q.no+' ý '+'abcd'[i]}><span><MathText text={st}/></span>{[true,false].map(v=><label key={String(v)} className={'dv-tf-btn'+(tf[i]===v?' is-on':'')}><input type="radio" name={q.id+'-'+i} checked={tf[i]===v} onChange={()=>set(q.id,tf.map((x,j)=>j===i?v:x))}/>{v?'Đúng':'Sai'}</label>)}</div>)}</div>
      :<label className="dv-num"><span>Đáp số</span><input inputMode="decimal" maxLength={8} value={String(answers[q.id]??'')} onChange={e=>set(q.id,e.target.value.replace(/[^0-9,.\-]/g,''))} placeholder="Ví dụ: -1,5"/></label>}
     </li>;})}
   </ol>
-  <nav className="hsa-card dv-jump" aria-label="Chuyển câu">{paper.questions.map(q=><a key={q.id} href={'#cau-'+q.no} className={answers[q.id]!==undefined&&answers[q.id]!==''?'is-done':''}>{q.no}</a>)}</nav>
+  <nav className="hsa-card dv-jump" aria-label="Chuyển câu">{paper.questions.map(q=><a key={q.id} href={'#cau-'+q.no} className={isAnswered(answers[q.id])?'is-done':''}>{q.no}</a>)}</nav>
   {error&&<p className="hsa-error" role="alert">{error}</p>}
   <div className="hsa-card dv-submit">
    {confirm||answered===paper.questions.length?<p className="hsa-actions"><button type="button" className="hsa-primary" onClick={()=>void submit()} disabled={busy}>{busy?'Đang chấm…':'Nộp bài'}</button>{answered<paper.questions.length&&<span>Còn {paper.questions.length-answered} câu chưa làm.</span>}</p>
@@ -163,6 +169,14 @@ function ResultView({saved,update}:{saved:Saved;update:(s:Saved|null)=>void}){
     <p className="dv-week">{paper.summer?`Đề dịp hè cho năm học ${paper.schoolYear}.`:`Đề theo tiến độ tuần ${r.week} năm học ${paper.schoolYear}, ngày ${r.ngay.split('-').reverse().join('/')}.`}</p>{r.scoreNote&&<p className="dv-note">{r.scoreNote}</p>}</div>
    <ul className="dv-sections">{r.bySection.map(s=><li key={s.id}><span>{s.label}</span><b>{s.correct}/{s.total}</b><i style={{['--p' as string]:s.percent+'%'}} className={s.percent>=70?'is-good':s.percent>=50?'is-mid':'is-low'}/></li>)}</ul>
   </section>
+  {r.tn&&<section className="hsa-card dv-tn">
+   <h2>Mini đề kiểu thi tốt nghiệp</h2>
+   <p className="hsa-result-score"><strong>{r.tn.score.toLocaleString('vi-VN')}/10</strong><span>Chấm theo thang của Bộ: {r.tn.earned.toLocaleString('vi-VN')}/{r.tn.max.toLocaleString('vi-VN')} điểm thô, quy về thang 10</span></p>
+   <ul className="dv-sections">{r.tn.parts.map(x=><li key={x.part}><span>{x.label}</span><b>{x.earned.toLocaleString('vi-VN')}/{x.max.toLocaleString('vi-VN')}</b><i style={{['--p' as string]:Math.round(x.earned/x.max*100)+'%'}} className={x.earned/x.max>=0.7?'is-good':x.earned/x.max>=0.5?'is-mid':'is-low'}/></li>)}</ul>
+   <h3>Điểm yếu theo dạng</h3>
+   <ul className="dv-dang">{r.tn.byDang.map(d=><li key={d.dang} className={d.correct===d.total?'is-vung':'is-hong'}><span>{d.dang}</span><b>{d.correct}/{d.total}</b></li>)}</ul>
+   <p className="dv-note">Câu đúng sai: đúng 1 ý được 0,1 điểm, 2 ý 0,25, 3 ý 0,5, cả 4 ý 1 điểm. Câu trả lời ngắn phải ghi đúng số như đề yêu cầu làm tròn.</p>
+  </section>}
   <section className="hsa-card dv-suggest">
    <h2>Gợi ý xếp lớp</h2>
    <p className="dv-class"><strong>{r.suggestion.group}</strong><span>{r.suggestion.level}</span></p>
@@ -180,7 +194,7 @@ function ResultView({saved,update}:{saved:Saved;update:(s:Saved|null)=>void}){
   <section className="hsa-card dv-items">
    <h2>Từng câu</h2>
    <p className="dv-note">Đáp án và lời giải chi tiết giáo viên chữa cùng em trong buổi tư vấn, để đề giữ được giá trị cho lần kiểm tra sau.</p>
-   <ol>{r.items.map(i=><li key={i.no} className={i.correct?'is-ok':i.answered?'is-bad':'is-skip'} title={i.topicName+' · '+LEVEL_LABEL[i.level]}><b>{i.no}</b><span>{i.correct?'Đúng':i.answered?'Sai':'Bỏ trống'}</span><small>{LEVEL_LABEL[i.level]}</small></li>)}</ol>
+   <ol>{r.items.map(i=><li key={i.no} className={i.correct?'is-ok':i.answered?'is-bad':'is-skip'} title={i.topicName+' · '+LEVEL_LABEL[i.level]}><b>{i.no}</b><span>{i.hits!==undefined&&!i.correct&&i.answered?`Đúng ${i.hits}/4 ý`:i.correct?'Đúng':i.answered?'Sai':'Bỏ trống'}</span><small>{LEVEL_LABEL[i.level]}</small></li>)}</ol>
    <p className="dv-levels">{r.byLevel.map(l=>`${l.label}: ${l.correct}/${l.total}`).join(' · ')}</p>
   </section>
   <section className="hsa-card dv-staff" aria-label="Phiếu cho trung tâm"><h2>Phiếu gửi trung tâm</h2><p className="dv-note">Nếu dòng trên báo chưa gửi được, em chụp phiếu này gửi Zalo MTM 0967 365 413.</p><pre>{resultSummary({name:hoSo.hoTen,khoi:hoSo.khoi,school:hoSo.truong,result:r})}</pre></section>

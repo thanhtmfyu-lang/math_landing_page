@@ -7,8 +7,11 @@ import {validateHsaMockConfig,HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,normaliz
 import {validatePracticeExam} from '../src/native/exams/data';
 import {createHsaRankApi} from '../api/hsa-xep-hang';
 import {routeMetadata,PUBLIC_PATHS} from '../src/migration/route-policy';
+import {readSecret} from '../scripts/de-thi-kho.mjs';
 const root=process.env.MTM_ROOT!;
 const json=(p:string)=>JSON.parse(readFileSync(join(root,p),'utf8'));
+// Đáp án và seed migration 069/070 chỉ còn ở thư mục riêng (MTM_DE_THI_DIR) từ 20/10; thiếu thì bỏ qua phần so đáp án.
+const secretJson=(p:string)=>{const t=readSecret(root,p);return t==null?null:JSON.parse(t);};
 
 // 1. Tên hiển thị công khai.
 assert.equal(sanitizeDisplayName('  Nguyễn   Minh Anh  '),'Nguyễn Minh Anh');
@@ -67,7 +70,7 @@ assert.equal(validateHsaMockConfig({version:1,exams:[]}).ok,false);
 const bank=[...json('src/native/chapters/practice-tests.json'),...json('src/native/chapters/exact-tests.json'),...json('src/native/chapters/archived-tests.json')].map((p:any)=>p.exam);
 const catalog=json('src/native/exams/catalog.json');
 for(const e of config.exams){
- const exam=e.source==='hsa-paper'?json('src/native/exams/hsa-papers/'+e.examId+'.key.json'):(e.source==='catalog'?catalog:bank).find((x:any)=>x.id===e.examId);
+ const exam=e.source==='hsa-paper'?(secretJson('src/native/exams/hsa-papers/'+e.examId+'.key.json')??json('src/native/exams/hsa-papers/'+e.examId+'.public.json').exam):(e.source==='catalog'?catalog:bank).find((x:any)=>x.id===e.examId);
  assert.ok(exam,'Đề '+e.examId+' phải có sẵn trong nguồn '+e.source);
  assert.ok(validatePracticeExam(exam).valid,'Đề '+e.examId+' phải hợp lệ');
 }
@@ -81,11 +84,12 @@ assert.equal(paper01.questions.length,50);assert.equal(paper01.durationMinutes,7
 console.log('Đạt cấu hình đề: kiểm trường, trùng, nguồn; đề HSA số 01 (50 câu / 75 phút) đang mở, đề mẫu đã tắt.');
 
 // 4. Migration 069 seed đúng bản đề client đang dùng (cùng versionHash), không seed đề mẫu, không chứa SĐT.
-const sql=readFileSync(join(root,'supabase/migrations-pending/202610190069_thi_thu_hsa_xep_hang.sql'),'utf8');
+const sql=readSecret(root,'supabase/migrations-pending/202610190069_thi_thu_hsa_xep_hang.sql');
+if(sql==null)console.log('BỎ QUA so seed 069/070: thiếu bản gốc (đặt MTM_DE_THI_DIR).');else{
 const b64=/values\('mtm-hsa-thi-thu-01',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql)?.[1];
 assert.ok(b64);
 const seeded=JSON.parse(Buffer.from(b64!,'base64').toString('utf8'));
-assert.deepEqual(seeded,json('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.key.json'));
+assert.deepEqual(seeded,secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-01.key.json'));
 assert.equal(seeded.versionHash,paper01.versionHash);
 assert.match(sql,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-01',false\)/);
 assert.ok(!sql.replace(/--.*$/gm,'').includes('mtm-preview-practice-hsa-01-v1'),'069 không seed đề mẫu');
@@ -93,14 +97,15 @@ assert.ok(!/phone|sdt|so_dien_thoai/i.test(sql.replace(/--.*$/gm,'')));
 assert.match(sql,/grant execute on function public\.mtm_hsa_rank_top\(text,integer\),public\.mtm_hsa_rank_submit\(text,uuid,text,text,text,text,text\) to service_role;/);
 console.log('Đạt migration 069: seed đúng đề HSA số 01, không seed đề mẫu, không có cột SĐT, chỉ service_role.');
 // 4b. Migration 070 (không sửa 069): seed đề 02 đúng bản client, cần 069 trước.
-const sql70=readFileSync(join(root,'supabase/migrations-pending/202610190070_thi_thu_hsa_de_02.sql'),'utf8');
+const sql70=readSecret(root,'supabase/migrations-pending/202610190070_thi_thu_hsa_de_02.sql')!;
 const b64b=/values\('mtm-hsa-thi-thu-02',convert_from\(decode\('([A-Za-z0-9+/=]+)','base64'\)/.exec(sql70)?.[1];
 assert.ok(b64b);
-assert.deepEqual(JSON.parse(Buffer.from(b64b!,'base64').toString('utf8')),json('src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json'));
+assert.deepEqual(JSON.parse(Buffer.from(b64b!,'base64').toString('utf8')),secretJson('src/native/exams/hsa-papers/mtm-hsa-thi-thu-02.key.json'));
 assert.match(sql70,/insert into mtm_hsa_rank\.exams\(exam_id,placeholder\) values\('mtm-hsa-thi-thu-02',false\)/);
 assert.match(sql70,/to_regclass\('mtm_hsa_rank\.exams'\) is null/);
 assert.ok(!sql.includes('mtm-hsa-thi-thu-02'),'069 giữ nguyên, không seed đề 02');
 console.log('Đạt migration 070: seed đúng đề HSA số 02, yêu cầu 069, không sửa 069.');
+}
 
 // 5. API: tắt mặc định, chỉ chuyển trường đã duyệt, băm mã thiết bị, không nhận điểm từ trình duyệt.
 const env:Record<string,string>={MTM_HSA_RANK_ENABLED:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'FIXTURE'};

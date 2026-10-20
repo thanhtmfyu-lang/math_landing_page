@@ -11,7 +11,9 @@ if(key.length!==32)throw Error('Cần MTM_DAU_VAO_KEY (base64 32 byte).');
 const dir=process.argv[2];if(!dir)throw Error('Cần thư mục ngân hàng.');
 const banks={};
 for(const f of readdirSync(dir).filter(f=>/^(?:[6-9]|1[0-2]|hsa)\.json$/.test(f)).sort()){const b=JSON.parse(readFileSync(join(dir,f),'utf8'));banks[f.replace('.json','')]=b;}
-if(Object.keys(banks).length!==8)throw Error('Cần đủ 8 tệp 6..12 và hsa.json, đang có: '+Object.keys(banks).join(','));
+// Không bắt buộc: 12-tn.json (mini đề kiểu tốt nghiệp lớp 12, phần I/II/III).
+try{banks['12-tn']=JSON.parse(readFileSync(join(dir,'12-tn.json'),'utf8'));}catch(e){if(e.code!=='ENOENT')throw e;}
+if(['6','7','8','9','10','11','12','hsa'].some(k=>!banks[k]))throw Error('Cần đủ 8 tệp 6..12 và hsa.json, đang có: '+Object.keys(banks).join(','));
 const iv=randomBytes(12),c=createCipheriv('aes-256-gcm',key,iv);c.setAAD(Buffer.from('dau-vao-ngan-hang'));
 const body=Buffer.concat([c.update(gzipSync(JSON.stringify(banks))),c.final()]);
 writeFileSync('server/dau-vao/ngan-hang.bin',Buffer.concat([iv,c.getAuthTag(),body]));

@@ -1,5 +1,52 @@
 [
  {
+  "id": "2026-10-20-toi-o-lop",
+  "kind": "tai-lop",
+  "title": "Một tối ở lớp MTM",
+  "date": "2026-10-20",
+  "summary": "Quà 20/10 còn trên bàn, trà sữa còn trong tay, nhưng đề thì vẫn phải xong. Một tối rất MTM: vui một chút, học thật nhiều.",
+  "place": "Phòng MTM-Emories, 18 ngách 23 ngõ 82 Chùa Láng",
+  "photos": [
+   {
+    "id": "2026-10-20-toi-o-lop-01",
+    "alt": "Quà nhỏ 20/10 đến tận tay, cô bạn tạo dáng ngay giữa lớp.",
+    "width": 1600,
+    "height": 2134
+   },
+   {
+    "id": "2026-10-20-toi-o-lop-02",
+    "alt": "Góc MTM-Emories: ăn mừng xong vẫn ngồi làm bài.",
+    "width": 1600,
+    "height": 2134
+   },
+   {
+    "id": "2026-10-20-toi-o-lop-03",
+    "alt": "Cụng ly trà sữa trước khi vào phần bài khó.",
+    "width": 1600,
+    "height": 2134
+   },
+   {
+    "id": "2026-10-20-toi-o-lop-04",
+    "alt": "Một buổi tối bình thường ở MTM: ai cũng cắm cúi với đề.",
+    "width": 720,
+    "height": 1280,
+    "video": true
+   },
+   {
+    "id": "2026-10-20-toi-o-lop-05",
+    "alt": "Thầy chữa bài trên máy, cả lớp dõi theo từng bước.",
+    "width": 1600,
+    "height": 2134
+   },
+   {
+    "id": "2026-10-20-toi-o-lop-06",
+    "alt": "Từng dòng lời giải hiện lên, lớp chép đủ bước.",
+    "width": 1600,
+    "height": 2134
+   }
+  ]
+ },
+ {
   "id": "2026-10-19-gio-nghi-phong-ben",
   "kind": "tai-lop",
   "title": "Giờ nghỉ ở phòng bên",
