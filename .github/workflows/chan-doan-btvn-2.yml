@@ -6,13 +6,16 @@ jobs:
   do:
     runs-on: ubuntu-latest
     steps:
-      - name: Do dang nhap that (khong PIN, khong ton luot, lan 5 20:30)
+      - name: Kiem Goc phu huynh tren web that (khong du lieu that)
         run: |
           set +e
-          for B in https://www.minhthanhmath.vn https://minhthanhmath.vn; do
-            echo "=== $B"
-            curl -sS -m 40 -L --post301 --post302 --post303 -w "\nclasses HTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"classes"}' $B/api/btvn | cut -c1-120
-            curl -sS -m 40 -L --post301 --post302 --post303 -w "\nlogin-nopin HTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"quan tri mtm","phone":"0900000099","className":"2K9 8+"}}' $B/api/btvn | cut -c1-300
+          B=https://www.minhthanhmath.vn; O="Origin: https://www.minhthanhmath.vn"; J='Content-Type: application/json'
+          for i in 1 2 3 4 5 6 7 8 9 10; do
+            c=$(curl -s -o /tmp/p.html -w "%{http_code}" $B/phu-huynh); grep -q ParentCorner /tmp/p.html; echo "page $c"
+            r=$(curl -sS -m 40 -X POST -H "$O" -H "$J" -d '{"ph":"classes"}' $B/api/btvn); echo "classes: $(echo "$r" | cut -c1-160)"
+            echo "$r" | grep -q '"classes"' && break; sleep 30
           done
-          echo "=== login HS gia"
-          curl -sS -m 40 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: https://www.minhthanhmath.vn" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"Thu Nghiem","phone":"0900000000","className":"2K9 8+"}}' https://www.minhthanhmath.vn/api/btvn | cut -c1-200
+          curl -sS -m 40 -w "\nchildren-khong-cookie HTTP %{http_code}\n" -X POST -H "$O" -H "$J" -d '{"ph":"children"}' $B/api/btvn | cut -c1-200
+          curl -sS -m 40 -w "\nlink-sai HTTP %{http_code}\n" -X POST -H "$O" -H "$J" -d '{"ph":"link","parentName":"Kiem Thu","parentPhone":"0900000098","childName":"Khong Co Ai","childPhone":"0900000097","className":"2K9 XPT"}' $B/api/btvn | cut -c1-200
+          curl -sS -m 40 -w "\nreport-khong-cookie HTTP %{http_code}\n" -X POST -H "$O" -H "$J" -d '{"ph":"report","childId":"aaaaaaaa-0000-4000-8000-000000000001"}' $B/api/btvn | cut -c1-200
+          curl -sS -m 40 -w "\nbtvn-classes HTTP %{http_code} %{time_total}s\n" -X POST -H "$O" -H "$J" -d '{"action":"classes"}' $B/api/btvn | cut -c1-80
