@@ -116,7 +116,7 @@ const read=(p:string)=>readFileSync(p,'utf8');
 assert.ok(read('vercel.json').includes('"source": "/phu-huynh"'));
 assert.ok(read('src/App.tsx').includes("path==='/phu-huynh'?<ParentCorner/>"));
 assert.ok(read('src/migration/Experience.tsx').includes('href="/phu-huynh"'));
-assert.ok(read('src/components/Footer.tsx').includes("['/phu-huynh','Góc phụ huynh']"));
+assert.ok(read('src/components/QuickLinks.tsx').includes("['/phu-huynh','Góc phụ huynh']"));
 assert.match(read('src/migration/route-policy.ts'),/pathname==='\/phu-huynh'\)return\{[^}]*robots:'noindex, nofollow'/);
 const sql=read('supabase/migrations-pending/202610200090_goc_phu_huynh.sql');
 assert.ok(sql.includes("crypt(")&&sql.includes("gen_salt('bf'"),'PIN phụ huynh lưu băm bcrypt');
