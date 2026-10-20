@@ -6,19 +6,17 @@
 .mtm-quick-row a.is-primary:hover{background:#2c4185}
 .mtm-quick-row svg{flex-shrink:0;color:#c79400}
 .mtm-quick-row a.is-primary svg{color:#ffcf24}
-.mtm-quick-row a[aria-current=page]:not(.is-primary){border-color:#ffcf24;background:#fffbea}
-.mtm-quick-more{display:flex;flex-wrap:wrap;justify-content:center;gap:6px 22px;margin-top:10px;font-size:13.5px}
-.mtm-quick-group{display:flex;flex-wrap:wrap;align-items:center;gap:4px 4px}
-.mtm-quick-group b{color:#7b6100;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.04em;margin-right:4px}
-.mtm-quick-group a{color:#213269;font-weight:600;padding:6px 10px;border-radius:999px;background:#f4f6fb;white-space:nowrap}
-.mtm-quick-group a:hover,.mtm-quick-group a[aria-current=page]{background:#fff3c4}
+.mtm-hub-tabs{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;gap:6px}
+.mtm-hub-tabs b{color:#7b6100;font-size:12px;font-weight:700;text-transform:uppercase;letter-spacing:.06em;margin-right:6px}
+.mtm-hub-tabs a,.mtm-hub-tabs span{padding:8px 14px;border-radius:999px;font-size:14px;font-weight:600;white-space:nowrap;border:1px solid #d8e3f2;background:#fff;color:#213269}
+.mtm-hub-tabs a:hover{border-color:#ffcf24;background:#fffbea}
+.mtm-hub-tabs a[aria-current=page]{background:#213269;border-color:#213269;color:#fff}
+.mtm-hub-tabs .is-soon{color:#8a94a8;border-style:dashed;background:transparent;font-weight:500}
 @media(max-width:760px){
  .mtm-quick-links{width:calc(100% - 32px);margin:10px auto 0}
  .mtm-quick-row{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
  .mtm-quick-row a{min-height:44px;padding:8px 10px;font-size:13px;gap:7px;white-space:normal;line-height:1.3}
- .mtm-quick-more{display:block;margin-top:8px;font-size:13px}
- .mtm-quick-group{flex-wrap:nowrap;overflow-x:auto;padding:3px 0;scrollbar-width:none;-webkit-overflow-scrolling:touch}
- .mtm-quick-group::-webkit-scrollbar{display:none}
- .mtm-quick-group b{flex:none;min-width:92px;font-size:11px}
- .mtm-quick-group a{flex:none;padding:7px 11px}
+ .mtm-hub-tabs{flex-wrap:nowrap;justify-content:flex-start;overflow-x:auto;scrollbar-width:none;padding:2px 0}
+ .mtm-hub-tabs::-webkit-scrollbar{display:none}
+ .mtm-hub-tabs>*{flex:none}
 }

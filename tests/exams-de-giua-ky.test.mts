@@ -159,7 +159,7 @@ assert.ok(meta.description.length>=80&&meta.description.length<=200&&/lời gi�
 assert.ok(json('vercel.json').rewrites.some((x:any)=>x.source==='/de-giua-ky-1'&&x.destination==='/index.html'));
 assert.match(read('scripts/public-sitemap.mjs'),/'\/de-giua-ky-1'/);
 const app=read('src/App.tsx');assert.ok(app.includes("lazy(()=>import('./native/exams/DeGiuaKy'))")&&app.includes("path==='/de-giua-ky-1'?<DeGiuaKy search={route.search}/>"));
-assert.ok(read('src/native/NativeExams.tsx').includes('href="/de-giua-ky-1"'));assert.ok(read('src/native/NativeCourses.tsx').includes("'/de-giua-ky-1'"));
+assert.ok(read('src/components/QuickLinks.tsx').includes("['/de-giua-ky-1','Giữa kỳ I']"));assert.ok(read('src/native/NativeCourses.tsx').includes("'/de-giua-ky-1'"));
 console.log('Đạt route /de-giua-ky-1: PUBLIC_PATHS, tiêu đề + mô tả SEO, index, rewrite Vercel, sitemap, liên kết từ /thi-thu và /khoa-hoc.');
 
 // 12. Trang: khóa đề không vào bản build production; không giá, một số liên hệ, không hứa điểm, không tên trường.
