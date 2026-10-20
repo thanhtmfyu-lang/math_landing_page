@@ -80,9 +80,27 @@ test('SSR có hướng dẫn, nguồn tự biên soạn và giới hạn lưu; n
 
 test('Lazy import chỉ gắn trong PracticeTool, CSS thắng nền ep-root và không thêm mạng hay bộ nhớ',()=>{
   const library=readFileSync(join(root,'src/native/chapters/PracticeLibrary.tsx'),'utf8');
-  assert.match(library,/const EstimationGame=lazy\(\(\)=>import\('\.\/EstimationGame'\)\)/);
-  assert.match(library,/<PracticeTool[^\n]+<EstimationGame\/><\/PracticeTool>/);
-  assert.doesNotMatch(library,/import\s+EstimationGame\s+from/);assert.equal(library.replace(/\r\n/g,'').includes('\n'),false);
+  const checkIntegration=(source:string)=>{
+    assert.match(source,/const EstimationGame=lazy\(\(\)=>import\('\.\/EstimationGame'\)\)/);
+    assert.doesNotMatch(source,/import\s+EstimationGame\s+from/);
+    const wrapped=/<PracticeTool\b[^>]*>\s*<EstimationGame\s*\/>\s*<\/PracticeTool>/g;
+    assert.equal([...source.matchAll(wrapped)].length,1,'Chỉ một EstimationGame trong PracticeTool');
+    assert.doesNotMatch(source.replace(wrapped,''),/<EstimationGame\b/,'Không gắn EstimationGame ngoài PracticeTool');
+  };
+  // Git lưu LF, checkout Windows có thể dùng CRLF. Kiểm tích hợp thay vì ép kiểu xuống dòng.
+  const lf=library.replace(/\r\n/g,'\n');
+  for(const eol of ['\n','\r\n']){
+    const source=lf.replace(/\n/g,eol);
+    checkIntegration(source);
+    const multiline=source.replace('<EstimationGame/></PracticeTool>',eol+'<EstimationGame/>'+eol+'</PracticeTool>');
+    assert.notEqual(multiline,source,'Ca JSX nhiều dòng phải thực sự đổi nguồn');
+    checkIntegration(multiline);
+    assert.throws(()=>checkIntegration(source.replace("lazy(()=>import('./EstimationGame'))","null")),assert.AssertionError);
+    assert.throws(()=>checkIntegration("import EstimationGame from './EstimationGame';"+eol+source),assert.AssertionError);
+    assert.throws(()=>checkIntegration(source.replace('<EstimationGame/>','')),assert.AssertionError);
+    assert.throws(()=>checkIntegration(source+eol+'<EstimationGame/>'),assert.AssertionError);
+    assert.throws(()=>checkIntegration(source+eol+'<PracticeTool><EstimationGame/></PracticeTool>'),assert.AssertionError);
+  }
   const m=mount('src/native/chapters/PracticeTool.tsx',{label:'Ước lượng',loading:'Đang tải',children:React.createElement('span',null,'Nội dung chưa tải')});try{
     assert.doesNotMatch(text(m.tree),/Nội dung chưa tải/);
     all(m.tree,n=>n.type==='details')[0].props.onToggle({currentTarget:{open:true}});m.draw();assert.match(text(m.tree),/Nội dung chưa tải/);
