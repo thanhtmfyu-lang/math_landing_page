@@ -17,7 +17,7 @@ export async function bamMatKhau(pw:string){const salt=randomBytes(16);return 's
 export async function dungMatKhau(pw:string,stored:string){const [k,salt,hash]=stored.split('$');if(k!=='scrypt'||!salt||!hash)return false;const got=await scrypt(pw,Buffer.from(salt,'base64url'),32),want=Buffer.from(hash,'base64url');return got.length===want.length&&timingSafeEqual(got,want);}
 
 /** Phòng thi thử THPT Quốc gia. GET: danh mục đề (kèm quyền của người xem) hoặc ?xep-hang=<đề>. POST {action}: mo, nop, dang-ky, dang-nhap, dang-xuat, kich-hoat, thanh-toan.
- * Đề giải mã từ server/phong-thi/kho-de.bin bằng MTM_PHONG_THI_KEY. Tài khoản, gói, lượt thi cần migration 076 + MTM_PHONG_THI_DB=1;
+ * Đề giải mã từ server/phong-thi/kho-de.bin bằng MTM_PHONG_THI_KEY. Tài khoản, gói, lượt thi cần migration 077 + MTM_PHONG_THI_DB=1;
  * chưa bật thì học sinh MTM vẫn vào miễn phí (xác nhận phiên BTVN), lượt thi chỉ chấm, không lưu. Thanh toán thật cần MTM_PHONG_THI_THANH_TOAN=1. */
 export function createPhongThiApi(getEnv=()=>process.env as Record<string,string|undefined>,transport:typeof fetch=fetch,clock=Date.now){return async(req:Req,res:Res)=>{
  res.setHeader('Cache-Control','no-store, private');res.setHeader('Content-Type','application/json; charset=utf-8');res.setHeader('X-Robots-Tag','noindex, nofollow');res.setHeader('Vary','Cookie');
@@ -89,7 +89,7 @@ export function createPhongThiApi(getEnv=()=>process.env as Record<string,string
   const hs=cookieOf(h,'mtm_btvn_demo');
   if(/^[0-9a-f]{64}$/.test(hs)){
    if(db){const r=await rpc('mtm_pt_hoc_sinh',{p_session:hs});if(r.ok){const x=await r.json();if(x&&typeof x.id==='string')ai={kieu:'hoc-sinh',id:x.id,ten:typeof x.ten==='string'?x.ten:null};}}
-   else{// Chưa áp 076: xác nhận phiên bằng RPC hạng đang chạy (lỗi khi phiên sai), giống /api/bang-tin.
+   else{// Chưa áp 077: xác nhận phiên bằng RPC hạng đang chạy (lỗi khi phiên sai), giống /api/bang-tin.
     const r=await rpc('mtm_btvn_my_rank',{p_session:hs,p_cohort:'2K9',p_kind:'btvn-tuan',p_class:null});if(r.ok)ai={kieu:'hoc-sinh',id:null,ten:null};}
   }
   if(ai.kieu==='khach'&&db){const t=await taiKhoan(cookieOf(h,COOKIE),rpc);if(t)ai=t;}

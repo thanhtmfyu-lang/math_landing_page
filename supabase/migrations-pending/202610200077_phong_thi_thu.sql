@@ -1,4 +1,4 @@
--- 076 Phòng thi thử THPT Quốc gia (/phong-thi-thu), 20/10/2026.
+-- 077 Phòng thi thử THPT Quốc gia (/phong-thi-thu), 20/10/2026.
 -- Đề và đáp án KHÔNG nằm trong CSDL: chỉ ở server/phong-thi/kho-de.bin (mã hóa). CSDL giữ: tài khoản người ngoài, quyền theo gói,
 -- mã kích hoạt, lượt thi đã chấm (cho bảng xếp hạng, lịch sử, báo điểm phụ huynh).
 -- Mọi hàm chỉ service_role gọi qua /api/phong-thi; anon/authenticated không đọc được bảng nào.
