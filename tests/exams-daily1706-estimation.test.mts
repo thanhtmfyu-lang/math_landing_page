@@ -89,15 +89,17 @@ test('Lazy import chỉ gắn trong PracticeTool, CSS thắng nền ep-root và 
   };
   // Git lưu LF, checkout Windows có thể dùng CRLF. Kiểm tích hợp thay vì ép kiểu xuống dòng.
   const lf=library.replace(/\r\n/g,'\n');
-  for(const source of [lf,lf.replace(/\n/g,'\r\n')]){
+  for(const eol of ['\n','\r\n']){
+    const source=lf.replace(/\n/g,eol);
     checkIntegration(source);
-    const multiline=source.replace('<EstimationGame/></PracticeTool>','\n<EstimationGame/>\n</PracticeTool>');
+    const multiline=source.replace('<EstimationGame/></PracticeTool>',eol+'<EstimationGame/>'+eol+'</PracticeTool>');
+    assert.notEqual(multiline,source,'Ca JSX nhiều dòng phải thực sự đổi nguồn');
     checkIntegration(multiline);
-    assert.throws(()=>checkIntegration(source.replace("lazy(()=>import('./EstimationGame'))","null")));
-    assert.throws(()=>checkIntegration("import EstimationGame from './EstimationGame';\n"+source));
-    assert.throws(()=>checkIntegration(source.replace('<EstimationGame/>','')));
-    assert.throws(()=>checkIntegration(source+'\n<EstimationGame/>'));
-    assert.throws(()=>checkIntegration(source+'\n<PracticeTool><EstimationGame/></PracticeTool>'));
+    assert.throws(()=>checkIntegration(source.replace("lazy(()=>import('./EstimationGame'))","null")),assert.AssertionError);
+    assert.throws(()=>checkIntegration("import EstimationGame from './EstimationGame';"+eol+source),assert.AssertionError);
+    assert.throws(()=>checkIntegration(source.replace('<EstimationGame/>','')),assert.AssertionError);
+    assert.throws(()=>checkIntegration(source+eol+'<EstimationGame/>'),assert.AssertionError);
+    assert.throws(()=>checkIntegration(source+eol+'<PracticeTool><EstimationGame/></PracticeTool>'),assert.AssertionError);
   }
   const m=mount('src/native/chapters/PracticeTool.tsx',{label:'Ước lượng',loading:'Đang tải',children:React.createElement('span',null,'Nội dung chưa tải')});try{
     assert.doesNotMatch(text(m.tree),/Nội dung chưa tải/);
