@@ -2,7 +2,7 @@ import './site-polish.css';
 import '../native/chapters/practice-nav.css';
 import {useEffect,useRef,useState,type ReactNode} from 'react';
 import {motion,useReducedMotion} from 'motion/react';
-import {ArrowRight,ArrowUpRight,BookOpen,Check,ChevronLeft,ChevronRight,GraduationCap,Menu,Pause,Play,ShieldCheck,X} from 'lucide-react';
+import {ArrowRight,ArrowUpRight,BookOpen,Check,ChevronLeft,ChevronRight,GraduationCap,Menu,Pause,Play,ShieldCheck,Users,X} from 'lucide-react';
 import {Link} from './navigation';
 import {SOURCE_ORIGIN} from './catalogue';
 import assetList from './assets.json';
@@ -19,7 +19,8 @@ export function AccessDialog(){
   <div className="mig-access-options">
    <Link href="/btvn" onClick={close}><GraduationCap/><span><b>Vào BTVN</b><small>Dùng mã MTM cấp hoặc thông tin đã đăng ký với lớp</small></span><ArrowRight/></Link>
    <Link href="/huong-dan?cho=phu-huynh" onClick={close}><ShieldCheck/><span><b>Hướng dẫn phụ huynh</b><small>Cách vào bài của con và liên hệ trợ lý lớp</small></span><ArrowRight/></Link>
-   <div className="mig-native-auth-pending" role="status"><BookOpen/><span><b>Tài khoản khóa học online và cổng phụ huynh riêng</b><small>Chưa được kết nối. Đăng ký tư vấn không tự tạo tài khoản.</small></span></div>
+   <Link href="/phu-huynh" onClick={close}><Users/><span><b>Góc phụ huynh</b><small>Xem điểm danh, BTVN, điểm thi và phần con cần luyện</small></span><ArrowRight/></Link>
+   <div className="mig-native-auth-pending" role="status"><BookOpen/><span><b>Tài khoản khóa học online</b><small>Chưa được kết nối. Đăng ký tư vấn không tự tạo tài khoản.</small></span></div>
   </div>
  </div></dialog>;
 }
