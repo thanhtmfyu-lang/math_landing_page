@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
-import {baoCao,cham,deCongKhai,dotCongKhai,dotDangMo,kiemBaoLoi,kiemDangKyDot,mucLuc,normShort,phanViHsa,quyenMo,tenRutGon,thoiGianCau,validateDe,validateDot,type PtDe,type PtDot,type PtKho} from '../server/phong-thi/engine';
+import {baoCao,cham,deCongKhai,dotCongKhai,dotDangMo,kiemBaoLoi,kiemDangKyDot,mucLuc,normShort,tenDe,phanViHsa,quyenMo,tenRutGon,thoiGianCau,validateDe,validateDot,type PtDe,type PtDot,type PtKho} from '../server/phong-thi/engine';
 import {DOT,docVe,dongGoi,kyVe,moGoi,phongThiKey,loadKho,xuLy} from '../server/phong-thi/handler';
 import {createPhongThiApi,chuanSdt,bamMatKhau,dungMatKhau,ipBam,taoMaTraCuu} from '../server/phong-thi/api';
 
@@ -248,4 +248,7 @@ const realKey=phongThiKey(process.env);
 if(realKey){const real=loadKho(realKey);for(const d of real.de){assert.deepEqual(validateDe(d),[],d.id);assert.ok(!/dapAn|loiGiai/.test(JSON.stringify(deCongKhai(d))));}
  console.log('phong-thi: kho thật',real.de.length,'đề hợp lệ');}
 else console.log('phong-thi: không có MTM_PHONG_THI_KEY, bỏ qua kiểm kho thật');
+// Số thứ tự cố định: thẻ đề, phòng làm bài và kết quả đều hiện "Đề N · ...".
+assert.equal(tenDe({tieuDe:'Sở Hà Nội',stt:4}),'Đề 4 · Sở Hà Nội');assert.equal(tenDe({tieuDe:'Sở Hà Nội'}),'Sở Hà Nội');
+{const d={...thpt,stt:3};assert.equal(mucLuc({version:1,dongGoi:'',de:[d]} as PtKho)[0].tieuDe,'Đề 3 · '+thpt.tieuDe);assert.equal(deCongKhai(d).tieuDe,'Đề 3 · '+thpt.tieuDe);}
 console.log('phong-thi: ok');

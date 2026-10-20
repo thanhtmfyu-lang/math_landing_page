@@ -19,6 +19,8 @@ for(const f of readdirSync(dir).filter(f=>f.endsWith('.json')).sort()){
  if(d?.kiemTra?.ketQua!=='dat'){bo.push(f+' (chưa kiểm đạt)');continue;}
  const e=validateDe(d);if(e.length){loi.push(...e.map(x=>f+': '+x));continue;}
  if(de.some(x=>x.id===d.id)){loi.push(f+': trùng id '+d.id);continue;}
+ if(!Number.isInteger(d.stt)||d.stt<1){loi.push(f+': thiếu stt (số thứ tự Đề N trong loại '+d.loai+')');continue;}
+ if(de.some(x=>x.loai===d.loai&&x.stt===d.stt)){loi.push(f+': trùng stt '+d.stt+' trong loại '+d.loai);continue;}
  de.push(d);
 }
 if(loi.length){console.error(loi.join('\n'));process.exit(1);}

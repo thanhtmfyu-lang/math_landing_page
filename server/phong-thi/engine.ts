@@ -21,7 +21,7 @@ export type PtCau={ma:string;phan:string;kieu:PtKieu;de:string;luaChon?:string[]
  dang?:string;nguon?:{ten:string;url?:string};tangBanQuyen?:'ban-duoc'|'noi-bo';vanTay?:string};
 export type PtPhan={ma:string;ten:string;kieu:PtKieu;thoiGian?:number};
 export type PtDe={id:string;loai:PtLoai;tieuDe:string;nam:number;nhom:PtNhom;tang:PtTang;thoiGian:number;nguon:{ten:string;url?:string;ghiChu?:string};
- phan:PtPhan[];cau:PtCau[];kiemTra:{ketQua:string;cach?:string;ngay?:string};thangDiem?:number;moTa?:string;
+ phan:PtPhan[];cau:PtCau[];kiemTra:{ketQua:string;cach?:string;ngay?:string};thangDiem?:number;moTa?:string;stt?:number;
  /** Chùm câu dùng chung một dẫn (bảng số liệu, đoạn đọc): hiện dẫn trước câu đầu của chùm. */
  chum?:PtChum[]};
 export type PtChum={ma:string;de:string;cau:string[];hinh?:string|null};
@@ -116,7 +116,7 @@ export type PtDeCongKhai={id:string;loai:PtLoai;tieuDe:string;nam:number;nhom:Pt
 export function thangDiem(de:PtDe){return de.thangDiem??THANG[de.loai];}
 export function deCongKhai(de:PtDe):PtDeCongKhai{
  const tong=de.cau.reduce((s,c)=>s+maxMilli(de,c),0),k=thangDiem(de)/tong;
- return {id:de.id,loai:de.loai,tieuDe:de.tieuDe,nam:de.nam,nhom:de.nhom,tang:de.tang,thoiGian:de.thoiGian,nguon:de.nguon.ten,thangDiem:thangDiem(de),
+ return {id:de.id,loai:de.loai,tieuDe:tenDe(de),nam:de.nam,nhom:de.nhom,tang:de.tang,thoiGian:de.thoiGian,nguon:de.nguon.ten,thangDiem:thangDiem(de),
   phan:de.phan.map(p=>({ma:p.ma,ten:p.ten,kieu:p.kieu,...(p.thoiGian?{thoiGian:p.thoiGian}:{}),soCau:de.cau.filter(c=>c.phan===p.ma).length})),
   cau:de.cau.map((c,i)=>({so:i+1,ma:c.ma,phan:c.phan,kieu:c.kieu,de:c.de,...(c.luaChon?{luaChon:c.luaChon}:{}),...(c.y?{y:c.y}:{}),...(c.o?{o:c.o}:{}),...(c.the?{the:c.the}:{}),hinh:c.hinh??null,
    diem:Math.round(maxMilli(de,c)*k*1000)/1000})),chum:(de.chum??[]).map(g=>({ma:g.ma,de:g.de,cau:g.cau,hinh:g.hinh??null}))};
@@ -148,16 +148,18 @@ export function cham(de:PtDe,traLoi:PtTraLoi):PtKetQua{
  const theoPhan=de.phan.map(p=>{const cs=cau.filter(c=>c.phan===p.ma);return {ma:p.ma,ten:p.ten,diem:r2(cs.reduce((s,c)=>s+c.diem,0)),toiDa:r2(cs.reduce((s,c)=>s+c.toiDa,0)),dung:cs.filter(c=>c.dung).length,tong:cs.length};});
  const chuDe=new Map<string,{dung:number;tong:number}>();
  for(const c of cau){if(!c.chuDe)continue;const o=chuDe.get(c.chuDe)??{dung:0,tong:0};o.tong++;if(c.dung)o.dung++;chuDe.set(c.chuDe,o);}
- return {de:de.id,tieuDe:de.tieuDe,loai:de.loai,diem:r2(diemTho),thangDiem:thang,dung:cau.filter(c=>c.dung).length,tong:cau.length,theoPhan,
+ return {de:de.id,tieuDe:tenDe(de),loai:de.loai,diem:r2(diemTho),thangDiem:thang,dung:cau.filter(c=>c.dung).length,tong:cau.length,theoPhan,
   theoChuDe:[...chuDe].map(([k2,v])=>({chuDe:k2,...v})).sort((a,b)=>a.dung/a.tong-b.dung/b.tong),cau};
 }
 
 /** Một dòng danh mục: thông tin công khai của đề, không có nội dung câu. */
-export type PtMucLuc={id:string;loai:PtLoai;tieuDe:string;nam:number;nhom:PtNhom;tang:PtTang;thoiGian:number;soCau:number;nguon:string;moTa?:string};
+export type PtMucLuc={id:string;loai:PtLoai;tieuDe:string;stt?:number;nam:number;nhom:PtNhom;tang:PtTang;thoiGian:number;soCau:number;nguon:string;moTa?:string};
+/** Số thứ tự cố định trong từng loại kỳ thi (stt trong tệp đề) để học sinh biết mình làm đề nào: "Đề 3 · ...". */
+export const tenDe=(d:{tieuDe:string;stt?:number})=>d.stt?`Đề ${d.stt} · ${d.tieuDe}`:d.tieuDe;
 export function mucLuc(kho:PtKho):PtMucLuc[]{
  const thuTu:Record<PtNhom,number>={'de-that':0,'minh-hoa':1,mtm:2,so:3,truong:4,toanmath:5};
- return kho.de.map(d=>({id:d.id,loai:d.loai,tieuDe:d.tieuDe,nam:d.nam,nhom:d.nhom,tang:d.tang,thoiGian:d.thoiGian,soCau:d.cau.length,nguon:d.nguon.ten,...(d.moTa?{moTa:d.moTa}:{})}))
-  .sort((a,b)=>PT_LOAI.indexOf(a.loai)-PT_LOAI.indexOf(b.loai)||b.nam-a.nam||thuTu[a.nhom]-thuTu[b.nhom]||a.tieuDe.localeCompare(b.tieuDe,'vi'));
+ return kho.de.map(d=>({id:d.id,loai:d.loai,tieuDe:tenDe(d),nam:d.nam,nhom:d.nhom,tang:d.tang,thoiGian:d.thoiGian,soCau:d.cau.length,nguon:d.nguon.ten,...(d.stt?{stt:d.stt}:{}),...(d.moTa?{moTa:d.moTa}:{})}))
+  .sort((a,b)=>PT_LOAI.indexOf(a.loai)-PT_LOAI.indexOf(b.loai)||(a.stt??1e9)-(b.stt??1e9)||b.nam-a.nam||thuTu[a.nhom]-thuTu[b.nhom]||a.tieuDe.localeCompare(b.tieuDe,'vi'));
 }
 
 /** Người đang xem: học sinh trung tâm (phiên BTVN hợp lệ), khách có tài khoản phòng thi (kèm các loại đề đã mua), hoặc khách vãng lai. */
@@ -248,7 +250,7 @@ export function dotCongKhai(ds:PtDot[],kho:PtKho,nay:number):PtDotCongKhai[]{
   const d=t.de?kho.de.find(x=>x.id===t.de):null;if(t.de&&!d)return [];
   const coDe=(id:string|null)=>!!id&&kho.de.some(x=>x.id===id);
   return [{ma:t.ma,ten:t.ten,loai:t.loai,mo:t.mo,dong:t.dong,...(t.moTa?{moTa:t.moTa}:{}),trangThai:Date.parse(t.mo)<=nay?'dang-mo' as const:'sap-mo' as const,
-   de:d?{id:d.id,tieuDe:d.tieuDe,thoiGian:d.thoiGian,soCau:d.cau.length,tang:d.tang}:null,
+   de:d?{id:d.id,tieuDe:tenDe(d),thoiGian:d.thoiGian,soCau:d.cau.length,tang:d.tang}:null,
    ...(t.khoi?{dangKy:{khoi:{'10':coDe(t.khoi['10']),'11':coDe(t.khoi['11']),'12':coDe(t.khoi['12'])}}}:{})}];
  }).sort((a,b)=>Date.parse(a.mo)-Date.parse(b.mo));
 }
