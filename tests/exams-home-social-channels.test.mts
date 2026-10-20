@@ -58,6 +58,10 @@ const menu=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{
 const menuHrefs=anchors(menuNav).map(link=>attribute(link.attributes,'href')).filter(href=>href!=='/#register');
 assert.deepEqual(menuHrefs.slice(0,3),['/','/btvn','/huong-dan?cho=phu-huynh']);assert.equal(menuHrefs.length,7);
 assert.match(menuNav,/<a(?=[^>]*href="\/huong-dan\?cho=phu-huynh")(?=[^>]*aria-current="page")[^>]*>Hướng dẫn phụ huynh<\/a>/);
+// 20/10: hàng lối tắt ở đầu mọi trang công khai, ẩn ở trang làm bài/quản trị.
+const {QuickLinks}=load('src/components/QuickLinks.tsx').exports,quick=render(QuickLinks,{pathname:'/khoa-hoc'});
+assert.deepEqual(anchors(quick).map(link=>attribute(link.attributes,'href')),['/btvn','/huong-dan?cho=phu-huynh','/kiem-tra-dau-vao','/#timetable','/hoc-online','/thi-thu']);
+for(const pathname of ['/btvn','/quan-tri','/thi-thu/de-thu'])assert.equal(render(QuickLinks,{pathname}),'');
 const r106Site=readFileSync(join(process.env.MTM_ROOT??process.cwd(),'src/migration/r106-site.css'),'utf8');
 assert.match(r106Site,/:not\(\.r106-home-page\) \.mig-header\{[^}]*background:#fff;/,'Thanh đầu trang dính phải nền đặc');
 
