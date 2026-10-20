@@ -15,8 +15,10 @@ const b = await chromium.launch(process.env.MTM_CHROMIUM ? {executablePath: proc
 async function mo(p, path) {
  const loiJs = [];
  p.removeAllListeners('pageerror');p.on('pageerror', e => loiJs.push(String(e.message).slice(0, 120)));
- const r = await p.goto(GOC + path + (path.includes('?') ? '&' : '?') + 'nguon=kiem-sau-deploy', {waitUntil: 'networkidle', timeout: 45000}).catch(e => ({status: () => 0, e}));
- await p.waitForTimeout(1200);
+ const r = await p.goto(GOC + path + (path.includes('?') ? '&' : '?') + 'nguon=kiem-sau-deploy', {waitUntil: 'load', timeout: 45000}).catch(e => ({status: () => 0, e}));
+ // Không chờ networkidle: /btvn giữ kết nối nền nên không bao giờ "rảnh". Chờ nội dung chính hiện ra.
+ await p.waitForFunction(() => (document.querySelector('main')?.innerText || '').trim().length > 40, null, {timeout: 20000}).catch(() => {});
+ await p.waitForTimeout(800);
  const d = p.getByRole('button', {name: 'Đã xem, vào trang chủ'});if (await d.count()) {await d.first().click();await p.waitForTimeout(400);}
  return {status: r.status(), loiJs};
 }
