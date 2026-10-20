@@ -4,7 +4,7 @@ import {join} from 'node:path';
 import {createHash} from 'node:crypto';
 import {sanitizeDisplayName,hsaNameKey,rankHsaEntries,publicHsaRow,formatHsaDuration,hsaStatusMessage,HSA_SUBMIT_STATUS} from '../server/hsa/rank';
 import {validateHsaMockConfig,HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,normalizeHsaPhone} from '../src/native/exams/hsa-mock';
-import {validatePracticeExam} from '../src/native/exams/data';
+import {validatePracticeExam,validateQuestionOnlyPracticeExam} from '../src/native/exams/data';
 import {createHsaRankApi} from '../api/hsa-xep-hang';
 import {routeMetadata,PUBLIC_PATHS} from '../src/migration/route-policy';
 import {readSecret} from '../scripts/de-thi-kho.mjs';
@@ -72,7 +72,12 @@ const catalog=json('src/native/exams/catalog.json');
 for(const e of config.exams){
  const exam=e.source==='hsa-paper'?(secretJson('src/native/exams/hsa-papers/'+e.examId+'.key.json')??json('src/native/exams/hsa-papers/'+e.examId+'.public.json').exam):(e.source==='catalog'?catalog:bank).find((x:any)=>x.id===e.examId);
  assert.ok(exam,'Đề '+e.examId+' phải có sẵn trong nguồn '+e.source);
- assert.ok(validatePracticeExam(exam).valid,'Đề '+e.examId+' phải hợp lệ');
+ // Tệp công khai đã tách đáp án từ 20/10: dùng cổng questions-only đúng hợp đồng,
+ // cổng chấm đủ đáp án chỉ áp dụng khi có đầu vào riêng hoặc đề luyện cục bộ.
+ const publicOnly=exam.responseMode==='questions-only';
+ if(publicOnly){assert.equal(exam.serverGraded,true);assert.equal(validatePracticeExam(exam).valid,false);}
+ const validation=publicOnly?validateQuestionOnlyPracticeExam(exam):validatePracticeExam(exam);
+ assert.ok(validation.valid,'Đề '+e.examId+' phải hợp lệ: '+validation.errors.join('; '));
 }
 const placeholder=config.exams.find((e:any)=>e.examId==='mtm-preview-practice-hsa-01-v1');
 assert.equal(placeholder?.placeholder,true,'Đề mẫu tạm phải gắn placeholder=true để trang hiện ghi chú.');

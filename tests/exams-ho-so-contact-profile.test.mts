@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {mount} from './daily19-ui-harness.mts';
 import {createRequire} from 'node:module';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
@@ -51,8 +52,8 @@ const home=readFileSync(join(root,'src/migration/Home.tsx'),'utf8');assert.ok(ho
 const css=readFileSync(join(root,'src/components/home-consultation.css'),'utf8');
 assert.match(css,/@media\(max-width:760px\)/);assert.match(css,/position:fixed/);assert.match(css,/safe-area-inset-bottom/);assert.match(css,/padding-bottom:calc\(84px/);assert.match(css,/background:#ffcf24/);
 
-const Gate=load('src/native/homework/HomeworkGate.tsx').default,identity={fullName:'Học sinh thử đăng nhập',phone:'0000000000',className:'Lớp thử'};
-const submissions:any[]=[],tree=Gate({studentCode:'MÃ THỬ',identity,busy:false,classNames:['Lớp thử'],onCode(){},onIdentity(){},onLogin:(payload:any)=>submissions.push(payload)});
+const identity={fullName:'Học sinh thử đăng nhập',phone:'0000000000',className:'Lớp thử'};
+const submissions:any[]=[],tree=mount('src/native/homework/HomeworkGate.tsx',{studentCode:'MÃ THỬ',identity,busy:false,classNames:['Lớp thử'],onCode(){},onIdentity(){},onLogin:(payload:any)=>submissions.push(payload)}).tree;
 const form=all(tree,node=>node.type==='form'&&node.props['aria-labelledby']==='btvn-identity-title')[0];
 assert.ok(form);const fields=all(form,node=>node.type==='input'||node.type==='select');
 assert.equal(fields.length,3);assert.deepEqual(fields.map(field=>field.type==='select'?'className':field.props.type),['text','tel','className']);

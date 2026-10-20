@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+// PIN (18/10) thêm một useState trước room; giữ đủ ca checking, ngoài phòng và trong phòng.
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {STUDY_DAYS_KEY,clearStudyDays,localStudyDay,readStudyDays,saveStudyDays,studyDayNumber,studyDayOffset,studyDayStats,type StudyStore} from '../src/native/homework/self-study-days';
@@ -124,7 +125,7 @@ test('Tải lười, thu gọn giữ nội dung, thử lại thay loader và bou
 });
 
 test('Mount trên BTVN thật ngoài phòng làm bài, không truyền danh tính, dữ liệu bài hoặc gọi API',()=>{
-  const render=(state:any,room:boolean,checking=false)=>{let index=0;const View=load('src/native/homework/HomeworkSession.tsx',{useState:(initial:any)=>{const at=index++;return [at===0?state:at===6?room:at===10?checking:typeof initial==='function'?initial():initial,()=>{}];},useRef:(v:any)=>({current:v}),useMemo:(fn:()=>unknown)=>fn(),useEffect(){}}).default;return all(View({pathname:'/btvn'}),n=>n.type?.name==='HomeworkStudyRhythmTool');};
+  const render=(state:any,room:boolean,checking=false)=>{let index=0;const View=load('src/native/homework/HomeworkSession.tsx',{useState:(initial:any)=>{const at=index++;return [at===0?state:at===7?room:at===11?checking:typeof initial==='function'?initial():initial,()=>{}];},useRef:(v:any)=>({current:v}),useMemo:(fn:()=>unknown)=>fn(),useEffect(){}}).default;return all(View({pathname:'/btvn'}),n=>n.type?.name==='HomeworkStudyRhythmTool');};
   assert.equal(render(null,false,true).length,0);assert.equal(render(null,false).length,1);assert.deepEqual(render(null,false)[0].props,{});
   assert.equal(render({lessons:[],draft:null},false).length,1);assert.equal(render({lessons:[],draft:null},true).length,0);
   const source=[file,tool,'src/native/homework/self-study-days.ts'].map(path=>readFileSync(join(root,path),'utf8')).join('\n');assert.doesNotMatch(source,/fetch\(|gateway|\.answers\b|fullName|phone|studentCode|dangerouslySetInnerHTML|\u2014/);

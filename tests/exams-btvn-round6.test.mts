@@ -42,7 +42,8 @@ assert.equal(denied.status,503);assert.ok(!JSON.stringify(denied.body).includes(
 // Component thật: select required, không nhập lớp tự do; form mã vẫn dùng được khi tải lớp lỗi.
 const root=process.env.MTM_ROOT??process.cwd(),require=createRequire(root+'/package.json');
 const {build}=require('esbuild');const out=root+'/.qa-temp/round6';mkdirSync(out,{recursive:true});
-const entry=`import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import assert from 'node:assert/strict';import Gate from './src/native/homework/HomeworkGate';
+const entry=`import React from 'react';import {renderToStaticMarkup} from 'react-dom/server';import assert from 'node:assert/strict';import GateComponent from './src/native/homework/HomeworkGate';import {mount} from './tests/daily19-ui-harness.mts';
+const Gate=props=>mount('src/native/homework/HomeworkGate.tsx',props).tree;
 const walk=n=>Array.isArray(n)?n.flatMap(walk):React.isValidElement(n)?[n,...walk(n.props.children)]:[];
 const formsOf=tree=>walk(tree).filter(n=>n.type==='form');
 const calls=[],identity={fullName:'Giả A',phone:'0900000000',className:'Lớp giả A'};
@@ -59,8 +60,8 @@ const failed=Gate({...props,classNames:[],classesError:true});submit(formsOf(fai
 assert.ok(!walk(formsOf(failed)[0]).find(n=>n.type==='button').props.disabled);
 assert.ok(walk(formsOf(failed)[1]).find(n=>n.type==='select').props.disabled);
 let reloads=0;walk(Gate({...props,classNames:[],classesError:true,onReloadClasses:()=>reloads++})).find(n=>n.type==='button'&&n.props.type==='button').props.onClick();assert.equal(reloads,1);
-export const html=renderToStaticMarkup(<Gate {...props}/>);`;
-const bundle=await build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',define:{'process.env.NODE_ENV':'"production"'}});
+export const html=renderToStaticMarkup(<GateComponent {...props}/>);`;
+const bundle=await build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external'});
 writeFileSync(out+'/gate.cjs',bundle.outputFiles[0].text);
 const rendered=(await import(pathToFileURL(out+'/gate.cjs').href)).default;
 const css=readFileSync(root+'/src/native/homework/btvn-session.css','utf8');

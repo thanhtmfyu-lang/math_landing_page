@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+import {mount} from './daily19-ui-harness.mts';
 import {createRequire} from 'node:module';
 import {join} from 'node:path';
 import {createHomeworkDeadlineICS,hasHomeworkDeadline} from '../src/native/homework/deadline-calendar';
@@ -65,7 +66,7 @@ await test('Thẻ chỉ xuất lịch khi đã mở, có bài và hạn thật t
 const {default:Gate}=load('src/native/homework/HomeworkGate.tsx');
 const props={studentCode:'SYNTHETIC-CODE',identity:{fullName:'Tên thử',phone:'0000000000',className:'Lớp thử'},busy:false,classNames:['Lớp thử']};
 await test('Hai form BTVN gửi riêng, giữ payload và chặn khi bận/lớp không hợp lệ',()=>{
-  const calls:any[]=[],make=(patch:any={})=>Gate({...props,onCode(){},onIdentity(){},onLogin:(input:any)=>calls.push(input),...patch});
+  const calls:any[]=[],make=(patch:any={})=>mount('src/native/homework/HomeworkGate.tsx',{...props,onCode(){},onIdentity(){},onLogin:(input:any)=>calls.push(input),...patch}).tree;
   const forms=all(make(),n=>n.type==='form');assert.equal(forms.length,2);
   forms[0].props.onSubmit({preventDefault(){}});forms[1].props.onSubmit({preventDefault(){}});
   assert.deepEqual(calls,[{studentCode:props.studentCode},props.identity]);
@@ -77,6 +78,22 @@ await test('Cổng có hai hướng dẫn, Zalo đúng số và cách mở từ 
   for(const href of ['/huong-dan','/huong-dan?cho=phu-huynh','https://zalo.me/0967365413'])assert.ok(html.includes('href="'+href+'"'));
   assert.match(html,/Mã học sinh lấy ở đâu/);assert.match(html,/Chrome hoặc Safari/);assert.match(html,/nhiều con cùng lớp/);
   assert.doesNotMatch(html,/role="tab"|chatgpt\.site|Tình hình con hôm nay/);
+});
+await test('Thông báo hết quyền hiện trong đúng form, cả chế độ nhập PIN và tạo PIN',()=>{
+  const notice='Phần bài chưa gửi xong có thể chưa được tính.';
+  for(const pinMode of ['enter','setup']){
+    const m=mount('src/native/homework/HomeworkGate.tsx',{...props,pinMode,notice,onCode(){},onIdentity(){},onLogin(){}});
+    try{
+      const forms=()=>all(m.tree,n=>n.type==='form');
+      assert.equal(all(forms()[0],n=>n.props?.role==='alert').length,0);
+      assert.equal(all(forms()[1],n=>n.props?.role==='alert')[0].props.children,notice);
+      assert.equal(m.scrolled.text,notice);assert.deepEqual(m.scrolled.options,{block:'nearest'});
+      forms()[0].props.onSubmit({preventDefault(){}});m.draw();
+      assert.equal(all(forms()[0],n=>n.props?.role==='alert')[0].props.children,notice);
+      assert.equal(all(forms()[1],n=>n.props?.role==='alert').length,0);
+      assert.equal(m.scrolled.text,notice);assert.deepEqual(m.scrolled.options,{block:'nearest'});
+    }finally{m.unmount();}
+  }
 });
 await test('Đích công khai trong dialog/footer nằm trên MTM, menu có Hướng dẫn',()=>{
   const {AccessDialog,MigrationHeader}=load('src/migration/Experience.tsx');

@@ -1,4 +1,5 @@
 import assert from 'node:assert/strict';
+// PIN (18/10) thêm một useState trước room; giữ đủ ca checking, ngoài phòng và trong phòng.
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {HOMEWORK_CHECKS,summarizeHomeworkChecks} from '../src/native/homework/self-check';
@@ -66,10 +67,10 @@ test('Session chỉ sở hữu phiếu ngoài cổng; lượt đang làm giao ph
   const render=(state:any,room:boolean,checking=false)=>{
     let index=0;
     const View=load('src/native/homework/HomeworkSession.tsx',{
-      useState:(initial:any)=>{const at=index++;return [at===0?state:at===6?room:at===10?checking:typeof initial==='function'?initial():initial,()=>{}];},
+      useState:(initial:any)=>{const at=index++;return [at===0?state:at===7?room:at===11?checking:typeof initial==='function'?initial():initial,()=>{}];},
       useRef:(initial:any)=>({current:initial}),useMemo:(fn:()=>unknown)=>fn(),useEffect:()=>{},
     }).default;
-    const before=JSON.stringify(state),tree=View({pathname:'/btvn'});assert.equal(JSON.stringify(state),before);assert.equal(index,12);
+    const before=JSON.stringify(state),tree=View({pathname:'/btvn'});assert.equal(JSON.stringify(state),before);assert.equal(index,13);
     return {tree,tools:all(tree,n=>n.type?.name==='HomeworkSelfCheckTool'),plans:all(tree,n=>n.type?.name==='HomeworkTimePlan'),managed:all(tree,n=>n.type?.name==='ManagedAttempt')};
   };
   assert.equal(render(null,false,true).tools.length,0);

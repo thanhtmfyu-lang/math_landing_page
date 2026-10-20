@@ -50,11 +50,13 @@ test('DL-12: không còn đề nào tải PDF từ kho GitHub cũ; 2 đề Thi t
     assert.equal(sha(join(root, 'public', pdf.url)), pdf.sha256);
   }
 });
-test('KT-20: Cache-Control lâu dài chỉ cho /exam-assets tên SHA-256, và mọi tệp ở đó đúng là SHA-256 nội dung', () => {
+test('KT-20: Cache-Control lâu dài đúng hai phạm vi đã duyệt: bundle /assets và PDF tên SHA-256', () => {
   const vercel = JSON.parse(readFileSync(join(root, 'vercel.json'), 'utf8')) as {headers?: {source: string; headers: {key: string; value: string}[]}[]};
   const cached = vercel.headers!.filter(rule=>rule.headers.some(h=>h.key.toLowerCase()==='cache-control'&&(/immutable/i.test(h.value)||/max-age\s*=\s*[1-9]/i.test(h.value))));
-  assert.equal(cached.length, 1, 'chỉ một luật cache lâu dài; trang riêng được phép no-store');
-  const rule = cached[0];
+  assert.deepEqual(cached.map(rule=>rule.source).sort(), ['/assets/(.*)', '/exam-assets/:file([0-9a-f]{64}\\.pdf)'].sort(), 'chỉ hai phạm vi cache đã duyệt; không cache trang riêng');
+  assert.deepEqual(cached.find(rule=>rule.source==='/assets/(.*)')!.headers, [{key: 'Cache-Control', value: 'public, max-age=31536000, immutable'}]);
+  assert.equal(existsSync(join(root, 'public/assets')), false, 'Không chép tệp tên cố định vào phạm vi /assets immutable do Vite quản lý');
+  const rule = cached.find(rule=>rule.source.startsWith('/exam-assets/'))!;
   assert.equal(rule.source, '/exam-assets/:file([0-9a-f]{64}\\.pdf)');
   assert.deepEqual(rule.headers, [{key: 'Cache-Control', value: 'public, max-age=31536000, immutable'}]);
   const pattern = /^[0-9a-f]{64}\.pdf$/;
