@@ -102,6 +102,9 @@
 .dv-tkb-note{margin:0;font-size:14px;line-height:1.5;color:#46546f}
 .dv-tkb-row{display:grid;gap:6px;padding:10px 0;border-top:1px solid #e3eaf5}
 .dv-tkb-row strong{font-size:14px;color:var(--hsa-navy)}
+.dv-tkb-ghi{font-weight:600;color:var(--hsa-navy)}
+.dv-tkb-lop{opacity:.75;font-size:12px}
+.dv-chip.is-on .dv-tkb-lop{color:#fff;opacity:.85}
 .dv-chip input{position:absolute;opacity:0;pointer-events:none}
 .dv-chip.is-on{border-color:var(--hsa-navy);background:#213269;color:#fff}
 .dv-chip:has(input:focus-visible){outline:3px solid #9cb8e6;outline-offset:1px}

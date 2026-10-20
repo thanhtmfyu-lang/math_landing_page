@@ -6,7 +6,7 @@ import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
 import {describeLeadSource,storedLeadSource} from '../../components/lead-source';
 import {DV_TRACKS,DV_TRACK_LABEL,LEVEL_LABEL,PART_LABEL,isDvTrack,type DvTrack,type Paper,type Result} from '../../../server/dau-vao/engine';
 import {CHON_BUOI,HS_GOALS,HS_GOAL_LABEL,HS_HEARD,HS_HEARD_LABEL,validateHoSo,type HoSo} from '../../../server/dau-vao/ho-so';
-import {LICH_CHUP,THU_LABEL,buoiCuaKhoi,type Buoi} from '../../../server/dau-vao/lich-lop';
+import {LICH_CHUP,THU_LABEL,buoiCuaKhoi,nhomTuBuoi,type Buoi,type Nhom} from '../../../server/dau-vao/lich-lop';
 import {entranceLeadPayload,resultSummary} from './entrance-test';
 import './hsa-mock.css';
 import './entrance-test.css';
@@ -46,18 +46,24 @@ function Start({initial,onStart}:{initial:DvTrack;onStart:(s:Saved)=>void}){
  const [error,setError]=useState(''),[busy,setBusy]=useState(false);
  const summer=[6,7,8].includes(new Date().getMonth()+1);
  const set=<K extends keyof Form>(k:K,v:Form[K])=>{setError('');setF(o=>{const n={...o,[k]:v};try{sessionStorage.setItem(FORM_KEY,JSON.stringify(n));}catch{/* bỏ qua */}return n;});};
- const toggle=(id:string)=>set('lichChon',f.lichChon.includes(id)?f.lichChon.filter(x=>x!==id):[...f.lichChon,id]);
  // Thời khóa biểu các lớp của khối: hiện ngay bản chụp, rồi thay bằng lịch máy chủ đọc từ tab Lich_lop.
  const [buoi,setBuoi]=useState<Buoi[]>(()=>buoiCuaKhoi(LICH_CHUP,initial,vnToday()));
  useEffect(()=>{let live=true;setBuoi(buoiCuaKhoi(LICH_CHUP,khoi,vnToday()));
   fetch(API+'?lich='+khoi,{headers:{Accept:'application/json'}}).then(r=>r.ok?r.json():null).then(d=>{if(live&&Array.isArray(d?.buoi)&&d.buoi.length)setBuoi(d.buoi);}).catch(()=>{/* giữ bản chụp */});
   return ()=>{live=false;};},[khoi]);
- useEffect(()=>{const ok=new Set(buoi.map(b=>b.id));if(f.lichChon.some(x=>!ok.has(x)))set('lichChon',f.lichChon.filter(x=>ok.has(x)));},[buoi]); // eslint-disable-line react-hooks/exhaustive-deps
- const lop=useMemo(()=>{const m=new Map<string,Buoi[]>();for(const b of buoi)m.set(b.lop,[...(m.get(b.lop)??[]),b]);return [...m];},[buoi]);
+ // Chương trình (XPS gộp 8+ và 9+, XPT, lớp cấp 2, HSA) và lựa chọn từng buổi: lichChon[i] là buổi i+1, '' khi chưa chọn.
+ const nhoms=useMemo(()=>nhomTuBuoi(buoi),[buoi]);
+ const fits=(n:Nhom,ids:string[])=>ids.length===n.buoi.length&&n.buoi.every((b,i)=>!ids[i]||b.lua.some(x=>x.id===ids[i]));
+ const [nhomId,setNhomId]=useState('');
+ const chooseNhom=(n:Nhom)=>{setNhomId(n.id);set('lichChon',n.buoi.map(b=>b.lua.length===1?b.lua[0].id:''));};
+ useEffect(()=>{const keep=nhoms.find(n=>n.id===nhomId&&fits(n,f.lichChon))??nhoms.find(n=>f.lichChon.some(Boolean)&&fits(n,f.lichChon));
+  if(keep){if(keep.id!==nhomId)setNhomId(keep.id);}else if(nhoms.length===1)chooseNhom(nhoms[0]);else{setNhomId('');if(f.lichChon.length)set('lichChon',[]);}},[nhoms]); // eslint-disable-line react-hooks/exhaustive-deps
+ const cur=nhoms.find(n=>n.id===nhomId);
+ const pick=(i:number,id:string)=>set('lichChon',f.lichChon.map((x,j)=>j===i?id:x));
  const submit=async(e:React.FormEvent)=>{e.preventDefault();setError('');
+  if(nhoms.length&&(!cur||f.lichChon.length!==cur.buoi.length||f.lichChon.some(x=>!x))){setError(CHON_BUOI);return;}
   const h=validateHoSo({...f,khoi,hinhThuc:f.hinhThuc||undefined,dongY:consent,leadSource:describeLeadSource(storedLeadSource())},vnToday());
   if(typeof h==='string'){setError(h);return;}
-  if(buoi.length&&!h.lichChon.length){setError(CHON_BUOI);return;}
   setBusy(true);
   try{
    let link:Saved['link'];
@@ -89,11 +95,15 @@ function Start({initial,onStart}:{initial:DvTrack;onStart:(s:Saved)=>void}){
   <fieldset className="hsa-field dv-chips-field"><legend>Hình thức học<b className="dv-req" aria-hidden="true"> *</b></legend><div className="dv-chips">
    {([['truc-tiep','Trực tiếp tại trung tâm (Chùa Láng, Đống Đa)'],['online','Online qua Zoom cùng lớp thật']] as const).map(([v,l])=><label key={v} className={'dv-chip'+(f.hinhThuc===v?' is-on':'')}><input type="radio" name="hinhThuc" checked={f.hinhThuc===v} onChange={()=>set('hinhThuc',v)}/>{l}</label>)}
   </div></fieldset>
-  <fieldset className="hsa-field dv-chips-field dv-tkb"><legend>Chọn buổi em đi học được<b className="dv-req" aria-hidden="true"> *</b><em className="dv-opt"> (chọn ít nhất 1, chọn nhiều càng dễ xếp)</em></legend>
-   <p className="dv-tkb-note">Đây là thời khóa biểu các lớp {khoi==='hsa'?'HSA':'khối '+khoi} hiện tại của trung tâm. Những lớp học cùng bài thì em có thể chọn lịch so le giữa các lớp (ví dụ buổi thứ 3 của lớp này và buổi chủ nhật của lớp kia), miễn khớp lịch của em nhất. Thầy cô sẽ xác nhận lại khi xếp lớp và mời em học thử vào buổi gần nhất em đã chọn.</p>
-   {lop.length?lop.map(([ten,bs])=><div key={ten} className="dv-tkb-row"><strong>Lớp {ten}</strong><div className="dv-chips" role="group" aria-label={'Lớp '+ten}>
-    {bs.map(b=><label key={b.id} className={'dv-chip'+(f.lichChon.includes(b.id)?' is-on':'')}><input type="checkbox" checked={f.lichChon.includes(b.id)} onChange={()=>toggle(b.id)}/>{THU_LABEL[b.thu]} · {b.bat}–{b.ket}</label>)}
-   </div></div>):<p className="dv-tkb-note">Khối này đang xếp lịch lớp mới. Em ghi giờ rảnh vào ô ghi chú, thầy cô sẽ gọi lại xếp lịch.</p>}
+  <fieldset className="hsa-field dv-chips-field dv-tkb"><legend>Lịch học em chọn<b className="dv-req" aria-hidden="true"> *</b></legend>
+   {nhoms.length?<>
+    <p className="dv-tkb-note">Thời khóa biểu các lớp {khoi==='hsa'?'HSA':'khối '+khoi} hiện tại của trung tâm. {nhoms.length>1?'Em chọn chương trình, rồi chọn ngày học cho từng buổi trong tuần.':'Em chọn ngày học cho từng buổi trong tuần.'} Thầy cô sẽ xác nhận khi xếp lớp và mời em học thử vào buổi gần nhất em chọn.</p>
+    {nhoms.length>1&&<div className="dv-chips" role="radiogroup" aria-label="Chương trình">{nhoms.map(n=><label key={n.id} className={'dv-chip'+(nhomId===n.id?' is-on':'')}><input type="radio" name="dv-nhom" checked={nhomId===n.id} onChange={()=>chooseNhom(n)}/>{n.ten}</label>)}</div>}
+    {cur&&<><p className="dv-tkb-note dv-tkb-ghi">{cur.ghiChu}</p>
+     {cur.buoi.map((b,i)=><div key={b.so} className="dv-tkb-row"><strong>Buổi {b.so}{b.lua.length>1?': em học ngày nào?':''}</strong><div className="dv-chips" role="radiogroup" aria-label={'Buổi '+b.so}>
+      {b.lua.map(x=><label key={x.id} className={'dv-chip'+(f.lichChon[i]===x.id?' is-on':'')}><input type="radio" name={'dv-buoi-'+b.so} checked={f.lichChon[i]===x.id} onChange={()=>pick(i,x.id)}/>{THU_LABEL[x.thu]} · {x.bat}–{x.ket}{b.lua.length>1&&<small className="dv-tkb-lop">&nbsp;lớp {x.lop.replace(/^2K\d+\s*(XPS\s*)?/,'')||x.lop}</small>}</label>)}
+     </div></div>)}</>}
+   </>:<p className="dv-tkb-note">Khối này đang xếp lịch lớp mới. Em ghi giờ rảnh vào ô ghi chú, thầy cô sẽ gọi lại xếp lịch.</p>}
   </fieldset>
   <div className="dv-grid">
    <label className="hsa-field"><span>Mục tiêu<em className="dv-opt"> (không bắt buộc)</em></span><select value={f.mucTieu} onChange={e=>set('mucTieu',e.target.value)}><option value="">Chọn mục tiêu</option>{HS_GOALS.map(g=><option key={g} value={g}>{HS_GOAL_LABEL[g]}</option>)}</select></label>
