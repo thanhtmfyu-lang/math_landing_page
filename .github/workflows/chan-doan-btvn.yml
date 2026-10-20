@@ -6,17 +6,13 @@ jobs:
   do:
     runs-on: ubuntu-latest
     steps:
-      - name: Do trang va API BTVN
+      - name: Do API BTVN co Origin
         run: |
           set +e
-          B=https://www.minhthanhmath.vn; curl -sSI https://minhthanhmath.vn/btvn | grep -i location
-          curl -sS -m 30 -o /dev/null -w "btvn page %{http_code} %{time_total}s\n" $B/btvn
-          for a in state classes; do
-            echo "== action $a"
-            curl -sS -m 70 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H 'Content-Type: application/json' -d "{\"action\":\"$a\"}" $B/api/btvn | cut -c1-600
-          done
-          echo "== GET"
-          curl -sS -m 70 -w "\nHTTP %{http_code} %{time_total}s\n" "$B/api/btvn" | cut -c1-400
-          for p in /api/bang-tin /api/xep-hang; do curl -sS -m 40 -o /dev/null -w "$p %{http_code} %{time_total}s\n" $B$p; done
-          JS=$(curl -sS $B/btvn | grep -o '/assets/[^"]*\.js' | head -3); echo "$JS"
-          for j in $JS; do curl -sS -o /dev/null -w "$j %{http_code}\n" $B$j; done
+          B=https://www.minhthanhmath.vn
+          for i in 1 2 3; do for a in state classes; do
+            echo "== $i action $a"
+            curl -sS -m 90 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: $B" -H 'Content-Type: application/json' -d "{\"action\":\"$a\"}" $B/api/btvn | cut -c1-300
+          done; done
+          echo "== login sai"
+          curl -sS -m 90 -w "\nHTTP %{http_code} %{time_total}s\n" -X POST -H "Origin: $B" -H 'Content-Type: application/json' -d '{"action":"login","gate":{"fullName":"Thu Nghiem","phone":"0900000000","className":"2K10 Lớp 9+","pin":"123456"}}' $B/api/btvn | cut -c1-300
