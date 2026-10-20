@@ -22,10 +22,12 @@ begin
  if public.mtm_bot_hs_reset_pin('Học Sinh Giả Bót','2K9 GIẢ BOT','0988888888')->>'ok'<>'false' or not exists(select 1 from mtm_hw_private.student_pins where student_id=a) then raise exception 'BOT_QA_RESET_STRANGER';end if;
  r=public.mtm_bot_hs_reset_pin('Học Sinh Giả Bót','2K9 GIẢ BOT','0911000071');
  if r->>'ok'<>'true' or exists(select 1 from mtm_hw_private.student_pins where student_id=a) then raise exception 'BOT_QA_RESET %',r;end if;
+ r=public.mtm_bot_hs_reset_pin('Học Sinh Giả Bót','2K9 GIẢ BOT','0911000071');
+ if r->>'code'<>'qua-gioi-han' then raise exception 'BOT_QA_RESET_LIMIT %',r;end if;
  if (select count(*) from mtm_hw_private.bot_support_log where student_id=a)<5 then raise exception 'BOT_QA_LOG';end if;
  -- PH quên PIN: Zalo chưa ghép bị từ chối.
  if public.mtm_bot_ph_reset_pin('0922000071','zalo-la')->>'ok'<>'false' then raise exception 'BOT_QA_PH';end if;
  -- Chỉ service_role gọi được.
  if has_function_privilege('anon','public.mtm_bot_hs_reset_pin(text,text,text,text)','execute') or has_function_privilege('authenticated','public.mtm_bot_hs_unlock(text,text,text)','execute') then raise exception 'BOT_QA_GRANT';end if;
- raise notice 'BOT 079: 7/7 kiểm tra đạt (không thấy tên, SĐT lệch, khoá PIN, mở khoá, đặt lại có kiểm SĐT, nhật ký, quyền).';
+ raise notice 'BOT 091: 8/8 kiểm tra đạt (không thấy tên, SĐT lệch, khoá PIN, mở khoá, đặt lại có kiểm SĐT, giới hạn 1 lần/24 giờ, nhật ký, quyền).';
 end$qa$;

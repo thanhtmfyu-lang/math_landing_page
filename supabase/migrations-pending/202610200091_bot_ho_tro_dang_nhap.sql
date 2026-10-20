@@ -95,6 +95,13 @@ begin
   insert into mtm_hw_private.bot_support_log(action,student_id,actor,result) values('reset_pin',sid,left(p_actor,64),'tu-choi-sdt');
   return jsonb_build_object('ok',false,'code','sdt-lech','advice','Số điện thoại không khớp hồ sơ nên chưa đặt lại PIN. Phụ huynh nhắn quản lý lớp để xác nhận.');
  end if;
+ -- Chống lạm dụng (soát Công ty AI 20/10): người biết tên + lớp + SĐT bạn có thể xin đặt lại. Giới hạn 1 lần/em/24 giờ và
+ -- 15 lần/ngày toàn hệ thống; vượt thì chuyển quản lý. Bot chỉ gọi khi SĐT khớp chính tài khoản Zalo đang nhắn (nếu lấy được).
+ if exists(select 1 from mtm_hw_private.bot_support_log l where l.action='reset_pin' and l.result='ok' and l.student_id=sid and l.at>now()-interval '24 hours')
+  or (select count(*) from mtm_hw_private.bot_support_log l where l.action='reset_pin' and l.result='ok' and l.at>now()-interval '24 hours')>=15 then
+  insert into mtm_hw_private.bot_support_log(action,student_id,actor,result) values('reset_pin',sid,left(p_actor,64),'qua-gioi-han');
+  return jsonb_build_object('ok',false,'code','qua-gioi-han','advice','Tài khoản này vừa được đặt lại PIN trong 24 giờ qua. Bot chuyển quản lý lớp xác nhận với phụ huynh rồi mới đặt lại tiếp.');
+ end if;
  delete from mtm_hw_private.student_pins where student_id=sid;get diagnostics n=row_count;
  delete from mtm_hw_private.btvn_identity_sessions where student_id=sid;
  insert into mtm_hw_private.bot_support_log(action,student_id,actor,result,detail) values('reset_pin',sid,left(p_actor,64),'ok',jsonb_build_object('phoneMatch',kind,'hadPin',n=1));

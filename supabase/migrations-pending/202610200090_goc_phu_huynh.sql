@@ -199,7 +199,7 @@ begin
  if ph is null then raise exception 'Parent session required' using errcode='42501';end if;
  delete from mtm_hw_private.parent_zalo_codes where phone=ph or expires_at<clock_timestamp()-interval '1 day';
  loop
-  code=lpad((floor(random()*1000000))::int::text,6,'0');
+  code=lpad(((('x'||encode(extensions.gen_random_bytes(4),'hex'))::bit(32)::bigint)%1000000)::text,6,'0');
   exit when not exists(select 1 from mtm_hw_private.parent_zalo_codes where digest=mtm_hw_private.token_digest('mtm-ph-zalo',code) and used_at is null and expires_at>clock_timestamp());
  end loop;
  insert into mtm_hw_private.parent_zalo_codes(digest,phone,expires_at) values(mtm_hw_private.token_digest('mtm-ph-zalo',code),ph,clock_timestamp()+interval '10 minutes');
