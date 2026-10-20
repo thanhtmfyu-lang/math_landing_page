@@ -1,6 +1,7 @@
 import {createHmac,randomUUID,timingSafeEqual} from 'node:crypto';
 import {DV_TRACK_LABEL,type Result} from './engine';
-import {validateHoSo,lichRanhText,HS_GOAL_LABEL,HS_HEARD_LABEL,type HoSo} from './ho-so';
+import {CHON_BUOI,validateHoSo,lichRanhText,HS_GOAL_LABEL,HS_HEARD_LABEL,type HoSo} from './ho-so';
+import {buoiCuaKhoi,buoiFromId,buoiGanNhat,buoiText,loadLich} from './lich-lop';
 import {hoSoSummary,resultSummary} from './phieu';
 // Phiếu học thử và kết quả bài kiểm tra đầu vào vào kho lead chung (mtm_lead.leads, migration 073 + 074).
 // Bật cùng cờ MTM_LEAD_ENABLED=1 của kho lead; chưa bật thì trả enabled:false để trang gửi đường EmailJS cũ.
@@ -20,15 +21,20 @@ async function rpc(env:Env,transport:typeof fetch,name:string,args:Record<string
 }
 const grade=(h:HoSo)=>['10','11','12'].includes(h.khoi)?h.khoi:h.khoi==='hsa'?'hsa':'thcs';
 /** Ghi phiếu học thử trước khi làm bài. */
-export async function saveHoSo(raw:unknown,key:Buffer|null,today:string,env:Env,transport:typeof fetch=fetch):Promise<LeadOut>{
+export async function saveHoSo(raw:unknown,key:Buffer|null,today:string,env:Env,transport:typeof fetch=fetch,now=Date.now()):Promise<LeadOut>{
  const h=validateHoSo(raw,today);if(typeof h==='string')return {status:400,body:{message:h}};
+ // Buổi chọn phải còn trong thời khóa biểu hiện hành của khối (lịch đổi giữa lúc mở trang và lúc gửi thì báo chọn lại).
+ const lich=new Set(buoiCuaKhoi(await loadLich(env,transport),h.khoi,today).map(b=>b.id));
+ if(lich.size&&!h.lichChon.length)return {status:400,body:{message:CHON_BUOI}};
+ if(h.lichChon.some(x=>!lich.has(x)))return {status:400,body:{message:'Thời khóa biểu vừa cập nhật, em tải lại trang và chọn lại buổi học.'}};
  if(env.MTM_LEAD_ENABLED!=='1'||!key)return {status:200,body:{enabled:false}};
- const id=randomUUID();
+ const id=randomUUID(),gan=buoiGanNhat(h.lichChon,now);
  try{
   const data=await rpc(env,transport,'mtm_lead_dau_vao_add',{p_id:id,p_student_name:h.hoTen,p_phone:h.sdtPh,p_grade:grade(h),p_study_mode:h.hinhThuc,
-   p_trial_slot:lichRanhText(h).slice(0,80),p_notes:hoSoSummary(h).slice(0,2000),p_lead_source:('Kiểm tra đầu vào web'+(h.leadSource?' · '+h.leadSource:'')).slice(0,300),
+   p_trial_slot:lichRanhText(h).slice(0,80),p_notes:hoSoSummary(h,now).slice(0,2000),p_lead_source:('Kiểm tra đầu vào web'+(h.leadSource?' · '+h.leadSource:'')).slice(0,300),
    p_ho_so:{khoi:h.khoi,khoi_label:DV_TRACK_LABEL[h.khoi],ngay_sinh:h.ngaySinh,truong:h.truong,lop_truong:h.lopTruong,phu_huynh:h.phuHuynh,sdt_hoc_sinh:h.sdtHs,
-    ngay_ranh:h.ngayRanh,ca_ranh:h.caRanh,muc_tieu:h.mucTieu?HS_GOAL_LABEL[h.mucTieu as keyof typeof HS_GOAL_LABEL]:'',nguon:h.nguon?HS_HEARD_LABEL[h.nguon as keyof typeof HS_HEARD_LABEL]:'',ghi_chu:h.ghiChu}});
+    lich_chon:h.lichChon.map(x=>{const b=buoiFromId(x);return {lop:b.lop,thu:b.thu,bat_dau:b.bat,ket_thuc:b.ket,text:buoiText(b)};}),
+    buoi_gan_nhat:gan&&{lop:buoiFromId(gan.id).lop,ngay:gan.ngay,gio:gan.gio},muc_tieu:h.mucTieu?HS_GOAL_LABEL[h.mucTieu as keyof typeof HS_GOAL_LABEL]:'',nguon:h.nguon?HS_HEARD_LABEL[h.nguon as keyof typeof HS_HEARD_LABEL]:'',ghi_chu:h.ghiChu}});
   if(data?.status==='limit')return {status:429,body:{message:'Số điện thoại này đã đăng ký nhiều lần hôm nay. Em nhắn Zalo 0967 365 413 để được hỗ trợ.'}};
   if(!data||(data.status!=='accepted'&&data.status!=='already')||typeof data.id!=='string')throw Error('Invalid status');
   return {status:200,body:{enabled:true,id:data.id,sig:sign(key,data.id)}};
