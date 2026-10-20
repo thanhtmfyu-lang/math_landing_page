@@ -137,11 +137,11 @@ begin
 end$$;
 
 -- Web: bài đã đăng trong 180 ngày, chỉ khi phiên BTVN hợp lệ (btvn_student báo lỗi 42501 nếu không).
-create or replace function public.mtm_bang_tin_doc(p_session text) returns jsonb
+-- 20/10/2026: chỉ ảnh anh Thành đã trả lời "duyệt" (status da-dang) mới đọc ra; đọc không cần phiên vì ảnh lớp công khai trên trang chủ.
+-- Chỉ service_role gọi được (qua /api/bang-tin), không mở cho anon.
+create or replace function public.mtm_bang_tin_doc() returns jsonb
 language plpgsql stable security definer set search_path='' as $$
-declare sid uuid=mtm_hw_private.btvn_student(p_session);
 begin
- if sid is null then raise exception 'Session required' using errcode='42501'; end if;
  return (select coalesce(jsonb_agg(x.j order by x.day desc,x.id),'[]'::jsonb) from (
   select p.id,p.day,jsonb_build_object('id',p.id,'kind',p.kind,'title',p.title,'date',to_char(p.day,'YYYY-MM-DD'),'summary',p.summary,'place',p.place,'pinned',p.pinned,
    'photos',(select jsonb_agg(jsonb_build_object('path',f.storage_path,'alt',f.alt,'width',f.width,'height',f.height) order by f.sent_at)
@@ -154,7 +154,7 @@ end$$;
 
 do $$declare f text;begin foreach f in array array[
  'mtm_bang_tin_nhan_anh(text,text,text,text,timestamptz,text,int,int,text)','mtm_bang_tin_cho_duyet(int)',
- 'mtm_bang_tin_duyet(text,uuid[],text,text,text,boolean,text,text)','mtm_bang_tin_an(text,uuid)','mtm_bang_tin_doc(text)'] loop
+ 'mtm_bang_tin_duyet(text,uuid[],text,text,text,boolean,text,text)','mtm_bang_tin_an(text,uuid)','mtm_bang_tin_doc()'] loop
  execute format('revoke all on function public.%s from public,anon,authenticated',f);
  execute format('grant execute on function public.%s to service_role',f);
 end loop;end$$;

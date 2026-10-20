@@ -15,25 +15,21 @@ export function createBoardApi(getEnv=()=>process.env,transport:typeof fetch=fet
  const env=getEnv(),h=req.headers??{},origin=h.origin;
  if(typeof origin!=='string'||origin!==`https://${h.host}`||!allowedBtvnOrigin(origin,env))return res.status(403).json({message:'Không thể xem bảng tin.'});
  const cookie=typeof h.cookie==='string'?h.cookie:'',session=cookie.split(';').map(x=>x.trim()).find(x=>x.startsWith('mtm_btvn_demo='))?.slice(14)??'';
- const key=boardKey(env);
- if(!/^[0-9a-f]{64}$/.test(session))return key?res.status(200).json({enabled:true,public:true,posts:localBoardPosts(key,Date.now(),true)}):res.status(401).json({message:'Em cần đăng nhập để xem bảng tin.'});
- if(!key&&env.MTM_BANG_TIN_ENABLED!=='1')return res.status(200).json({enabled:false,posts:[]});
- try{
+ const key=boardKey(env),signedIn=/^[0-9a-f]{64}$/.test(session),zalo=env.MTM_BANG_TIN_ENABLED==='1';
+ if(!key&&!zalo)return signedIn?res.status(200).json({enabled:false,posts:[]}):res.status(401).json({message:'Em cần đăng nhập để xem bảng tin.'});
+ // 20/10: bài từ ảnh Zalo chỉ có trạng thái "da-dang" sau khi anh Thành trả lời "duyệt" (Javis gọi Edge duyet), nên trả cho cả khách
+ // như ảnh đóng gói. Lỗi đọc Supabase không làm mất ảnh đóng gói trong kho.
+ let remote:ReturnType<typeof toPosts>=[];
+ if(zalo)try{
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error();const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error();
   const auth={apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'};
-  let remote:ReturnType<typeof toPosts>=[];
-  if(env.MTM_BANG_TIN_ENABLED==='1'){
-   const response=await transport(url.origin+'/rest/v1/rpc/mtm_bang_tin_doc',{method:'POST',headers:auth,body:JSON.stringify({p_session:session}),signal:AbortSignal.timeout(8000)});
-   if(!response.ok){if(response.status===401||response.status===403)return res.status(401).json({message:'Em cần đăng nhập lại.'});throw Error();}
-   const rows=(await response.json()) as Row[];if(!Array.isArray(rows))throw Error();
-   remote=toPosts(rows,await signPaths(url.origin,auth,rows,transport));
-  }else{
-   // Chưa áp 071: xác nhận phiên bằng RPC hạng đang chạy (lỗi 42501 khi phiên sai), giống /api/xep-hang-cua-em.
-   const check=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_my_rank',{method:'POST',headers:auth,body:JSON.stringify({p_session:session,p_cohort:'2K9',p_kind:'btvn-tuan',p_class:null}),signal:AbortSignal.timeout(8000)});
-   if(!check.ok){if([400,401,403].includes(check.status))return res.status(401).json({message:'Em cần đăng nhập lại.'});throw Error();}
-  }
-  return res.status(200).json({enabled:true,posts:[...remote,...(key?localBoardPosts(key):[])]});
- }catch{return res.status(503).json({message:'Chưa tải được bảng tin.'});}
+  const response=await transport(url.origin+'/rest/v1/rpc/mtm_bang_tin_doc',{method:'POST',headers:auth,body:'{}',signal:AbortSignal.timeout(8000)});
+  if(!response.ok)throw Error();
+  const rows=(await response.json()) as Row[];if(!Array.isArray(rows))throw Error();
+  remote=toPosts(rows,await signPaths(url.origin,auth,rows,transport));
+ }catch{if(!key)return res.status(503).json({message:'Chưa tải được bảng tin.'});}
+ const local=key?localBoardPosts(key,Date.now(),!signedIn):[];
+ return res.status(200).json({enabled:true,public:!signedIn,posts:[...remote.filter(r=>!local.some(l=>l.id===r.id)),...local]});
 };}
 async function signPaths(origin:string,auth:Record<string,string>,rows:Row[],transport:typeof fetch){
  const paths=[...new Set(rows.flatMap(r=>(r.photos??[]).map(p=>p.path)).filter(p=>PATH.test(p)))];
