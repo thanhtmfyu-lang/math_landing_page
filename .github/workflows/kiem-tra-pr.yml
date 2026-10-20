@@ -1,0 +1,58 @@
+# Kiểm tra mỗi PR và mỗi lần đẩy lên main: build phải xanh mới được merge.
+# Bộ test chạy đầy đủ và báo số file lỗi; khi main hết test lỗi sẵn thì đổi
+# continue-on-error thành false để test cũng chặn merge.
+name: Kiểm tra PR
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+
+concurrency:
+  group: kiem-tra-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          # Kho có ~3 GB đề PDF và ảnh trong public/: không cần để build mã.
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/public/**/*.pdf
+            !/build/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - name: Build
+        run: npx vite build --outDir "$RUNNER_TEMP/build"
+      - name: Sitemap có trang chính
+        run: |
+          for p in /kiem-tra-dau-vao /phong-thi-thu /ky-khao-sat /de-giua-ky-1; do
+            grep -q "minhthanhmath.vn$p</loc>" "$RUNNER_TEMP/build/sitemap.xml" || { echo "Thiếu $p trong sitemap"; exit 1; }
+          done
+
+  test:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    continue-on-error: true
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/public/**/*.pdf
+            !/build/
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci --no-audit --no-fund
+      - run: npm test
