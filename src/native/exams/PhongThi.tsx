@@ -1,3 +1,4 @@
+import PostExamAnalysis from './PostExamAnalysis';
 import {useCallback,useEffect,useMemo,useRef,useState} from 'react';
 import R106PageIntro from '../../migration/R106PageIntro';
 import MathText from '../math/MathText';
@@ -298,11 +299,12 @@ function KetQua({luot,update}:{luot:Luot;update:(l:Luot|null)=>void}){
    <p className="hsa-actions pt-next"><Link className="hsa-ghost" href={'/kiem-tra-dau-vao?nguon=ket-qua-'+(luot.dot?.ma??k.de).toLowerCase().replace(/[^a-z0-9-]/g,'-').slice(0,40)}>Kiểm tra đầu vào miễn phí</Link><a className="hsa-ghost" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer">Nhận báo cáo qua Zalo phụ huynh (gửi mã {luot.dot?.ma??k.de})</a></p>
   </section>
   <BaoCao1Trang luot={luot}/>
+  <PostExamAnalysis result={k} ticket={luot.ve}/>
   {k.theoChuDe.length>0&&<section className="hsa-card pt-topics"><h2>Chủ đề cần ôn</h2><ul>{k.theoChuDe.filter(t=>t.dung<t.tong).slice(0,8).map(t=><li key={t.chuDe}><span>{tenChuDe(t.chuDe)}</span><b>{t.dung}/{t.tong}</b></li>)}</ul>
    {k.theoChuDe.every(t=>t.dung===t.tong)&&<p>Em làm đúng mọi chủ đề trong đề. Rất tốt!</p>}</section>}
   <section className="hsa-card pt-solutions"><h2>Đáp án và lời giải</h2>
    <div className="pt-acc-tabs" role="tablist">{(['sai','tat-ca'] as const).map(t=><button key={t} type="button" role="tab" aria-selected={loc===t} onClick={()=>setLoc(t)}>{t==='sai'?`Câu sai, bỏ trống (${k.tong-k.dung})`:'Tất cả câu'}</button>)}</div>
-   <ol className="pt-sol-list">{cau.map(c=>{const q=de.cau.find(x=>x.ma===c.ma)!;return <li key={c.ma} className={c.dung?'is-ok':c.daLam?'is-bad':'is-skip'}>
+   <ol className="pt-sol-list">{cau.map(c=>{const q=de.cau.find(x=>x.ma===c.ma)!;return <li key={c.ma} id={'pt-review-'+c.ma} className={c.dung?'is-ok':c.daLam?'is-bad':'is-skip'}>
     <p className="pt-q-head"><strong>Câu {c.so}</strong><span>Mã {c.ma}{c.chuDe?' · '+tenChuDe(c.chuDe):''}</span><em>{c.dung?'Đúng':c.daLam?(c.kieu==='ds'?`Đúng ${c.yDung}/4 ý`:'Sai'):'Bỏ trống'} · {so(c.diem)}/{so(c.toiDa)}</em></p>
     <details><summary>Xem đề</summary><div className="pt-prompt"><MathText text={q.de}/></div>{q.hinh&&<Hinh src={q.hinh} alt={'Hình câu '+c.so}/>}
      {q.luaChon&&<ol className="pt-sol-choices" type="A">{q.luaChon.map((x,i)=><li key={i}><MathText text={x}/></li>)}</ol>}{q.y&&<ol className="pt-sol-choices" type="a">{q.y.map((x,i)=><li key={i}><MathText text={x}/></li>)}</ol>}</details>
