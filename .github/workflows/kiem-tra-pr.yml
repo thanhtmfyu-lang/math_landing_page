@@ -56,15 +56,18 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     continue-on-error: true
     steps:
       - uses: actions/checkout@v4
         with:
+          # Test A02/A04/A05 kiểm SHA-256 PDF trong public/exam-assets (~2,6 GB) nên cần tệp thật.
+          # Test KT06/V77 so với commit cũ bằng git show: lấy đủ lịch sử, nội dung cũ tải khi cần.
+          fetch-depth: 0
+          filter: blob:none
           sparse-checkout-cone-mode: false
           sparse-checkout: |
             /*
-            !/public/**/*.pdf
             !/build/
       - uses: actions/setup-node@v4
         with:
