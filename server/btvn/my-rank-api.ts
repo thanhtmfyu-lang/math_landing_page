@@ -1,5 +1,5 @@
-﻿import {publicRankRow,validRankFilter} from '../server/btvn/rank-row';
-import {allowedBtvnOrigin} from '../server/btvn/origin-policy';
+﻿import {publicRankRow,validRankFilter} from './rank-row';
+import {allowedBtvnOrigin} from './origin-policy';
 type Req={method?:string;body?:unknown;headers?:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string)=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 export function createMyRankApi(getEnv=()=>process.env,transport:typeof fetch=fetch){return async(req:Req,res:Res)=>{

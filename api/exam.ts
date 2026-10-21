@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {createPhongThiApi} from '../server/phong-thi/api';
+import previewDisabled from '../server/preview-disabled';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;headers:Record<string,string|string[]|undefined>;body?:unknown};
 type Res={setHeader:(k:string,v:any)=>void;status:(n:number)=>{json:(v:unknown)=>void}};
 export function createExamApi(getEnv=()=>process.env,clientFactory=createClient){return async(req:Req,res:Res)=>{
@@ -22,4 +23,9 @@ export function createExamApi(getEnv=()=>process.env,clientFactory=createClient)
 };}
 /** Vercel Hobby chỉ cho 12 hàm mỗi lần deploy: /api/phong-thi được rewrite về đây (?muc=phong-thi), xem server/phong-thi/api.ts. */
 const exam=createExamApi(),phongThi=createPhongThiApi();
-export default function handler(req:Req,res:Res){return req.query?.muc==='phong-thi'?phongThi(req,res):exam(req,res);}
+export default function handler(req:Req,res:Res){
+ if(req.query?.muc==='preview-disabled')return previewDisabled(req,res);
+ if(req.query?.muc==='phong-thi')return phongThi(req,res);
+ if(req.query?.muc!==undefined)return previewDisabled(req,res);
+ return exam(req,res);
+}

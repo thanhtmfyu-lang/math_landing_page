@@ -2,7 +2,7 @@
 import assert from 'node:assert/strict';
 import {publicRankRow} from '../server/btvn/rank-row';
 import {createRankApi} from '../api/xep-hang';
-import {createMyRankApi} from '../api/xep-hang-cua-em';
+import {createMyRankApi} from '../server/btvn/my-rank-api';
 import {handleAvatar,PHOTO_MAX_CHARS,validPhoto,type AvatarRecord,type AvatarRepository} from '../server/btvn/avatar-http';
 
 const jpeg=(width=192,height=192)=>Buffer.from([0xff,0xd8,0xff,0xc0,0,0x11,8,height>>8,height&255,width>>8,width&255,3,1,0x22,0,2,0x11,1,3,0x11,1,0xff,0xda,0,0x0c,3,1,0,2,0x11,3,0x11,0,0x3f,0,0x12,0x34,0xff,0xd9]);
