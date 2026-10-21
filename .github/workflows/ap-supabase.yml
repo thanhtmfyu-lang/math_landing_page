@@ -1,0 +1,82 @@
+# Áp migration đã duyệt và deploy Edge lên Supabase thật. Chỉ chạy tay (Actions > "Áp Supabase" > Run workflow).
+# Cần secret SUPABASE_ACCESS_TOKEN (anh Thành tạo ở Supabase > Account > Access Tokens).
+# Kho công khai nên log chỉ in tên tệp và đạt/lỗi, không in kết quả truy vấn.
+# Không tự áp cả thư mục: chỉ áp đúng các tệp được ghi tên, theo đúng thứ tự ghi.
+name: Áp Supabase
+
+on:
+  workflow_dispatch:
+    inputs:
+      migrations:
+        description: 'Tên tệp trong supabase/migrations-pending, cách nhau bởi dấu phẩy, theo thứ tự áp (để trống nếu chỉ deploy Edge)'
+        required: false
+        default: ''
+      edge:
+        description: 'Tên Edge function trong supabase/functions, cách nhau bởi dấu phẩy (để trống nếu không deploy)'
+        required: false
+        default: ''
+      gio_cao_diem:
+        description: 'Cho chạy trong 17:00–22:30 giờ Việt Nam (mặc định chặn vì đang có ca học)'
+        type: boolean
+        default: false
+
+concurrency:
+  group: ap-supabase
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ap:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      PROJECT_REF: egljwujhgdapaxyrjskj
+      MIGRATIONS: ${{ inputs.migrations }}
+      EDGE: ${{ inputs.edge }}
+      GIO_CAO_DIEM: ${{ inputs.gio_cao_diem }}
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          sparse-checkout: supabase
+      - name: Kiểm điều kiện
+        run: |
+          [ -n "$SUPABASE_ACCESS_TOKEN" ] || { echo "Chưa có secret SUPABASE_ACCESS_TOKEN"; exit 1; }
+          [ -n "$MIGRATIONS$EDGE" ] || { echo "Chưa ghi tệp migration hay Edge nào"; exit 1; }
+          phut=$(( 10#$(TZ=Asia/Ho_Chi_Minh date +%H)*60 + 10#$(TZ=Asia/Ho_Chi_Minh date +%M) ))
+          if [ "$GIO_CAO_DIEM" != "true" ] && [ $phut -ge 1020 ] && [ $phut -lt 1350 ]; then
+            echo "Đang 17:00–22:30 giờ Việt Nam: không áp lúc có ca học"; exit 1; fi
+          IFS=',' read -ra ds <<< "$MIGRATIONS"
+          for f in "${ds[@]}"; do f=$(echo "$f" | xargs); [ -z "$f" ] && continue
+            [[ "$f" =~ ^[0-9A-Za-z_.-]+\.sql$ ]] && [ -f "supabase/migrations-pending/$f" ] || { echo "Không có tệp: $f"; exit 1; }; done
+          IFS=',' read -ra fs <<< "$EDGE"
+          for e in "${fs[@]}"; do e=$(echo "$e" | xargs); [ -z "$e" ] && continue
+            [[ "$e" =~ ^[a-z0-9-]+$ ]] && [ -f "supabase/functions/$e/index.ts" ] || { echo "Không có Edge: $e"; exit 1; }; done
+      - name: Áp migration
+        if: inputs.migrations != ''
+        run: |
+          IFS=',' read -ra ds <<< "$MIGRATIONS"
+          for f in "${ds[@]}"; do f=$(echo "$f" | xargs); [ -z "$f" ] && continue
+            body=$(jq -Rs '{query: .}' "supabase/migrations-pending/$f")
+            code=$(curl -sS -o /tmp/ket-qua.json -w '%{http_code}' -X POST \
+              "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data "$body")
+            if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then echo "ĐẠT  $f"
+            else
+              # Chỉ in dòng lỗi đầu, bỏ phần DETAIL (có thể chứa giá trị dòng) và che dãy số dài.
+              echo "LỖI  $f (HTTP $code): $(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{6,}/***/g' | head -c 300)"; exit 1; fi
+          done
+      - uses: supabase/setup-cli@v1
+        if: inputs.edge != ''
+        with:
+          version: latest
+      - name: Deploy Edge
+        if: inputs.edge != ''
+        run: |
+          IFS=',' read -ra fs <<< "$EDGE"
+          for e in "${fs[@]}"; do e=$(echo "$e" | xargs); [ -z "$e" ] && continue
+            supabase functions deploy "$e" --project-ref "$PROJECT_REF" --use-api >/tmp/deploy.log 2>&1 \
+              && echo "ĐẠT  Edge $e" || { echo "LỖI  Edge $e"; tail -5 /tmp/deploy.log | grep -vi token; exit 1; }
+          done
