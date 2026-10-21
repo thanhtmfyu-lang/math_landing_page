@@ -15,6 +15,7 @@ import AttemptAnswerSheet from './AttemptAnswerSheet';
 import AttemptResult from './AttemptResult';
 import {formatAttemptDeadline} from './deadline-label';
 import './r106-assessment.css';
+import {isExposedExam,PRACTICE_ONLY_NOTICE} from '../../../server/exam-security/exposure';
 export {localStore};
 const QuestionPdf=lazy(()=>import('./QuestionPdf'));
 function exportDraft(draft: Draft): boolean {
@@ -48,6 +49,7 @@ export default function PracticeAttempt({onServerStart,onServerSubmit,serverScor
     {/* LT-15 (Đợt 4): trên điện thoại phiếu trả lời (có nút Bắt đầu) bị ẩn sau thẻ "Đọc câu hỏi"; nút này đưa việc bắt đầu lên màn đầu.
         Cùng điều kiện và cùng hàm begin() với nút trong phiếu; chỉ hiện ở màn hẹp (exams.css). */}
     {!draft&&<div className="ep-mobile-start"><button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button><p>{persisted.current?`Hạn nộp bài đang làm: ${formatAttemptDeadline(persisted.current.deadline)}.`:`Đồng hồ ${exam.durationMinutes} phút chỉ chạy khi bấm nút. Có thể đọc đề trước ở mục bên dưới.`}{erratum&&!acceptedErratum?' Hãy đọc và đánh dấu điều kiện đính chính ở ngay dưới trước khi bắt đầu.':''}</p></div>}
+    {isExposedExam(exam.id)&&<p className="ep-notice" role="note">{PRACTICE_ONLY_NOTICE}</p>}
     {exam.preAttemptNotice&&<div className="ep-notice"><strong>Điều kiện đính chính của bản MTM</strong><p>{exam.preAttemptNotice}</p><p>Bản nguồn và lịch sử cũ được giữ riêng.</p></div>}
     {newAttemptsClosed&&<div className="ep-notice" role="status"><strong>Tạm chưa mở lượt mới</strong><p>{newAttemptsClosed}</p></div>}
     {notice&&<p className="ep-notice" role="alert">{notice}</p>}
