@@ -40,7 +40,9 @@ jobs:
     steps:
       - uses: actions/checkout@v4
         with:
-          sparse-checkout: supabase
+          sparse-checkout: |
+            supabase
+            scripts
       - name: Kiểm điều kiện
         run: |
           [ -n "$SUPABASE_ACCESS_TOKEN" ] || { echo "Chưa có secret SUPABASE_ACCESS_TOKEN"; exit 1; }
@@ -59,14 +61,7 @@ jobs:
         run: |
           IFS=',' read -ra ds <<< "$MIGRATIONS"
           for f in "${ds[@]}"; do f=$(echo "$f" | xargs); [ -z "$f" ] && continue
-            body=$(jq -Rs '{query: .}' "supabase/migrations-pending/$f")
-            code=$(curl -sS -o /tmp/ket-qua.json -w '%{http_code}' -X POST \
-              "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
-              -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data "$body")
-            if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then echo "ĐẠT  $f"
-            else
-              # Chỉ in dòng lỗi đầu, bỏ phần DETAIL (có thể chứa giá trị dòng) và che dãy số dài.
-              echo "LỖI  $f (HTTP $code): $(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{6,}/***/g' | head -c 300)"; exit 1; fi
+            node scripts/apply-supabase-query.mjs "$f" || exit 1
           done
       - uses: supabase/setup-cli@v1
         if: inputs.edge != ''
@@ -78,5 +73,5 @@ jobs:
           IFS=',' read -ra fs <<< "$EDGE"
           for e in "${fs[@]}"; do e=$(echo "$e" | xargs); [ -z "$e" ] && continue
             supabase functions deploy "$e" --project-ref "$PROJECT_REF" --use-api >/tmp/deploy.log 2>&1 \
-              && echo "ĐẠT  Edge $e" || { echo "LỖI  Edge $e"; tail -5 /tmp/deploy.log | grep -vi token; exit 1; }
+              && echo "ĐẠT  Edge $e" || { echo "LỖI  Edge $e"; rm -f /tmp/deploy.log; exit 1; }
           done
