@@ -132,3 +132,18 @@ const corner=read('src/native/phu-huynh/ParentCorner.tsx');
 assert.ok(!/chatbot/i.test(corner)&&corner.includes('Zalo Toán Thầy Thành'),'Mã ghép gửi Zalo Toán Thầy Thành, không ghi chatbot');
 assert.ok(!corner.includes("'/'+r.rank.total"),'L28: hạng không kèm /y (total là số bài của con, không phải sĩ số)');
 console.log('GÓC PHỤ HUYNH: 10/10 nhóm kiểm tra đạt (ghép đúng, sai 1 trường cùng câu, chặn xem chéo, khoá PIN, cookie, Zalo, không SĐT).');
+
+// Ca ghép lớp: lớp gốc ghi chuyển buổi/vắng, lớp học thật ghi có mặt cùng ngày → phụ huynh chỉ thấy 1 dòng "Có mặt (ca …)".
+{
+ const {mergeAttendance}=await import('../server/phu-huynh/service');
+ const m=mergeAttendance([
+  {date:'2026-10-20',status:'chuyen_buoi',classLabel:'2K10 8+'},{date:'2026-10-20',status:'co_mat',classLabel:'2K10 9+'},
+  {date:'2026-10-18',status:'vang',classLabel:'2K10 8+'},{date:'2026-10-18',status:'di_muon',classLabel:'2K10 8+'},
+  {date:'2026-10-15',status:'vang_phep',classLabel:'2K10 8+'},{date:'bad',status:'co_mat'},{date:'2026-10-14',status:'du_kien'}],'2K10 8+');
+ assert.deepEqual(m.map(a=>a.date),['2026-10-20','2026-10-18','2026-10-15']);
+ assert.equal(m[0].label,'Có mặt (ca 2K10 9+)');
+ assert.equal(m[1].label,'Đi muộn');
+ assert.equal(m[2].label,'Vắng có phép');
+ const s=summarize([],m,Date.parse('2026-10-21T12:00:00+07:00'));
+ assert.deepEqual(s.monthAttendance,{attended:2,total:3});
+}
