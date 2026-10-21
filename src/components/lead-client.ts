@@ -1,5 +1,5 @@
 import type {Registration} from './registration-submit';
-export type LeadKind='dang-ky'|'thi-thu-hsa';
+export type LeadKind='dang-ky'|'thi-thu-hsa'|'on-cuoi-ky-1';
 /** Gửi lead về máy chủ trung tâm. 'saved': đã lưu; 'fallback': máy chủ chưa bật, gửi đường EmailJS cũ; lỗi thì ném Error tiếng Việt. */
 export async function postLead(kind:LeadKind,data:Registration,fetcher:typeof fetch=fetch):Promise<'saved'|'fallback'>{
  const {studentName,phone,grade,message,notes,groupSize,groupInterest,trial,trialSlot,leadSource}=data;

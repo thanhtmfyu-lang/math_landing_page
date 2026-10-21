@@ -65,7 +65,7 @@ assert.match(menuAt('/phu-huynh'),/<a(?=[^>]*href="\/phu-huynh")(?=[^>]*aria-cur
 const {QuickLinks}=load('src/components/QuickLinks.tsx').exports,quick=render(QuickLinks,{pathname:'/khoa-hoc'});
 assert.deepEqual(anchors(quick).map(link=>attribute(link.attributes,'href')),['/btvn','/thi-thu','/phu-huynh','/kiem-tra-dau-vao']);
 const hubHrefs=(pathname:string,search='')=>anchors(render(QuickLinks,{pathname,search})).map(link=>attribute(link.attributes,'href'));
-for(const p of ['/thi-thu','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang'])assert.deepEqual(hubHrefs(p),['/thi-thu','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang'],p);
+for(const p of ['/thi-thu','/on-cuoi-ky-1','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang'])assert.deepEqual(hubHrefs(p),['/thi-thu','/on-cuoi-ky-1','/de-giua-ky-1','/phong-thi-thu','/thi-thu-hsa','/ky-khao-sat','/xep-hang'],p);
 for(const [p,q] of [['/phu-huynh',''],['/huong-dan','?cho=phu-huynh']])assert.deepEqual(hubHrefs(p,q),['/phu-huynh','/huong-dan?cho=phu-huynh','/#timetable'],p);
 assert.match(render(QuickLinks,{pathname:'/de-giua-ky-1'}),/<a(?=[^>]*href="\/de-giua-ky-1")(?=[^>]*aria-current="page")[^>]*>Giữa kỳ I<\/a>/);
 for(const pathname of ['/btvn','/quan-tri','/thi-thu/de-thu'])assert.equal(render(QuickLinks,{pathname}),'');

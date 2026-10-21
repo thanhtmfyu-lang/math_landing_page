@@ -1,6 +1,6 @@
 import {normalizeRegistration,type Registration} from '../../src/components/registration-submit';
 import {canSdtHs,coSdtHs} from '../../src/components/student-phone';
-export const LEAD_KINDS=['dang-ky','thi-thu-hsa'] as const;
+export const LEAD_KINDS=['dang-ky','thi-thu-hsa','on-cuoi-ky-1'] as const;
 export type LeadKind=typeof LEAD_KINDS[number];
 const FIELDS=['kind','studentName','phone','grade','message','notes','groupSize','groupInterest','trial','trialSlot','leadSource'];
 /** Kiểm lead từ trình duyệt bằng đúng luật của form; trả tham số RPC mtm_lead_add hoặc chuỗi lỗi tiếng Việt. */
@@ -8,6 +8,7 @@ export function leadRpcArgs(body:unknown):Record<string,unknown>|string{
  if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).some(k=>!FIELDS.includes(k)))return 'Yêu cầu không hợp lệ.';
  const b=body as Record<string,unknown>;
  if(!LEAD_KINDS.includes(b.kind as LeadKind))return 'Yêu cầu không hợp lệ.';
+ if(b.kind==='on-cuoi-ky-1'&&!['10','11','12'].includes(String(b.grade)))return 'Chọn lớp 10, 11 hoặc 12.';
  for(const k of ['studentName','phone','grade','message','notes','groupSize','trialSlot','leadSource'])if(b[k]!==undefined&&typeof b[k]!=='string')return 'Yêu cầu không hợp lệ.';
  for(const k of ['groupInterest','trial'])if(b[k]!==undefined&&typeof b[k]!=='boolean')return 'Yêu cầu không hợp lệ.';
  if(typeof b.leadSource==='string'&&b.leadSource.length>300)return 'Yêu cầu không hợp lệ.';
