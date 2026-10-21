@@ -1,5 +1,6 @@
 import {createClient} from '@supabase/supabase-js';
 import {createPhongThiApi} from '../server/phong-thi/api';
+import {createSemesterApi} from '../server/semester/api';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;headers:Record<string,string|string[]|undefined>;body?:unknown};
 type Res={setHeader:(k:string,v:any)=>void;status:(n:number)=>{json:(v:unknown)=>void}};
 export function createExamApi(getEnv=()=>process.env,clientFactory=createClient){return async(req:Req,res:Res)=>{
@@ -21,5 +22,5 @@ export function createExamApi(getEnv=()=>process.env,clientFactory=createClient)
  }catch{return res.status(503).json({message:'Chưa mở được tài liệu.'});}
 };}
 /** Vercel Hobby chỉ cho 12 hàm mỗi lần deploy: /api/phong-thi được rewrite về đây (?muc=phong-thi), xem server/phong-thi/api.ts. */
-const exam=createExamApi(),phongThi=createPhongThiApi();
-export default function handler(req:Req,res:Res){return req.query?.muc==='phong-thi'?phongThi(req,res):exam(req,res);}
+const exam=createExamApi(),phongThi=createPhongThiApi(),semester=createSemesterApi();
+export default function handler(req:Req,res:Res){return req.query?.muc==='on-cuoi-ky-1'?semester(req,res):req.query?.muc==='phong-thi'?phongThi(req,res):exam(req,res);}

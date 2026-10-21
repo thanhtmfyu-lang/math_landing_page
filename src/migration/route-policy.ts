@@ -4,7 +4,7 @@ import {resolveNativeLesson,nativeLessonUrl,publicSnapshot,HIDDEN_SNAPSHOT_EXAMS
 import {courses,findCourse,courseSummary,lessonCount,displayCourseTitle} from './catalogue';
 import {legacyLearningAlias} from './legacy-alias';
 export const OFFICIAL_ORIGIN='https://www.minhthanhmath.vn';
-export const PUBLIC_PATHS=['/','/khoa-hoc','/thi-thu','/luyen-tap','/xep-hang','/so-tay','/tai-lieu','/huong-dan','/san-choi','/chinh-sach-bao-mat','/thi-thu-hsa','/kiem-tra-dau-vao','/ky-khao-sat','/phong-thi-thu','/hoc-online','/de-giua-ky-1',...courses.map(c=>'/khoa-hoc/'+c.slug)];
+export const PUBLIC_PATHS=['/','/khoa-hoc','/thi-thu','/luyen-tap','/xep-hang','/so-tay','/tai-lieu','/huong-dan','/san-choi','/chinh-sach-bao-mat','/thi-thu-hsa','/kiem-tra-dau-vao','/ky-khao-sat','/phong-thi-thu','/hoc-online','/on-cuoi-ky-1','/de-giua-ky-1',...courses.map(c=>'/khoa-hoc/'+c.slug)];
 export type CatalogState={grade:'10'|'11'|'12'|'hsa'|'all';query:string;order:'roadmap'|'name'};
 export function parseCatalogQuery(search:string):CatalogState{
  const p=new URLSearchParams(search),raw=p.get('lop');
@@ -13,6 +13,7 @@ export function parseCatalogQuery(search:string):CatalogState{
 export function catalogURL(state:CatalogState){const p=new URLSearchParams({lop:state.grade});if(state.query)p.set('q',state.query);if(state.order!=='roadmap')p.set('sort',state.order);return'/khoa-hoc?'+p.toString();}
 export function normalizePublicPath(path:string){if(!path.startsWith('/')||path.includes('\\'))return'/not-found';return path.replace(/\/+$/,'')||'/';}
 export function routeMetadata(pathname:string,hostname:string,search=''){
+ if(pathname==='/on-cuoi-ky-1')return{known:true,path:pathname,title:'Ôn cuối kỳ I Toán 10–12 | Minh Thành Math',description:'Lộ trình ôn cuối kỳ I miễn phí cho lớp 10, 11, 12, học theo tuần và phần nâng cao đi cùng sách MTM.',url:OFFICIAL_ORIGIN+pathname,ogImage:OFFICIAL_ORIGIN+'/mtm-original-logo.png',robots:'noindex, follow'};
  const alias=legacyLearningAlias(normalizePublicPath(pathname),search);
  if(alias){const dest=alias.startsWith('/btvn')?'/btvn':'/xep-hang';return{known:true,path:normalizePublicPath(pathname),title:(dest==='/btvn'?'Bài tập về nhà':'Đấu trường xếp hạng')+' | Minh Thành Math',description:dest==='/btvn'?'Góc học tập nằm ở trang BTVN. Vào bằng mã lớp sau khi đăng nhập.':'Bảng điểm công khai là bảng xếp hạng. Điểm riêng của từng em nằm trong BTVN sau khi đăng nhập.',url:OFFICIAL_ORIGIN+dest,ogImage:OFFICIAL_ORIGIN+'/mtm-original-logo.png',robots:'noindex, follow'};}
  if(pathname==='/phu-huynh')return{known:true,path:pathname,title:'Góc phụ huynh | Minh Thành Math',description:'Phụ huynh Minh Thành Math xem điểm danh, bài tập về nhà, điểm thi và phần con cần luyện thêm sau khi ghép đúng hồ sơ của con.',url:OFFICIAL_ORIGIN+pathname,ogImage:OFFICIAL_ORIGIN+'/mtm-original-logo.png',robots:'noindex, nofollow'};
