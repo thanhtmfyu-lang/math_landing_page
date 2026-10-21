@@ -14,7 +14,7 @@ assert.deepEqual(validateDe(thpt),[]);
 
 // Trả lời ngắn: dấu phẩy/chấm, số 0 thừa, dấu cộng, -0.
 assert.equal(normShort('12.50'),'12,5');assert.equal(normShort(' +3,0 '),'3');assert.equal(normShort('-0'),'0');assert.equal(normShort(',25'),'0,25');
-assert.equal(normShort('0012'),'12');assert.equal(normShort('1/2'),'');assert.equal(normShort('abc'),'');assert.equal(normShort(''),'');
+assert.equal(normShort('0012'),'12');assert.equal(normShort('1/2'),'1/2');assert.equal(normShort('10/4'),'5/2');assert.equal(normShort('4/2'),'2');assert.equal(normShort('-6/8'),'-3/4');assert.equal(normShort('1/0'),'');assert.equal(normShort('1/2/3'),'');assert.equal(normShort('abc'),'');assert.equal(normShort(''),'');
 
 // Bài làm đúng hết = 10 điểm; bỏ trống = 0.
 const full:Record<string,unknown>={};for(const c of thpt.cau)full[c.ma]=c.dapAn;
@@ -26,6 +26,11 @@ assert.equal(ds([true,null,null,null]),0.1);assert.equal(ds([true,false,null,nul
 const r=cham(thpt,{'I-1':'A','I-2':1,'III-1':'12.5','III-2':'-3,0','III-3':'abc'});
 assert.equal(r.diem,0.25+0.25+0.5+0.5);assert.equal(r.theoPhan.find(p=>p.ma==='III')!.dung,2);
 assert.equal(r.cau.find(c=>c.ma==='III-3')!.daLam,false);
+// Quy chế HSA: đáp số phân số tối giản; chấm theo giá trị (5/4 = 10/8 = 1,25), khác giá trị thì sai.
+const phanSo={...thpt,cau:thpt.cau.map(c=>c.ma==='III-1'?{...c,dapAn:'5/4'}:c)} as PtDe;
+for(const v of ['5/4','10/8','1,25','1.25'])assert.equal(cham(phanSo,{'III-1':v}).theoPhan.find(p=>p.ma==='III')!.dung,1,v);
+for(const v of ['4/5','1,3','5'])assert.equal(cham(phanSo,{'III-1':v}).theoPhan.find(p=>p.ma==='III')!.dung,0,v);
+assert.deepEqual(validateDe(phanSo),[]);
 // Kiểu lạ, câu không có trong đề: bỏ qua, không lỗi.
 assert.equal(cham(thpt,{'I-1':{x:1},'khong-co':'A','II-2':'Đ'}).diem,0);
 

@@ -55,7 +55,7 @@ export default function HsaPaperReader({exam,groups,tables}:{exam:PracticeExam;g
      <div className="hsa-prompt"><HsaText text={q.prompt??q.text??''}/></div>
      {tables?.[q.id]&&<HsaDataTable table={tables[q.id]}/>}
      {q.kind==='mc'&&<ol className="cp-choices" type="A">{q.choices.map((choice,i)=><li key={i}><RoomChoice questionId={q.id} choice={['A','B','C','D'][i]}><HsaText text={choice}/></RoomChoice></li>)}</ol>}
-     {q.kind==='short'&&room===null&&<p className="hsa-short-note">Câu điền đáp án: nhập một số vào phiếu trả lời, dùng dấu phẩy thập phân (ví dụ 2,46).</p>}
+     {q.kind==='short'&&room===null&&<p className="hsa-short-note">Câu điền đáp án: theo quy chế HSA chỉ nhập số nguyên hoặc phân số tối giản vào phiếu trả lời (ví dụ 12, -3 hoặc 5/4).</p>}
     </article></Fragment>;
   })}
  </section>;

@@ -267,7 +267,7 @@ function TraLoiCau({c,v,set}:{c:PtCauCongKhai;v:unknown;set:(v:unknown)=>void}){
   {[true,false].map(b=><td key={String(b)}><label className={'pt-ds-btn'+(a[i]===b?' is-on':'')}><input type="radio" name={c.ma+'-'+i} checked={a[i]===b} onChange={()=>{const n=[0,1,2,3].map(j=>a[j]??null);n[i]=b;set(n);}}/><span>{b?'Đ':'S'}</span></label></td>)}
  </tr>)}</tbody></table>;}
  if(c.kieu==='keo-tha'){const a=Array.isArray(v)?v as (number|null)[]:[];return <div className="pt-kt">{c.o!.map((o,i)=><label key={i} className="hsa-field"><span><MathText text={o}/></span><select value={a[i]??''} onChange={e=>{const n=c.o!.map((_,j)=>a[j]??null);n[i]=e.target.value===''?null:Number(e.target.value);set(n);}}><option value="">Chọn</option>{c.the!.map((t,j)=><option key={j} value={j}>{t.replace(/\$/g,'')}</option>)}</select></label>)}</div>;}
- return <label className="dv-num pt-short"><span>Đáp số</span><input inputMode="decimal" maxLength={8} value={String(v??'')} onChange={e=>set(e.target.value.replace(/[^0-9,.\-]/g,''))} placeholder="Ví dụ: -1,5"/></label>;
+ return <label className="dv-num pt-short"><span>Đáp số</span><input inputMode="text" maxLength={12} value={String(v??'')} onChange={e=>set(e.target.value.replace(/[^0-9,./\-]/g,''))} placeholder="Ví dụ: -1,5 hoặc 3/4"/></label>;
 }
 
 function hienTraLoi(c:{kieu:string},x:unknown){

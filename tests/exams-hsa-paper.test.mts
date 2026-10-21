@@ -40,7 +40,12 @@ for(const {n,groups,tables} of PAPERS){
  assert.equal(key.questions.length,50);assert.equal(key.durationMinutes,75);assert.equal(src.thoi_gian_phut,75);
  assert.equal(key.questions.filter((q:any)=>q.kind==='mc').length,35);
  assert.equal(key.questions.filter((q:any)=>q.kind==='short').length,15);
- assert.ok(key.questions.filter((q:any)=>q.kind==='short').every((q:any)=>q.mode==='numeric'));
+ // Quy chế HSA: câu điền chỉ nhận số nguyên (numeric) hoặc phân số tối giản (rational), không đáp số thập phân.
+ for(const q of key.questions.filter((q:any)=>q.kind==='short')){
+  const a=q.acceptedAnswers[0];
+  if(q.mode==='numeric')assert.match(a,/^-?\d+$/,tag+q.id+': đáp số điền phải là số nguyên');
+  else{assert.equal(q.mode,'rational');const m=/^(-?\d+)\/(\d+)$/.exec(a);assert.ok(m,tag+q.id+': phân số');const g=(x:number,y:number):number=>y?g(y,x%y):Math.abs(x);assert.equal(g(+m![1],+m![2]),1,tag+q.id+': chưa tối giản');}
+ }
  assert.ok(key.questions.every((q:any)=>q.maxMillipoints===200));
  assert.equal(src.cau_truc.tong_so_cau,50);assert.equal(src.tong_hop_kiem_dinh.so_cau_khop,50);
  console.log(tag+'Đạt cấu trúc: 50 câu, 75 phút, 35 trắc nghiệm + 15 điền số, mỗi câu 200/10 000, kiểm định 50/50.');
