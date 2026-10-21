@@ -1,4 +1,4 @@
-import {classRules} from './class-rules';
+import {classRules,type ClassRules} from './class-rules';
 const record=(v:any)=>v&&typeof v==='object'&&!Array.isArray(v);
 const text=(v:any,max:number)=>typeof v==='string'&&v.trim().length>0&&v.length<=max&&!/[\x00-\x1f\x7f]/.test(v);
 // DB kiểm lại lớp active. Cổng chỉ nhận nhãn lớp MTM, không nhận tên tuỳ ý.
@@ -6,7 +6,7 @@ export const validAttendanceLabel=(v:unknown)=>typeof v==='string'&&/^2K\d{1,2}(
 const ensure=(v:unknown)=>{if(!v)throw Error('INVALID_ATTENDANCE');};
 const date=(v:any)=>text(v,40)&&/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(v)&&Number.isFinite(Date.parse(v))&&new Date(v.slice(0,10)+'T00:00:00Z').toISOString().slice(0,10)===v.slice(0,10);
 /** Whitelist chính xác trước khi port có quyền service_role. */
-export function attendanceRpc(body:any):{name:string;payload:Record<string,unknown>}|null{
+export function attendanceRpc(body:any,rules:ClassRules=classRules):{name:string;payload:Record<string,unknown>}|null{
  if(!['sync_attendance','sync_due','support_report'].includes(body.action))return null;
  if(body.action==='support_report'){
   ensure(Object.keys(body).every(k=>['action','since'].includes(k))&&date(body.since));
@@ -28,5 +28,5 @@ export function attendanceRpc(body:any):{name:string;payload:Record<string,unkno
   count+=s.attendees.length;ensure(count<=20000);
   for(const a of s.attendees)ensure(record(a)&&Object.keys(a).every(k=>['name','phone','status'].includes(k))&&text(a.name,160)&&typeof a.phone==='string'&&/^0\d{9}$/.test(a.phone)&&typeof a.status==='string'&&['','C','M','L','K','ON','P','PH P'].includes(a.status));
  }
- return {name:'sync_due',payload:{p_payload:{sessions:body.sessions,classRules},p_apply:body.apply??false}};
+ return {name:'sync_due',payload:{p_payload:{sessions:body.sessions,classRules:rules},p_apply:body.apply??false}};
 }

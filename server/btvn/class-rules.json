@@ -5,23 +5,6 @@
   ],
   "classes": {
     "2K9 9+": {
-      "sessions": [
-        {
-          "weekday": 1,
-          "start": "17:30",
-          "end": "19:30"
-        },
-        {
-          "weekday": 3,
-          "start": "17:30",
-          "end": "19:30"
-        },
-        {
-          "weekday": 5,
-          "start": "17:30",
-          "end": "19:30"
-        }
-      ],
       "open": {
         "type": "paired",
         "sourceLabel": "2K9 9+",
@@ -39,18 +22,6 @@
       }
     },
     "2K14": {
-      "sessions": [
-        {
-          "weekday": 1,
-          "start": "18:00",
-          "end": "20:00"
-        },
-        {
-          "weekday": 4,
-          "start": "09:00",
-          "end": "11:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -59,18 +30,6 @@
       }
     },
     "2K10 XPT": {
-      "sessions": [
-        {
-          "weekday": 1,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 6,
-          "start": "15:30",
-          "end": "17:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -79,23 +38,6 @@
       }
     },
     "2K9 XPT": {
-      "sessions": [
-        {
-          "weekday": 1,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 2,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 4,
-          "start": "19:30",
-          "end": "21:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -118,23 +60,6 @@
       }
     },
     "2K9 8+": {
-      "sessions": [
-        {
-          "weekday": 2,
-          "start": "17:30",
-          "end": "19:30"
-        },
-        {
-          "weekday": 4,
-          "start": "17:30",
-          "end": "19:30"
-        },
-        {
-          "weekday": 6,
-          "start": "17:30",
-          "end": "19:30"
-        }
-      ],
       "open": {
         "type": "paired",
         "sourceLabel": "2K9 9+",
@@ -152,23 +77,6 @@
       }
     },
     "2K10 9+": {
-      "sessions": [
-        {
-          "weekday": 2,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 5,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 7,
-          "start": "08:00",
-          "end": "10:00"
-        }
-      ],
       "open": {
         "type": "paired",
         "sourceLabel": "2K10 9+",
@@ -181,18 +89,6 @@
       }
     },
     "2K13": {
-      "sessions": [
-        {
-          "weekday": 2,
-          "start": "20:00",
-          "end": "22:00"
-        },
-        {
-          "weekday": 5,
-          "start": "20:00",
-          "end": "22:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -201,18 +97,6 @@
       }
     },
     "2K11 8+": {
-      "sessions": [
-        {
-          "weekday": 3,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 7,
-          "start": "15:30",
-          "end": "17:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -221,18 +105,6 @@
       }
     },
     "2K11 XPT": {
-      "sessions": [
-        {
-          "weekday": 3,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 6,
-          "start": "13:30",
-          "end": "15:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -241,13 +113,6 @@
       }
     },
     "HSA.2": {
-      "sessions": [
-        {
-          "weekday": 4,
-          "start": "14:30",
-          "end": "17:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -256,18 +121,6 @@
       }
     },
     "2K12": {
-      "sessions": [
-        {
-          "weekday": 4,
-          "start": "18:00",
-          "end": "20:00"
-        },
-        {
-          "weekday": 7,
-          "start": "15:00",
-          "end": "17:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -276,18 +129,6 @@
       }
     },
     "2K15": {
-      "sessions": [
-        {
-          "weekday": 4,
-          "start": "18:00",
-          "end": "20:00"
-        },
-        {
-          "weekday": 7,
-          "start": "14:00",
-          "end": "16:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -296,18 +137,6 @@
       }
     },
     "2K11 9+": {
-      "sessions": [
-        {
-          "weekday": 4,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 7,
-          "start": "13:30",
-          "end": "15:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -316,18 +145,6 @@
       }
     },
     "2K10 8+": {
-      "sessions": [
-        {
-          "weekday": 5,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 7,
-          "start": "10:00",
-          "end": "12:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -336,13 +153,6 @@
       }
     },
     "TSA": {
-      "sessions": [
-        {
-          "weekday": 7,
-          "start": "14:00",
-          "end": "17:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -351,13 +161,6 @@
       }
     },
     "HSA": {
-      "sessions": [
-        {
-          "weekday": 7,
-          "start": "17:00",
-          "end": "20:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -366,13 +169,6 @@
       }
     },
     "2K9 HSA (THỨ 5)": {
-      "sessions": [
-        {
-          "weekday": 4,
-          "start": "14:30",
-          "end": "17:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -381,18 +177,6 @@
       }
     },
     "2K10 Thứ 3, 6": {
-      "sessions": [
-        {
-          "weekday": 2,
-          "start": "19:30",
-          "end": "21:30"
-        },
-        {
-          "weekday": 5,
-          "start": "19:30",
-          "end": "21:30"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
@@ -401,13 +185,6 @@
       }
     },
     "2K9 HSA (CN)": {
-      "sessions": [
-        {
-          "weekday": 7,
-          "start": "17:00",
-          "end": "20:00"
-        }
-      ],
       "open": {
         "type": "after_session"
       },
