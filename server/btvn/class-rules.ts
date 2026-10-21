@@ -1,9 +1,16 @@
 import config from './class-rules.json';
+import {classSlots,loadSchedule,SCHEDULE_SNAPSHOT,type ScheduleRow} from '../schedule/lich-lop';
 
 export type Slot={weekday:number;start:string;end:string};
 type Rule={sessions:Slot[];open:{type:string;sourceLabel?:string;days?:Record<string,number>};due:{type:string;days?:Record<string,{weekday:number;weeks:number}>}};
-export const classRules=config;
-const rules=config.classes as Record<string,Rule>;
+export type ClassRules={timezone:string;notes:string[];classes:Record<string,Rule>};
+export function rulesFromSchedule(rows:ScheduleRow[]):ClassRules{
+ return {...config,classes:Object.fromEntries(Object.entries(config.classes).map(([label,policy])=>[label,{...policy,sessions:classSlots(rows,label,true)}]))} as ClassRules;
+}
+export const classRules=rulesFromSchedule(SCHEDULE_SNAPSHOT);
+export async function loadClassRules(env:Record<string,string|undefined>,transport:typeof fetch=fetch,now=Date.now()){
+ return rulesFromSchedule((await loadSchedule(env,transport,now)).rows);
+}
 export function lessonDay(value:string){
  if(!/^\d{4}-\d{2}-\d{2}$/.test(value)||!Number.isFinite(Date.parse(value+'T00:00:00Z'))||new Date(value+'T00:00:00Z').toISOString().slice(0,10)!==value)throw Error('INVALID_CLASS_DATE');
  return new Date(value+'T00:00:00Z');
@@ -19,14 +26,16 @@ const dueIso=(d:Date,start:string)=>{
 };
 const slot=(r:Rule,day:number)=>r.sessions.filter(s=>s.weekday===day).sort((a,b)=>a.start.localeCompare(b.start)).at(-1);
 /** ISO giờ VN; lịch ngoài khung đã biết vẫn khóa tới 21:30, không tự mở sớm. */
-export function opensAt(label:string,lessonDate:string):string{
+export function opensAt(label:string,lessonDate:string,ruleSet:ClassRules=classRules):string{
+ const rules=ruleSet.classes;
  const d=lessonDay(lessonDate),w=weekday(d),r=rules[label];
  if(!r)return iso(d,'21:30');
  const sourceDay=r.open.days?.[String(w)]??w,source=rules[r.open.sourceLabel??label];
  return iso(shift(d,sourceDay-w),slot(source,sourceDay)?.end??'21:30');
 }
 /** attendedSlot là thứ 1..7 (hoặc slot). Không đoán ca T6/CN khi chưa có điểm danh. Trả hạn = giờ bắt đầu buổi hạn − 30 phút. */
-export function plannedDueAt(label:string,lessonDate:string,attendedSlot?:number|Slot):string|null{
+export function plannedDueAt(label:string,lessonDate:string,attendedSlot?:number|Slot,ruleSet:ClassRules=classRules):string|null{
+ const rules=ruleSet.classes;
  const d=lessonDay(lessonDate),w=weekday(d),r=rules[label];if(!r)return null;
  let target=w,days=7;
  switch(r.due.type){
