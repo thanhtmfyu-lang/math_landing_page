@@ -1,4 +1,5 @@
 import {createHash} from 'node:crypto';
+import {isExposedExam,PRACTICE_ONLY_NOTICE} from '../server/exam-security/exposure';
 import {allowedBtvnOrigin} from '../server/btvn/origin-policy';
 import {HSA_SUBMIT_STATUS,HSA_TOP_LIMIT,hsaNameKey,isHsaGrade,publicHsaRow,sanitizeDisplayName,validHsaExamId,type HsaSubmitStatus} from '../server/hsa/rank';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;body?:unknown;headers?:Record<string,string|string[]|undefined>};
@@ -17,6 +18,7 @@ export function createHsaRankApi(getEnv=()=>process.env,transport:typeof fetch=f
  if(req.method==='GET'){
   const exam=req.query?.de;
   if(!validHsaExamId(exam))return res.status(400).json({message:'Đề không hợp lệ.'});
+  if(isExposedExam(exam))return res.status(200).json({enabled:false,open:false,rows:[],practiceOnly:true,message:PRACTICE_ONLY_NOTICE});
   if(env.MTM_HSA_RANK_ENABLED!=='1')return res.status(200).json({enabled:false,open:false,rows:[]});
   try{
    const response=await rpc('mtm_hsa_rank_top',{p_exam:exam,p_limit:HSA_TOP_LIMIT});if(!response.ok)throw Error('RPC failed');
@@ -36,6 +38,7 @@ export function createHsaRankApi(getEnv=()=>process.env,transport:typeof fetch=f
   ||typeof body.attemptToken!=='string'||!/^[a-f0-9]{64}$/.test(body.attemptToken)||!isHsaGrade(body.grade)||typeof body.device!=='string'||!/^[a-f0-9]{32,64}$/.test(body.device))return res.status(400).json({message:'Yêu cầu không hợp lệ.'});
  const name=sanitizeDisplayName(body.name);
  if(!name)return res.status(400).json({message:'Tên hiển thị chưa phù hợp. Em chọn tên khác (2–24 ký tự, không số điện thoại hay đường dẫn).'});
+ if(isExposedExam(body.de))return res.status(200).json({enabled:false,status:'closed',rank:null,practiceOnly:true,message:PRACTICE_ONLY_NOTICE});
  if(env.MTM_HSA_RANK_ENABLED!=='1')return res.status(200).json({enabled:false});
  try{
   // Chỉ lưu băm của mã thiết bị theo từng đề; mã gốc không rời API.
