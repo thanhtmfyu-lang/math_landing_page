@@ -16,7 +16,7 @@ for(const file of walk(build)){
 }
 add('production assets contain no R106 preview routes flags synthetic student IDs or score file',leaks.length===0,leaks);
 const config=JSON.parse(readFileSync(join(root,'vercel.json'),'utf8'));
-add('production preview prefix is routed to terminal404 handler',config.rewrites?.[0]?.source==='/__preview/:path*'&&config.rewrites[0].destination==='/api/preview-disabled'&&readFileSync(join(root,'api/preview-disabled.ts'),'utf8').includes('res.status(404)'));
+add('production preview prefix is routed to terminal404 handler',config.rewrites?.some(r=>r.source==='/__preview/:path*'&&r.destination==='/api/exam?muc=preview-disabled')&&readFileSync(join(root,'server/preview-disabled.ts'),'utf8').includes('res.status(404)'));
 add('appearance migration remains pending only',existsSync(join(root,'supabase/migrations-pending/202610170010_student_appearance.sql'))&&!existsSync(join(root,'supabase/migrations/202610170010_student_appearance.sql')));
 const priorIgnore=execFileSync('git',['show','origin/main:.vercelignore'],{cwd:root,encoding:'utf8'}).split(/\r?\n/).map(s=>s.trim()).filter(s=>s&&!s.startsWith('#')),currentIgnore=readFileSync(join(root,'.vercelignore'),'utf8').split(/\r?\n/).map(s=>s.trim());
 add('all existing deployment exclusions remain intact',priorIgnore.every(line=>currentIgnore.includes(line)));

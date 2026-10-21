@@ -1,4 +1,6 @@
 import {publicArena,publicRankRow,validRankFilter} from '../server/btvn/rank-row';
+import {createHsaRankApi} from '../server/hsa/api';
+import {createMyRankApi} from '../server/btvn/my-rank-api';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string)=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 export function createRankApi(getEnv=()=>process.env,transport:typeof fetch=fetch){return async(req:Req,res:Res)=>{
@@ -40,4 +42,14 @@ export function createRankApi(getEnv=()=>process.env,transport:typeof fetch=fetc
   return res.status(200).json({enabled:true,rows});
  }catch{return res.status(503).json({message:'Chưa tải được bảng xếp hạng. Vui lòng thử lại.'});}
 };}
-export default createRankApi();
+export function createRankRouter(getEnv=()=>process.env,transport:typeof fetch=fetch){
+ const publicRank=createRankApi(getEnv,transport),hsa=createHsaRankApi(getEnv,transport),mine=createMyRankApi(getEnv,transport);
+ return (req:Req&{headers?:Record<string,string|string[]|undefined>;body?:unknown},res:Res)=>{
+  const route=req.query?.muc;
+  if(route===undefined)return publicRank(req,res);
+  if(route==='hsa')return hsa(req,res);
+  if(route==='cua-em')return mine(req,res);
+  res.setHeader('Cache-Control','no-store');return res.status(404).json({message:'Không tìm thấy trang.'});
+ };
+}
+export default createRankRouter();

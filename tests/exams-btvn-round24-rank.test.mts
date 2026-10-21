@@ -1,5 +1,5 @@
 ﻿import assert from 'node:assert/strict';
-import {createMyRankApi} from '../api/xep-hang-cua-em';
+import {createMyRankApi} from '../server/btvn/my-rank-api';
 import {createRankApi} from '../api/xep-hang';
 const env={MTM_RANK_ENABLED:'1',MTM_BTVN_ENABLED:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'FIXTURE'};
 const row={rank:17,fullName:'Học sinh GIẢ',className:'2K9 9+',score:8,submitted:1,total:2};

@@ -46,6 +46,6 @@ const page=readFileSync(join(root,'src/native/exams/HsaMock.tsx'),'utf8');
 assert.ok(page.includes("outcome.server&&board.state==='on'&&rank?hsaCertificateRank(rank):null"));
 assert.ok(page.includes('Tải giấy khen')&&page.includes('navigator.canShare')&&page.includes('hsa-cert-preview'));
 assert.ok(readFileSync(join(root,'src/components/mtm-certificate.ts'),'utf8').includes('await fonts.ready'));
-const api=readFileSync(join(root,'api/hsa-xep-hang.ts'),'utf8');
+const api=readFileSync(join(root,'server/hsa/api.ts'),'utf8');
 assert.ok(api.includes("res.status(200).json({enabled:true,status:data.status as HsaSubmitStatus,rank,name})"));
 console.log('Đạt gắn giấy khen vào khung kết quả, không đổi API /api/hsa-xep-hang.');

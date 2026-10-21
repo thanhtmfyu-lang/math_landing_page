@@ -1,4 +1,4 @@
-import {boardKey,openMedia} from '../server/bang-tin/local';
+import {boardKey,openMedia} from './local';
 // Phát ảnh/video Bảng tin trung tâm theo link ký (do /api/bang-tin cấp sau khi kiểm phiên BTVN). Hỗ trợ Range cho video trên iPhone.
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;headers?:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string)=>void;status:(n:number)=>{end:(body?:Buffer|string)=>void}};

@@ -5,7 +5,7 @@ import {createHash} from 'node:crypto';
 import {sanitizeDisplayName,hsaNameKey,rankHsaEntries,publicHsaRow,formatHsaDuration,hsaStatusMessage,HSA_SUBMIT_STATUS} from '../server/hsa/rank';
 import {validateHsaMockConfig,HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,normalizeHsaPhone} from '../src/native/exams/hsa-mock';
 import {validatePracticeExam,validateQuestionOnlyPracticeExam} from '../src/native/exams/data';
-import {createHsaRankApi} from '../api/hsa-xep-hang';
+import {createHsaRankApi} from '../server/hsa/api';
 import {routeMetadata,PUBLIC_PATHS} from '../src/migration/route-policy';
 import {readSecret} from '../scripts/de-thi-kho.mjs';
 const root=process.env.MTM_ROOT!;
@@ -168,7 +168,7 @@ console.log('Đạt route /thi-thu-hsa: PUBLIC_PATHS, tiêu đề, mô tả, rew
 // 5. Migration 092: 16 câu điền theo quy chế HSA. Tệp nằm trong kho công khai nên KHÔNG có đáp số;
 // chỉ có đề bài mới (trùng bản web), versionHash/sourceHash của bản web và hàm áp nhận đáp số lúc chạy.
 {
- const sql92=readFileSync(join(root,'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql'),'utf8');
+ const sql92=readFileSync(join(root,'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql'),'utf8').replace(/\r\n/g,'\n');
  let soCau=0;
  for(const n of ['01','02']){
   const pub=JSON.parse(readFileSync(join(root,'src/native/exams/hsa-papers/mtm-hsa-thi-thu-'+n+'.public.json'),'utf8')).exam;
