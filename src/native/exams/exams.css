@@ -12,6 +12,7 @@
 .ep-root :is(button,input,select,a,summary):focus-visible{outline:3px solid #1d4ed8;outline-offset:3px}
 .ep-root .ep-primary{background:#172033;color:#fff;border-color:#172033;font-weight:700}
 .ep-root .ep-primary:hover{background:#334155}
+.ep-root .ep-primary:disabled{opacity:.5;cursor:not-allowed}.ep-start-blocked{color:#9a3412;font-weight:600}
 .ep-intro{margin-bottom:24px}
 .ep-admin-entry{display:inline-flex;align-items:center;justify-content:center;min-height:44px;max-width:100%;padding:10px 18px;border:1px solid #e8c329;border-radius:8px;background:#ffda35;color:#172033;font-weight:700;text-decoration:none}
 .ep-admin-entry:hover{background:#f2cb21}
