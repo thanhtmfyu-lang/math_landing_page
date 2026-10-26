@@ -2,12 +2,12 @@ import {createCipheriv,createDecipheriv,createHash,createHmac,randomBytes,timing
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {gunzipSync,gzipSync} from 'node:zlib';
-import {cham,deCongKhai,dotCongKhai,mucLuc,quyenMo,thoiGianCau,type PtDe,type PtDot,type PtKetQua,type PtKho,type PtNguoiXem} from './engine';
+import {cham,deCongKhai,dotCongKhai,mucLuc,quyenMo,thoiGianCau,type PtDe,type PtDot,type PtKetQua,type PtKho,type PtLoai,type PtNguoiXem} from './engine';
 import goiRaw from './goi.json';
 import dotRaw from './dot.json';
 
 /** Gói bán cho người ngoài. gia null = chưa duyệt giá; moBan false = chưa bán. Thanh toán thật còn cần MTM_PHONG_THI_THANH_TOAN=1. */
-export type PtGoi={id:string;ten:string;loai:('thpt'|'hsa'|'tsa')[];soNgay:number;gia:number|null;moBan:boolean;moTa:string};
+export type PtGoi={id:string;ten:string;loai:PtLoai[];soNgay:number;gia:number|null;moBan:boolean;moTa:string};
 export const GOI=(goiRaw as {goi:PtGoi[]}).goi;
 /** Lịch đợt thi (không bí mật: chỉ mã đề và giờ). Sửa server/phong-thi/dot.json rồi deploy, không cần đóng gói lại kho. */
 export const DOT=(dotRaw as {dot:PtDot[]}).dot;

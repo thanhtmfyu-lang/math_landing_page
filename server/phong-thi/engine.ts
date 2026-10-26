@@ -1,9 +1,9 @@
 /** Phòng thi thử THPT Quốc gia (/phong-thi-thu): phần lõi thuần dùng chung cho /api/phong-thi và test.
  * Kho đề (đề + đáp án + lời giải) chỉ nằm trong server/phong-thi/kho-de.bin đã mã hóa; ở đây không đọc tệp, không gọi mạng.
  * Đề gửi cho trình duyệt đã bỏ đáp án và lời giải; lời giải theo mã câu chỉ trả về sau khi máy chủ chấm bài nộp. */
-export const PT_LOAI=['thpt','hsa','tsa'] as const;
+export const PT_LOAI=['thpt','hsa','tsa','bca'] as const;
 export type PtLoai=typeof PT_LOAI[number];
-export const PT_LOAI_TEN:Record<PtLoai,string>={thpt:'Tốt nghiệp THPT',hsa:'HSA · ĐGNL ĐHQGHN',tsa:'TSA · ĐGTD Bách khoa'};
+export const PT_LOAI_TEN:Record<PtLoai,string>={thpt:'Tốt nghiệp THPT',hsa:'HSA · ĐGNL ĐHQGHN',tsa:'TSA · ĐGTD Bách khoa',bca:'ĐGNL Bộ Công an'};
 export const PT_NHOM=['de-that','minh-hoa','mtm','so','truong','toanmath'] as const;
 export type PtNhom=typeof PT_NHOM[number];
 export const PT_NHOM_TEN:Record<PtNhom,string>={'de-that':'Đề thi thật','minh-hoa':'Đề minh họa chính thức',mtm:'Đề MTM biên soạn',so:'Đề thi thử Sở GD&ĐT',truong:'Đề thi thử các trường',toanmath:'Đề tuyển chọn'};
@@ -27,8 +27,9 @@ export type PtDe={id:string;loai:PtLoai;tieuDe:string;nam:number;nhom:PtNhom;tan
 export type PtChum={ma:string;de:string;cau:string[];hinh?:string|null};
 export type PtKho={version:1;dongGoi:string;de:PtDe[]};
 
-/** Thang điểm hiển thị theo kỳ thi; THPT tổng 10, HSA phần Toán 50 câu × 1 điểm, TSA phần Tư duy Toán học thang 40 (mặc định, đề có thể đặt thangDiem). */
-const THANG:Record<PtLoai,number>={thpt:10,hsa:50,tsa:40};
+/** Thang điểm hiển thị theo kỳ thi; THPT tổng 10, HSA phần Toán 50 câu × 1 điểm, TSA phần Tư duy Toán học thang 40,
+ * BCA phần Toán 35 câu × 1 điểm (MTM quy đổi, Bộ Công an không công bố điểm từng câu) (mặc định, đề có thể đặt thangDiem). */
+const THANG:Record<PtLoai,number>={thpt:10,hsa:50,tsa:40,bca:35};
 /** Điểm tối đa từng câu (phần nghìn điểm). THPT theo quy chế 2025: Phần I 0,25; Phần II 1 (chấm theo số ý đúng); Phần III 0,5. */
 export function maxMilli(de:PtDe,c:PtCau){
  if(de.loai==='thpt'){if(c.kieu==='mc')return 250;if(c.kieu==='ds')return 1000;if(c.kieu==='ngan')return 500;}
@@ -46,13 +47,13 @@ export function validateDe(input:unknown):string[]{
  if(!d||typeof d!=='object')return ['Đề không hợp lệ'];
  const at=(okId(d.id)?d.id:'?')+': ';
  if(!okId(d.id))e.push(at+'id chỉ gồm a-z, 0-9, dấu gạch (3–80 ký tự)');
- if(!(PT_LOAI as readonly string[]).includes(d.loai))e.push(at+'loai phải là thpt, hsa hoặc tsa');
+ if(!(PT_LOAI as readonly string[]).includes(d.loai))e.push(at+'loai phải là thpt, hsa, tsa hoặc bca');
  if(!(PT_NHOM as readonly string[]).includes(d.nhom))e.push(at+'nhom không hợp lệ');
  if(!(PT_TANG as readonly string[]).includes(d.tang))e.push(at+'tang không hợp lệ');
  // Bản quyền: đề sở, trường, tuyển chọn chỉ dành cho học sinh trung tâm, không đưa vào tầng bán hay công khai.
  if(['so','truong','toanmath'].includes(d.nhom)&&d.tang!=='hoc-sinh-mtm')e.push(at+'đề '+d.nhom+' chỉ được đặt tầng hoc-sinh-mtm (tái tạo theo Chuẩn T rồi mới bán)');
  // Đề tham khảo HSA (ĐHQGHN), TSA (ĐHBK) có bản quyền của trường: chỉ dùng miễn phí, không đưa vào gói bán.
- if(d.nhom==='minh-hoa'&&d.loai!=='thpt'&&d.tang==='tra-phi')e.push(at+'đề tham khảo HSA/TSA chỉ đặt cong-khai hoặc hoc-sinh-mtm (chưa có phép bán)');
+ if(d.nhom==='minh-hoa'&&d.loai!=='thpt'&&d.tang==='tra-phi')e.push(at+'đề tham khảo HSA/TSA/BCA chỉ đặt cong-khai hoặc hoc-sinh-mtm (chưa có phép bán)');
  if(!str(d.tieuDe,5,160))e.push(at+'tieuDe 5–160 ký tự');
  if(!Number.isSafeInteger(d.nam)||d.nam<2017||d.nam>2035)e.push(at+'nam không hợp lệ');
  if(!Number.isSafeInteger(d.thoiGian)||d.thoiGian<5||d.thoiGian>240)e.push(at+'thoiGian 5–240 phút');

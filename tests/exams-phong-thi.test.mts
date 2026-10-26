@@ -44,6 +44,11 @@ const tsa:PtDe={...thpt,id:'tsa-mau',loai:'tsa',tang:'cong-khai',phan:[{ma:'T',t
 assert.deepEqual(validateDe(tsa),[]);
 assert.equal(cham(tsa,{t1:['C','A'],t2:[2,0],t3:'B',t4:[true,true,true,true]}).diem,40);
 assert.equal(cham(tsa,{t1:['A'],t2:[2,1]}).diem,0);
+// BCA: mỗi câu 1 điểm, thang 35 (đề 2 câu thì quy về 35).
+const bca:PtDe={...thpt,id:'bca-mau',loai:'bca',tang:'hoc-sinh-mtm',phan:[{ma:'toan',ten:'Phần Toán',kieu:'mc'}],
+ cau:[{ma:'b1',phan:'toan',kieu:'mc',de:'?',luaChon:['a','b','c','d'],dapAn:'C'},{ma:'b2',phan:'toan',kieu:'ngan',de:'?',dapAn:'7/4'}]};
+assert.deepEqual(validateDe(bca),[]);assert.equal(deCongKhai(bca).thangDiem,35);
+assert.equal(cham(bca,{b1:'C',b2:'7/4'}).diem,35);assert.equal(cham(bca,{b1:'C'}).diem,17.5);
 
 // Bản quyền: đề sở/trường/tuyển chọn không được đặt tầng bán hay công khai; đề chưa kiểm đáp án bị chặn.
 assert.ok(validateDe({...thpt,nhom:'so',tang:'tra-phi'}).some(e=>e.includes('hoc-sinh-mtm')));
@@ -55,7 +60,7 @@ assert.ok(validateDe({...thpt,chum:[{ma:'g1',de:'Dùng chung',cau:['khong-co']}]
 
 // Quyền: học sinh MTM mở mọi tầng; khách chỉ đề công khai; tài khoản có gói đúng loại còn hạn.
 const HS={kieu:'hoc-sinh' as const,id:'x',ten:'A'},KHACH={kieu:'khach' as const},now=Date.parse('2026-11-25T00:00:00Z');
-const TK=(loai:('thpt'|'hsa'|'tsa')[],den:string)=>({kieu:'tai-khoan' as const,id:'t',ten:'B',goi:[{loai,den}]});
+const TK=(loai:('thpt'|'hsa'|'tsa'|'bca')[],den:string)=>({kieu:'tai-khoan' as const,id:'t',ten:'B',goi:[{loai,den}]});
 assert.deepEqual(quyenMo({tang:'hoc-sinh-mtm',loai:'thpt'},HS),{mo:true});
 assert.deepEqual(quyenMo({tang:'tra-phi',loai:'thpt'},KHACH),{mo:false,lyDo:'can-goi'});
 assert.deepEqual(quyenMo({tang:'cong-khai',loai:'thpt'},KHACH),{mo:true});

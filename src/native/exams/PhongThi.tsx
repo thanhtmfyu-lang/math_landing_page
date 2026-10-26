@@ -65,6 +65,7 @@ function Sanh({search,onMo}:{search:string;onMo:(l:Luot)=>void}){
    <nav className="hsa-picker pt-tabs" aria-label="Kỳ thi">{PT_LOAI.map(l=><a key={l} href={'?loai='+l} aria-current={l===loai?'page':undefined} onClick={e=>{e.preventDefault();setLoai(l);history.replaceState(null,'','?loai='+l);}}>{PT_LOAI_TEN[l]}<small>{(dm?.de??[]).filter(d=>d.loai===l).length} đề</small></a>)}</nav>
    <p className="pt-format">{loai==='thpt'?'Cấu trúc từ 2025: Phần I 12 câu trắc nghiệm (0,25 điểm/câu), Phần II 4 câu đúng sai (tối đa 1 điểm/câu), Phần III 6 câu trả lời ngắn (0,5 điểm/câu). 90 phút, thang 10.'
     :loai==='hsa'?'Phần 1 Toán học và xử lý số liệu của bài HSA: 50 câu (trắc nghiệm và điền đáp án), 75 phút, mỗi câu 1 điểm, thang 50.'
+    :loai==='bca'?'Phần Toán của bài thi đánh giá Bộ Công an, theo khuôn đề minh họa 2026: 35 câu (30 trắc nghiệm, 5 trả lời ngắn), 45 phút. MTM tính mỗi câu 1 điểm, thang 35.'
     :'Phần Tư duy Toán học của bài TSA: 40 câu, 60 phút; câu chọn một, đúng sai, chọn nhiều, kéo thả, điền đáp án; đúng hết các ý mới được điểm.'}</p>
    {loi&&<p className="hsa-error" role="alert">{loi} {!dm&&<button type="button" className="hsa-link" onClick={tai}>Tải lại</button>}</p>}
    {!dm&&!loi&&<p className="pt-wait" role="status">Đang tải kho đề…</p>}
