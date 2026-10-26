@@ -1,5 +1,5 @@
 import type {Registration} from './registration-submit';
-export type LeadKind='dang-ky'|'thi-thu-hsa';
+export type LeadKind='dang-ky'|'thi-thu-hsa'|'on-cuoi-ky-1';
 export const LEAD_ERROR='Chưa xác nhận lưu được thông tin. Vui lòng liên hệ Zalo 0967 365 413 để trung tâm kiểm tra trước khi gửi lại.';
 /** Chỉ báo thành công khi máy chủ xác nhận đã lưu lead. */
 export async function postLead(kind:LeadKind,data:Registration,fetcher:typeof fetch=fetch):Promise<'saved'>{

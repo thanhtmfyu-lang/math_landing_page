@@ -6,6 +6,7 @@
   "buildCommand": "npm run build",
   "outputDirectory": "build",
   "rewrites": [
+    {"source":"/on-cuoi-ky-1","destination":"/index.html"},
     {
       "source": "/goc-hoc-tap",
       "destination": "/index.html"

@@ -1,0 +1,22 @@
+.semester-course{--semester-navy:#213269;--semester-gold:#ffcf24;padding-bottom:48px;color:var(--semester-navy)}
+.semester-course button,.semester-course input{font:inherit}
+.semester-hero{display:grid;grid-template-columns:1.6fr 1fr;gap:40px;padding:48px 0 32px;align-items:center}
+.semester-eyebrow{font-size:12px;font-weight:800;letter-spacing:.1em;color:#495a81}
+.semester-hero h1{font-size:clamp(32px,4vw,54px);line-height:1.16;letter-spacing:-.035em;margin:18px 0}
+.semester-hero h1 em{font-style:normal;background:linear-gradient(transparent 70%,#ffcf2480 70%)}
+.semester-hero p{font-size:17px;line-height:1.7;max-width:620px}
+.semester-actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:24px}
+.semester-hero aside{background:var(--semester-navy);color:white;border-radius:100px 24px 24px 24px;padding:42px 32px;border-bottom:8px solid var(--semester-gold)}
+.semester-hero aside>svg{color:var(--semester-gold)}.semester-hero aside h2{font-size:30px;margin:12px 0}.semester-hero aside p{display:flex;gap:8px;align-items:center;font-size:15px}.semester-hero aside span{font-size:13px;color:#ffdf70}
+.semester-sample{background:#fff9dc;border:1px solid #ead273;border-radius:12px;padding:16px;line-height:1.6;margin-bottom:36px}
+.semester-heading{display:flex;justify-content:space-between;align-items:center;gap:20px}.semester-heading h2{font-size:28px;margin:10px 0}
+.semester-grades{display:flex;gap:8px}.semester-grades button{background:white;border:1px solid #adb7ce;border-radius:12px;padding:10px 18px;min-height:44px;white-space:nowrap;font-weight:700}.semester-grades button[aria-pressed=true]{background:var(--semester-navy);color:var(--semester-gold)}
+.semester-message{min-height:24px;font-weight:600;line-height:1.6;color:#5c3700}
+.semester-weeks{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:16px;margin-top:18px}
+.semester-weeks article{padding:22px 18px;border:1px solid #dbe1ec;background:white;border-radius:20px;box-shadow:0 8px 20px #21326908}.semester-week{font-size:12px;font-weight:800;color:#556489}.semester-weeks h3{font-size:19px;line-height:1.4;margin:12px 0 20px}
+.semester-lesson{border-top:1px solid #e7eaf0;padding:16px 0 0;margin-top:16px}.semester-lesson p{font-size:15px;line-height:1.5;margin:0 0 8px;display:flex;gap:8px;align-items:flex-start}.semester-lesson svg{flex-shrink:0;margin-top:2px}.semester-lesson small{display:block;color:#52617f;font-size:12px;line-height:1.5}.semester-lesson button{width:100%;padding:10px;margin-top:14px;min-height:44px;border-radius:9px;border:1px solid #c7cfdf;background:#f1f4fa;font-size:13px;color:#213269}
+.semester-course button:disabled{cursor:default;opacity:.65}.semester-course button:not(:disabled){cursor:pointer}.semester-course :focus-visible{outline:3px solid #9a6b00;outline-offset:3px}
+.semester-book{display:flex;gap:24px;background:#f1f4fa;border-radius:22px;padding:32px;margin:40px 0}.semester-book>svg{flex-shrink:0}.semester-book h2{font-size:26px;margin:10px 0}.semester-book p{line-height:1.7;max-width:780px}.semester-book a{font-weight:700;text-decoration:underline}.semester-book label{display:block;margin:24px 0 10px;font-weight:700}.semester-book form>div{display:flex;gap:12px;flex-wrap:wrap}.semester-book input{min-height:48px;min-width:0;max-width:100%;flex:1;padding:12px;border:1px solid #9aa9c7;border-radius:10px;background:white}
+.semester-player{padding:24px;background:#f1f4fa;border-radius:20px;margin-top:24px}.semester-player video{width:100%;max-height:70vh;display:block;margin:16px 0;background:#000}
+@media(max-width:1050px){.semester-weeks{grid-template-columns:repeat(2,minmax(0,1fr))}.semester-hero{gap:24px}}
+@media(max-width:600px){.semester-hero{grid-template-columns:1fr;padding-top:24px;gap:20px}.semester-hero aside{padding:30px 24px;border-radius:60px 18px 18px 18px}.semester-heading{align-items:flex-start;flex-direction:column}.semester-grades{width:100%}.semester-grades button{flex:1;padding:10px}.semester-weeks{grid-template-columns:1fr}.semester-book{padding:22px 18px;gap:12px}.semester-book>svg{display:none}.semester-book form>div{flex-direction:column}.semester-book input{width:100%}.semester-actions .mig-button{width:100%;justify-content:center}.semester-course p{line-height:1.65}}
