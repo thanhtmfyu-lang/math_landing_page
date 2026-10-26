@@ -1,3 +1,4 @@
+import MyClass from './MyClass';
 import {StudentSchool} from '../../components/StudentAppearance';
 import {useEffect,useRef,useState,type ReactNode,type RefObject} from 'react';
 import type {HomeworkLesson,HomeworkReceipt,HomeworkState} from './btvn-contract';
@@ -68,7 +69,7 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
   useEffect(()=>{
     const controller=new AbortController(),generation=++rankGeneration.current;
     if(!cohort){setRank({status:'unsupported',row:null});return()=>controller.abort();}
-    const body=JSON.stringify({khoi:cohort,loai:kind}),query=body+'|'+state.fullName+'|'+state.className;
+    const body=JSON.stringify({khoi:cohort,loai:kind,lop:state.className}),query=body+'|'+state.fullName+'|'+state.className;
     if(rankQuery.current!==query){rankQuery.current=query;rankSnapshot.current='';setRank({status:'loading',row:null});}
     requestLeaderboard<{enabled:boolean;row:RankRow|null}>('/api/xep-hang-cua-em',{method:'POST',credentials:'same-origin',headers:{'Content-Type':'application/json'},body})
       .then(response=>{
@@ -105,6 +106,7 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
   return <div className="r104-homework">
     <CenterBoard onSkip={()=>document.querySelector('.r104-hw-today')?.scrollIntoView({behavior:'smooth',block:'start'})}/>
     <header className="r104-hw-heading"><p>Học tập <span aria-hidden="true">/</span> Bài tập về nhà</p><h1>Góc học tập của em<span>.</span></h1><p>Việc hôm nay, kết quả và những bước tiếp theo.</p></header>
+    <MyClass state={state} onSelect={onSelect} busy={busy}/>
     <div className="r104-hw-profile"><div>{profileControl}<span><strong>{state.fullName}</strong><small>{displayClassName(state)}</small><StudentSchool identity={state.fullName+'|'+state.className}/></span></div>{cohort&&<span className="r104-hw-cohort">Khối {cohort}</span>}</div>
     <div className="r104-hw-workplane">
       <section className="r104-hw-today" aria-labelledby="r104-today-title">

@@ -3,6 +3,8 @@ import {normalizedShort} from '../../src/native/exams/assessment';
 import {mtmPracticeGradingReadiness} from '../../src/native/exams/mtm-assessment';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 import {classOpeningTimes} from './class-schedule';
+import {classRules,loadClassRules} from './class-rules';
+import {scheduleEnvironment} from '../schedule/lich-lop';
 import {attendanceRpc} from './publish-attendance';
 import {scorebookRpc,scorebookResult} from './publish-scorebook';
 export type PublishAsset={path:string;sha256:string;content_type:string;data_base64:string};
@@ -23,7 +25,7 @@ function references(exam:PracticeExam){
  return refs;
 }
 /** Factory thuần: test tiêm port giả; không đọc env hoặc mạng khi import. */
-export function createBtvnPublishHandler(port:PublishPort,secret:string){return async(request:Request)=>{
+export function createBtvnPublishHandler(port:PublishPort,secret:string,options:{scheduleEnv?:Record<string,string|undefined>;scheduleTransport?:typeof fetch}={}){return async(request:Request)=>{
  const respond=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}});
  if(request.method!=='POST')return respond(405,{error_code:'POST_REQUIRED'});
  // So hash có chiều dài cố định; không trả khác biệt giữa secret sai/thiếu.
@@ -36,7 +38,9 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string){return 
   const body=JSON.parse(text);ensure(body&&typeof body==='object'&&!Array.isArray(body),'INVALID_PAYLOAD');
   const read=scorebookRpc(body);
   if(read)return respond(200,scorebookResult(read.name,await port.rpc(read.name,read.payload)));
-  const attendance=attendanceRpc(body);
+  const scheduleEnv=options.scheduleEnv??scheduleEnvironment();
+  const rules=['sync_due','publish','update_material'].includes(body.action)?await loadClassRules(scheduleEnv,options.scheduleTransport):classRules;
+  const attendance=attendanceRpc(body,rules);
   if(attendance){ensure(new TextEncoder().encode(text).length<=10*1024*1024,'PAYLOAD_TOO_LARGE');return respond(200,await port.rpc(attendance.name,attendance.payload));}
   ensure(['lookup','publish','error','update_material'].includes(body.action)&&/^[a-z0-9-]{1,160}$/.test(body.lesson_key),'INVALID_ACTION');
   const previous=await port.rpc('lookup',{lesson_key:body.lesson_key});
@@ -72,7 +76,7 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string){return 
   ensure(/^\d{4}-\d{2}-\d{2}$/.test(m.date)&&new Date(m.date).toISOString().slice(0,10)===m.date&&typeof m.title==='string'&&m.title.length>0&&m.title.length<=300,'INVALID_MATERIAL');
   const link=(v:unknown)=>{if(v===null||v===undefined||v==='')return null;ensure(typeof v==='string'&&v.length<=4096,'INVALID_MATERIAL_LINK');const u=new URL(v);ensure(u.protocol==='https:'&&!u.username&&!u.password,'INVALID_MATERIAL_LINK');return u.href;};
   const classDates=m.classDates??{};ensure(classDates&&typeof classDates==='object'&&!Array.isArray(classDates)&&Object.entries(classDates).every(([name,date])=>m.classNames.includes(name)&&typeof date==='string'&&/^\d{4}-\d{2}-\d{2}$/.test(date)&&new Date(date).toISOString().slice(0,10)===date),'INVALID_CLASS_DATES');
-  const material={lessonCode:m.lessonCode,classNames:m.classNames,date:m.date,title:m.title,titleSource:m.titleSource??'sheet',homeworkScope:m.homeworkScope,homeworkScopeSource:m.homeworkScopeSource,classDates,classOpensAt:classOpeningTimes({...m,classDates}),videoId:m.videoId??null,materialUrl:link(m.materialUrl),handoutUrl:link(m.handoutUrl),homeworkUrl:null,videoUrl:link(m.videoUrl),homeworkNote:typeof m.homeworkNote==='string'?m.homeworkNote.slice(0,300):undefined};
+  const material={lessonCode:m.lessonCode,classNames:m.classNames,date:m.date,title:m.title,titleSource:m.titleSource??'sheet',homeworkScope:m.homeworkScope,homeworkScopeSource:m.homeworkScopeSource,classDates,classOpensAt:classOpeningTimes({...m,classDates},rules,!!scheduleEnv.MTM_LICH_LOP_CSV),videoId:m.videoId??null,materialUrl:link(m.materialUrl),handoutUrl:link(m.handoutUrl),homeworkUrl:null,videoUrl:link(m.videoUrl),homeworkNote:typeof m.homeworkNote==='string'?m.homeworkNote.slice(0,300):undefined};
   // PDF BTVN chỉ mở qua chữ ký riêng; không trả đường nguồn trực tiếp của đề.
   ensure(material.videoId===null||/^[a-zA-Z0-9_-]{11}$/.test(material.videoId),'INVALID_VIDEO');
   if(body.action==='error'){

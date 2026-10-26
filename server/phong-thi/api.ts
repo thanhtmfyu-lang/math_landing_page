@@ -4,6 +4,7 @@ import {allowedBtvnOrigin} from '../btvn/origin-policy';
 import {sanitizeDisplayName} from '../hsa/rank';
 import {PT_LOAI,PT_KHOI,kiemBaoLoi,kiemDangKyDot,tenRutGon,type PtNguoiXem} from './engine';
 import {DOT,GOI,serverKho,xuLy,type PtThiSinh} from './handler';
+import {analysisTicket,publicDistribution} from './analysis';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;body?:unknown;headers?:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const scrypt=promisify(scryptCb) as (pw:string,salt:Buffer,len:number)=>Promise<Buffer>;
@@ -148,6 +149,17 @@ export function createPhongThiApi(getEnv=()=>process.env as Record<string,string
    const r=await rpc('mtm_pt_khao_sat',{p_dot:thiSinh.dot,p_khoi:Number(thiSinh.khoi),p_sbd:thiSinh.sbd,p_limit:1});if(!r.ok)throw Error();const x=await r.json();
    return res.status(200).json({thiSinh:thiSinhDu,em:x?.em??null,n:x?.n??0,cau:x?.cau??{}});
   }catch{return res.status(503).json({message:'Chưa kết nối được máy chủ. Em thử lại sau ít phút.'});}
+ }
+ if(action==='phan-tich'){
+  if(!kho)return res.status(503).json({message:'Chưa tải được phân tích.'});
+  const ticket=analysisTicket(body,kho.key,ai,nay);
+  if(!ticket)return res.status(403).json({message:'Không xác minh được lượt làm bài.'});
+  if(!db||env.MTM_PHONG_THI_ANALYSIS!=='1')return res.status(200).json({available:false});
+  try{
+   const r=await rpc('mtm_pt_phan_tich',{p_nonce:ticket.n,p_de:ticket.d});
+   if(!r.ok)throw Error();
+   return res.status(200).json(publicDistribution(await r.json()));
+  }catch{return res.status(503).json({message:'Phổ điểm chưa sẵn sàng. Kết quả của em vẫn được giữ.'});}
  }
  const out=xuLy(action,body??{},ai,kho,nay,{thiSinh});
  if(action==='danh-muc'&&out.status===200&&db&&ai.kieu!=='khach'){

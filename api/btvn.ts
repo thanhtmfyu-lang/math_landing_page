@@ -9,6 +9,8 @@ import {createSupabaseRepository} from '../server/btvn/supabase-transport';
 import {createClient} from '@supabase/supabase-js';
 import {handleParent,supabaseRpc} from '../server/phu-huynh/http';
 import type {Rpc} from '../server/phu-huynh/service';
+import {loadSchedule} from '../server/schedule/lich-lop';
+import {buildClassOverview} from '../server/btvn/class-overview';
 type Req={method?:string;body?:unknown;headers:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const header=(req:Req,key:string)=>typeof req.headers[key]==='string'?req.headers[key] as string:'';
@@ -37,6 +39,10 @@ export function createBtvnApi(getEnv=()=>process.env,loadRepository:()=>Promise<
   const repo=factory({SUPABASE_URL:env.SUPABASE_URL!,SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_SERVICE_ROLE_KEY!,MTM_HOMEWORK_PUBLISHABLE_KEY:env.MTM_HOMEWORK_PUBLISHABLE_KEY!,VERCEL:env.VERCEL,VERCEL_ENV:env.VERCEL_ENV,VERCEL_URL:env.VERCEL_URL},origin,key);
   const result=await createDurableHomeworkHandler(repo)({method:req.method??'',body:req.body,cookie:header(req,'cookie'),origin,host,secure:true});
   const body=result.body as any,action=(req.body as {action?:unknown}|null)?.action;
+  if(result.status===200&&typeof body.className==='string'&&Array.isArray(body.lessons)&&['login','state','select','submit'].includes(String(action))){
+   try{body.classOverview=buildClassOverview(body,await loadSchedule(env),(options.clock??Date.now)());}
+   catch{/* Existing homework stays usable when optional class overview fails. */}
+  }
   if(result.status===200&&Array.isArray(body.lessons)){
    // Chỉ danh sách buổi mới đợi metadata. Mở lượt/gia hạn ảnh và ACK bài
    // không phụ thuộc YouTube, không tạo request nền sau khi đã trả JSON.
