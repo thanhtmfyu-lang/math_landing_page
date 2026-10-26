@@ -1,7 +1,7 @@
 import {createHash} from 'node:crypto';
-import {isExposedExam,PRACTICE_ONLY_NOTICE} from '../server/exam-security/exposure';
-import {allowedBtvnOrigin} from '../server/btvn/origin-policy';
-import {HSA_SUBMIT_STATUS,HSA_TOP_LIMIT,hsaNameKey,isHsaGrade,publicHsaRow,sanitizeDisplayName,validHsaExamId,type HsaSubmitStatus} from '../server/hsa/rank';
+import {isExposedExam,PRACTICE_ONLY_NOTICE} from '../exam-security/exposure';
+import {allowedBtvnOrigin} from '../btvn/origin-policy';
+import {HSA_SUBMIT_STATUS,HSA_TOP_LIMIT,hsaNameKey,isHsaGrade,publicHsaRow,sanitizeDisplayName,validHsaExamId,type HsaSubmitStatus} from './rank';
 type Req={method?:string;query?:Record<string,string|string[]|undefined>;body?:unknown;headers?:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string)=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 /** Bảng xếp hạng Thi thử HSA. Tắt mặc định: chỉ bật khi MTM_HSA_RANK_ENABLED=1 và migration 069 đã áp.

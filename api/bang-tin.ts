@@ -1,5 +1,6 @@
 import {allowedBtvnOrigin} from '../server/btvn/origin-policy';
 import {boardKey,localBoardPosts} from '../server/bang-tin/local';
+import {createBoardMediaApi} from '../server/bang-tin/media-api';
 // Bảng tin trung tâm (19/10/2026): bài đã duyệt từ ảnh nhóm Zalo, chỉ trả khi phiên BTVN hợp lệ.
 // Quy tắc anh Thành chốt 19/10 17:45: ảnh, video lớp công khai trên trang chủ để marketing. Khách chưa đăng nhập nhận ảnh
 // đóng gói không đánh dấu "public": false (chuẩn fanpage: không cận mặt riêng một em).
@@ -44,4 +45,13 @@ function toPosts(rows:Row[],signed:Map<string,string>){
  return rows.map(r=>({id:r.id,kind:r.kind,title:r.title,date:r.date,summary:r.summary??'',place:r.place??undefined,pinned:r.pinned===true,
   photos:(r.photos??[]).filter(p=>signed.has(p.path)).map(p=>({url:signed.get(p.path)!,alt:p.alt,width:p.width??undefined,height:p.height??undefined}))})).filter(p=>p.photos.length);
 }
-export default createBoardApi();
+export function createBoardRouter(getEnv=()=>process.env,transport:typeof fetch=fetch){
+ const board=createBoardApi(getEnv,transport),media=createBoardMediaApi(getEnv);
+ return (req:Req&{query?:Record<string,string|string[]|undefined>},res:{setHeader:(key:string,value:string)=>void;status:(n:number)=>{json:(value:unknown)=>void;end:(body?:Buffer|string)=>void}})=>{
+  const route=req.query?.muc;
+  if(route==='anh')return media(req,res);
+  if(route===undefined)return board(req,res);
+  res.setHeader('Cache-Control','no-store');return res.status(404).json({message:'Không tìm thấy trang.'});
+ };
+}
+export default createBoardRouter();

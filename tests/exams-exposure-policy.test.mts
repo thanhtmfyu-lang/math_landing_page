@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
-import {createHsaRankApi} from '../api/hsa-xep-hang';
+import {createHsaRankApi} from '../server/hsa/api';
 import {isExposedExam} from '../server/exam-security/exposure';
 
 const root = process.env.MTM_ROOT!;

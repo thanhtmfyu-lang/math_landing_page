@@ -7,6 +7,18 @@
   "outputDirectory": "build",
   "rewrites": [
     {
+      "source": "/api/hsa-xep-hang",
+      "destination": "/api/xep-hang?muc=hsa"
+    },
+    {
+      "source": "/api/xep-hang-cua-em",
+      "destination": "/api/xep-hang?muc=cua-em"
+    },
+    {
+      "source": "/api/bang-tin-anh",
+      "destination": "/api/bang-tin?muc=anh"
+    },
+    {
       "source": "/goc-hoc-tap",
       "destination": "/index.html"
     },
@@ -24,7 +36,7 @@
     },
     {
       "source": "/__preview/:path*",
-      "destination": "/api/preview-disabled"
+      "destination": "/api/exam?muc=preview-disabled"
     },
     {
       "source": "/bai-hoc/:path*",
@@ -207,11 +219,8 @@
     }
   ],
   "functions": {
-    "api/bang-tin-anh.ts": {
-      "includeFiles": "server/bang-tin/**"
-    },
     "api/bang-tin.ts": {
-      "includeFiles": "server/bang-tin/bai.json"
+      "includeFiles": "server/bang-tin/**"
     },
     "api/kiem-tra-dau-vao.ts": {
       "includeFiles": "server/dau-vao/ngan-hang.bin"

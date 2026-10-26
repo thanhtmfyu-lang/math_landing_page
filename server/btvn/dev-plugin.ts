@@ -9,7 +9,7 @@ import {HomeworkService} from './service';
 import {handleHomework} from './http';
 import {demoLessons} from './demo-lessons';
 import {boardKey,localBoardPosts} from '../bang-tin/local';
-import {createBoardMediaApi} from '../../api/bang-tin-anh';
+import {createBoardMediaApi} from '../bang-tin/media-api';
 import type {PracticeExam} from '../../src/native/exams/data';
 export function btvnDevPlugin():Plugin {
   return {name:'mtm-btvn-demo',apply:'serve',configureServer(server){
