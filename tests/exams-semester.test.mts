@@ -42,7 +42,7 @@ const leadApi=createLeadApi(()=>env,async(url:any,init:any)=>{assert.ok(String(u
 assert.equal((await call(leadApi,reg,{headers:{origin:headers.origin,host:headers.host}})).code,401);
 assert.equal((await call(leadApi,reg)).code,200);assert.equal(leadArgs.p_session,token);
 const root=process.env.MTM_ROOT||process.cwd();
-const sql=readFileSync(join(root,'supabase/migrations-pending/202610210097_on_cuoi_ky_1.sql'),'utf8');
+const sql=readFileSync(join(root,'supabase/migrations-pending/202610260098_on_cuoi_ky_1.sql'),'utf8');
 const params=sql.match(/create function public\.mtm_hk1_register\(([^)]+)\)/)![1].split(',').map(x=>x.trim().split(' ')[0]).sort();
 assert.deepEqual(Object.keys(leadArgs).sort(),params);
 assert.equal((JSON.parse(readFileSync(join(root,'package.json'),'utf8')).dependencies)['@supabase/supabase-js'],'2.117.3');

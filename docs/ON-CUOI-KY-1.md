@@ -14,8 +14,8 @@ Nguồn giao việc: `20261021-1115-web-on-cuoi-ky-1.md`. Nhánh `codex/on-cuoi-
 
 ## Cách luồng phát hành kiểm và cấu hình
 
-1. Kiểm lại main và số migration mới nhất trước merge. Migration mới `202610210097_on_cuoi_ky_1.sql`, phụ thuộc BTVN 005 và lead 073/074. Không sửa migration đã áp. Constraint kind hiện hành ở main có `dang-ky`, `thi-thu-hsa`, `kiem-tra-dau-vao`; 097 giữ ba kind đó và thêm kind mới.
-2. Backup và áp 097 trong môi trường preview riêng trước. Chưa bật `MTM_SEMESTER_ENABLED` thì API khóa ôn đóng. Đăng ký cần thêm `MTM_LEAD_ENABLED=1`, `SUPABASE_URL` và `SUPABASE_SERVICE_ROLE_KEY` trên server, không đặt bí mật vào biến `VITE_*`.
+1. Kiểm lại main và số migration mới nhất trước merge. Migration mới `202610260098_on_cuoi_ky_1.sql`, phụ thuộc BTVN 005 và lead 073/074. Không sửa migration đã áp. Constraint kind hiện hành ở main có `dang-ky`, `thi-thu-hsa`, `kiem-tra-dau-vao`; 098 giữ ba kind đó và thêm kind mới.
+2. Backup và áp 098 trong môi trường preview riêng trước. Chưa bật `MTM_SEMESTER_ENABLED` thì API khóa ôn đóng. Đăng ký cần thêm `MTM_LEAD_ENABLED=1`, `SUPABASE_URL` và `SUPABASE_SERVICE_ROLE_KEY` trên server, không đặt bí mật vào biến `VITE_*`.
 3. Nạp video đã kiểm quyền/nội dung vào bucket private, đường dẫn bắt đầu `hk1/`. Cấu hình `mtm_hk1.videos.private_path` và `enabled=true`. Cả 24 dòng seed hiện chỉ là placeholder tắt, không có media hay đáp án thật. Tên bài hiển thị hiện là mẫu; muốn thay lộ trình phải cập nhật catalogue tương ứng và kiểm lại.
 4. Mốc mặc định 16/11/2026 lúc 00:00 Asia/Saigon, tuần sau cộng bảy ngày. Có thể đổi `settings.opens_at`, `max_views` và `watch_seconds` trong giới hạn constraint. `videos.max_views` không null sẽ ghi đè N của khối. Giảm N không hoàn lại hoặc xóa lượt cũ.
 5. Học sinh dùng tài khoản BTVN đã được MTM cấp. Học sinh ngoài trung tâm chưa có tài khoản cần đi qua luồng cấp tài khoản hiện hành của MTM; PR này không thêm cơ chế tự xác minh danh tính mới. Giao diện ghi rõ bước liên hệ MTM, không hứa form tự tạo tài khoản.
