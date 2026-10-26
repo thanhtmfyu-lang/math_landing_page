@@ -181,3 +181,5 @@
  .pt-rp-grid{grid-template-columns:1.4fr 1fr}
  .pt-report *{-webkit-print-color-adjust:exact;print-color-adjust:exact}
 }
+
+.pt-score-distribution{list-style:none;padding:0;display:grid;gap:8px}.pt-score-distribution li{display:grid;grid-template-columns:64px minmax(0,1fr) 48px;align-items:center;gap:10px}.pt-score-distribution meter{width:100%;height:20px}.pt-score-distribution strong{text-align:right}.pt-analysis a{text-decoration:underline}

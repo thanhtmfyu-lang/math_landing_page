@@ -220,5 +220,10 @@
     "api/exam.ts": {
       "includeFiles": "server/phong-thi/kho-de.bin"
     }
+  },
+  "git": {
+    "deploymentEnabled": {
+      "codex/web-v13-*": false
+    }
   }
 }

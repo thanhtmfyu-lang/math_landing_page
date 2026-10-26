@@ -57,7 +57,9 @@ for(const href of ['/btvn','/huong-dan?cho=phu-huynh','/phu-huynh','/xep-hang'])
 const menu=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{pathname:'/huong-dan'}),menuNav=menu.slice(menu.indexOf('id="mig-nav-links"'));
 const menuHrefs=anchors(menuNav).map(link=>attribute(link.attributes,'href')).filter(href=>href!=='/#register');
 // 20/10 anh Thành (lần 2): ít cửa, mỗi loại một mối: "Thi" gom mọi kỳ thi, "Phụ huynh" gom mọi thứ cho phụ huynh.
-assert.deepEqual(menuHrefs.slice(0,4),['/','/btvn','/thi-thu','/phu-huynh']);assert.equal(menuHrefs.length,7);
+assert.deepEqual(menuHrefs.slice(0,4),['/','/btvn','/thi-thu','/phu-huynh']);assert.equal(menuHrefs.length,8);
+// 26/10 anh Thành: nút Ôn tập theo chương (/luyen-tap) mất khỏi menu từ 21/10, phải luôn có.
+assert.ok(menuHrefs.includes('/luyen-tap'),'menu thiếu /luyen-tap');
 const menuAt=(pathname:string)=>{const h=render(load('src/migration/Experience.tsx').exports.MigrationHeader,{pathname});return h.slice(h.indexOf('id="mig-nav-links"'));};
 assert.match(menuAt('/de-giua-ky-1'),/<a(?=[^>]*href="\/thi-thu")(?=[^>]*aria-current="page")[^>]*>Thi<\/a>/);
 assert.match(menuAt('/phu-huynh'),/<a(?=[^>]*href="\/phu-huynh")(?=[^>]*aria-current="page")[^>]*>Phụ huynh<\/a>/);

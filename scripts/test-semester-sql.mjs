@@ -30,7 +30,7 @@ try{
  await db.exec(btvn.match(/create function mtm_hw_private\.btvn_student\([\s\S]*?end\$\$;/)[0]);
  await db.exec(readFileSync('supabase/migrations-pending/202610200073_lead_web.sql','utf8'));
  await check('Áp nguyên migration 093 và mặc định 3 lượt, bucket private, chỉ placeholder',async()=>{
-  await db.exec(readFileSync('supabase/migrations-pending/202610210093_on_cuoi_ky_1.sql','utf8'));
+  await db.exec(readFileSync('supabase/migrations-pending/202610210097_on_cuoi_ky_1.sql','utf8'));
   assert.equal(await scalar('select count(*)::int from mtm_hk1.videos'),24);
   assert.equal(await scalar('select min(max_views) from mtm_hk1.settings'),3);
   assert.equal(await scalar("select public from storage.buckets where id='mtm-semester'"),false);

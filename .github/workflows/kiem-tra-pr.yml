@@ -1,5 +1,5 @@
 # Kiểm tra mỗi PR và mỗi lần đẩy lên main: build phải xanh mới được merge.
-# Bộ test chạy đầy đủ với PDF fixture và lịch sử nguồn cần đối chiếu.
+# Bộ test chạy đầy đủ; từ 21/10 (170/170 đạt) test lỗi cũng chặn merge.
 name: Kiểm tra PR
 
 on:
@@ -55,15 +55,19 @@ jobs:
 
   test:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 30
     continue-on-error: false
     steps:
       - uses: actions/checkout@v4
         with:
-          # Asset tests kiểm SHA của PDF; KT06/V77 cần git show bản lịch sử.
-          # Lấy đủ cây hiện tại, lazy-fetch blob cũ khi test thật sự cần.
+          # Test A02/A04/A05 kiểm SHA-256 PDF trong public/exam-assets (~2,6 GB) nên cần tệp thật.
+          # Test KT06/V77 so với commit cũ bằng git show: lấy đủ lịch sử, nội dung cũ tải khi cần.
           fetch-depth: 0
           filter: blob:none
+          sparse-checkout-cone-mode: false
+          sparse-checkout: |
+            /*
+            !/build/
       - uses: actions/setup-node@v4
         with:
           node-version: 22

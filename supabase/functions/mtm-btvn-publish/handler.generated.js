@@ -565,16 +565,16 @@ function validatePracticeProfile(input) {
   const gate = validateAssessment(input);
   if (!gate.valid) return gate;
   const errors = [];
-  if (!equalQuestion && !e.id.startsWith("mtm-custom-") && !e.id.startsWith("mtm-preview-") && !e.id.startsWith("mtm-practice-")) errors.push("Flexible profile requires a custom edition");
+  if (!equalQuestion && !e.id.startsWith("mtm-custom-") && !e.id.startsWith("mtm-preview-") && !e.id.startsWith("mtm-practice-") && !e.id.startsWith("mtm-hsa-")) errors.push("Flexible profile requires a custom edition");
   if (equalQuestion && e.sections === void 0) return gate;
   if (!Array.isArray(e.sections) || !e.sections.length || !equalQuestion && e.sections.length > 12) return { valid: false, errors: [...errors, "Sections required"] };
   let offset = 0;
   for (const section of e.sections) {
-    if (!section || typeof section.label !== "string" || !section.label.trim() || section.label.length > 100 || !(e.rubricVersion === "MTM-BTVN-10-v1" ? ["mc", "tf", "short", "self"] : ["mc", "tf", "short"]).includes(section.kind) || !Number.isSafeInteger(section.count) || section.count < 1 || !equalQuestion && section.count > 300) {
+    if (!section || typeof section.label !== "string" || !section.label.trim() || section.label.length > 100 || !(e.rubricVersion === "MTM-BTVN-10-v1" ? ["mc", "tf", "short", "self"] : ["mc", "tf", "short", "mixed"]).includes(section.kind) || !Number.isSafeInteger(section.count) || section.count < 1 || !equalQuestion && section.count > 300) {
       errors.push("Invalid section");
       continue;
     }
-    if (e.questions.slice(offset, offset + section.count).length !== section.count || e.questions.slice(offset, offset + section.count).some((q) => q.kind !== section.kind)) errors.push("Section/question mismatch");
+    if (e.questions.slice(offset, offset + section.count).length !== section.count || e.questions.slice(offset, offset + section.count).some((q) => section.kind === "mixed" ? !["mc", "tf", "short"].includes(q.kind) : q.kind !== section.kind)) errors.push("Section/question mismatch");
     offset += section.count;
   }
   if (offset !== e.questions.length || !equalQuestion && offset > 300) errors.push("Complete section counts required");
@@ -627,7 +627,7 @@ function validatePracticePresentation(input, questionOnly) {
   if (!boundedText(input.title, 300)) errors.push("Missing title");
   if (!Number.isSafeInteger(input.durationMinutes) || input.durationMinutes < 1 || input.durationMinutes > 1440) errors.push("Invalid duration");
   if (!isSha256(input.versionHash) || !boundedText(input.rubricVersion, 120)) errors.push("Invalid exam/rubric version");
-  if (!isHttpsUrl(input.sourceUrl) || input.publicationVerified !== true || input.questionDisplayVerified !== true) errors.push("Publication/question display not verified");
+  if (!(input.serverGraded === true && !("sourceUrl" in input) || isHttpsUrl(input.sourceUrl)) || input.publicationVerified !== true || input.questionDisplayVerified !== true) errors.push("Publication/question display not verified");
   const material = input.sourceMaterial;
   if (!isRecord(material) || !["title", "publisher", "version", "locator"].every((key) => boundedText(material[key], 1e3))) errors.push("Incomplete source material");
   if (input.answerVerificationNote !== void 0 && !boundedText(input.answerVerificationNote, 2e3)) errors.push("Invalid answer verification note");
@@ -644,7 +644,7 @@ function validatePracticePresentation(input, questionOnly) {
     if (!boundedText(q.prompt ?? q.text ?? q.sourceRef, 2e4)) errors.push("Missing question text or source locator");
     if (q.prompt !== void 0 && !boundedText(q.prompt, 2e4)) errors.push("Invalid prompt");
     if (q.text !== void 0 && !boundedText(q.text, 2e4)) errors.push("Invalid text");
-    if (q.convertedFrom !== void 0 && (input.rubricVersion !== "MTM-BTVN-10-v1" || q.kind !== "short" || q.convertedFrom !== "essay")) errors.push("Invalid essay conversion");
+    if (q.convertedFrom !== void 0 && (input.rubricVersion !== "MTM-BTVN-10-v1" && input.rubricVersion !== MTM_SCORING_VERSION || q.kind !== "short" || q.convertedFrom !== "essay")) errors.push("Invalid essay conversion");
     if (!questionOnly && q.kind === "self" && !boundedText(q.solution, 2e4) && !q.sourceContent?.solutions?.length) errors.push("Self question requires a solution");
     if (q.solution !== void 0 && !boundedText(q.solution, 2e4)) errors.push("Invalid solution");
     if (q.correctionNote !== void 0 && !boundedText(q.correctionNote, 2e3)) errors.push("Invalid correction note");
@@ -668,23 +668,6 @@ var class_rules_default = {
   ],
   classes: {
     "2K9 9+": {
-      sessions: [
-        {
-          weekday: 1,
-          start: "17:30",
-          end: "19:30"
-        },
-        {
-          weekday: 3,
-          start: "17:30",
-          end: "19:30"
-        },
-        {
-          weekday: 5,
-          start: "17:30",
-          end: "19:30"
-        }
-      ],
       open: {
         type: "paired",
         sourceLabel: "2K9 9+",
@@ -702,18 +685,6 @@ var class_rules_default = {
       }
     },
     "2K14": {
-      sessions: [
-        {
-          weekday: 1,
-          start: "18:00",
-          end: "20:00"
-        },
-        {
-          weekday: 4,
-          start: "09:00",
-          end: "11:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -722,18 +693,6 @@ var class_rules_default = {
       }
     },
     "2K10 XPT": {
-      sessions: [
-        {
-          weekday: 1,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 6,
-          start: "15:30",
-          end: "17:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -742,23 +701,6 @@ var class_rules_default = {
       }
     },
     "2K9 XPT": {
-      sessions: [
-        {
-          weekday: 1,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 2,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 4,
-          start: "19:30",
-          end: "21:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -781,23 +723,6 @@ var class_rules_default = {
       }
     },
     "2K9 8+": {
-      sessions: [
-        {
-          weekday: 2,
-          start: "17:30",
-          end: "19:30"
-        },
-        {
-          weekday: 4,
-          start: "17:30",
-          end: "19:30"
-        },
-        {
-          weekday: 6,
-          start: "17:30",
-          end: "19:30"
-        }
-      ],
       open: {
         type: "paired",
         sourceLabel: "2K9 9+",
@@ -815,23 +740,6 @@ var class_rules_default = {
       }
     },
     "2K10 9+": {
-      sessions: [
-        {
-          weekday: 2,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 5,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 7,
-          start: "08:00",
-          end: "10:00"
-        }
-      ],
       open: {
         type: "paired",
         sourceLabel: "2K10 9+",
@@ -844,18 +752,6 @@ var class_rules_default = {
       }
     },
     "2K13": {
-      sessions: [
-        {
-          weekday: 2,
-          start: "20:00",
-          end: "22:00"
-        },
-        {
-          weekday: 5,
-          start: "20:00",
-          end: "22:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -864,18 +760,6 @@ var class_rules_default = {
       }
     },
     "2K11 8+": {
-      sessions: [
-        {
-          weekday: 3,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 7,
-          start: "15:30",
-          end: "17:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -884,18 +768,6 @@ var class_rules_default = {
       }
     },
     "2K11 XPT": {
-      sessions: [
-        {
-          weekday: 3,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 6,
-          start: "13:30",
-          end: "15:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -904,13 +776,6 @@ var class_rules_default = {
       }
     },
     "HSA.2": {
-      sessions: [
-        {
-          weekday: 4,
-          start: "14:30",
-          end: "17:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -919,18 +784,6 @@ var class_rules_default = {
       }
     },
     "2K12": {
-      sessions: [
-        {
-          weekday: 4,
-          start: "18:00",
-          end: "20:00"
-        },
-        {
-          weekday: 7,
-          start: "15:00",
-          end: "17:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -939,18 +792,6 @@ var class_rules_default = {
       }
     },
     "2K15": {
-      sessions: [
-        {
-          weekday: 4,
-          start: "18:00",
-          end: "20:00"
-        },
-        {
-          weekday: 7,
-          start: "14:00",
-          end: "16:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -959,18 +800,6 @@ var class_rules_default = {
       }
     },
     "2K11 9+": {
-      sessions: [
-        {
-          weekday: 4,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 7,
-          start: "13:30",
-          end: "15:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -979,18 +808,6 @@ var class_rules_default = {
       }
     },
     "2K10 8+": {
-      sessions: [
-        {
-          weekday: 5,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 7,
-          start: "10:00",
-          end: "12:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -999,13 +816,6 @@ var class_rules_default = {
       }
     },
     TSA: {
-      sessions: [
-        {
-          weekday: 7,
-          start: "14:00",
-          end: "17:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -1014,13 +824,6 @@ var class_rules_default = {
       }
     },
     HSA: {
-      sessions: [
-        {
-          weekday: 7,
-          start: "17:00",
-          end: "20:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -1029,13 +832,6 @@ var class_rules_default = {
       }
     },
     "2K9 HSA (TH\u1EE8 5)": {
-      sessions: [
-        {
-          weekday: 4,
-          start: "14:30",
-          end: "17:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -1044,18 +840,6 @@ var class_rules_default = {
       }
     },
     "2K10 Th\u1EE9 3, 6": {
-      sessions: [
-        {
-          weekday: 2,
-          start: "19:30",
-          end: "21:30"
-        },
-        {
-          weekday: 5,
-          start: "19:30",
-          end: "21:30"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -1064,13 +848,6 @@ var class_rules_default = {
       }
     },
     "2K9 HSA (CN)": {
-      sessions: [
-        {
-          weekday: 7,
-          start: "17:00",
-          end: "20:00"
-        }
-      ],
       open: {
         type: "after_session"
       },
@@ -1081,9 +858,354 @@ var class_rules_default = {
   }
 };
 
+// server/schedule/lich-lop.snapshot.json
+var lich_lop_snapshot_default = {
+  source: "Lich_lop",
+  snapshotDate: "2026-10-20",
+  notes: [
+    "TSA retained from legacy BTVN fallback, not verified in the Lich_lop snapshot."
+  ],
+  rows: [
+    {
+      id: "2K9 XPS 9+|T2|17:30|19:30",
+      lop: "2K9 XPS 9+",
+      thu: "T2",
+      bat: "17:30",
+      ket: "19:30"
+    },
+    {
+      id: "2K9 XPS 9+|T4|17:30|19:30",
+      lop: "2K9 XPS 9+",
+      thu: "T4",
+      bat: "17:30",
+      ket: "19:30"
+    },
+    {
+      id: "2K9 XPS 9+|T6|17:30|19:30",
+      lop: "2K9 XPS 9+",
+      thu: "T6",
+      bat: "17:30",
+      ket: "19:30"
+    },
+    {
+      id: "2K9 XPS 8+|T3|17:30|19:30",
+      lop: "2K9 XPS 8+",
+      thu: "T3",
+      bat: "17:30",
+      ket: "19:30"
+    },
+    {
+      id: "2K9 XPS 8+|T5|17:30|19:30",
+      lop: "2K9 XPS 8+",
+      thu: "T5",
+      bat: "17:30",
+      ket: "19:30"
+    },
+    {
+      id: "2K9 XPS 8+|T7|17:30|19:30",
+      lop: "2K9 XPS 8+",
+      thu: "T7",
+      bat: "17:30",
+      ket: "19:30"
+    },
+    {
+      id: "2K9 XPT|T2|19:30|21:30",
+      lop: "2K9 XPT",
+      thu: "T2",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K9 XPT|T3|19:30|21:30",
+      lop: "2K9 XPT",
+      thu: "T3",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K9 XPT|T5|19:30|21:30",
+      lop: "2K9 XPT",
+      thu: "T5",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K10 XPS 9+|T3|19:30|21:30",
+      lop: "2K10 XPS 9+",
+      thu: "T3",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K10 XPS 9+|CN|08:00|10:00",
+      lop: "2K10 XPS 9+",
+      thu: "CN",
+      bat: "08:00",
+      ket: "10:00"
+    },
+    {
+      id: "2K10 XPS 8+|T6|19:30|21:30",
+      lop: "2K10 XPS 8+",
+      thu: "T6",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K10 XPS 8+|CN|10:00|12:00",
+      lop: "2K10 XPS 8+",
+      thu: "CN",
+      bat: "10:00",
+      ket: "12:00"
+    },
+    {
+      id: "2K10 XPT|T2|19:30|21:30",
+      lop: "2K10 XPT",
+      thu: "T2",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K10 XPT|T7|15:30|17:30",
+      lop: "2K10 XPT",
+      thu: "T7",
+      bat: "15:30",
+      ket: "17:30"
+    },
+    {
+      id: "2K11 XPS 9+|T5|19:30|21:30",
+      lop: "2K11 XPS 9+",
+      thu: "T5",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K11 XPS 9+|CN|13:30|15:30",
+      lop: "2K11 XPS 9+",
+      thu: "CN",
+      bat: "13:30",
+      ket: "15:30"
+    },
+    {
+      id: "2K11 XPS 8+|T4|19:30|21:30",
+      lop: "2K11 XPS 8+",
+      thu: "T4",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K11 XPS 8+|CN|15:30|17:30",
+      lop: "2K11 XPS 8+",
+      thu: "CN",
+      bat: "15:30",
+      ket: "17:30"
+    },
+    {
+      id: "2K11 XPT|T4|19:30|21:30",
+      lop: "2K11 XPT",
+      thu: "T4",
+      bat: "19:30",
+      ket: "21:30"
+    },
+    {
+      id: "2K11 XPT|T7|13:30|15:30",
+      lop: "2K11 XPT",
+      thu: "T7",
+      bat: "13:30",
+      ket: "15:30"
+    },
+    {
+      id: "2K12|T5|18:00|20:00",
+      lop: "2K12",
+      thu: "T5",
+      bat: "18:00",
+      ket: "20:00"
+    },
+    {
+      id: "2K12|CN|15:00|17:00",
+      lop: "2K12",
+      thu: "CN",
+      bat: "15:00",
+      ket: "17:00"
+    },
+    {
+      id: "2K13|T3|20:00|22:00",
+      lop: "2K13",
+      thu: "T3",
+      bat: "20:00",
+      ket: "22:00"
+    },
+    {
+      id: "2K13|T6|20:00|22:00",
+      lop: "2K13",
+      thu: "T6",
+      bat: "20:00",
+      ket: "22:00"
+    },
+    {
+      id: "2K14|T2|18:00|20:00",
+      lop: "2K14",
+      thu: "T2",
+      bat: "18:00",
+      ket: "20:00"
+    },
+    {
+      id: "2K14|T5|09:00|11:00",
+      lop: "2K14",
+      thu: "T5",
+      bat: "09:00",
+      ket: "11:00"
+    },
+    {
+      id: "2K15|T5|18:00|20:00",
+      lop: "2K15",
+      thu: "T5",
+      bat: "18:00",
+      ket: "20:00"
+    },
+    {
+      id: "2K15|CN|14:00|16:00",
+      lop: "2K15",
+      thu: "CN",
+      bat: "14:00",
+      ket: "16:00"
+    },
+    {
+      id: "HSA.2|T5|14:30|17:30",
+      lop: "HSA.2",
+      thu: "T5",
+      bat: "14:30",
+      ket: "17:30"
+    },
+    {
+      id: "HSA|CN|17:00|20:00",
+      lop: "HSA",
+      thu: "CN",
+      bat: "17:00",
+      ket: "20:00"
+    },
+    {
+      id: "TSA|CN|14:00|17:00",
+      lop: "TSA",
+      thu: "CN",
+      bat: "14:00",
+      ket: "17:00",
+      legacyOnly: true
+    }
+  ]
+};
+
+// server/schedule/lich-lop.ts
+var SCHEDULE_SNAPSHOT = lich_lop_snapshot_default.rows;
+var SCHEDULE_SNAPSHOT_DATE = lich_lop_snapshot_default.snapshotDate;
+var DAYS = ["T2", "T3", "T4", "T5", "T6", "T7", "CN"];
+var aliases = { "2K9 HSA (TH\u1EE8 5)": "HSA.2", "2K9 HSA (CN)": "HSA" };
+var scheduleClass = (name) => aliases[name.trim()] ?? name.trim().replace(/\s+XPS(?=\s+[89]\+)/, "");
+function classSlots(rows, label, attendanceAlternatives = false) {
+  const name = scheduleClass(label);
+  const selected = rows.filter((row) => {
+    const other = scheduleClass(row.lop);
+    if (other === name) return true;
+    if (attendanceAlternatives && name === "2K10 9+" && other === "2K10 8+" && row.thu === "T6") return true;
+    if (name === "2K10 Th\u1EE9 3, 6") return other === "2K10 9+" && row.thu === "T3" || other === "2K10 8+" && row.thu === "T6";
+    return false;
+  });
+  const unique = new Map(selected.map((row) => {
+    const slot2 = { weekday: DAYS.indexOf(row.thu) + 1, start: row.bat, end: row.ket };
+    return [JSON.stringify(slot2), slot2];
+  }));
+  return [...unique.values()].filter((s) => s.weekday > 0).sort((a, b) => a.weekday - b.weekday || a.start.localeCompare(b.start));
+}
+var hhmm = (raw) => {
+  const m = /^(\d{1,2})[:h](\d{2})/.exec(raw.trim());
+  return m && +m[1] < 24 && +m[2] < 60 ? m[1].padStart(2, "0") + ":" + m[2] : null;
+};
+var day = (raw) => {
+  const v = raw.trim().toLowerCase();
+  if (/^(cn|chủ nhật|chu nhat)$/.test(v)) return "CN";
+  const m = /^(?:thứ|thu|t)\s*([2-7])$/.exec(v);
+  return m ? "T" + m[1] : null;
+};
+function csv(raw) {
+  const result = [];
+  let row = [], cell = "", quoted = false;
+  for (let i = 0; i < raw.length; i++) {
+    const c = raw[i];
+    if (quoted) {
+      if (c === '"') {
+        if (raw[i + 1] === '"') {
+          cell += '"';
+          i++;
+        } else quoted = false;
+      } else cell += c;
+    } else if (c === '"') quoted = true;
+    else if (c === ",") {
+      row.push(cell);
+      cell = "";
+    } else if (c === "\r" || c === "\n") {
+      if (c === "\r" && raw[i + 1] === "\n") i++;
+      row.push(cell);
+      result.push(row);
+      row = [];
+      cell = "";
+    } else cell += c;
+  }
+  if (quoted) return [];
+  if (cell || row.length) {
+    row.push(cell);
+    result.push(row);
+  }
+  return result;
+}
+function parseScheduleCsv(raw) {
+  const rows = csv(raw.replace(/^\uFEFF/, "")), header = (rows.shift() ?? []).map((v) => v.trim().toLowerCase());
+  const cols = ["l\u1EDBp", "th\u1EE9", "b\u1EAFt \u0111\u1EA7u", "k\u1EBFt th\xFAc"].map((v) => header.indexOf(v));
+  if (cols.some((v) => v < 0)) return [];
+  const found = /* @__PURE__ */ new Map();
+  for (const row of rows) {
+    const [name, t, b, k] = cols.map((i) => row[i] ?? ""), lop = name.trim().replace(/\s+/g, " "), thu = day(t), bat = hhmm(b), ket = hhmm(k);
+    if (!lop || lop.length > 30 || lop.includes("|") || !thu || !bat || !ket || bat >= ket) continue;
+    const id = [lop, thu, bat, ket].join("|");
+    found.set(id, { id, lop, thu, bat, ket });
+  }
+  return [...found.values()];
+}
+function scheduleEnvironment() {
+  const runtime = globalThis;
+  return { MTM_LICH_LOP_CSV: typeof process !== "undefined" ? process.env.MTM_LICH_LOP_CSV : runtime.Deno?.env.get("MTM_LICH_LOP_CSV") };
+}
+var cache = null;
+async function loadSchedule(env, transport = fetch, now = Date.now()) {
+  const raw = env.MTM_LICH_LOP_CSV;
+  const fallback = () => ({ rows: SCHEDULE_SNAPSHOT, source: "snapshot", snapshotDate: SCHEDULE_SNAPSHOT_DATE });
+  if (!raw) return fallback();
+  let url;
+  try {
+    url = new URL(raw);
+    if (url.protocol !== "https:" || url.hostname !== "docs.google.com" || url.username || url.password) return fallback();
+  } catch {
+    return fallback();
+  }
+  if (cache?.url === url.href && now - cache.at < 6e5) return { rows: cache.rows, source: "Lich_lop" };
+  try {
+    const response = await transport(url.href, { signal: AbortSignal.timeout(4e3) });
+    if (!response.ok) throw Error();
+    const rows = parseScheduleCsv(await response.text());
+    if (rows.length < 5) throw Error();
+    cache = { url: url.href, at: now, rows };
+    return { rows, source: "Lich_lop" };
+  } catch {
+    return cache?.url === url.href ? { rows: cache.rows, source: "Lich_lop-cache" } : fallback();
+  }
+}
+
 // server/btvn/class-rules.ts
-var classRules = class_rules_default;
-var rules = class_rules_default.classes;
+function rulesFromSchedule(rows) {
+  return { ...class_rules_default, classes: Object.fromEntries(Object.entries(class_rules_default.classes).map(([label, policy]) => [label, { ...policy, sessions: classSlots(rows, label, true) }])) };
+}
+var classRules = rulesFromSchedule(SCHEDULE_SNAPSHOT);
+async function loadClassRules(env, transport = fetch, now = Date.now()) {
+  return rulesFromSchedule((await loadSchedule(env, transport, now)).rows);
+}
 function lessonDay(value) {
   if (!/^\d{4}-\d{2}-\d{2}$/.test(value) || !Number.isFinite(Date.parse(value + "T00:00:00Z")) || (/* @__PURE__ */ new Date(value + "T00:00:00Z")).toISOString().slice(0, 10) !== value) throw Error("INVALID_CLASS_DATE");
   return /* @__PURE__ */ new Date(value + "T00:00:00Z");
@@ -1091,8 +1213,9 @@ function lessonDay(value) {
 var weekday = (d) => d.getUTCDay() || 7;
 var shift = (d, n) => new Date(d.getTime() + n * 864e5);
 var iso = (d, time) => d.toISOString().slice(0, 10) + "T" + time + ":00+07:00";
-var slot = (r, day) => r.sessions.filter((s) => s.weekday === day).sort((a, b) => a.start.localeCompare(b.start)).at(-1);
-function opensAt(label, lessonDate) {
+var slot = (r, day2) => r.sessions.filter((s) => s.weekday === day2).sort((a, b) => a.start.localeCompare(b.start)).at(-1);
+function opensAt(label, lessonDate, ruleSet = classRules) {
+  const rules = ruleSet.classes;
   const d = lessonDay(lessonDate), w = weekday(d), r = rules[label];
   if (!r) return iso(d, "21:30");
   const sourceDay = r.open.days?.[String(w)] ?? w, source = rules[r.open.sourceLabel ?? label];
@@ -1100,12 +1223,18 @@ function opensAt(label, lessonDate) {
 }
 
 // server/btvn/class-schedule.ts
-function classOpeningTimes(material) {
+function classOpeningTimes(material, rules, strict = false) {
   const result = {};
   for (const name of material.classNames) {
     const date2 = material.classDates?.[name] ?? material.date;
     if (!/^\d{4}-\d{2}-\d{2}$/.test(date2) || !Number.isFinite(Date.parse(date2 + "T00:00:00Z")) || (/* @__PURE__ */ new Date(date2 + "T00:00:00Z")).toISOString().slice(0, 10) !== date2) throw Error("INVALID_CLASS_DATE");
-    result[name] = opensAt(name, date2);
+    if (strict && rules && !rules.classes[name]?.sessions.length) throw Error("CLASS_SCHEDULE_UNAVAILABLE");
+    if (strict && rules) {
+      const rule = rules.classes[name], day2 = (/* @__PURE__ */ new Date(date2 + "T00:00:00Z")).getUTCDay() || 7;
+      const source = rules.classes[rule.open.sourceLabel ?? name], openingDay = rule.open.days?.[String(day2)] ?? day2;
+      if (!source?.sessions.some((slot2) => slot2.weekday === openingDay)) throw Error("CLASS_SCHEDULE_UNAVAILABLE");
+    }
+    result[name] = opensAt(name, date2, rules);
   }
   return result;
 }
@@ -1118,7 +1247,7 @@ var ensure = (v) => {
   if (!v) throw Error("INVALID_ATTENDANCE");
 };
 var date = (v) => text4(v, 40) && /^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d:[0-5]\d(?:\.\d{1,3})?(?:Z|[+-]\d{2}:\d{2})$/.test(v) && Number.isFinite(Date.parse(v)) && (/* @__PURE__ */ new Date(v.slice(0, 10) + "T00:00:00Z")).toISOString().slice(0, 10) === v.slice(0, 10);
-function attendanceRpc(body) {
+function attendanceRpc(body, rules = classRules) {
   if (!["sync_attendance", "sync_due", "support_report"].includes(body.action)) return null;
   if (body.action === "support_report") {
     ensure(Object.keys(body).every((k) => ["action", "since"].includes(k)) && date(body.since));
@@ -1143,7 +1272,7 @@ function attendanceRpc(body) {
     ensure(count <= 2e4);
     for (const a of s.attendees) ensure(record4(a) && Object.keys(a).every((k) => ["name", "phone", "status"].includes(k)) && text4(a.name, 160) && typeof a.phone === "string" && /^0\d{9}$/.test(a.phone) && typeof a.status === "string" && ["", "C", "M", "L", "K", "ON", "P", "PH P"].includes(a.status));
   }
-  return { name: "sync_due", payload: { p_payload: { sessions: body.sessions, classRules }, p_apply: body.apply ?? false } };
+  return { name: "sync_due", payload: { p_payload: { sessions: body.sessions, classRules: rules }, p_apply: body.apply ?? false } };
 }
 
 // server/btvn/class-config.ts
@@ -1208,7 +1337,7 @@ function references(exam) {
   }
   return refs;
 }
-function createBtvnPublishHandler(port, secret) {
+function createBtvnPublishHandler(port, secret, options = {}) {
   return async (request) => {
     const respond = (status, body) => new Response(JSON.stringify(body), { status, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow" } });
     if (request.method !== "POST") return respond(405, { error_code: "POST_REQUIRED" });
@@ -1225,7 +1354,9 @@ function createBtvnPublishHandler(port, secret) {
       ensure2(body && typeof body === "object" && !Array.isArray(body), "INVALID_PAYLOAD");
       const read = scorebookRpc(body);
       if (read) return respond(200, scorebookResult(read.name, await port.rpc(read.name, read.payload)));
-      const attendance = attendanceRpc(body);
+      const scheduleEnv = options.scheduleEnv ?? scheduleEnvironment();
+      const rules = ["sync_due", "publish", "update_material"].includes(body.action) ? await loadClassRules(scheduleEnv, options.scheduleTransport) : classRules;
+      const attendance = attendanceRpc(body, rules);
       if (attendance) {
         ensure2(new TextEncoder().encode(text5).length <= 10 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
         return respond(200, await port.rpc(attendance.name, attendance.payload));
@@ -1276,7 +1407,7 @@ function createBtvnPublishHandler(port, secret) {
       };
       const classDates = m.classDates ?? {};
       ensure2(classDates && typeof classDates === "object" && !Array.isArray(classDates) && Object.entries(classDates).every(([name, date2]) => m.classNames.includes(name) && typeof date2 === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date2) && new Date(date2).toISOString().slice(0, 10) === date2), "INVALID_CLASS_DATES");
-      const material = { lessonCode: m.lessonCode, classNames: m.classNames, date: m.date, title: m.title, titleSource: m.titleSource ?? "sheet", homeworkScope: m.homeworkScope, homeworkScopeSource: m.homeworkScopeSource, classDates, classOpensAt: classOpeningTimes({ ...m, classDates }), videoId: m.videoId ?? null, materialUrl: link(m.materialUrl), handoutUrl: link(m.handoutUrl), homeworkUrl: null, videoUrl: link(m.videoUrl), homeworkNote: typeof m.homeworkNote === "string" ? m.homeworkNote.slice(0, 300) : void 0 };
+      const material = { lessonCode: m.lessonCode, classNames: m.classNames, date: m.date, title: m.title, titleSource: m.titleSource ?? "sheet", homeworkScope: m.homeworkScope, homeworkScopeSource: m.homeworkScopeSource, classDates, classOpensAt: classOpeningTimes({ ...m, classDates }, rules, !!scheduleEnv.MTM_LICH_LOP_CSV), videoId: m.videoId ?? null, materialUrl: link(m.materialUrl), handoutUrl: link(m.handoutUrl), homeworkUrl: null, videoUrl: link(m.videoUrl), homeworkNote: typeof m.homeworkNote === "string" ? m.homeworkNote.slice(0, 300) : void 0 };
       ensure2(material.videoId === null || /^[a-zA-Z0-9_-]{11}$/.test(material.videoId), "INVALID_VIDEO");
       if (body.action === "error") {
         ensure2(/^[A-Z0-9_]{1,80}$/.test(body.error_code ?? ""), "INVALID_ERROR");

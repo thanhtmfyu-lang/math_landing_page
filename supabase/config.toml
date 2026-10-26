@@ -2,3 +2,11 @@
 # This does not change admin Auth or any existing project's JWT setting.
 [functions.mtm-homework-access]
 verify_jwt = false
+
+# NM8 authenticates the existing J33 worker capability inside its one RPC.
+[functions.mtm-lead-status]
+verify_jwt = false
+
+# Board ingestion/review authenticates x-mtm-token against MTM_DD_TOKEN in the handler.
+[functions.mtm-bang-tin]
+verify_jwt = false

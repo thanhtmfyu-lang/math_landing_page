@@ -34,15 +34,19 @@ const on=()=>({MTM_LEAD_ENABLED:'1',SUPABASE_URL:'https://abc.supabase.co',SUPAB
 {const {r,res:s}=res();await createLeadApi(on,(async()=>new Response('x',{status:500})) as typeof fetch)({method:'POST',headers,body:ok},s);assert.equal(r.code,503);}
 console.log('API /api/dang-ky: chặn origin lạ, tắt mặc định, ghi RPC khi bật.');
 
-// 3. Trình duyệt: lưu được thì không gửi EmailJS; máy chủ chưa bật thì quay về đường cũ; lỗi thì báo lỗi, không gửi đường cũ.
+// 3. Chỉ nhận thành công khi máy chủ xác nhận lưu; mọi lỗi hướng dẫn Zalo.
 const reg={studentName:'A',phone:'0967365413',grade:'12',message:'online'};
 const f=(code:number,body:unknown)=>(async()=>new Response(JSON.stringify(body),{status:code})) as typeof fetch;
 assert.equal(await postLead('dang-ky',reg,f(200,{enabled:true,status:'accepted'})),'saved');
 assert.equal(await postLead('dang-ky',reg,f(200,{enabled:true,status:'already'})),'saved');
-assert.equal(await postLead('dang-ky',reg,f(200,{enabled:false})),'fallback');
-assert.equal(await postLead('dang-ky',reg,f(404,{})),'fallback');
-await assert.rejects(postLead('dang-ky',reg,f(503,{message:'Chưa gửi được đăng ký.'})),/Chưa gửi được/);
-console.log('Form: lưu máy chủ trước, chỉ quay về EmailJS khi máy chủ chưa bật.');
+for(const [code,body] of [[200,{enabled:false}],[404,{}],[503,{message:'Chưa gửi được đăng ký.'}],[200,{}],[200,{status:'unknown'}],[200,{enabled:false,status:'accepted'}]] as const){
+ await assert.rejects(postLead('dang-ky',reg,f(code,body)),/Zalo 0967 365 413/);
+}
+await assert.rejects(postLead('dang-ky',reg,(async()=>{throw new TypeError('Failed to fetch');}) as typeof fetch),/Zalo 0967 365 413/);
+await assert.rejects(postLead('dang-ky',reg,(async()=>new Response('<html>Unavailable</html>',{status:200})) as typeof fetch),/Zalo 0967 365 413/);
+await assert.rejects(postLead('thi-thu-hsa',reg,f(200,{enabled:false})),/Zalo 0967 365 413/);
+assert.equal(await postLead('thi-thu-hsa',reg,f(200,{status:'accepted'})),'saved');
+console.log('Form: chỉ nhận accepted/already; lỗi, tắt API, mất mạng đều báo Zalo, không trả fallback.');
 
 // 4. Lead thi thử HSA mang điểm và tên đề vào ghi chú, qua được bộ kiểm.
 const hsa=hsaLeadRegistration({name:'Minh',grade:'12',phone:'0967 365 413',scoreText:'42/50',examTitle:'Đề số 01',leadSource:''});

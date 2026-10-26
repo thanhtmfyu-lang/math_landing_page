@@ -11,12 +11,11 @@ import {
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner@2.0.3";
 import { ScrollReveal } from "./ScrollReveal";
-import emailjs from "@emailjs/browser";
 import {postLead} from "./lead-client";
 import './registration-submit.css';
 import { ZALO_ASSISTANT_URL } from './mtm-contact';
 
-import { createRegistrationGate, emailRegistration } from './registration-submit';
+import { createRegistrationGate } from './registration-submit';
 
 import { applyRegistrationContext, registrationContextEvent } from './registration-context';
 import { describeLeadSource, storedLeadSource } from './lead-source';
@@ -49,10 +48,7 @@ export function RegisterSection({kind='dang-ky',initialGrade='',onRegistered}: {
     try{
       const sent=await gate.current({...formData,groupInterest,trial,trialSlot:trial?describeTrialSlot(pickedDay,trialSlot):'',leadSource:describeLeadSource(storedLeadSource())},async(data)=>{
         setIsPending(true);
-        if(await postLead(kind,data)==='saved')return;
-        if(semester)throw new Error('Đăng ký khóa ôn chưa mở trên máy chủ. Em nhắn Zalo 0967 365 413.');
-        if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)throw new Error('Form chưa sẵn sàng. Vui lòng liên hệ trung tâm qua kênh tư vấn.');
-        await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...emailRegistration(data),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);
+        await postLead(kind,data);
       });
       if(sent){toast.success(semester?'Đã đăng ký khóa ôn cuối kỳ I.':'Đã gửi yêu cầu tư vấn. Trung tâm sẽ liên hệ để xác nhận.');setIsSubmitted(true);setFormData({studentName:'',phone:'',grade:'',message:'',notes:'',groupSize:''});setTrialDay('');setTrialSlot('');onRegistered?.();}
     }catch(error){const message=error instanceof Error?error.message:'Chưa xác nhận gửi được. Kiểm tra thông tin trước khi thử lại.';setSubmitError(message);toast.error(message);}
@@ -161,7 +157,7 @@ export function RegisterSection({kind='dang-ky',initialGrade='',onRegistered}: {
                   {semester?'Đã lưu đăng ký theo tài khoản. Em xem bài theo tuần khi MTM mở video.':'Yêu cầu tư vấn đã được gửi; lịch học và đăng ký cần trung tâm xác nhận.'}
                 </p>
               )}
-            </fieldset></form><details className="mtm-data-notice mtm-data-after"><summary>Thông tin đăng ký được dùng thế nào?</summary><p>Bạn cũng có thể tự gửi email tới <a href="mailto:quanlytoanminhthanhmath@gmail.com">quanlytoanminhthanhmath@gmail.com</a>.</p><p>{semester?'Tên, số liên hệ và khối lớp được lưu trong kho đăng ký riêng của MTM để quản lý khóa ôn; lượt mở video gắn với tài khoản học sinh. Không tự tạo tài khoản hoặc đăng ký nhận quảng cáo.':'Tên học sinh, số điện thoại, lớp, hình thức học và thông tin tư vấn tùy chọn bạn nhập được gửi qua dịch vụ EmailJS để trung tâm tiếp nhận yêu cầu tư vấn. Chỉ cung cấp thông tin cần thiết; không gửi mật khẩu hoặc hồ sơ nhạy cảm. Việc gửi yêu cầu không tự đăng ký lớp, tạo tài khoản hay đồng ý nhận quảng cáo.'}</p><p>Cần hỏi về việc sử dụng hoặc chỉnh sửa thông tin đã gửi? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>. Nếu không muốn dùng biểu mẫu, bạn có thể nhắn Zalo trực tiếp.</p></details>
+            </fieldset></form><details className="mtm-data-notice mtm-data-after"><summary>Thông tin đăng ký được dùng thế nào?</summary><p>Bạn cũng có thể tự gửi email tới <a href="mailto:quanlytoanminhthanhmath@gmail.com">quanlytoanminhthanhmath@gmail.com</a>.</p><p>{semester?'Tên, số liên hệ và khối lớp được lưu trong kho đăng ký riêng của MTM để quản lý khóa ôn; lượt mở video gắn với tài khoản học sinh. Không tự tạo tài khoản hoặc đăng ký nhận quảng cáo.':'Tên học sinh, số điện thoại, lớp, hình thức học và thông tin tư vấn tùy chọn bạn nhập được lưu trên máy chủ của trung tâm để trung tâm tiếp nhận yêu cầu tư vấn. Chỉ cung cấp thông tin cần thiết; không gửi mật khẩu hoặc hồ sơ nhạy cảm. Việc gửi yêu cầu không tự đăng ký lớp, tạo tài khoản hay đồng ý nhận quảng cáo.'}</p><p>Cần hỏi về việc sử dụng hoặc chỉnh sửa thông tin đã gửi? <a href={ZALO_ASSISTANT_URL}>Nhắn Zalo 0967 365 413</a>. Nếu không muốn dùng biểu mẫu, bạn có thể nhắn Zalo trực tiếp.</p></details>
             {submitError&&<div ref={errorRef} tabIndex={-1} role="alert" className="mt-4 rounded-xl border border-red-200 bg-red-50 p-4 mtm-registration-feedback"><p>{submitError}</p><p>Thông tin vẫn được giữ trong biểu mẫu. Bạn có thể <a href={ZALO_ASSISTANT_URL} className="underline font-semibold">nhắn Zalo 0967 365 413</a> để được tư vấn. Nếu chưa rõ yêu cầu đã tới trung tâm hay chưa, hãy nhắn Zalo kiểm tra trước khi gửi lại.</p></div>}
           </div>
         </ScrollReveal>

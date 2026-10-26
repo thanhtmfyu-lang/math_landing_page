@@ -1,4 +1,4 @@
--- 093: PR nháp, CHƯA ÁP. Phụ thuộc 005 (BTVN identity), 073/074 (lead).
+-- 097 (số cũ 093, đổi 26/10 vì trùng): PR nháp, CHƯA ÁP. Phụ thuộc 005 (BTVN identity), 073/074 (lead).
 -- Giữ private schema, dùng phiên BTVN đã xác minh. Không dùng số điện thoại trình duyệt làm danh tính.
 begin;
 alter table mtm_lead.leads drop constraint if exists leads_kind_check;
