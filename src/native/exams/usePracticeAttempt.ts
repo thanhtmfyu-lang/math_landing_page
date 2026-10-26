@@ -10,7 +10,7 @@ import {erratumFor} from './practice-errata';
 import type {PracticeAttemptProps} from './attempt-types';
 
 /** Một instance cho mỗi lượt đang mở; RAM, đồng hồ và kiểm xung đột giữ cùng vòng đời. */
-export function usePracticeAttempt({exam,previousExam,storeOverride,newAttemptsClosed,onRetake,isHomework=false,deadlineAt,clockOffsetMs=0,onServerStart,onServerSubmit,serverScore}: PracticeAttemptProps) {
+export function usePracticeAttempt({exam,previousExam,storeOverride,questionReader,newAttemptsClosed,onRetake,isHomework=false,deadlineAt,clockOffsetMs=0,onServerStart,onServerSubmit,serverScore}: PracticeAttemptProps) {
   const validation={allowQuestionOnly:isHomework};
   const clockNow=()=>Date.now()+clockOffsetMs;
   const timeLeft=(value:Draft,at:number)=>remainingMs({deadline:Math.min(value.deadline,deadlineAt??Infinity)},at);
@@ -44,7 +44,11 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,newAttemptsC
   const [unsaved, setUnsaved] = useState(false);
   const [now, setNow] = useState(clockNow);
   const [exportNotice, setExportNotice] = useState('');
-  const [pdfReady,setPdfReady]=useState(!exam.sourcePdf);
+  const [pdfShown,setPdfReady]=useState(!exam.sourcePdf);
+  // 22/10: BTVN đã hiện đủ đề bằng ảnh từng câu (questionReader) thì không chờ PDF nữa. Trên điện thoại PDF không tải được
+  // làm nút "Tiếp tục làm bài" khoá mà trông như bấm được, HS bấm không thấy gì.
+  const readerCovers=!!questionReader&&exam.questions.length>0&&exam.questions.every(q=>!!q.sourceContent?.questions.length);
+  const pdfReady=pdfShown||readerCovers;
   const [confirmation,setConfirmation]=useState<'submit'|'retake'|null>(null);
   const [desktopLayout,setDesktopLayout]=useState<'balanced'|'reading'|'answers'>('balanced');
   const [activeQuestion,setActiveQuestion]=useState(0),[questionFocus,setQuestionFocus]=useState(false),[mobilePane,setMobilePane]=useState<'pdf'|'answers'>(ram.current?.submittedAt!=null?'answers':'pdf');
