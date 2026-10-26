@@ -12,7 +12,7 @@ import {readRemote,type RemoteAttempt,type RemoteResult} from './server-attempt'
 import type {PracticeExam} from './data';
 import {QuestionReader,ExtraSolution,rich} from '../chapters/ChapterPractice';
 import HsaPaperReader,{HsaSolutionExtra,hsaRich,type HsaGroup,type HsaTables} from './HsaPaperReader';
-import {HSA_MOCK_EXAMS,hsaMockExam,hsaLeadPayload,hsaLeadRegistration,normalizeHsaPhone,type HsaMockExam} from './hsa-mock';
+import {HSA_MOCK_EXAMS,hsaMockExam,hsaLeadRegistration,normalizeHsaPhone,type HsaMockExam} from './hsa-mock';
 import {hsaCertificateDate,hsaCertificateFileName,hsaCertificateRank,renderHsaCertificate,type HsaCertificateData} from './hsa-certificate';
 import {HSA_GRADES,HSA_GRADE_LABEL,formatHsaDuration,formatHsaScore,hsaStatusMessage,isHsaGrade,sanitizeDisplayName,type HsaGrade,type HsaRankRow,type HsaSubmitStatus} from '../../../server/hsa/rank';
 import './exams.css';
@@ -146,15 +146,14 @@ function HsaMockRoom({cfg}:{cfg:HsaMockExam}){
    const next={status:data.status as HsaSubmitStatus,rank:typeof data.rank==='number'?data.rank:null,name:typeof data.name==='string'?data.name:e.name};setRank(next);write(rankKey(a.attemptId),JSON.stringify(next));void refresh();}
   catch{setRank({status:'error'});}
  },[cfg.examId,refresh]);
+ const leadPending=useRef(false);
  const sendLead=useCallback(async(o:Outcome)=>{
-  const e=entryRef.current;if(!e?.phone)return;if(read(leadKey(cfg.examId)))return setLead('sent');
+  const e=entryRef.current;if(!e?.phone||leadPending.current)return;if(read(leadKey(cfg.examId)))return setLead('sent');
   const lead={name:e.name,grade:e.grade,phone:e.phone,scoreText:scoreText(o.score)+' trong '+formatHsaDuration(o.elapsedMs/1000),examTitle:cfg.title,leadSource:describeLeadSource(storedLeadSource())};
-  try{write(leadKey(cfg.examId),o.attemptId);if(await postLead('thi-thu-hsa',hsaLeadRegistration(lead))==='saved')return setLead('sent');}
-  catch{try{window.localStorage.removeItem(leadKey(cfg.examId));}catch{/* bỏ qua */}return setLead('error');}
-  if(!import.meta.env.VITE_SERVICE_KEY||!import.meta.env.VITE_TEMPLATE_KEY||!import.meta.env.VITE_PUBLIC_KEY)return setLead('skipped');
-  try{const emailjs=(await import('@emailjs/browser')).default;
-   await emailjs.send(import.meta.env.VITE_SERVICE_KEY,import.meta.env.VITE_TEMPLATE_KEY,{...hsaLeadPayload(lead),time:new Date().toLocaleString('vi-VN',{timeZone:'Asia/Saigon'})},import.meta.env.VITE_PUBLIC_KEY);setLead('sent');}
+  leadPending.current=true;
+  try{await postLead('thi-thu-hsa',hsaLeadRegistration(lead));write(leadKey(cfg.examId),o.attemptId);setLead('sent');}
   catch{try{window.localStorage.removeItem(leadKey(cfg.examId));}catch{/* bỏ qua */}setLead('error');}
+  finally{leadPending.current=false;}
  },[cfg.examId,cfg.title,scoreText]);
  const finished=useCallback((o:Outcome,remote?:RemoteAttempt)=>{
   setOutcome(o);void sendLead(o);
@@ -185,7 +184,7 @@ function HsaMockRoom({cfg}:{cfg:HsaMockExam}){
      {outcome&&<section className="hsa-card hsa-result" aria-live="polite"><h2>Kết quả của em</h2><p className="hsa-result-score"><strong>{scoreText(outcome.score)}</strong><span>Thời gian làm: {formatHsaDuration(outcome.elapsedMs/1000)}</span></p>
       <p>{!outcome.server?board.state==='off'?'Bảng xếp hạng sẽ mở sớm; lượt này chưa vào bảng.':'Lượt này chấm trên trình duyệt nên chưa vào bảng xếp hạng.':!rank?'':rank.status==='pending'?'Đang ghi bảng xếp hạng…':rank.status==='error'?(rank.message??'Chưa ghi được bảng xếp hạng.'):'rank' in rank?hsaStatusMessage(rank.status,rank.rank):''}{outcome.server&&rank?.status==='error'&&<> <button type="button" className="hsa-ghost" onClick={()=>{const a=exam&&readRemote(localStore(),exam);if(a)void submitRank(a);}}>Thử lại</button></>}</p>
       {(()=>{const top=outcome.server&&board.state==='on'&&rank?hsaCertificateRank(rank):null;return top&&rank&&'rank' in rank?<HsaCertificate data={{name:rank.name??entry.name,paper:cfg.title,scoreText:scoreText(outcome.score),rank:top,date:hsaCertificateDate()}}/>:null;})()}
-      {entry.phone?<p>{lead==='sent'?'MTM sẽ liên hệ qua số em để lại để gửi kết quả chi tiết và tư vấn.':lead===null?'Đang gửi kết quả cho MTM…':'Chưa gửi được thông tin cho MTM. Em nhắn Zalo để nhận kết quả chi tiết và tư vấn.'}</p>:<p>Muốn nhận phân tích kết quả và lộ trình HSA? Em thêm số điện thoại ở <button type="button" className="hsa-link" onClick={()=>setEditing(true)}>Sửa thông tin</button> trước lượt sau, hoặc nhắn Zalo cho MTM.</p>}
+      {entry.phone?<p>{lead==='sent'?'MTM sẽ liên hệ qua số em để lại để gửi kết quả chi tiết và tư vấn.':lead===null?'Đang gửi kết quả cho MTM…':'Chưa xác nhận lưu được thông tin cho MTM. Em liên hệ Zalo 0967 365 413 để kiểm tra và nhận tư vấn.'}</p>:<p>Muốn nhận phân tích kết quả và lộ trình HSA? Em thêm số điện thoại ở <button type="button" className="hsa-link" onClick={()=>setEditing(true)}>Sửa thông tin</button> trước lượt sau, hoặc nhắn Zalo cho MTM.</p>}
       <p className="hsa-actions"><Link className="hsa-primary" href="/khoa-hoc?lop=hsa">Xem lộ trình HSA</Link><a className="hsa-ghost" href={ZALO_ASSISTANT_URL} target="_blank" rel="noopener noreferrer">Nhắn Zalo tư vấn</a></p>
      </section>}
      {noKey&&!loadError?<section className="hsa-card" role="status"><h2>Chưa mở chấm bài</h2><p>Phòng thi đề này đang chờ máy chủ chấm điểm. Em quay lại sau ít phút hoặc nhắn Zalo cho MTM nhé.</p></section>

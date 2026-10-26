@@ -168,6 +168,8 @@ console.log('Đạt route /thi-thu-hsa: PUBLIC_PATHS, tiêu đề, mô tả, rew
 // 5. Migration 092: 16 câu điền theo quy chế HSA. Tệp nằm trong kho công khai nên KHÔNG có đáp số;
 // chỉ có đề bài mới (trùng bản web), versionHash/sourceHash của bản web và hàm áp nhận đáp số lúc chạy.
 {
+ // Git trên Windows có thể checkout SQL bằng CRLF; prompt JSON dùng LF.
+ // Chỉ chuẩn hóa xuống dòng, vẫn so nguyên văn toàn bộ nội dung từng câu.
  const sql92=readFileSync(join(root,'supabase/migrations-pending/202610200092_hsa_dien_phan_so.sql'),'utf8').replace(/\r\n/g,'\n');
  let soCau=0;
  for(const n of ['01','02']){
