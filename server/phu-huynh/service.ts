@@ -77,9 +77,23 @@ export async function parentReport(rpc:Rpc,session:string,childId:unknown,now=Da
  const homework:ParentHomework[]=lessons.filter(l=>l.kind!=='kiem-tra-thang'||!l.locked).map(l=>({
   lessonCode:l.lessonCode,title:l.homeworkTitle||l.title,date:l.date,kind:l.kind??'btvn',dueAt:l.dueAt,bestScore:l.bestScore,submittedAt:l.submittedAt,late:l.late===true,
   status:l.submittedAt?(l.late?'muon':'da-nop'):l.locked?'chua-mo':(l.dueAt!==null&&l.dueAt<now?'qua-han':'chua-nop')}));
- const attendance:ParentAttendance[]=(Array.isArray(extras?.attendance)?extras.attendance:[]).filter((a:any)=>typeof a?.date==='string'&&ATTENDANCE_LABEL[a.status]).map((a:any)=>({date:a.date,status:a.status,label:ATTENDANCE_LABEL[a.status]}));
+ const attendance=mergeAttendance(Array.isArray(extras?.attendance)?extras.attendance:[],child.className);
  const papers:ParentPaper[]=(Array.isArray(extras?.papers)?extras.papers:[]).filter((p:any)=>typeof p?.testCode==='string').map((p:any)=>({testCode:p.testCode,date:p.date??null,subject:p.subject??null,score:Number(p.score),maxScore:p.maxScore===null||p.maxScore===undefined?10:Number(p.maxScore)}));
  return {parentName,children,child,generatedAt:now,upcoming:typeof extras?.upcoming==='string'?extras.upcoming:null,attendance,homework,papers,rank,summary:summarize(homework,attendance,now)};
+}
+
+/** Ca ghép lớp (8+/9+ học chung, học bù, chuyển buổi) có thể sinh 2 dòng cùng ngày: lớp gốc "chuyển buổi/vắng" và lớp học thật "có mặt".
+ * Phụ huynh chỉ thấy 1 kết luận mỗi ngày: có đi học thì lấy dòng đi học (ghi lớp nếu không phải lớp gốc); bỏ "chuyển buổi" khi đã có dòng khác. */
+const ATT_RANK:Record<string,number>={co_mat:6,hoc_online:6,di_muon:5,ve_som:5,vang_phep:3,vang:2,chuyen_buoi:1};
+export function mergeAttendance(rows:any[],homeClass:string):ParentAttendance[]{
+ const best=new Map<string,{date:string;status:string;classLabel:string|null}>();
+ for(const a of rows){
+  if(typeof a?.date!=='string'||!/^\d{4}-\d{2}-\d{2}$/.test(a.date)||!ATTENDANCE_LABEL[a.status])continue;
+  const cur=best.get(a.date),cand={date:a.date,status:String(a.status),classLabel:typeof a.classLabel==='string'?a.classLabel:null};
+  if(!cur||ATT_RANK[cand.status]>ATT_RANK[cur.status]||(ATT_RANK[cand.status]===ATT_RANK[cur.status]&&cand.classLabel===homeClass))best.set(a.date,cand);
+ }
+ return [...best.values()].sort((a,b)=>b.date.localeCompare(a.date)).map(a=>({date:a.date,status:a.status,
+  label:ATTENDANCE_LABEL[a.status]+(ATTENDED.has(a.status)&&a.classLabel&&a.classLabel!==homeClass?' (ca '+a.classLabel+')':'')}));
 }
 
 /** Tổng quan: tỉ lệ đi học tháng này, tỉ lệ nộp, điểm TB; 3 chủ đề tốt nhất, 3 chủ đề cần luyện (theo điểm cao nhất từng buổi). */
