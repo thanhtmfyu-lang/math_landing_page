@@ -11,10 +11,10 @@ export const QUICK_LINKS=[
  ['/kiem-tra-dau-vao','Kiểm tra đầu vào',ClipboardCheck],
 ] as const;
 // Mối "Thi": mọi kỳ thi, đề thi thử và bảng xếp hạng.
-export const THI_TABS=[['/thi-thu','Tất cả đề'],['/on-cuoi-ky-1','Ôn cuối kỳ I'],['/de-giua-ky-1','Giữa kỳ I'],['/phong-thi-thu','Phòng thi thử THPT'],['/thi-thu-hsa','Thi thử HSA'],['/ky-khao-sat','Kỳ khảo sát MTM'],['/xep-hang','Bảng xếp hạng']] as const;
+export const THI_TABS=[['/thi-thu','Tất cả đề'],['/de-giua-ky-1','Giữa kỳ I'],['/phong-thi-thu','Phòng thi thử THPT'],['/thi-thu-hsa','Thi thử HSA'],['/ky-khao-sat','Kỳ khảo sát MTM'],['/xep-hang','Bảng xếp hạng']] as const;
 // Mối "Phụ huynh": xem kết quả của con, hướng dẫn, lịch học.
 export const PHU_HUYNH_TABS=[['/phu-huynh','Xem kết quả của con'],['/huong-dan?cho=phu-huynh','Hướng dẫn phụ huynh'],['/#timetable','Lịch học']] as const;
-const SAP_MO=['Giữa kỳ II','Cuối kỳ II'];
+const SAP_MO=['Cuối kỳ I','Giữa kỳ II','Cuối kỳ II'];
 export function hubOf(pathname:string,search=''):'thi'|'phu-huynh'|null{
  if(THI_TABS.some(([h])=>h===pathname))return 'thi';
  if(pathname==='/phu-huynh'||(pathname==='/huong-dan'&&new URLSearchParams(search).get('cho')==='phu-huynh'))return 'phu-huynh';
