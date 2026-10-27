@@ -70,7 +70,8 @@ test('Session chỉ sở hữu phiếu ngoài cổng; lượt đang làm giao ph
       useState:(initial:any)=>{const at=index++;return [at===0?state:at===7?room:at===11?checking:typeof initial==='function'?initial():initial,()=>{}];},
       useRef:(initial:any)=>({current:initial}),useMemo:(fn:()=>unknown)=>fn(),useEffect:()=>{},
     }).default;
-    const before=JSON.stringify(state),tree=View({pathname:'/btvn'});assert.equal(JSON.stringify(state),before);assert.equal(index,13);
+    // P0: essayOpen is appended after existing state slots; room/checking stay unchanged.
+    const before=JSON.stringify(state),tree=View({pathname:'/btvn'});assert.equal(JSON.stringify(state),before);assert.equal(index,14);
     return {tree,tools:all(tree,n=>n.type?.name==='HomeworkSelfCheckTool'),plans:all(tree,n=>n.type?.name==='HomeworkTimePlan'),managed:all(tree,n=>n.type?.name==='ManagedAttempt')};
   };
   assert.equal(render(null,false,true).tools.length,0);
