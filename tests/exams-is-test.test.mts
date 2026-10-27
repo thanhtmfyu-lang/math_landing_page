@@ -33,7 +33,7 @@ const sqlPort={rpc:async(name:string,args:any)=>{try{return {data:await admin(na
   for(const path of paths){blobs.delete(bucket+'/'+path);await q('delete from storage.objects where bucket_id=$1 and name=$2',[bucket,path]);}return {error:null};
  }};
 // Synthetic credentials only; SQL runs locally in PGlite, never a live service.
-const cleanupEnv={MTM_BTVN_ENABLED:'1',VERCEL:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'fixture-service',MTM_HOMEWORK_PUBLISHABLE_KEY:'fixture-publishable',MTM_BTVN_NETWORK_SECRET:'x'.repeat(32)};
+const cleanupEnv={MTM_BTVN_ENABLED:'1',VERCEL:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'fixture-service',MTM_HOMEWORK_PUBLISHABLE_KEY:'fixture-public',MTM_BTVN_NETWORK_SECRET:'x'.repeat(32)};
 let cleanupClients=0;
 const clientFactory=((url:string,key:string,options:any)=>{
  cleanupClients++;assert.equal(url,cleanupEnv.SUPABASE_URL);
