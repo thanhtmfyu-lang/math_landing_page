@@ -22,3 +22,22 @@
   background-size: min(64%, 520px) auto;
   background-repeat: no-repeat;
 }
+
+/* In the mobile room, branding follows the answers in normal flow. The paper's
+   compact padding cannot reserve space for a footer that wraps to many lines. */
+@media (max-width: 760px) {
+  .ep-root.fr-room .fr-paper::after {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: block;
+    margin-top: 18px;
+    padding: 42px 0 0;
+    font-size: 13px;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    background-image: url('/mtm-watermark.png');
+    background-position: center top;
+    background-size: min(64%, 240px) auto;
+  }
+}
