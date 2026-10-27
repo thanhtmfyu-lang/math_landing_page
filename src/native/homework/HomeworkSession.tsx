@@ -105,7 +105,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   // 21/10: trên điện thoại nút "Bắt đầu làm bài" ở xa dưới, báo lỗi ở đầu trang nên HS tưởng bấm không ăn. Cuộn tới báo lỗi.
   useEffect(()=>{if(notice)document.querySelector('.btvn-notice-alert')?.scrollIntoView({block:'center'});},[notice]);
   const requestExit=async(run:()=>void|Promise<void>)=>{
-    if(essayPending.current){setNotice('Còn ảnh tự luận chưa nhận. Em mở Nộp ảnh tự luận, gửi lại hoặc bỏ ảnh chưa gửi trước khi rời bài.');setEssayOpen(true);return;}
+    if(essayPending.current){setNotice('Còn ảnh tự luận chưa nhận. Em mở Nộp ảnh cả bài tự luận, gửi lại hoặc bỏ ảnh chưa gửi trước khi rời bài.');setEssayOpen(true);return;}
     const generation=sessionGeneration.current,current=()=>mounted.current&&sessionGeneration.current===generation;
     let completed=false;
     setBusy(true);setNotice('');setExitClosed(false);

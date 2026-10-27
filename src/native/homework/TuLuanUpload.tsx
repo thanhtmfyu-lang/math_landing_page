@@ -65,11 +65,11 @@ export default function TuLuanUpload({scope,fullName,closesAt,open,onOpenChange,
   }finally{running.current=false;if(alive.current)setBusy(false);}
  };
  const closed=now+clockOffset>=deadline,canRecover=queue.some(item=>item.status==='error'&&!!item.prepared),part=thiThangPart(scope.lessonCode),code=part?maDeLabel(part.ma):scope.lessonCode;
- return <section className="tu-luan-entry" aria-label="Bài tự luận của em"><button type="button" className="btvn-btn" onClick={()=>onOpenChange(true)}>Nộp ảnh tự luận</button>{received.length>0&&<p>Đã nhận {received.length} ảnh tự luận.</p>}
+ return <section className="tu-luan-entry" aria-label="Bài tự luận của em"><button type="button" className="btvn-btn" onClick={()=>onOpenChange(true)}>Nộp ảnh cả bài tự luận</button>{received.length>0&&<p>Đã nhận {received.length} ảnh tự luận.</p>}
  {open&&createPortal(<div className="tu-luan-overlay"><div ref={dialog} className="tu-luan-dialog" role="dialog" aria-modal="true" aria-labelledby="tu-luan-title" tabIndex={-1}>
-  <header><h2 id="tu-luan-title">Nộp ảnh tự luận</h2><button type="button" onClick={()=>onOpenChange(false)} aria-label="Đóng nộp ảnh tự luận">Đóng</button></header>
+  <header><h2 id="tu-luan-title">Nộp ảnh cả bài tự luận</h2><button type="button" onClick={()=>onOpenChange(false)} aria-label="Đóng nộp ảnh tự luận">Đóng</button></header>
   <p><strong>{fullName} · {code}</strong></p><p className="tu-luan-code">{scope.lessonCode}</p>
-  <p>Chụp rõ từng trang, đủ bốn góc, theo thứ tự. Chọn tối đa 8 ảnh mỗi lần, ảnh gốc tối đa 20 MB. Có thể bổ sung hoặc nộp lại; ảnh đã nhận vẫn được giữ, ảnh trùng chỉ tính một lần.</p>
+  <p><strong>Một lần nộp cho cả bài:</strong> làm xong tất cả câu tự luận trên giấy rồi chụp từng trang giấy (không tách từng câu), rõ chữ, đủ bốn góc, theo thứ tự trang. Chọn tối đa 8 ảnh mỗi lần, ảnh gốc tối đa 20 MB. Có thể bổ sung hoặc nộp lại; ảnh đã nhận vẫn được giữ, ảnh trùng chỉ tính một lần.</p>
   <p>Hạn nhận ảnh: <strong>{time(deadline)}</strong> (kết thúc ca + 15 phút). Nút Nộp bài trắc nghiệm và việc gửi ảnh được xác nhận riêng.</p>
   <p className="tu-luan-fallback">{ESSAY_FALLBACK}</p>
   {message&&<p role="alert">{message}</p>}
