@@ -210,8 +210,8 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
  let baoLoi=0;const api=createPhongThiApi(()=>envDb,fake({mtm_pt_bao_loi:()=>{baoLoi++;return {status:baoLoi>10?'qua-nhieu':'ok'};},
   mtm_pt_dang_ky_dot:(a)=>({status:'ok',sbd:a.p_tien_to+'-'+a.p_khoi+'-0001',khoi:a.p_khoi}),
   mtm_pt_tra_cuu_dot:(a)=>a.p_sbd==='KS26-10-0001'&&a.p_tra_cuu.length===64?{dot:'ks-hk1-2026',sbd:'KS26-10-0001',khoi:'10',ten:'Nguyễn Văn An',truong:'THPT A',mtm:false}:null,
-  mtm_pt_khao_sat:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{'c1':0.5},bang:[{hang:1,sbd:'KS26-10-0001',ten:'Nguyễn Văn An',mtm:false,diem:9,phanVi:100}]}),
-  mtm_pt_xep_hang_dot:()=>[]}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
+  mtm_pt_khao_sat_real100:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{'c1':0.5},bang:[{hang:1,sbd:'KS26-10-0001',ten:'Nguyễn Văn An',mtm:false,diem:9,phanVi:100}]}),
+  mtm_pt_xep_hang_dot_real100:()=>[]}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
  const P=(body:any,cookie='')=>call(api,{method:'POST',headers:{...ORIGIN,cookie,'x-forwarded-for':'9.9.9.9'},body});
  // Không giải mã được kho (khóa thử) thì các hành động mới báo đang cập nhật, không gọi CSDL.
  const realKho=!!phongThiKey(process.env);
@@ -227,7 +227,7 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
   const apiR=createPhongThiApi(()=>envR,fake({mtm_pt_bao_loi:()=>{baoLoi++;return {status:baoLoi>10?'qua-nhieu':'ok'};},
    mtm_pt_dang_ky_dot:(a)=>({status:a.p_sdt==='0911111111'?'sdt-du':'ok',sbd:a.p_tien_to+'-'+a.p_khoi+'-0001',khoi:a.p_khoi}),
    mtm_pt_tra_cuu_dot:(a)=>a.p_sbd==='KS26-10-0001'?{dot:'ks-hk1-2026',sbd:'KS26-10-0001',khoi:'10',ten:'Nguyễn Văn An',truong:'THPT A',mtm:false}:null,
-   mtm_pt_khao_sat:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{}}),mtm_pt_ghi_luot:()=>({status:'luyen-tap',lan:1})}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
+   mtm_pt_khao_sat_real100:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{}}),mtm_pt_ghi_luot_real100:()=>({status:'luyen-tap',lan:1})}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
   const PR=(body:any,cookie='')=>call(apiR,{method:'POST',headers:{...ORIGIN,cookie,'x-forwarded-for':'9.9.9.9'},body});
   assert.equal((await PR({action:'bao-loi',de:d0.id,ma:d0.cau[0].ma,noiDung:'Đáp án câu 1 bị sai'})).status,200);
   assert.equal(rec.at(-1)!.name,'mtm_pt_bao_loi');assert.equal(rec.at(-1)!.args.p_nguoi,'khach');assert.match(rec.at(-1)!.args.p_ip,/^[0-9a-f]{64}$/);assert.ok(!JSON.stringify(rec.at(-1)!.args).includes('9.9.9.9'));
@@ -249,7 +249,7 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
   const dmR=await call(apiR,{method:'GET',headers:{cookie:ck}});assert.equal(dmR.status,200);assert.equal(dmR.body.dot.find((t:any)=>t.ma==='ks-hk1-2026').cuaEm.sbd,'KS26-10-0001');
   const cong=kt.de.find(x=>x.tang==='cong-khai')!;
   const mR=await PR({action:'mo',de:cong.id});const nR=await PR({action:'nop',de:cong.id,ve:mR.body.ve,traLoi:{},thoiGian:{[cong.cau[0].ma]:0}});
-  assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
+  assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot_real100')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
  }
 }
 
