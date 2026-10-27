@@ -11,6 +11,7 @@ import {handleParent,supabaseRpc} from '../server/phu-huynh/http';
 import type {Rpc} from '../server/phu-huynh/service';
 import {loadSchedule} from '../server/schedule/lich-lop';
 import {buildClassOverview} from '../server/btvn/class-overview';
+import {createProductionEssayHandler} from '../server/btvn/tu-luan';
 type Req={method?:string;body?:unknown;headers:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const header=(req:Req,key:string)=>typeof req.headers[key]==='string'?req.headers[key] as string:'';
@@ -33,6 +34,11 @@ export function createBtvnApi(getEnv=()=>process.env,loadRepository:()=>Promise<
    const rpc=options.parentRpc?options.parentRpc(supa):supabaseRpc(createClient(supa.SUPABASE_URL,supa.SUPABASE_SERVICE_ROLE_KEY,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}}));
    const result=await handleParent(rpc,req.body as Record<string,unknown>,header(req,'cookie'),key,true);
    for(const [name,value] of Object.entries(result.headers))res.setHeader(name,value);
+   return res.status(result.status).json(result.body);
+  }
+  const essayBody=req.body as Record<string,unknown>|null;
+  if(typeof essayBody?.action==='string'&&essayBody.action.startsWith('essay-')){
+   const result=await createProductionEssayHandler({SUPABASE_URL:env.SUPABASE_URL!,SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_SERVICE_ROLE_KEY!})(essayBody,header(req,'cookie'));
    return res.status(result.status).json(result.body);
   }
   const factory=await loadRepository();

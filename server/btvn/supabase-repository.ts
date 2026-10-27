@@ -83,7 +83,7 @@ export class SupabaseHomeworkRepository {
       const token=service.login({studentCode:code},'internal');
       const next=action==='start'?service.start(token):action==='save'?service.save(token,attemptId??'',answers??{}):action==='submit'?service.submit(token,attemptId??'',answers??{}):service.state(token);
       next.demo=false;next.serverNow=this.clock();
-      if(monthly){next.kind='kiem-tra-thang';next.opensAt=snapshot.material.opensAt;next.closesAt=snapshot.material.closesAt;next.canStart=now<snapshot.material.closesAt!;}
+      if(monthly){next.kind='kiem-tra-thang';next.opensAt=snapshot.material.opensAt;next.closesAt=snapshot.material.closesAt;next.canStart=now<snapshot.material.closesAt!;next.essayUploadAvailable=snapshot.exam.questions.some(q=>q.kind==='self');}
       // Điểm chấm tay do RPC owner cung cấp, chỉ ghép vào response. Không sửa
       // biên nhận gốc hoặc ghi metadata này trở lại giao dịch commit.
       if(!monthly||now>=(snapshot.material.closesAt??Infinity)){

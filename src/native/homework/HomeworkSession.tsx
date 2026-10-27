@@ -5,6 +5,7 @@ import {Link} from '../../migration/navigation';
 import {createAssetRenewal,mergeHomeworkSave,mergeHomeworkRenewal,homeworkServerNow} from './asset-renewal';
 import {scheduleOpeningRefresh,mergeOpeningState} from './opening-refresh';
 import {useContext,useEffect,useMemo,useRef,useState,type ReactNode} from 'react';
+import TuLuanUpload from './TuLuanUpload';
 import {displayClassName} from './presentation';
 import EntryNotice,{entryFailure} from './EntryNotice';
 import LessonCards from './LessonCards';
@@ -39,7 +40,7 @@ function HomeworkReader({exam}:{exam:PracticeExam}){
   const active=useContext(RoomQuestionContext);
   return <section aria-label="Đề BTVN">{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent&&<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
 }
-function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef}:{state:HomeworkState & {exam:PracticeExam};gateway:HomeworkGateway;onState:(state:HomeworkState)=>void;onPendingChange:(pending:boolean)=>void;saverRef:{current:ReturnType<typeof createHomeworkSaver>|null}}){
+function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEssay}:{state:HomeworkState & {exam:PracticeExam};gateway:HomeworkGateway;onState:(state:HomeworkState)=>void;onPendingChange:(pending:boolean)=>void;saverRef:{current:ReturnType<typeof createHomeworkSaver>|null};onOpenEssay?:()=>void}){
   const checkSelection=useState<string[]>([]);
   const [save,setSave]=useState(REMOTE_SAVE_INITIAL),[notice,setNotice]=useState('');
   const last=useRef<Draft|null>(state.draft);
@@ -62,7 +63,7 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef}:{state:
   const saveStatus=save.failed?'Chưa lưu máy chủ':save.pending?'Chờ máy chủ lưu':'Đã lưu máy chủ';
   return <><p className="r106-assessment r106-save-feedback" role="status">{save.message||notice}</p>{save.failed&&!save.closed&&<button disabled={save.saving} onClick={saver.retry}>Gửi lại bài đang giữ</button>}
     <PracticeAttempt isHomework exam={state.exam} catalogUrl={location.pathname} contextLabel="BTVN" audienceLabel={displayClassName(state)} storeOverride={store}
-      homeworkSelfCheck={<HomeworkSelfCheckTool selection={checkSelection}/>}
+      homeworkSelfCheck={<HomeworkSelfCheckTool selection={checkSelection}/>} onOpenEssay={onOpenEssay}
       saveStatus={save.failed?save.message:saveStatus} savePending={save.pending} onRetrySave={save.failed&&!save.closed?saver.retry:undefined} onAcceptClosed={save.closed?saver.acceptClosed:undefined}
       deadlineAt={state.closesAt} clockOffsetMs={state.serverNow!==undefined&&state.clientReceivedAt!==undefined?state.serverNow-state.clientReceivedAt:0}
       storageNotice="Bài làm gửi đến máy chủ MTM theo tài khoản em. Chỉ thông báo nhận bài từ máy chủ mới xác nhận đã nộp BTVN."
@@ -91,12 +92,20 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   };
   useEffect(()=>{void loadClasses();return()=>{classesGeneration.current++;};},[pathname]);
   const [room,setRoom]=useState(false);
-  const remotePending=useRef(false),saverRef=useRef<ReturnType<typeof createHomeworkSaver>|null>(null);
-  const leaveConfirmation=useUnsavedGuard(()=>remotePending.current,REMOTE_LEAVE_MESSAGE);
+  const remotePending=useRef(false),essayPending=useRef(false),saverRef=useRef<ReturnType<typeof createHomeworkSaver>|null>(null);
+  const onEssayPending=useRef((pending:boolean)=>{essayPending.current=pending;}).current;
+  const essayScope=useRef({key:'',available:false});
+  const currentEssayKey=state?.lessonCode+':'+state?.draft?.attemptId;
+  if(essayScope.current.key!==currentEssayKey)essayScope.current={key:currentEssayKey,available:false};
+  if(state?.essayUploadAvailable||state?.exam?.questions.some(q=>q.kind==='self'))essayScope.current.available=true;
+  const canUploadEssay=!!state?.draft&&state.kind==='kiem-tra-thang'&&!!state.closesAt&&essayScope.current.available;
+  const leaveConfirmation=useUnsavedGuard(()=>remotePending.current||essayPending.current,REMOTE_LEAVE_MESSAGE+' Ảnh tự luận chưa có biên nhận cũng sẽ mất nếu rời trang.');
   const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[checking,setChecking]=useState(true),[exitClosed,setExitClosed]=useState(false);
+  const [essayOpen,setEssayOpen]=useState(false);
   // 21/10: trên điện thoại nút "Bắt đầu làm bài" ở xa dưới, báo lỗi ở đầu trang nên HS tưởng bấm không ăn. Cuộn tới báo lỗi.
   useEffect(()=>{if(notice)document.querySelector('.btvn-notice-alert')?.scrollIntoView({block:'center'});},[notice]);
   const requestExit=async(run:()=>void|Promise<void>)=>{
+    if(essayPending.current){setNotice('Còn ảnh tự luận chưa nhận. Em mở Nộp ảnh tự luận, gửi lại hoặc bỏ ảnh chưa gửi trước khi rời bài.');setEssayOpen(true);return;}
     const generation=sessionGeneration.current,current=()=>mounted.current&&sessionGeneration.current===generation;
     let completed=false;
     setBusy(true);setNotice('');setExitClosed(false);
@@ -204,7 +213,8 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
       {state.classMismatch&&<EntryNotice className={state.className}/>}
       {!room&&<><BtvnCertificates state={state}/><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><a href="/btvn/tai-lieu" className="btvn-btn">Bài đang bổ sung và bản đơn giản</a><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
       {room&&(state.exam||state.opensAt!==undefined||state.kind==='kiem-tra-thang')&&<><button className="btvn-btn btvn-back" disabled={busy} onClick={()=>void requestExit(()=>setRoom(false))}>← Các buổi học</button>
-        {state.exam&&state.draft&&state.draft.submittedAt===null?<ManagedAttempt key={state.draft.attemptId} state={{...state,exam:state.exam}} gateway={gateway} saverRef={saverRef} onState={next=>setState(previous=>previous?mergeHomeworkSave(previous,next):next)} onPendingChange={pending=>{remotePending.current=pending;}}/>:<HomeworkOverview key={state.lessonCode+':'+(state.draft?.attemptId??'new')} state={state} busy={busy} onRefreshReceipt={()=>void refreshReceipt()} onStart={()=>void run('start')}/>}
+        {state.exam&&state.draft&&state.draft.submittedAt===null?<ManagedAttempt key={state.draft.attemptId} state={{...state,exam:state.exam}} gateway={gateway} saverRef={saverRef} onOpenEssay={canUploadEssay?()=>setEssayOpen(true):undefined} onState={next=>setState(previous=>previous?mergeHomeworkSave(previous,next):next)} onPendingChange={pending=>{remotePending.current=pending;}}/>:<HomeworkOverview key={state.lessonCode+':'+(state.draft?.attemptId??'new')} state={state} busy={busy} onRefreshReceipt={()=>void refreshReceipt()} onStart={()=>void run('start')}/>}
+        {canUploadEssay&&<TuLuanUpload key={state.lessonCode+':'+state.draft!.attemptId} scope={{lessonCode:state.lessonCode,attemptId:state.draft!.attemptId}} fullName={state.fullName} closesAt={state.closesAt!} open={essayOpen} onOpenChange={setEssayOpen} onPendingChange={onEssayPending}/>}
       </>}
 
     </>}
