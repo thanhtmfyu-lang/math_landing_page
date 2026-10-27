@@ -9,7 +9,8 @@ import {scorebookResult} from '../server/btvn/publish-scorebook';
 import {validatePracticeExam,type PracticeExam} from '../src/native/exams/data';
 import {createDraft} from '../src/native/exams/store';
 import {SupabaseHomeworkRepository} from '../server/btvn/supabase-repository';
-import {createCleanupApi} from '../api/btvn-test-cleanup';
+import {createBtvnApi} from '../api/btvn';
+import type {createClient} from '@supabase/supabase-js';
 
 const {db,applied}=await baselineDatabase(),checks:string[]=[];
 const q=(sql:string,args:any[]=[])=>db.query(sql,args);
@@ -31,6 +32,27 @@ const sqlPort={rpc:async(name:string,args:any)=>{try{return {data:await admin(na
   removals++;assert.equal(bucket,ESSAY_BUCKET);if(failRemove)return {error:{message:'fixture failure'}};
   for(const path of paths){blobs.delete(bucket+'/'+path);await q('delete from storage.objects where bucket_id=$1 and name=$2',[bucket,path]);}return {error:null};
  }};
+// Synthetic credentials only; SQL runs locally in PGlite, never a live service.
+const cleanupEnv={MTM_BTVN_ENABLED:'1',VERCEL:'1',SUPABASE_URL:'https://fixture.invalid',SUPABASE_SERVICE_ROLE_KEY:'fixture-service',MTM_HOMEWORK_PUBLISHABLE_KEY:'fixture-publishable',MTM_BTVN_NETWORK_SECRET:'x'.repeat(32)};
+let cleanupClients=0;
+const clientFactory=((url:string,key:string,options:any)=>{
+ cleanupClients++;assert.equal(url,cleanupEnv.SUPABASE_URL);
+ if(key===cleanupEnv.MTM_HOMEWORK_PUBLISHABLE_KEY){
+  const auth=options.global.headers.Authorization;
+  const actor=auth==='Bearer owner-fixture'?owner:auth==='Bearer other-fixture'?other:nonadmin;
+  return {rpc:async(name:string,args:any)=>{try{return {data:await admin(name,args,actor),error:null};}catch(e:any){return {data:null,error:{code:e.code}};}}};
+ }
+ assert.equal(key,cleanupEnv.SUPABASE_SERVICE_ROLE_KEY);assert.equal(options.global,undefined);
+ return {storage:{from:(bucket:string)=>({remove:(paths:string[])=>sqlPort.remove(bucket,paths)})}};
+}) as unknown as typeof createClient;
+const cleanupApi=createBtvnApi(()=>cleanupEnv,async()=>{throw Error('Cleanup must not use student repository');},{cleanupClient:clientFactory});
+const cleanupRequest=async(studentId:unknown,authorization='Bearer owner-fixture',overrides:Record<string,any>={})=>{
+ let status=0,body:any;const headers:Record<string,string|string[]>={};
+ await cleanupApi({method:'POST',headers:{host:'minhthanhmath.vn',origin:'https://minhthanhmath.vn','x-vercel-forwarded-for':'192.0.2.1',authorization},body:{action:'test-cleanup',studentId},...overrides},
+  {setHeader:(k,v)=>{headers[k]=v;},status:s=>{status=s;return {json:v=>{body=v;}};}});
+ assert.equal(headers['Cache-Control'],'no-store, private');
+ return {status,body};
+};
 try{
  await q('insert into auth.users values($1),($2),($3)',[owner,other,nonadmin]);
  await q('insert into public.mtm_exam_admins(user_id) values($1),($2)',[owner,other]);
@@ -126,6 +148,10 @@ try{
   for(const sid of [real,'00000000-0000-4000-8000-000000000000'])assert.equal((await cleanupTestStudent(sqlPort,sid)).status,403);
   assert.equal(removals,0);assert.equal(await one('select count(*)::int from mtm_test100.cleanup_jobs'),0);
  });
+ await check('shared HTTP route denies real accounts, non-admin and other owner before Storage',async()=>{
+  for(const [sid,auth] of [[real,'Bearer owner-fixture'],[test,'Bearer nonadmin-fixture'],[test,'Bearer other-fixture']])assert.equal((await cleanupRequest(sid,auth)).status,403);
+  assert.equal(removals,0);assert.equal(await one('select count(*)::int from mtm_test100.cleanup_jobs'),0);
+ });
  // Real createEssayHandler + 099 reservation/confirm RPC. Bytes are held by an
  // explicit local Storage emulator, not a Supabase service or a metadata-only test.
  const essay=createEssayHandler({rpc:async(name,args)=>{try{return {data:await rpc(name,args),error:null};}catch(e:any){return {data:null,error:{code:e.code}};}},storage:{from:bucket=>({
@@ -147,13 +173,13 @@ try{
  });
  const realRows=await one("select jsonb_build_object('work',(select to_jsonb(w) from mtm_hw_private.btvn_work w where student_id=$1),'image',(select to_jsonb(i) from mtm_hw_private.tu_luan_images i where student_id=$1),'object',(select to_jsonb(o) from storage.objects o where name=$2))",[real,realPath]);
  await check('Storage failure leaves receipt/work for retry; finish refuses remaining objects',async()=>{
-  failRemove=true;assert.equal((await cleanupTestStudent(sqlPort,test)).status,503);failRemove=false;
+  failRemove=true;assert.equal((await cleanupRequest(test)).status,503);failRemove=false;
   assert.equal(await one('select count(*)::int from mtm_hw_private.tu_luan_images where student_id=$1',[test]),1);
   const job=await admin('mtm_test_cleanup_prepare100',{p_student:test});await assert.rejects(()=>admin('mtm_test_cleanup_finish100',{p_job:job.jobId}),(e:any)=>e.code==='55000');
   await denied(()=>q('update mtm_hw_private.btvn_work set revision=revision+1 where student_id=$1',[test]));
  });
  await check('retry removes QA bytes + metadata + submission/work; real rows/bytes exactly preserved',async()=>{
-  const done=await cleanupTestStudent(sqlPort,test);assert.equal(done.status,200);assert.equal(done.body.imagesDeleted,1);assert.equal(done.body.worksDeleted,1);
+  const done=await cleanupRequest(test);assert.equal(done.status,200);assert.equal(done.body.imagesDeleted,1);assert.equal(done.body.worksDeleted,1);
   assert.equal(blobs.has(ESSAY_BUCKET+'/'+testPath),false);assert.equal(await one('select count(*)::int from storage.objects where name=$1',[testPath]),0);
   for(const table of ['tu_luan_images','btvn_work','btvn_monthly_scores'])assert.equal(await one('select count(*)::int from mtm_hw_private.'+table+' where student_id=$1',[test]),0);
   assert.deepEqual(await one("select jsonb_build_object('work',(select to_jsonb(w) from mtm_hw_private.btvn_work w where student_id=$1),'image',(select to_jsonb(i) from mtm_hw_private.tu_luan_images i where student_id=$1),'object',(select to_jsonb(o) from storage.objects o where name=$2))",[real,realPath]),realRows);
@@ -166,17 +192,20 @@ try{
   await denied(()=>q("insert into storage.objects(bucket_id,name,metadata) values('mtm-tu-luan',$1,'{}')",[testPath.toUpperCase()]));
   await denied(()=>q('insert into mtm_hw_private.btvn_work(student_id,lesson_code) values($1,$2)',[test,testLesson]));
   await denied(()=>q('update mtm_hw_private.students set is_test=false where id=$1',[test]));
-  const again=await cleanupTestStudent(sqlPort,test);assert.equal(again.status,200);assert.equal(again.body.alreadyFinished,true);
+  const again=await cleanupRequest(test);assert.equal(again.status,200);assert.equal(again.body.alreadyFinished,true);
  });
  await check('web production transports use new RPCs; projection removes explicit test rows',async()=>{
   assert.equal(productionRpc('mtm_btvn_read'),'mtm_btvn_read_scoped100');assert.equal(productionRpc('mtm_btvn_admin_scores'),'mtm_btvn_admin_scores_real100');assert.equal(productionRpc('mtm_btvn_commit'),'mtm_btvn_commit');
   assert.deepEqual(scorebookResult('scorebook',[{is_test:true}]),[]);
  });
- await check('HTTP cleanup rejects wrong method, foreign origin, missing JWT and injected path',async()=>{
-  const api=createCleanupApi(()=>({}));
-  for(const [req,status] of [[{method:'GET'},405],[{method:'POST',headers:{origin:'https://foreign.invalid'}},403],[{method:'POST',headers:{origin:'https://minhthanhmath.vn'}},401],[{method:'POST',headers:{origin:'https://minhthanhmath.vn',authorization:'Bearer fixture'},body:{studentId:test,path:realPath}},400]] as const){
-   let seen=0;await api(req,{setHeader:()=>{},status:s=>{seen=s;return {json:()=>{}};}});assert.equal(seen,status);
-  }
+ await check('HTTP cleanup rejects wrong method, origin/host, missing JWT and injected fields',async()=>{
+  const beforeClients=cleanupClients;
+  assert.equal((await cleanupRequest(test,'Bearer owner-fixture',{method:'GET'})).status,405);
+  for(const headers of [{host:'foreign.invalid',origin:'https://foreign.invalid'},{host:'foreign.invalid',origin:'https://minhthanhmath.vn'}])assert.equal((await cleanupRequest(test,'',{headers})).status,403);
+  for(const auth of ['', 'Basic fixture', 'Bearer invalid token'])assert.equal((await cleanupRequest(test,auth)).status,401);
+  for(const extra of [{path:realPath},{bucket:ESSAY_BUCKET},{owner},{is_test:true},{ph:'state'}])assert.equal((await cleanupRequest(test,'Bearer owner-fixture',{body:{action:'test-cleanup',studentId:test,...extra}})).status,400);
+  assert.equal(cleanupClients,beforeClients);
+  assert.equal((await cleanupRequest('invalid-uuid')).status,400);
  });
  mkdirSync('.qa-temp/is-test',{recursive:true});writeFileSync('.qa-temp/is-test/results.json',JSON.stringify({postgres:await one('select version()'),baselineMigrations:applied,passed:checks.length,checks,storage:'local byte emulator + real PostgreSQL metadata; no native Supabase Storage service',liveDatabaseTouched:false},null,2));
  console.log('IS_TEST SQL+BYTES '+checks.length+'/'+checks.length);

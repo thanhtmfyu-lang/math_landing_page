@@ -30,7 +30,7 @@ Nếu cần mã HS để đăng nhập, dùng RPC cấp mã hiện có `mtm_hw_a
 
 ## Dọn sạch bài thử
 
-POST `/api/btvn-test-cleanup`, cùng origin web, `Authorization: Bearer <JWT quản trị hiện có>`, JSON duy nhất `{"studentId":"<UUID tài khoản thử>"}`. Không truyền path, bucket, owner, is_test hoặc service key từ client. RPC `prepare100`/`finish100` chỉ cấp EXECUTE cho authenticated, kiểm admin hiện có + đúng owner + is_test=true; service_role/anon/HS không gọi được.
+POST `/api/btvn`, cùng origin web, `Authorization: Bearer <JWT quản trị hiện có>`, JSON duy nhất `{"action":"test-cleanup","studentId":"<UUID tài khoản thử>"}`. Route dùng chung các chặn POST, origin/host và proxy của BTVN. Không truyền path, bucket, owner, is_test hoặc service key từ client. RPC `prepare100`/`finish100` chỉ cấp EXECUTE cho authenticated, kiểm admin hiện có + đúng owner + is_test=true; service_role/anon/HS không gọi được.
 
 1. Prepare khóa tài khoản thử và ghi tombstone, lấy tất cả ảnh đã xác nhận, pending và object mồ côi trong đúng prefix owner/student của bucket `mtm-tu-luan`.
 2. Server dùng Storage API `.remove()` để xóa byte/object, theo lô 100. Không `DELETE storage.objects` trong migration/RPC production.

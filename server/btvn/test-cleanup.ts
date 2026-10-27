@@ -1,4 +1,19 @@
 import {ESSAY_BUCKET} from './tu-luan';
+import {createClient} from '@supabase/supabase-js';
+
+type CleanupEnv={SUPABASE_URL:string;SUPABASE_SERVICE_ROLE_KEY:string;MTM_HOMEWORK_PUBLISHABLE_KEY:string};
+/** Mounted behind /api/btvn's POST, same-origin and trusted-proxy checks. */
+export function createProductionTestCleanupHandler(env:CleanupEnv,clientFactory= createClient){return async(body:unknown,authorization:string)=>{
+ if(!/^Bearer [A-Za-z0-9._-]+$/.test(authorization))return {status:401,body:{message:'Cần phiên quản trị.'}};
+ if(!body||typeof body!=='object'||Array.isArray(body)||Object.keys(body).length!==2||!Object.hasOwn(body,'studentId')||(body as any).action!=='test-cleanup')return {status:400,body:{message:'Chỉ nhận action và studentId.'}};
+ try{
+  const config={auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}};
+  const admin=clientFactory(env.SUPABASE_URL,env.MTM_HOMEWORK_PUBLISHABLE_KEY,{...config,global:{headers:{Authorization:authorization}}});
+  // SQL checks auth.uid(), admin membership, owner and is_test before Storage.
+  const storage=clientFactory(env.SUPABASE_URL,env.SUPABASE_SERVICE_ROLE_KEY,config);
+  return await cleanupTestStudent({rpc:(name,args)=>admin.rpc(name,args),remove:(bucket,paths)=>storage.storage.from(bucket).remove(paths)},(body as any).studentId);
+ }catch{return {status:503,body:{message:'Chưa dọn được bài thử.'}};}
+};}
 
 type Rpc=(name:string,args:Record<string,unknown>)=>PromiseLike<{data:any;error:any}>;
 export type CleanupPort={rpc:Rpc;remove:(bucket:string,paths:string[])=>PromiseLike<{error:any}>};
