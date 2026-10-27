@@ -144,4 +144,84 @@
 .ep-root.fr-room.fr-dark .mtm-source-error button{background:var(--fr-card);border-color:#b78c20;color:#fde68a}
 .ep-root.fr-room.fr-dark .ep-short-interpretation:not(:empty){background:#162e50;border-left-color:#7aa7f7;color:#c6dcff}
 .ep-root.fr-room.fr-dark .ep-short-interpretation.is-ambiguous:not(:empty){background:#3b2a06;border-left-color:#b78c20;color:#fde68a}
+
+/* Narrow iPhones: keep statement text above the two answers, including PDF mode.
+ * Explicit selectors also work on Safari versions without :has(). */
+@media (max-width:760px) {
+ /* Four full statements must remain reachable when the viewport is short.
+  * The desktop PDF layout intentionally keeps its separate scrolling pane. */
+ .ep-root.fr-room .fr-pdf-workspace {
+  overflow:auto;
+ }
+ .ep-root.fr-room .fr-pdf-workspace .fr-paper {
+  display:block;
+  height:auto;
+  min-height:100%;
+ }
+ .ep-root.fr-room .fr-pdf-workspace .fr-pdf-document {
+  height:40vh;
+  min-height:120px;
+  max-height:400px;
+  overflow:auto;
+ }
+ .ep-root.fr-room .fr-pdf-workspace .fr-quick fieldset {
+  display:block;
+ }
+ .ep-root.fr-room .fr-quick,
+ .ep-root.fr-room .fr-quick fieldset,
+ .ep-root.fr-room .fr-quick-tf > div {
+  min-width:0;
+  max-width:100%;
+ }
+ .ep-root.fr-room .fr-quick-tf {
+  grid-template-columns:minmax(0,1fr);
+  gap:12px;
+ }
+ .ep-root.fr-room .fr-quick-tf > div {
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  padding:12px;
+  gap:8px;
+ }
+ .ep-root.fr-room .fr-quick-tf > div > span,
+ .ep-root.fr-room .fr-quick-tf > div > p {
+  grid-column:1 / -1;
+  grid-row:auto;
+  overflow-wrap:break-word;
+ }
+ .ep-root.fr-room .fr-quick-tf button {
+  grid-row:auto;
+  min-width:0;
+  min-height:44px;
+  font-size:16px;
+  line-height:1.5;
+  white-space:nowrap;
+ }
+ .ep-root.fr-room .fr-quick input.ep-short {
+  box-sizing:border-box;
+  width:100%;
+  max-width:100%;
+  min-width:0;
+  height:auto;
+  min-height:52px;
+  padding:10px 12px;
+  font-size:22px;
+  line-height:1.5;
+ }
+ .ep-root.fr-room .fr-quick label,
+ .ep-root.fr-room .fr-quick small,
+ .ep-root.fr-room .fr-quick .ep-short-feedback {
+  display:block;
+  min-width:0;
+  max-width:100%;
+  line-height:1.6;
+  overflow-wrap:break-word;
+  overflow-wrap:anywhere;
+ }
+ .ep-root.fr-room .fr-quick .ep-short-feedback {
+  margin-top:10px;
+ }
+ .ep-root.fr-room .fr-quick > fieldset > small {
+  margin-top:8px;
+ }
+}
 @media(max-width:760px){.fr-brand{min-width:0}.fr-brand img{max-width:100%}.fr-clock small{overflow-wrap:normal}}
