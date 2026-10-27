@@ -15,7 +15,7 @@ const message=(r:Reply)=>typeof r.data?.message==='string'?r.data.message:'Hệ 
 const day=(iso:string|null)=>{if(!iso)return '';const [y,m,d]=iso.slice(0,10).split('-');return `${d}/${m}/${y}`;};
 const weekday=(iso:string)=>['CN','T2','T3','T4','T5','T6','T7'][new Date(iso.slice(0,10)+'T12:00:00+07:00').getDay()];
 const score=(n:number|null)=>n===null?'–':(Math.round(n*100)/100).toLocaleString('vi-VN');
-const STATUS:Record<ParentHomework['status'],string>={'da-nop':'Đã nộp','muon':'Nộp muộn','chua-nop':'Chưa đến hạn','qua-han':'Chưa nộp','chua-mo':'Chưa mở'};
+const STATUS:Record<ParentHomework['status'],string>={'da-nop':'Đã nộp','muon':'Nộp muộn','chua-nop':'Chưa đến hạn','qua-han':'Chưa làm','chua-mo':'Chưa mở'};
 
 export default function ParentCorner(){
  const [phase,setPhase]=useState<'checking'|'gate'|'in'>('checking');

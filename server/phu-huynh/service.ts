@@ -20,7 +20,7 @@ const phone=(v:unknown)=>typeof v==='string'&&v.length<=20?v:null;
 const text=(v:unknown,max=160)=>typeof v==='string'&&v.trim().length>=1&&v.length<=max?v:null;
 const pin=(v:unknown)=>typeof v==='string'&&/^[0-9]{6}$/.test(v)?v:null;
 const ATTENDED=new Set(['co_mat','hoc_online','di_muon','ve_som']);
-export const ATTENDANCE_LABEL:Record<string,string>={co_mat:'Có mặt',hoc_online:'Học online',di_muon:'Đi muộn',ve_som:'Về sớm',vang_phep:'Vắng có phép',vang:'Vắng',chuyen_buoi:'Học bù buổi khác'};
+export const ATTENDANCE_LABEL:Record<string,string>={co_mat:'Có mặt',hoc_online:'Học online',di_muon:'Đi muộn',ve_som:'Về sớm',vang_phep:'Vắng có phép',vang:'Vắng',chuyen_buoi:'Chuyển ca'};
 
 function pinResult(r:any,setupOk=true){
  if(r?.pin==='locked')throw new ParentError(423,PH_LOCKED);
