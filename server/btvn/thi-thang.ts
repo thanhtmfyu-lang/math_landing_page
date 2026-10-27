@@ -12,6 +12,23 @@ export function assignedMa(base:string,fullName:string,className:string):1|2{
   return (digest[0]&1)===0?1:2;
 }
 type Card=Pick<HomeworkLesson,'lessonCode'|'submittedAt'>;
+/** Thành giao 27/10/2026: tạm ẩn đúng 12 bài chờ đối soát lịch DB.
+ * Chặn tại cổng server hiện có, cả đọc đề và ghi bài; gỡ bằng PR riêng sau nghiệm thu.
+ * Không tự hết hạn theo đồng hồ hoặc theo lịch chưa xác minh; không thay DB. */
+const TEMPORARILY_HIDDEN_LESSONS:ReadonlySet<string>=new Set([
+  'thi-thang-2026-10-2k10-8-thi-ma-1',
+  'thi-thang-2026-10-2k10-8-thi-ma-2',
+  'thi-thang-2026-10-2k10-8-btvn-ma-1',
+  'thi-thang-2026-10-2k10-8-btvn-ma-2',
+  'thi-thang-2026-10-2k11-8-thi-ma-1',
+  'thi-thang-2026-10-2k11-8-thi-ma-2',
+  'thi-thang-2026-10-2k11-8-btvn-ma-1',
+  'thi-thang-2026-10-2k11-8-btvn-ma-2',
+  'thi-thang-2026-10-2k11-9-thi-ma-1',
+  'thi-thang-2026-10-2k11-9-thi-ma-2',
+  'thi-thang-2026-10-2k11-9-btvn-ma-1',
+  'thi-thang-2026-10-2k11-9-btvn-ma-2',
+]);
 const submitted=(cards:Card[],code:string)=>cards.some(card=>card.lessonCode===code&&card.submittedAt!=null);
 /** Mã HS đã làm: bài thi online đã nộp, nếu không thì BTVN mã kia đã nộp (HS offline tự chọn). */
 export function doneMa(base:string,cards:Card[]):1|2|null{
@@ -21,6 +38,7 @@ export function doneMa(base:string,cards:Card[]):1|2|null{
 }
 /** null = được mở; chuỗi = lý do chặn (cả xem đề, để HS online không thấy mã bạn bên cạnh trong ca). */
 export function thiThangBlock(lessonCode:string,cards:Card[],fullName:string,className:string):string|null{
+  if(TEMPORARILY_HIDDEN_LESSONS.has(lessonCode))return 'Bài đang tạm ẩn để kiểm tra lịch mở. Em quay lại sau thông báo của thầy.';
   const part=thiThangPart(lessonCode);if(!part)return null;
   if(part.phase==='thi'){
     const own=assignedMa(part.base,fullName,className);
