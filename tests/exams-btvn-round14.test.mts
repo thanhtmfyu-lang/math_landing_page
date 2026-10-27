@@ -31,7 +31,7 @@ assert.ok(html.includes('Điểm lượt này'));assert.ok(html.includes('7,5<sm
 assert.match(html,/<button class="btvn-btn">Làm lượt tiếp<\/button>/);
 assert.ok(!html.includes('Phiếu kết quả để tự gửi'));
 html=overview({...submitted,receipts:[{...receipt,late:true}]});assert.ok(html.includes('Nộp muộn'));
-html=overview({...submitted,receipts:[{...receipt,late:null}]});assert.ok(html.includes('Chờ xác minh hạn'));
+html=overview({...submitted,receipts:[{...receipt,late:null}]});assert.ok(html.includes('Đã ghi nhận bài nộp'));
 html=overview({...submitted,attemptsUsed:5});assert.ok(html.includes('đã dùng hết 5 lượt'));assert.ok(!html.includes('Làm lượt tiếp'));
 html=overview({...submitted,bestScore:9});assert.ok(html.includes('Điểm cao nhất: 9/10'));assert.ok(html.includes('7,5<small>'));
 html=render(Cards,{lessons:[{...lesson,dueAt:1}],busy:false,onHomework(){}});assert.ok(html.includes('Quá hạn · Chưa nộp'));assert.ok(html.includes('Tên đề giả'));assert.ok(html.includes('Tên buổi giả'));

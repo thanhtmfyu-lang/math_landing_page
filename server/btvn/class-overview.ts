@@ -1,16 +1,17 @@
 import {classSlots,scheduleClass,type ScheduleRow} from '../schedule/lich-lop';
 import type {HomeworkLesson} from '../../src/native/homework/btvn-contract';
+import {displayHomeworkLessons,distinctHomeworkTitle} from '../../src/native/homework/presentation';
 
 type Card={lessonCode:string;title:string;date:string};
 export type ClassOverview={className:string;source:'Lich_lop'|'Lich_lop-cache'|'snapshot';snapshotDate?:string;legacySchedule:boolean;
  week:{startsAt:number;endsAt:number}[];next:{startsAt:number;endsAt:number}|null;open:Card[];monthly:Card[];latest:Card|null;progress:{submitted:number;opened:number}};
-const card=(lesson:HomeworkLesson):Card=>({lessonCode:lesson.lessonCode,title:lesson.homeworkTitle||lesson.title,date:lesson.date});
 /** The class comes from the authenticated server state, never from a new query
  * parameter. Return no name, score, URL or class list belonging to another pupil. */
 export function buildClassOverview(state:{className:string;lessons:HomeworkLesson[]},schedule:{rows:ScheduleRow[];source:ClassOverview['source'];snapshotDate?:string},now:number):ClassOverview{
  if(!state.className||!Number.isFinite(now))throw Error('CLASS_OVERVIEW_UNAVAILABLE');
  const label=scheduleClass(state.className);
- const own=state.lessons.filter(l=>Array.isArray(l.classNames)&&l.classNames.some(name=>scheduleClass(name)===label));
+ const own=displayHomeworkLessons(state.lessons).filter(l=>Array.isArray(l.classNames)&&l.classNames.some(name=>scheduleClass(name)===label));
+ const card=(lesson:HomeworkLesson):Card=>({lessonCode:lesson.lessonCode,title:distinctHomeworkTitle(lesson,own),date:lesson.date});
  const unlocked=own.filter(l=>!l.locked&&(l.opensAt===undefined||l.opensAt<=now));
  const vn=new Date(now+7*3600000),today=vn.toISOString().slice(0,10),day=vn.getUTCDay()||7;
  const monday=Date.parse(today+'T00:00:00Z')-(day-1)*86400000;

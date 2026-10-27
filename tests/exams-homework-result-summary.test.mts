@@ -23,7 +23,7 @@ await test('Phiếu chỉ lấy biên nhận đúng lượt và các trường k
   const extra={...state,phone:'0900000000',studentCode:'HS-GIA-RIENG',privateUrl:'https://example.invalid/rieng?token=FAKE',draft:{...state.draft!,answers:{'CAU-RIENG-GIA':'DAP-AN-RIENG-GIA'}},receipts:[{...receipt,fullName:'TEN-TRONG-RECEIPT-GIA',note:'GHI-CHU-RIENG-GIA'}]};
   assert.equal(createHomeworkResultSummary(extra),text,'Không ghép trường tự do hoặc câu trả lời vào phiếu');
   assert.equal(createHomeworkResultSummary({...state,kind:'kiem-tra-thang'})!.split('\n')[1],'Kết quả kiểm tra cuối tháng');
-  assert.match(createHomeworkResultSummary({...state,receipts:[{...receipt,late:null,timedOut:true}]})!,/Hạn nộp: Chờ xác minh\nKết thúc lượt: Hết giờ tự nộp/);
+  assert.match(createHomeworkResultSummary({...state,receipts:[{...receipt,late:null,timedOut:true}]})!,/Hạn nộp: Đã ghi nhận bài nộp\nKết thúc lượt: Hết giờ tự nộp/);
   assert.match(createHomeworkResultSummary({...state,receipts:[{...receipt,late:true}]})!,/Hạn nộp: Nộp muộn/);
   for(const score of [0,10])assert.ok(createHomeworkResultSummary({...state,receipts:[{...receipt,score}]}));
   assert.ok(createHomeworkResultSummary({...state,receipts:[{...receipt,submittedAt:submittedAt+1000}]}),'Chấp nhận thời gian máy chủ cùng lượt khác thời gian draft');
