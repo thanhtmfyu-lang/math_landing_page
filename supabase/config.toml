@@ -10,3 +10,7 @@ verify_jwt = false
 # Board ingestion/review authenticates x-mtm-token against MTM_DD_TOKEN in the handler.
 [functions.mtm-bang-tin]
 verify_jwt = false
+
+# Essay-image export for the grader authenticates x-mtm-token against MTM_DD_TOKEN in the handler; read only.
+[functions.mtm-tu-luan-xuat]
+verify_jwt = false
