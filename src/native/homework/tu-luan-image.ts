@@ -27,23 +27,29 @@ export async function prepareEssayImage(file:File):Promise<PreparedEssay>{
   if(!heic)throw error;
   try{
    const {default:convert}=await import('heic2any');
-   const converted=await convert({blob:file,toType:'image/jpeg',quality:1});
+   const converted=await convert({blob:file,toType:'image/jpeg',quality:0.92});
    if(Array.isArray(converted))throw Error('Chọn từng ảnh HEIC riêng, không chọn ảnh động hoặc chuỗi ảnh.');
    image=await decode(converted);
   }catch{throw Error('Không đổi được HEIC trên máy này. Em chụp lại ở JPEG (iPhone: Camera → Định dạng → Tương thích nhất) hoặc dùng Zalo dự phòng.');}
  }
  if(!image.naturalWidth||!image.naturalHeight)throw Error(message);
  // Keep small handwriting legible; downsize only beyond 2560 px long edge.
- const scale=Math.min(1,2560/Math.max(image.naturalWidth,image.naturalHeight));
- const canvas=document.createElement('canvas');canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
- const context=canvas.getContext('2d');if(!context)throw Error(message);
- context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);image.src='';
+ // 27/10: very detailed photos stayed above 3 MB at 2560 px, so step the size down instead of refusing.
+ const canvas=document.createElement('canvas');
  try{
   let blob:Blob|null=null;
-  for(const quality of [0.9,0.8,0.7]){
-   blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+  for(const edge of [2560,2048,1600]){
+   const scale=Math.min(1,edge/Math.max(image.naturalWidth,image.naturalHeight));
+   canvas.width=Math.max(1,Math.round(image.naturalWidth*scale));canvas.height=Math.max(1,Math.round(image.naturalHeight*scale));
+   const context=canvas.getContext('2d');if(!context)throw Error(message);
+   context.fillStyle='#fff';context.fillRect(0,0,canvas.width,canvas.height);context.drawImage(image,0,0,canvas.width,canvas.height);
+   for(const quality of [0.9,0.8,0.7]){
+    blob=await new Promise<Blob|null>(resolve=>canvas.toBlob(resolve,'image/jpeg',quality));
+    if(blob&&blob.size<=MAX_UPLOAD_BYTES)break;
+   }
    if(blob&&blob.size<=MAX_UPLOAD_BYTES)break;
   }
+  image.src='';
   if(!blob||blob.size<100||blob.size>MAX_UPLOAD_BYTES)throw Error('Ảnh còn quá lớn sau khi nén. Em chụp từng trang gần hơn rồi thử lại.');
   if(!crypto.subtle)throw Error('Trình duyệt chưa hỗ trợ nộp ảnh an toàn. Em mở bài bằng Safari/Chrome qua HTTPS hoặc dùng Zalo dự phòng.');
   const sha256=Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',await readBlob(blob))),x=>x.toString(16).padStart(2,'0')).join('');
