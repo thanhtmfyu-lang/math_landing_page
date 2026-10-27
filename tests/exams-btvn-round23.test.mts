@@ -18,7 +18,7 @@ assert.doesNotMatch(html,/Chưa làm BTVN|todo-card|class="todo"|btvn-btn primar
 const missingOpening=render(Cards,{...props,lessons:[{...lesson,opensAt:undefined}]});
 assert.match(missingOpening,/🔒 Chưa mở, mở lúc sau buổi học/);
 assert.match(missingOpening,/Giờ mở: sau buổi học/);
-assert.match(missingOpening,/Hạn: Chờ xác minh lịch lớp và ca học/);
+assert.match(missingOpening,/Hạn nộp: em liên hệ trợ lý lớp để được hỗ trợ./);
 assert.doesNotMatch(missingOpening,/Invalid Date/);
 assert.match(html,/Giờ mở:/);
 assert.doesNotMatch(html,/Mở làm sau buổi học:/);
