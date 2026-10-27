@@ -17,7 +17,7 @@ export default function TuLuanUpload({scope,fullName,closesAt,open,onOpenChange,
  const update=(id:number,patch:Partial<Queued>)=>{if(!alive.current)return;setQueue(previous=>{const next=previous.map(item=>item.id===id?{...item,...patch}:item);values.current=next;return next;});};
  const refresh=async()=>{
   try{const data=await essayRequest<{items:EssayReceipt[];deadline:number;serverNow:number}>(scope,'essay-list');if(!alive.current)return;setReceived(previous=>[...new Map([...previous,...data.items].map(item=>[item.id,item])).values()].sort((a,b)=>a.pageNumber-b.pageNumber));setDeadline(data.deadline);setClockOffset(data.serverNow-Date.now());setLoaded(true);setMessage('');}
-  catch(error){if(alive.current){setLoaded(false);setMessage(error instanceof Error?error.message:'Chưa tải được biên nhận ảnh. Em thử lại.');}}
+  catch(error){if(alive.current){setLoaded(false);setMessage((error instanceof Error?error.message:'Chưa tải được biên nhận ảnh.')+' Em vẫn chọn ảnh và bấm Gửi được.');}}
  };
  useEffect(()=>{alive.current=true;return()=>{alive.current=false;};},[]);
  useEffect(()=>{if(open)void refresh();},[open]);
@@ -47,8 +47,9 @@ export default function TuLuanUpload({scope,fullName,closesAt,open,onOpenChange,
   const next=[...remaining,...Array.from(files,file=>({id:++sequence.current,file,status:'ready' as const,progress:0}))];values.current=next;setQueue(next);setMessage('');
  };
  const upload=async()=>{
-  if(running.current||!loaded)return;running.current=true;setBusy(true);setMessage('');
+  if(running.current)return;running.current=true;setBusy(true);setMessage('');
   try{
+   if(!loaded)await refresh();
    for(const item of values.current){
     if(item.status==='received')continue;
     if(closed&&!item.prepared)break;
@@ -74,12 +75,12 @@ export default function TuLuanUpload({scope,fullName,closesAt,open,onOpenChange,
   {message&&<p role="alert">{message}</p>}
   {!loaded&&<button type="button" disabled={busy} onClick={()=>void refresh()}>Thử kết nối lại</button>}
   {closed&&<p role="status">Đã hết hạn nộp ảnh. Ảnh đã có biên nhận vẫn được giữ. Nếu đã gửi ảnh trước hạn nhưng mất kết nối, bấm Thử lại ảnh chưa nhận để kiểm tra biên nhận.</p>}
-  <fieldset disabled={busy||closed||!loaded}><legend>Chọn ảnh bài làm</legend>
-   <label className="tu-luan-pick">Chụp ảnh<input aria-label="Chụp ảnh tự luận" type="file" accept="image/jpeg,image/png,image/heic,image/heif,.heic,.heif" capture="environment" onChange={event=>{add(event.currentTarget.files);event.currentTarget.value='';}}/></label>
-   <label className="tu-luan-pick">Chọn từ thư viện<input aria-label="Chọn ảnh tự luận từ thư viện" type="file" multiple accept="image/jpeg,image/png,image/webp,image/heic,image/heif,.heic,.heif" onChange={event=>{add(event.currentTarget.files);event.currentTarget.value='';}}/></label>
+  <fieldset disabled={busy||closed}><legend>Chọn ảnh bài làm</legend>
+   <label className="tu-luan-pick">Chụp ảnh<input aria-label="Chụp ảnh tự luận" type="file" accept="image/*" capture="environment" onChange={event=>{add(event.currentTarget.files);event.currentTarget.value='';}}/></label>
+   <label className="tu-luan-pick">Chọn từ thư viện<input aria-label="Chọn ảnh tự luận từ thư viện" type="file" multiple accept="image/*" onChange={event=>{add(event.currentTarget.files);event.currentTarget.value='';}}/></label>
   </fieldset>
   <ol className="tu-luan-queue">{queue.map(item=><li key={item.id}><strong>{item.file.name}</strong><span role="status">{item.status==='ready'?'Chờ gửi':item.status==='processing'?'Đang nén / đổi ảnh…':item.status==='uploading'?`Đang tải ${item.progress}%`:item.status==='received'?`Đã nhận · Trang ${item.receipt?.pageNumber}`:'Chưa nhận ảnh'}</span>{item.error&&<p role="alert">{item.error}</p>}{!busy&&item.status!=='received'&&<button type="button" onClick={()=>setQueue(previous=>previous.filter(row=>row.id!==item.id))}>Bỏ ảnh chưa gửi</button>}</li>)}</ol>
-  <button type="button" className="tu-luan-send" disabled={busy||!pending||(closed&&!canRecover)||!loaded} onClick={()=>void upload()}>{busy?'Đang gửi ảnh…':queue.some(item=>item.status==='error')?'Thử lại ảnh chưa nhận':'Gửi ảnh đã chọn'}</button>
+  <button type="button" className="tu-luan-send" disabled={busy||!pending||(closed&&!canRecover)} onClick={()=>void upload()}>{busy?'Đang gửi ảnh…':queue.some(item=>item.status==='error')?'Thử lại ảnh chưa nhận':'Gửi ảnh đã chọn'}</button>
   <section aria-label="Biên nhận ảnh"><h3>Ảnh máy chủ đã nhận ({received.length})</h3>{received.length===0?<p>Chưa có biên nhận ảnh. Chỉ chữ Đã nhận kèm số trang mới xác nhận gửi thành công.</p>:<ol>{received.map(item=><li key={item.id}>Trang {item.pageNumber} · Đã nhận {time(item.receivedAt)}</li>)}</ol>}</section>
  </div></div>,document.body)}
  </section>;
