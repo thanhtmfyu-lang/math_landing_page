@@ -3,8 +3,9 @@ export const isDemoVideo=(id:string)=>id==='abcdefghijk';
 export const displayClassName=(state:HomeworkState)=>state.demo&&/^LOP-TEST-/i.test(state.className)?'Lớp học thử':state.className;
 // Giữ nguyên các bài trong đợt thi tháng, kể cả thẻ BTVN đi kèm.
 export const protectedMonthlyLesson=(lesson:LessonMaterial)=>lesson.kind==='kiem-tra-thang'||/^thi-thang-/.test(lesson.lessonCode);
-const titleText=(raw:string='')=>raw.normalize('NFC').replace(/_/g,' ');
-export function cleanHomeworkTitle(raw:string=''){
+// JSON from legacy lessons can contain null despite the TypeScript string type.
+const titleText=(raw:unknown='')=>(typeof raw==='string'?raw:'').normalize('NFC').replace(/_/g,' ');
+export function cleanHomeworkTitle(raw:unknown=''){
   return titleText(raw).replace(/\[L\d+\]/gi,' ')
     .replace(/\[(?:Có đính chính|tự luận nộp vở)[^\]]*\]|\((?:Có đính chính|tự luận nộp vở)[^)]*\)/gi,' ')
     .replace(/\b\d{4}[-_. /]\d{1,2}[-_. /]\d{1,2}\b|\b\d{1,2}[-_. /]\d{1,2}[-_. /]\d{4}\b/g,' ')

@@ -1,4 +1,4 @@
-import {Component,lazy,Suspense,useEffect,type ReactNode} from 'react';
+import {lazy,Suspense,useEffect} from 'react';
 import {captureLeadSource} from './components/lead-source';
 import {routeMetadata} from './migration/route-policy';
 import {legacyLearningAlias} from './migration/legacy-alias';
@@ -40,7 +40,7 @@ const OnlineCourses=lazy(()=>import('./migration/OnlineCourses'));
 const SemesterCourse=lazy(()=>import('./native/semester/SemesterCourse'));
 const Playground=lazy(()=>import('./native/playground/Playground'));
 const NotFound=lazy(()=>import('./migration/StudyRoutes').then(m=>({default:m.NotFound})));
-class RouteError extends Component<{children:ReactNode},{failed:boolean}>{state={failed:false};static getDerivedStateFromError(){return{failed:true};}render(){return this.state.failed?<section className="mig-container mig-panel mig-load-error" role="alert"><h1>Chưa tải được nội dung</h1><p>Kết nối có thể đã gián đoạn hoặc phiên bản trang vừa thay đổi. Bản sổ tay đã lưu trên trình duyệt không bị xóa.</p><button type="button" className="mig-button outline" onClick={()=>location.reload()}>Thử tải lại trang</button></section>:this.props.children;}}
+import {RouteError} from './migration/RouteError';
 
 import {Link,useRoute,RoutePosition,navigate} from './migration/navigation';import {findCourse,displayCourseTitle} from './migration/catalogue';
 export default function App(){const route=useRoute();const path=route.pathname;const alias=legacyLearningAlias(path,route.search,route.hash);useEffect(()=>{if(alias)navigate(alias,{replace:true});},[alias]);const slug=path.startsWith('/khoa-hoc/')?path.slice('/khoa-hoc/'.length):'';const course=slug?findCourse(slug):undefined;const name=path==='/'?'Học cùng MTM':path==='/khoa-hoc'?'Khóa học Toán':(course&&displayCourseTitle(course))||({ '/thi-thu':'Thi thử và bài tập','/so-tay':'Sổ tay học tập','/tai-lieu':'Thư viện học liệu','/huong-dan':'Hướng dẫn học sinh, phụ huynh','/chinh-sach-bao-mat':'Chính sách quyền riêng tư','/thi-thu-hsa':'Thi thử HSA miễn phí','/de-giua-ky-1':'Đề giữa kỳ I Toán 10, 11, 12','/kiem-tra-dau-vao':'Kiểm tra đầu vào Toán','/ky-khao-sat':'Kỳ khảo sát MTM','/phu-huynh':'Góc phụ huynh'} as Record<string,string>)[path]||'Không tìm thấy trang';
