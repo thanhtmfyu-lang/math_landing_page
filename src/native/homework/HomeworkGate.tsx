@@ -31,7 +31,7 @@ type Props = {
   studentCode:string; identity:Identity; busy:boolean;
   classNames?:string[]; classesLoading?:boolean; classesError?:boolean; onReloadClasses?:()=>void;
   onCode:(value:string)=>void; onIdentity:(value:Identity)=>void;
-  onLogin:(input:GateInput)=>void;
+  onLogin:(input:GateInput,remember?:boolean)=>void;
   pinMode?:'enter'|'setup';
   notice?:string;
 };
@@ -40,6 +40,9 @@ type Props = {
 export default function HomeworkGate({studentCode,identity,busy,classNames=[],classesLoading=false,classesError=false,onReloadClasses,onCode,onIdentity,onLogin,pinMode,notice=''}:Props){
   const [codeError,setCodeError]=useState(''),[identityError,setIdentityError]=useState('');
   const [submittedWithCode,setSubmittedWithCode]=useState(false);
+  // 28/10: mặc định nhớ 30 ngày để HS không phải nhập lại mỗi buổi; máy dùng chung thì bỏ chọn.
+  const [remember,setRemember]=useState(true);
+  const rememberField=<label className="btvn-remember"><input type="checkbox" checked={remember} onChange={event=>setRemember(event.target.checked)}/><span>Nhớ đăng nhập 30 ngày trên máy này<small>Bỏ chọn nếu dùng máy chung hoặc máy của người khác.</small></span></label>;
   const codeFeedback=useRef<HTMLParagraphElement>(null),identityFeedback=useRef<HTMLParagraphElement>(null);
   const codeNotice=codeError||(submittedWithCode?notice:''),identityNotice=identityError||(!submittedWithCode?notice:'');
   useEffect(()=>{if(notice)(submittedWithCode?codeFeedback:identityFeedback).current?.scrollIntoView({block:'nearest'});},[notice,submittedWithCode]);
@@ -50,14 +53,15 @@ export default function HomeworkGate({studentCode,identity,busy,classNames=[],cl
     <details><summary>Mã học sinh lấy ở đâu?</summary><p>Mã do MTM cấp cho học sinh khi cần. Nếu chưa có hoặc quên mã, dùng cách Không có mã; cần hỗ trợ thì nhắn Zalo trợ lý lớp. Không gửi mã vào nhóm công khai.</p></details>
     <details><summary>Gặp lỗi khi mở bài từ Zalo?</summary><p>Mở menu của Zalo, chọn mở bằng trình duyệt nếu có, rồi dùng Chrome hoặc Safari. Nếu không thấy lựa chọn, tự mở trình duyệt và nhập minhthanhmath.vn/btvn. Không gửi mã hoặc thông tin đăng nhập cho người khác.</p></details>
   </section><div className="btvn-gates" aria-label="Vào bài của lớp">
-    <form className="btvn-gate mig-panel" aria-labelledby="btvn-code-title" onInvalid={event=>{setSubmittedWithCode(true);const field=event.target;if(field instanceof HTMLInputElement)setCodeError(previous=>previous||invalidFieldMessage(field));}} onInput={()=>setCodeError('')} onSubmit={event=>{event.preventDefault();if(!busy){setSubmittedWithCode(true);onLogin({studentCode});}}}>
+    <form className="btvn-gate mig-panel" aria-labelledby="btvn-code-title" onInvalid={event=>{setSubmittedWithCode(true);const field=event.target;if(field instanceof HTMLInputElement)setCodeError(previous=>previous||invalidFieldMessage(field));}} onInput={()=>setCodeError('')} onSubmit={event=>{event.preventDefault();if(!busy){setSubmittedWithCode(true);onLogin({studentCode},remember);}}}>
       <h2 id="btvn-code-title">Có mã</h2>
       <label>Mã học sinh<input type="password" autoComplete="off" maxLength={160} required aria-describedby="btvn-code-help" value={studentCode} onChange={event=>onCode(event.target.value)}/></label>
       <p id="btvn-code-help">Nhập mã học sinh do MTM cấp riêng cho em.</p>
       {codeNotice&&<p ref={codeFeedback} role="alert">{codeNotice}</p>}
+      {rememberField}
       <button type="submit" className="ep-primary" disabled={busy}>{busy?'Đang kiểm tra…':'Vào bài'}</button>
     </form>
-    <form className="btvn-gate mig-panel" aria-labelledby="btvn-identity-title" onInvalid={event=>{setSubmittedWithCode(false);const field=event.target;if(field instanceof HTMLInputElement||field instanceof HTMLSelectElement)setIdentityError(previous=>previous||invalidFieldMessage(field));}} onInput={event=>{setIdentityError('');const confirm=event.currentTarget.elements.namedItem('btvn-new-pin-2');if(confirm instanceof HTMLInputElement)confirm.setCustomValidity('');}} onSubmit={event=>{event.preventDefault();if(!busy&&!classesLoading&&classNames.includes(identity.className)){const input=pinMode?withPin(event,identity,pinMode==='setup'):{...identity};if(input){setSubmittedWithCode(false);onLogin(input);}}}}>
+    <form className="btvn-gate mig-panel" aria-labelledby="btvn-identity-title" onInvalid={event=>{setSubmittedWithCode(false);const field=event.target;if(field instanceof HTMLInputElement||field instanceof HTMLSelectElement)setIdentityError(previous=>previous||invalidFieldMessage(field));}} onInput={event=>{setIdentityError('');const confirm=event.currentTarget.elements.namedItem('btvn-new-pin-2');if(confirm instanceof HTMLInputElement)confirm.setCustomValidity('');}} onSubmit={event=>{event.preventDefault();if(!busy&&!classesLoading&&classNames.includes(identity.className)){const input=pinMode?withPin(event,identity,pinMode==='setup'):{...identity};if(input){setSubmittedWithCode(false);onLogin(input,remember);}}}}>
       <h2 id="btvn-identity-title">Không có mã</h2>
       <p>Dùng họ tên học sinh hoặc phụ huynh và số điện thoại đã đăng ký với lớp. Gia đình có nhiều con cùng lớp nên nhập tên học sinh để đối chiếu đúng bài.</p>
       {([['fullName','Họ tên học sinh hoặc phụ huynh'],['phone','Số điện thoại (học sinh hoặc phụ huynh)']] as const).map(([key,label])=><label key={key}>{label}<input type={key==='phone'?'tel':'text'} autoComplete="off" maxLength={160} required value={identity[key]} onChange={event=>onIdentity({...identity,[key]:event.target.value})}/></label>)}
@@ -71,6 +75,7 @@ export default function HomeworkGate({studentCode,identity,busy,classNames=[],cl
       {classesError&&<p role="status">Chưa tải được danh sách lớp. <button type="button" disabled={busy||classesLoading} onClick={onReloadClasses}>Thử tải lại</button></p>}
       {!classesLoading&&!classesError&&!classNames.length&&<p role="status">Chưa có lớp để chọn. Em liên hệ MTM.</p>}
       {identityNotice&&<p ref={identityFeedback} role="alert">{identityNotice}</p>}
+      {rememberField}
       <button type="submit" className="ep-primary" disabled={busy||classesLoading||!classNames.length}>{busy?'Đang kiểm tra…':'Vào bài'}</button>
     </form>
   </div></>;

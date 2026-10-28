@@ -11,5 +11,5 @@ export type HomeworkState = {essayUploadAvailable?:boolean;classOverview?:ClassO
 export type HomeworkAction = 'login'|'state'|'start'|'save'|'submit'|'logout'|'select';
 /** Giao diện duy nhất giữa trình duyệt và máy chủ; không chứa danh sách học sinh. */
 export interface HomeworkGateway {
-  call(action:HomeworkAction, body?:{lessonCode?:string;gate?:GateInput;attemptId?:string;answers?:Answers}):Promise<HomeworkState>;
+  call(action:HomeworkAction, body?:{lessonCode?:string;gate?:GateInput;remember?:boolean;attemptId?:string;answers?:Answers}):Promise<HomeworkState>;
 }

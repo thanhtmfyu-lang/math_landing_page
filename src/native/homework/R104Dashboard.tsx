@@ -103,19 +103,16 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
     requestAnimationFrame(()=>preview.current?.scrollIntoView({block:'nearest'}));
   };
   return <div className="r104-homework">
-    <CenterBoard onSkip={()=>document.querySelector('.r104-hw-today')?.scrollIntoView({behavior:'smooth',block:'start'})}/>
     <header className="r104-hw-heading"><p>Học tập <span aria-hidden="true">/</span> Bài tập về nhà</p><h1>Góc học tập của em<span>.</span></h1><p>Việc hôm nay, kết quả và những bước tiếp theo.</p></header>
-    <MyClass state={state} onSelect={onSelect} busy={busy}/>
-    <div className="r104-hw-profile"><div>{profileControl}<span><strong>{state.fullName}</strong><small>{displayClassName(state)}</small><StudentSchool identity={state.fullName+'|'+state.className}/></span></div>{cohort&&<span className="r104-hw-cohort">Khối {cohort}</span>}</div>
     <div className="r104-hw-workplane">
       <section className="r104-hw-today" aria-labelledby="r104-today-title">
+        <ThiThangSection lessons={lessons} now={clock} busy={busy} onSelect={onSelect}/>
         <header><span className="r104-hw-overline"><i/>Việc hôm nay</span><small>{priority?'Buổi '+dayMonth(priority.date):'Lịch học của em'}</small></header>
         <div className="r104-hw-today-grid"><div className="r104-hw-today-copy"><p>{displayClassName(state)}</p><h2 id="r104-today-title">{priority?distinctHomeworkTitle(priority,lessons):lessons.length?'Em đã xem hết việc cần làm':'Chờ buổi học đầu tiên'}<span>.</span></h2>
           <p>{priority?homeworkPriorityReason(priority,clock):lessons.length?'Em có thể xem lại bài đã nộp và bài giảng trong từng buổi bên dưới.':'Khi thầy giao bài, buổi học và BTVN sẽ xuất hiện tại đây.'}</p>
           {priority&&<><div className="r104-hw-today-facts"><span>Đã mở</span><span>{displayHomeworkDeadline(priority,priority.lessonCode===state.lessonCode?state.dueAt:undefined)}</span></div><button type="button" className="r104-hw-primary" disabled={busy} onClick={choosePriority}>Xem bài cần làm <span aria-hidden="true">↗</span></button><p className="r104-hw-select-note">Mở thông tin bài, chưa bắt đầu lượt làm.</p></>}
           <div role="status">{priorityNotice}</div>
         </div><div className="r104-hw-class-snapshot"><p>Từng bước tiến bộ</p><h3>Buổi học của em</h3><dl><div><dt>Đang mở, chưa nộp</dt><dd>{count('open')}</dd></div><div><dt>Đã có bài nộp</dt><dd>{count('submitted','scored')}</dd></div><div><dt>Chưa tới giờ mở</dt><dd>{count('locked')}</dd></div></dl></div></div>
-        <ThiThangSection lessons={lessons} now={clock} busy={busy} onSelect={onSelect}/>
         {lessons.length>0&&<section className="r104-hw-lessons" id="r104-lessons" aria-labelledby="r104-lessons-title">
           <div className="r104-hw-lessons-heading"><div><small>{displayClassName(state)}</small><h2 id="r104-lessons-title">Buổi học của em</h2></div>
             <div className="r104-hw-filters" role="group" aria-label="Lọc buổi học"><button type="button" aria-pressed={filter==='all'} onClick={()=>{setFilter('all');setLimit(PAGE);}}>Tất cả</button><button type="button" aria-pressed={filter==='opened'} onClick={()=>{setFilter('opened');setLimit(PAGE);}}>Đã mở</button></div></div>
@@ -137,6 +134,10 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
         </section>
       </div>
     </div>
+    {/* 28/10 trang HS gọn: việc hôm nay + thi tháng đứng đầu; lớp, hồ sơ, bảng tin xuống dưới. */}
+    <MyClass state={state} onSelect={onSelect} busy={busy}/>
+    <div className="r104-hw-profile"><div>{profileControl}<span><strong>{state.fullName}</strong><small>{displayClassName(state)}</small><StudentSchool identity={state.fullName+'|'+state.className}/></span></div>{cohort&&<span className="r104-hw-cohort">Khối {cohort}</span>}</div>
+    <CenterBoard/>
   </div>;
 }
 

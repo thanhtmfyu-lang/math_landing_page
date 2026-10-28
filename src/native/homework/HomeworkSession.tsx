@@ -187,10 +187,10 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     const visible=()=>{if(document.visibilityState==='visible')check();};document.addEventListener('visibilitychange',visible);
     return()=>{alive=false;renewAssets.current=()=>{};clearInterval(timer);window.removeEventListener('mtm:retry-assets',retry);document.removeEventListener('visibilitychange',visible);};
   },[gateway,state?.lessonCode,state?.demo,state?.assetsExpiresAt,state?.opensAt,state?.closesAt,state?.solutionsAvailable,!!state?.exam]);
-  const run=async(action:'login'|'start',input?:GateInput)=>{
+  const run=async(action:'login'|'start',input?:GateInput,remember?:boolean)=>{
     const generation=sessionGeneration.current,current=()=>mounted.current&&sessionGeneration.current===generation;let completed=false;
     setBusy(true);setNotice('');try{
-      const next=await gateway.call(action,action==='login'?{gate:input}:{});
+      const next=await gateway.call(action,action==='login'?{gate:input,...(remember!==undefined?{remember}:{})}:{});
       if(!mounted.current||sessionGeneration.current!==generation+(action==='login'?1:0))return;
       completed=true;setState(next);setRoom(action==='start'||!!next.draft);setGate({fullName:'',phone:'',className:''});setStudentCode('');setPinMode('enter');
     }catch(error){if(current()){const message=error instanceof Error?error.message:'Chưa kết nối được máy chủ. Em thử lại sau.';if(message==='PIN_SETUP')setPinMode('setup');else if(message==='PIN_REQUIRED')setPinMode('enter');setNotice(message==='PIN_SETUP'?PIN_SETUP_NOTICE:message==='PIN_REQUIRED'?PIN_REQUIRED_NOTICE:message);}}finally{if(mounted.current&&(current()||completed))setBusy(false);}
@@ -207,21 +207,25 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     {leaveConfirmation}
     {state?.demo&&<p className="btvn-demo" role="note">Bản thử với học sinh giả và buổi mẫu. Chưa giao BTVN cho lớp thật.</p>}{state&&notice&&<p role="alert" className="btvn-notice-alert">{notice}</p>}{exitClosed&&<button type="button" className="btvn-btn" onClick={()=>{saverRef.current?.acceptClosed();setExitClosed(false);setNotice('Đã chọn bản máy chủ đã chấm. Em có thể rời bài.');}}>Chấp nhận bản máy chủ đã chấm</button>}
     {!state&&<header className="btvn-entry-heading"><div className="btvn-entry-bar"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><Link href="/" className="btvn-home-link">← Trang chủ</Link></div><h1>Bài tập về nhà</h1><p>Vào lớp để xem bài giảng và hoàn thành BTVN của em.</p></header>}
-    {checking?<LoadingCards label="Đang kiểm tra phiên và tải danh sách buổi học…"/>:!state?<HomeworkGate studentCode={studentCode} identity={gate} busy={busy} classNames={classNames} classesLoading={classesLoading} classesError={classesError} onReloadClasses={()=>void loadClasses()} onCode={setStudentCode} onIdentity={setGate} onLogin={input=>void run('login',input)} pinMode={pinMode} notice={notice}/>:<>
+    {checking?<LoadingCards label="Đang kiểm tra phiên và tải danh sách buổi học…"/>:!state?<HomeworkGate studentCode={studentCode} identity={gate} busy={busy} classNames={classNames} classesLoading={classesLoading} classesError={classesError} onReloadClasses={()=>void loadClasses()} onCode={setStudentCode} onIdentity={setGate} onLogin={(input,remember)=>void run('login',input,remember)} pinMode={pinMode} notice={notice}/>:<>
       <header className="btvn-top"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><div><b>Bài tập về nhà</b><p>Video buổi học và BTVN của lớp em</p></div><div className="btvn-me"><Link href="/" className="btvn-home-link">← Trang chủ</Link><b>{state.fullName}</b><span>{displayClassName(state)}</span><button disabled={busy} onClick={()=>void requestExit(async()=>{await gateway.call('logout');setState(null);setRoom(false);})}>Thoát</button></div></header>
-      <HomeworkBrowserHelp/>
+      {room&&<HomeworkBrowserHelp/>}
       {state.classMismatch&&<EntryNotice className={state.className}/>}
-      {!room&&<><BtvnCertificates state={state}/><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><a href="/btvn/tai-lieu" className="btvn-btn">Bài đang bổ sung và bản đơn giản</a><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
+      {!room&&<><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><BtvnCertificates state={state}/><a href="/btvn/tai-lieu" className="btvn-btn">Bài đang bổ sung và bản đơn giản</a><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
       {room&&(state.exam||state.opensAt!==undefined||state.kind==='kiem-tra-thang')&&<><button className="btvn-btn btvn-back" disabled={busy} onClick={()=>void requestExit(()=>setRoom(false))}>← Các buổi học</button>
         {state.exam&&state.draft&&state.draft.submittedAt===null?<ManagedAttempt key={state.draft.attemptId} state={{...state,exam:state.exam}} gateway={gateway} saverRef={saverRef} onOpenEssay={canUploadEssay?()=>setEssayOpen(true):undefined} onState={next=>setState(previous=>previous?mergeHomeworkSave(previous,next):next)} onPendingChange={pending=>{remotePending.current=pending;}}/>:<HomeworkOverview key={state.lessonCode+':'+(state.draft?.attemptId??'new')} state={state} busy={busy} onRefreshReceipt={()=>void refreshReceipt()} onStart={()=>void run('start')}/>}
         {canUploadEssay&&<TuLuanUpload key={state.lessonCode+':'+state.draft!.attemptId} scope={{lessonCode:state.lessonCode,attemptId:state.draft!.attemptId}} fullName={state.fullName} closesAt={state.closesAt!} open={essayOpen} onOpenChange={setEssayOpen} onPendingChange={onEssayPending}/>}
       </>}
 
     </>}
-    {!checking&&(!state||!room)&&<HomeworkTimePlan/>}
-    {!checking&&(!state||!room)&&<HomeworkStudyRhythmTool/>}
-    {!checking&&(!state||!room)&&<HomeworkWarmupTool key={'warmup:'+(state?.lessonCode??'')}/>}
-    {!checking&&(!state||!room)&&<HomeworkSelfCheckTool key={'entry:'+(state?.lessonCode??'')}/>}
-    {!checking&&(!state||!room)&&<aside className="btvn-self-check" aria-label="Đổi nhịp luyện Toán"><Link href="/san-choi" className="btvn-btn">Đổi nhịp với Sân chơi Toán</Link><p>Luyện riêng để đổi nhịp sau khi học, không tính điểm BTVN.</p></aside>}
+    {/* 28/10 trang HS gọn: công cụ phụ gom vào một mục thu gọn ở cuối, không đẩy BTVN xuống. */}
+    {!checking&&(!state||!room)&&<details className="btvn-extra-tools"><summary><span>Công cụ học thêm</span><small>Kế hoạch giờ học, khởi động, tự kiểm tra, Sân chơi Toán</small></summary>
+      {state&&<HomeworkBrowserHelp/>}
+      <HomeworkTimePlan/>
+      <HomeworkStudyRhythmTool/>
+      <HomeworkWarmupTool key={'warmup:'+(state?.lessonCode??'')}/>
+      <HomeworkSelfCheckTool key={'entry:'+(state?.lessonCode??'')}/>
+      <aside className="btvn-self-check" aria-label="Đổi nhịp luyện Toán"><Link href="/san-choi" className="btvn-btn">Đổi nhịp với Sân chơi Toán</Link><p>Luyện riêng để đổi nhịp sau khi học, không tính điểm BTVN.</p></aside>
+    </details>}
   </section>;
 }

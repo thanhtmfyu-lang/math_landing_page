@@ -360,3 +360,52 @@
 .ep-root.btvn-session .btvn-pin-setup { border: 1px dashed #c69828; border-radius: 12px; padding: 12px 14px; background: #fffbea; display: flex; flex-direction: column; gap: 10px; }
 .ep-root.btvn-session .btvn-pin-setup p { margin: 0; line-height: 1.6; }
 .ep-root.btvn-session .btvn-gate label small { display: block; margin-top: 4px; color: #5a6478; font-weight: 400; line-height: 1.5; }
+
+/* 28/10 trang HS gọn: công cụ phụ gom vào một mục thu gọn ở cuối trang. */
+.ep-root.btvn-session > .btvn-extra-tools {
+  width: 100%;
+  max-width: var(--btvn-page-width);
+  margin: 24px auto;
+  padding-inline: var(--btvn-page-gutter);
+  box-sizing: border-box;
+}
+.btvn-extra-tools > summary {
+  display: block;
+  cursor: pointer;
+  padding: 14px 16px;
+  border: 1px solid #d9e1ec;
+  border-radius: 12px;
+  background: #f7f9fc;
+  color: #0f2a4a;
+  font-weight: 700;
+  min-height: 44px;
+  box-sizing: border-box;
+}
+.btvn-extra-tools > summary small {
+  display: block;
+  margin-top: 4px;
+  font-weight: 400;
+  color: #4b5b70;
+}
+.btvn-extra-tools[open] > summary { margin-bottom: 12px; }
+
+/* Ô "Nhớ đăng nhập": vùng bấm lớn, không dùng flex gap (Safari cũ trên iPhone không hỗ trợ). */
+.btvn-gate .btvn-remember {
+  display: flex;
+  align-items: flex-start;
+  margin: 8px 0 12px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.btvn-gate .btvn-remember input {
+  width: 22px;
+  height: 22px;
+  min-height: 0;
+  margin: 1px 10px 0 0;
+  flex: 0 0 auto;
+}
+.btvn-gate .btvn-remember small {
+  display: block;
+  font-weight: 400;
+  color: #4b5b70;
+}
