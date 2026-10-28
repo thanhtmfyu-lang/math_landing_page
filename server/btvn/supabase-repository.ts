@@ -48,6 +48,7 @@ export class SupabaseHomeworkRepository {
     const out=await this.db.rpc(name,args);if(out.error)throw new HomeworkError(out.error.code==='42501'?401:out.error.code==='40001'?409:503,out.error.code==='42501'?GATE_ERROR:out.error.code==='40001'?'Bài đã thay đổi ở tab khác. Tải lại để tiếp tục.':'Chưa kết nối được máy chủ. Em thử lại sau.');return out.data as T;
   }
   async logout(session:string){await this.rpc('mtm_btvn_logout',{p_session:session});}
+  async remember(session:string){return (await this.rpc<boolean>('mtm_btvn_remember',{p_session:session}))===true;}
   async classNames(){return publicClassNames(await this.rpc<unknown>('mtm_btvn_classes',{}));}
   async issueMissingCode(studentId:string,days=90){return this.rpc<{ok:boolean;code?:string;preserved?:boolean}>('mtm_btvn_issue_missing_code',{p_student_id:studentId,p_days:days});}
   async scoresFile(lessonCode:string){const rows=await this.rpc<StudentWork[]>('mtm_btvn_admin_scores',{p_lesson:lessonCode});return scoresCsv(rows,lessonCode);}
