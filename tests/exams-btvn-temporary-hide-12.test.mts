@@ -4,7 +4,7 @@ import {SupabaseHomeworkRepository} from '../server/btvn/supabase-repository';
 import {createDurableHomeworkHandler} from '../server/btvn/durable-http';
 import {assignedMa,thiThangBlock,visibleThiThangCards} from '../server/btvn/thi-thang';
 
-const bases=['thi-thang-2026-10-2k10-8','thi-thang-2026-10-2k11-8'];
+const bases=['thi-thang-2026-10-2k10-8','thi-thang-2026-10-2k11-9'];
 const targets=bases.flatMap(base=>['thi','btvn'].flatMap(phase=>[1,2].map(ma=>`${base}-${phase}-ma-${ma}`)));
 const name='Học sinh giả kiểm chặn',className='2K10 8+',fixture=pipelineFixture();
 const cards=targets.map(lessonCode=>({lessonCode,submittedAt:null}));
@@ -34,8 +34,8 @@ for(const slug of targets){
 }
 assert.equal(commits,0);assert.equal(signed,0);assert.equal(assets,0);
 
-// Lessons outside the exact set (incl. 2K11 9+ reopened 28/10) keep the original deterministic assignment.
-for(const [base,cls] of [['thi-thang-2026-10-2k10-9','2K10 9+'],['thi-thang-2026-10-2k10-thu-3-6','2K10 9+'],['thi-thang-2026-10-2k11-9','2K11 9+']]){
+// Lessons outside the exact set (incl. 2K11 8+ reopened 28/10) keep the original deterministic assignment.
+for(const [base,cls] of [['thi-thang-2026-10-2k10-9','2K10 9+'],['thi-thang-2026-10-2k10-thu-3-6','2K10 9+'],['thi-thang-2026-10-2k11-8','2K11 8+']]){
  const own=assignedMa(base,name,cls);
  for(const phase of ['thi','btvn'])for(const ma of [1,2]){
   const slug=`${base}-${phase}-ma-${ma}`,reason=thiThangBlock(slug,[],name,cls);
