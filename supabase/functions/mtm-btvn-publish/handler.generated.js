@@ -1451,8 +1451,10 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       for (const item of decoded) await port.upload(item.storage_path, item.bytes, item.asset.content_type, item.asset.sha256);
       const metadata = decoded.map(({ asset, bytes, storage_path }) => ({ path: asset.path, sha256: asset.sha256, content_type: asset.content_type, bytes: bytes.length, storage_path }));
       return respond(200, await port.rpc("publish", { kind, opensAt: body.opensAt, closesAt: body.closesAt, lesson_key: body.lesson_key, source_version: body.source_version, material, exam, assets: metadata, verification: proof }));
-    } catch {
-      return respond(422, { error_code: "PUBLISH_REJECTED" });
+    } catch (e) {
+      const code = e instanceof Error && /^[A-Z][A-Z0-9_]{2,59}$/.test(e.message) ? e.message : "UNCLASSIFIED";
+      console.warn("[btvn-publish] rejected", code);
+      return new Response(JSON.stringify({ error_code: "PUBLISH_REJECTED" }), { status: 422, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "X-MTM-Reject-Code": code } });
     }
   };
 }
