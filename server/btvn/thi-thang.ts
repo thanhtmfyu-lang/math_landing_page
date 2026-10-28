@@ -13,7 +13,7 @@ export function assignedMa(base:string,fullName:string,className:string):1|2{
 }
 type Card=Pick<HomeworkLesson,'lessonCode'|'submittedAt'>;
 /** Thành giao 27/10/2026: tạm ẩn các bài chờ đối soát lịch DB.
- * 28/10: mở lại 4 bài 2K11 9+ (thi thứ Tư 28/10 19:30–21:30 theo tin đính chính 26/10; lịch cột đã áp bằng 20261028_0500).
+ * 28/10 19:21 anh Thành chốt: tối nay 28/10 lớp 8+ thi, tối mai 29/10 mới 9+ → mở 4 bài 2K11 8+, ẩn 2K11 9+ đến khi DB đúng lịch 29/10.
  * Chặn tại cổng server hiện có, cả đọc đề và ghi bài; gỡ bằng PR riêng sau nghiệm thu.
  * Không tự hết hạn theo đồng hồ hoặc theo lịch chưa xác minh; không thay DB. */
 const TEMPORARILY_HIDDEN_LESSONS:ReadonlySet<string>=new Set([
@@ -21,10 +21,10 @@ const TEMPORARILY_HIDDEN_LESSONS:ReadonlySet<string>=new Set([
   'thi-thang-2026-10-2k10-8-thi-ma-2',
   'thi-thang-2026-10-2k10-8-btvn-ma-1',
   'thi-thang-2026-10-2k10-8-btvn-ma-2',
-  'thi-thang-2026-10-2k11-8-thi-ma-1',
-  'thi-thang-2026-10-2k11-8-thi-ma-2',
-  'thi-thang-2026-10-2k11-8-btvn-ma-1',
-  'thi-thang-2026-10-2k11-8-btvn-ma-2',
+  'thi-thang-2026-10-2k11-9-thi-ma-1',
+  'thi-thang-2026-10-2k11-9-thi-ma-2',
+  'thi-thang-2026-10-2k11-9-btvn-ma-1',
+  'thi-thang-2026-10-2k11-9-btvn-ma-2',
 ]);
 const submitted=(cards:Card[],code:string)=>cards.some(card=>card.lessonCode===code&&card.submittedAt!=null);
 /** Mã HS đã làm: bài thi online đã nộp, nếu không thì BTVN mã kia đã nộp (HS offline tự chọn). */
