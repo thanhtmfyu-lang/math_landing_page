@@ -1,5 +1,6 @@
 // Ảnh tự luận đã nộp trên web cho bộ chấm (Javis), CHỈ ĐỌC: POST JSON {action:"list", lessons:[mã bài] | prefix:"thi-thang-2026-10-..."},
 // header x-mtm-token = MTM_DD_TOKEN (dùng chung với mtm-diem-danh). Trả từng trang ảnh đã xác nhận nhận kèm link ký 1 giờ.
+// action:"scores" (cùng lessons | prefix): trả receipts (các lần nộp, điểm máy chấm) của từng HS trong btvn_work, không SĐT.
 // Bảng tu_luan_images không cấp cho service_role (migration 099) nên đọc qua SUPABASE_DB_URL như mtm-btvn-publish. Không ghi DB/Storage.
 import postgres from "npm:postgres@3.4.5";
 const URL_DB = Deno.env.get("SUPABASE_URL") ?? "";
@@ -37,8 +38,20 @@ Deno.serve(async (req) => {
   const prefix = typeof p?.prefix === "string" ? p.prefix : "";
   const lessonsOk = lessons.length >= 1 && lessons.length <= 20 && lessons.every((l) => typeof l === "string" && /^[a-z0-9-]{1,160}$/.test(l));
   const prefixOk = /^thi-thang-[0-9]{4}-[0-9]{2}-[a-z0-9-]{0,120}$/.test(prefix);
-  if (p?.action !== "list" || (!lessonsOk && !prefixOk)) return Response.json({ error: "bad request" }, { status: 400 });
+  if ((p?.action !== "list" && p?.action !== "scores") || (!lessonsOk && !prefixOk)) return Response.json({ error: "bad request" }, { status: 400 });
   try {
+    if (p.action === "scores") {
+      const rows = await sql`select w.student_id::text as "studentId", s.full_name as "fullName", c.label as "className",
+          w.lesson_code as "lessonCode", w.receipts as "receipts"
+        from mtm_hw_private.btvn_work w
+        join mtm_hw_private.students s on s.id = w.student_id
+        join mtm_hw_private.classes c on c.id = s.class_id
+        where jsonb_array_length(w.receipts) > 0
+          and ${lessonsOk ? sql`w.lesson_code = any(${lessons as string[]}::text[])` : sql`starts_with(w.lesson_code, ${prefix})`}
+        order by w.lesson_code, s.full_name, s.id
+        limit 3000`;
+      return Response.json({ count: rows.length, items: rows }, { headers: { "cache-control": "no-store" } });
+    }
     const rows = await sql`select i.student_id::text as "studentId", s.full_name as "fullName", c.label as "className",
         i.lesson_code as "lessonCode", i.page_number as "pageNumber", i.received_at as "receivedAt", i.storage_path as "path"
       from mtm_hw_private.tu_luan_images i
