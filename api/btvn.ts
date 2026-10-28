@@ -1,3 +1,4 @@
+import {createClientErrorLogger} from '../server/btvn/client-error';
 import {expireLegacyHomeworkCookie} from '../server/btvn/http';
 import {checkVideoEmbed} from '../server/btvn/video-embed';
 import {createHmac} from 'node:crypto';
@@ -16,9 +17,18 @@ type Req={method?:string;body?:unknown;headers:Record<string,string|string[]|und
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const header=(req:Req,key:string)=>typeof req.headers[key]==='string'?req.headers[key] as string:'';
 /** Chỉ mount production sau Claude nghiệm thu. Không đọc env/kết nối khi import. */
+const logClientError=createClientErrorLogger();
 export function createBtvnApi(getEnv=()=>process.env,loadRepository:()=>Promise<typeof createSupabaseRepository>=async()=>createSupabaseRepository,options:{checkVideoEmbed?:typeof checkVideoEmbed;clock?:()=>number;parentRpc?:(env:{SUPABASE_URL:string;SUPABASE_SERVICE_ROLE_KEY:string})=>Rpc}={}){return async function handler(req:Req,res:Res){
  res.setHeader('Cache-Control','no-store, private');res.setHeader('X-Robots-Tag','noindex, nofollow');
  const env=getEnv();
+ // Reuse the existing function: no extra deployment endpoint or student session.
+ if((req.body as {action?:unknown}|null)?.action==='client-error'){
+  const host=header(req,'host'),origin=header(req,'origin');
+  if(req.method!=='POST')return res.status(405).json({message:'Chỉ nhận POST.'});
+  if(!allowedBtvnOrigin(origin,env)||origin!==`https://${host}`)return res.status(403).json({message:'Không thể ghi nhận lỗi.'});
+  return logClientError((req.body as {error?:unknown}).error)?res.status(202).json({ok:true}):res.status(400).json({message:'Lỗi không hợp lệ.'});
+ }
+
  if(env.MTM_BTVN_ENABLED!=='1'||env.VERCEL!=='1'||!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY||!env.MTM_HOMEWORK_PUBLISHABLE_KEY||!env.MTM_BTVN_NETWORK_SECRET||env.MTM_BTVN_NETWORK_SECRET.length<32)return res.status(503).json({message:'BTVN chưa mở trên máy chủ. Vui lòng chờ MTM xác nhận.'});
  try{
   const host=header(req,'host'),origin=header(req,'origin');
