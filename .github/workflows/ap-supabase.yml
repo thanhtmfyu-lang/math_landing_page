@@ -66,7 +66,8 @@ jobs:
             if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then echo "ĐẠT  $f"
             else
               # Chỉ in dòng lỗi đầu, bỏ phần DETAIL (có thể chứa giá trị dòng) và che dãy số dài.
-              echo "LỖI  $f (HTTP $code): $(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{6,}/***/g' | head -c 300)"; exit 1; fi
+              m="$(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{6,}/***/g' | head -c 600)"
+              echo "LỖI  $f (HTTP $code): $m"; [[ "$f" == *chan_doan* ]] && echo "::notice title=chan-doan::$m"; exit 1; fi
           done
       - name: Làm mới bản báo cáo lọc tài khoản thử
         if: inputs.migrations != ''
