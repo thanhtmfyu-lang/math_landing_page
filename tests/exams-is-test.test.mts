@@ -24,6 +24,7 @@ const rpc=(name:string,args:Record<string,any>,role='service_role',actor='')=>db
 });
 const admin=(name:string,args:Record<string,any>,actor=owner)=>rpc(name,args,'authenticated',actor);
 const denied=(fn:()=>Promise<any>)=>assert.rejects(fn,(e:any)=>e.code==='42501');
+const E_BEGIN='\nbegin\n';
 const check=async(name:string,fn:()=>Promise<void>)=>{await fn();checks.push(name);console.log('ĐẠT IS_TEST: '+name);};
 const cookie='a'.repeat(64),testCookie='b'.repeat(64),jpeg=new Uint8Array([255,216,255,...Array(250).fill(7)]),sha=createHash('sha256').update(jpeg).digest('hex');
 const blobs=new Map<string,Uint8Array>();let removals=0,failRemove=false;
@@ -66,6 +67,18 @@ try{
   assert.deepEqual(await one("select to_jsonb(s)-'is_test' from mtm_hw_private.students s where id=$1",[real]),before);
   assert.equal(await one('select is_test from mtm_hw_private.students where id=$1',[real]),false);
   for(const f of original)assert.equal(await one('select pg_get_functiondef($1::oid)',[f.oid]),f.def);
+ });
+ await check('refresh_reports: idempotent, and an edited original reaches its _real100 clone',async()=>{
+  const count="select count(*)::int from pg_proc p join pg_namespace n on n.oid=p.pronamespace where n.nspname in ('public','mtm_hw_private') and p.proname ~ '_real100$'";
+  const n=await one(count);assert.ok(n>20);
+  assert.equal(await one('select mtm_test100.refresh_reports()'),n);assert.equal(await one(count),n);
+  const def=await one("select pg_get_functiondef('public.mtm_ph_extras(text,uuid)'::regprocedure)");
+  assert.equal(def.split(E_BEGIN).length,2);
+  await db.exec(def.replace(E_BEGIN,E_BEGIN+' perform 1; -- refresh-marker\n'));
+  assert.ok(!String(await one("select pg_get_functiondef('public.mtm_ph_extras_real100(text,uuid)'::regprocedure)")).includes('refresh-marker'));
+  await one('select mtm_test100.refresh_reports()');
+  assert.ok(String(await one("select pg_get_functiondef('public.mtm_ph_extras_real100(text,uuid)'::regprocedure)")).includes('refresh-marker'));
+  await db.exec(def);await one('select mtm_test100.refresh_reports()');
  });
  await q("insert into mtm_hw_private.students(id,owner_id,class_id,full_name,school,school_class,public_alias,is_test) values($1,$2,$3,'Test fixture','Synthetic','11A','MTM-000000000002',true)",[test,owner,cid]);
  const exam=JSON.parse(readFileSync('scripts/fixtures/is-test-exam.json','utf8')) as PracticeExam;

@@ -9,39 +9,48 @@ alter table mtm_phong_thi.tai_khoan add column is_test boolean not null default 
 
 create schema mtm_test100;
 revoke all on schema mtm_test100 from public,anon,authenticated,service_role,mtm_btvn_publisher;
-create view mtm_test100.students as select * from mtm_hw_private.students where not is_test;
-create view mtm_test100.btvn_lessons as select * from mtm_hw_private.btvn_lessons where not is_test;
-create view mtm_test100.btvn_work as select w.* from mtm_hw_private.btvn_work w
- join mtm_test100.students s on s.id=w.student_id join mtm_test100.btvn_lessons l on l.code=w.lesson_code;
-create view mtm_test100.tu_luan_images as select i.* from mtm_hw_private.tu_luan_images i
- join mtm_test100.students s on s.id=i.student_id join mtm_test100.btvn_lessons l on l.code=i.lesson_code;
-create view mtm_test100.paper_scores as select p.* from mtm_hw_private.paper_scores p
- join mtm_test100.students s on s.id=p.student_id
- where not exists(select 1 from mtm_hw_private.btvn_lessons l where l.code=p.test_code and l.is_test);
-create view mtm_test100.btvn_monthly_scores as select p.* from mtm_hw_private.btvn_monthly_scores p join mtm_test100.students s on s.id=p.student_id;
-create view mtm_test100.btvn_manual_grades as select p.* from mtm_hw_private.btvn_manual_grades p
- join mtm_test100.students s on s.id=p.student_id join mtm_test100.btvn_lessons l on l.code=p.lesson_code;
-create view mtm_test100.attempts as select p.* from mtm_hw_private.attempts p join mtm_test100.students s on s.id=p.student_id;
-create view mtm_test100.pt_luot as select l.* from mtm_phong_thi.luot l
- where not exists(select 1 from mtm_hw_private.students s where s.id=l.hoc_sinh and s.is_test)
- and not exists(select 1 from mtm_phong_thi.tai_khoan t where t.id=l.tai_khoan and t.is_test)
- and not exists(select 1 from mtm_hw_private.btvn_lessons b where b.code=l.de and b.is_test);
-create view mtm_test100.pt_dang_ky_dot as select d.* from mtm_phong_thi.dang_ky_dot d
- where not exists(select 1 from mtm_hw_private.students s where s.id=d.hoc_sinh and s.is_test);
 
 -- New report entry points, retaining current DB customizations. Original functions
 -- and their ACL stay intact. Filtering happens BEFORE window ranks/averages/LIMIT.
 -- Explicit allowlist, no EXECUTE supplied by HTTP callers. Dependencies in the
 -- historical reporting chain are cloned too, with no direct EXECUTE grant.
 create table mtm_test100.report_sources(signature text primary key,source_sha256 text not null,source_definition text not null);
-do $reports$
-declare f record; g record; src text; audit_src text; qualified text; signature text; root boolean;
+-- Clones are snapshots of the originals. Every later migration that edits an original
+-- must be followed by refresh_reports(); ap-supabase.yml calls it after each run.
+create function mtm_test100.refresh_reports() returns integer
+language plpgsql set search_path='' as $reports$
+declare f record; g record; src text; audit_src text; qualified text; signature text; root boolean; n integer=0;
  names text[]=array['mtm_btvn_leaderboard','mtm_btvn_leaderboard_class','mtm_btvn_my_rank','mtm_btvn_arena',
  'mtm_btvn_scorebook','mtm_btvn_admin_scores','mtm_btvn_opening_materials',
  'mtm_btvn_sheet_csv','mtm_btvn_sheet_csv2','mtm_btvn_sheet_csv3','mtm_btvn_sheet_csv4','mtm_btvn_sheet_csv5','mtm_btvn_sheet_csv6',
  'mtm_ph_children','mtm_ph_extras','mtm_ph_child_session','mtm_btvn_read','mtm_tu_luan_teacher',
  'mtm_pt_xep_hang','mtm_pt_xep_hang_dot','mtm_pt_khao_sat','mtm_pt_lich_su','mtm_pt_bao_phu_huynh','mtm_pt_ghi_luot'];
 begin
+-- New columns on base tables reach the views (CREATE OR REPLACE appends columns).
+ execute $v$create or replace view mtm_test100.students as select * from mtm_hw_private.students where not is_test$v$;
+ execute $v$create or replace view mtm_test100.btvn_lessons as select * from mtm_hw_private.btvn_lessons where not is_test$v$;
+ execute $v$create or replace view mtm_test100.btvn_work as select w.* from mtm_hw_private.btvn_work w
+ join mtm_test100.students s on s.id=w.student_id join mtm_test100.btvn_lessons l on l.code=w.lesson_code$v$;
+ execute $v$create or replace view mtm_test100.tu_luan_images as select i.* from mtm_hw_private.tu_luan_images i
+ join mtm_test100.students s on s.id=i.student_id join mtm_test100.btvn_lessons l on l.code=i.lesson_code$v$;
+ execute $v$create or replace view mtm_test100.paper_scores as select p.* from mtm_hw_private.paper_scores p
+ join mtm_test100.students s on s.id=p.student_id
+ where not exists(select 1 from mtm_hw_private.btvn_lessons l where l.code=p.test_code and l.is_test)$v$;
+ execute $v$create or replace view mtm_test100.btvn_monthly_scores as select p.* from mtm_hw_private.btvn_monthly_scores p join mtm_test100.students s on s.id=p.student_id$v$;
+ execute $v$create or replace view mtm_test100.btvn_manual_grades as select p.* from mtm_hw_private.btvn_manual_grades p
+ join mtm_test100.students s on s.id=p.student_id join mtm_test100.btvn_lessons l on l.code=p.lesson_code$v$;
+ execute $v$create or replace view mtm_test100.attempts as select p.* from mtm_hw_private.attempts p join mtm_test100.students s on s.id=p.student_id$v$;
+ execute $v$create or replace view mtm_test100.pt_luot as select l.* from mtm_phong_thi.luot l
+ where not exists(select 1 from mtm_hw_private.students s where s.id=l.hoc_sinh and s.is_test)
+ and not exists(select 1 from mtm_phong_thi.tai_khoan t where t.id=l.tai_khoan and t.is_test)
+ and not exists(select 1 from mtm_hw_private.btvn_lessons b where b.code=l.de and b.is_test)$v$;
+ execute $v$create or replace view mtm_test100.pt_dang_ky_dot as select d.* from mtm_phong_thi.dang_ky_dot d
+ where not exists(select 1 from mtm_hw_private.students s where s.id=d.hoc_sinh and s.is_test)$v$;
+ delete from mtm_test100.report_sources;
+ for g in select p.oid::regprocedure sig from pg_proc p join pg_namespace n on n.oid=p.pronamespace
+  where n.nspname in ('public','mtm_hw_private') and p.proname ~ '_real100$' loop
+  execute 'drop function '||g.sig::text;
+ end loop;
  if to_regprocedure('public.mtm_tu_luan_student(text,text,text,text,text,integer)') is null
  or to_regprocedure('mtm_hw_private.btvn_rank_rows(text,text,text,text,uuid)') is null then
  raise exception '100 requires 099 and the existing ranking schema';end if;
@@ -91,7 +100,7 @@ begin
   src=replace(src,'CREATE OR REPLACE FUNCTION','CREATE FUNCTION');
   -- SQL functions may reference a later clone; resolve when first called.
   perform set_config('check_function_bodies',case when f.prolang=(select oid from pg_language where lanname='sql') then 'off' else 'on' end,true);
-  execute src;
+  execute src;n=n+1;
   signature=format('%I.%I(%s)',f.nspname,f.proname||'_real100',f.args);
   execute 'revoke all on function '||signature||' from public,anon,authenticated,service_role,mtm_btvn_publisher';
   root=f.nspname='public' and f.proname=any(names);
@@ -100,7 +109,10 @@ begin
   end if;
  end loop;
  perform set_config('check_function_bodies','on',true);
+ return n;
 end$reports$;
+revoke all on function mtm_test100.refresh_reports() from public,anon,authenticated,service_role,mtm_btvn_publisher;
+select mtm_test100.refresh_reports();
 
 -- Student path: strict test/real lesson separation, retaining ordinary QA access.
 create function public.mtm_btvn_read_scoped100(p_session text,p_lesson text default null) returns jsonb

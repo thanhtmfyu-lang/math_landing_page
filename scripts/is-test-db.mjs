@@ -11,7 +11,7 @@ export async function baselineDatabase(){
  create schema storage;create table storage.buckets(id text primary key,name text,public boolean,file_size_limit bigint,allowed_mime_types text[]);
  create table storage.objects(id uuid primary key default gen_random_uuid(),bucket_id text,name text,metadata jsonb,created_at timestamptz default clock_timestamp());
  alter table storage.objects enable row level security;`);
- const applied=[];
+ const applied=[],skipped=[];
  for(const dir of ['supabase/migrations','supabase/migrations-pending']){
   // 043 is a one-off real-person data reconciliation, with no schema definitions.
   const files=readdirSync(dir).filter(f=>f.endsWith('.sql')&&!f.includes('202610270100')&&!f.startsWith('20261027_')&&!/202610180043|202610190068|202610200075/.test(f)).sort((a,b)=>{
@@ -33,10 +33,14 @@ export async function baselineDatabase(){
     await db.exec(sql);applied.push(file);
     if(file.includes('202610180042'))await db.exec(`create table mtm_hw_private.merge_backup(id bigserial primary key,at timestamptz default now(),kept uuid,merged uuid,kind text,data jsonb)`);
    }
-   catch(e){console.error('SCHEMA FAILED',file,e.message);throw e;}
+   catch(e){
+    // Live data migrations guard on real rows (RAISE, SQLSTATE P0001) and cannot run on
+    // the empty fixture; they carry no schema the is_test checks depend on.
+    if(dir==='supabase/migrations-pending'&&e.code==='P0001'){await db.exec('rollback').catch(()=>{});skipped.push(file);continue;}
+    console.error('SCHEMA FAILED',file,e.message);throw e;}
   }
  }
- return {db,applied};
+ return {db,applied,skipped};
 }
 if(process.argv[1]?.replaceAll('\\','/').endsWith('/is-test-db.mjs')){
  const {db,applied}=await baselineDatabase();console.log('SCHEMA OK',applied.length);
