@@ -36,7 +36,7 @@ export function createSemesterApi(getEnv: () => Env = () => process.env, clientF
       || (b.action === 'activate' && !activationDigest(b.code))) return res.status(400).json({message: 'Yêu cầu không hợp lệ.'});
     const session = semesterSession(req.headers.cookie);
     if (!session) return res.status(401).json({message: messages.login[1]});
-    if (env.MTM_SEMESTER_ENABLED !== '1' || !env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
+    if (env.MTM_SEMESTER_ENABLED === '0' || !env.SUPABASE_URL || !env.SUPABASE_SERVICE_ROLE_KEY)
       return res.status(503).json({message: 'Khóa ôn chưa mở trên máy chủ. Em nhắn Zalo 0967 365 413 để được hỗ trợ.'});
     try {
       if (new URL(env.SUPABASE_URL).protocol !== 'https:') throw Error('HTTPS required');
