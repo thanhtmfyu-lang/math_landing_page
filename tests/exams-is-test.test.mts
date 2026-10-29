@@ -136,6 +136,20 @@ try{
   assert.ok(rows.length>0);assert.ok(!JSON.stringify(rows).includes('Test fixture'));assert.ok(JSON.stringify(rows).includes('Real fixture'));
   const csv=await rpc('mtm_btvn_sheet_csv6_real100',{p_tab:'cahomnay'});assert.ok(!String(csv).includes('Test fixture'));assert.ok(String(csv).includes('Real fixture'));
  });
+ await check('external consumers: class list API, due sync and support report skip test fixture',async()=>{
+  const migration=readFileSync('supabase/migrations-pending/20261029_1500_is_test_nguon_ngoai.sql','utf8');
+  await db.exec(migration);await db.exec(migration);
+  const ca=await rpc('mtm_dd_api15',{p:{action:'ca'}});
+  assert.ok(ca.length>0);assert.ok(!JSON.stringify(ca).includes('Test fixture'));assert.ok(JSON.stringify(ca).includes('Real fixture'));
+  // Same parent phone on both: before the patch two candidates made the attendee ambiguous.
+  await q("update mtm_hw_private.students set parent_phone='0900000009' where id=any($1)",[[real,test]]);
+  const due=await rpc('mtm_btvn_sync_due',{p_payload:{sessions:[{label:'2K10 9+',startsAt:today+'T19:30:00+07:00',sourceIdentity:'qa-due',attendees:[{phone:'0900000009',status:'C',name:'Ten khac'}]}]},p_apply:false});
+  assert.equal(due.matchedStudents,1);assert.equal(due.unmatched,0);
+  await q('update mtm_hw_private.students set parent_phone=null where id=any($1)',[[real,test]]);
+  await q("insert into mtm_hw_private.support_events(kind,class_name,full_name,phone,student_id) values('tu_dong_them','2K10 9+','Real fixture','0900000001',$1),('tu_dong_them','2K10 9+','Test fixture','0900000002',$2)",[real,test]);
+  const support=await rpc('mtm_btvn_support_report',{p_since:'2000-01-01T00:00:00Z'});
+  assert.deepEqual(support.map((r:any)=>r.studentId),[real]);
+ });
  await check('Phong thi rank omits test student and test account before row_number',async()=>{
   const tk=await one("insert into mtm_phong_thi.tai_khoan(sdt,ten,mat_khau,is_test) values('0900000002','Test external','scrypt$fixture$fixture',true) returning id");
   for(const [i,sid,account,score] of [[1,real,null,8],[2,test,null,10],[3,null,tk,10]])await q("insert into mtm_phong_thi.luot(nonce,de,loai,nguoi,hoc_sinh,tai_khoan,diem,thang,dung,tong,giay,qua_gio,chi_tiet,ten_hien_thi) values($1,'qa-pt','thpt',$2,$3,$4,$5,10,1,1,100,false,'{}',$6)",['qa-nonce-'+i,'hs:fixture'+i,sid,account,score,i===1?'Real fixture':'Test fixture']);

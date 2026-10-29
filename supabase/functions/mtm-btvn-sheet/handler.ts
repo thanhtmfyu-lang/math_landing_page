@@ -65,7 +65,8 @@ export function createSheetHandler(config: SheetConfig, fetcher: Fetcher = fetch
       if (req.method === "POST") return await feedback(req);
       const tab = url.searchParams.get("tab") ?? "";
       if (!TABS.has(tab)) return new Response("bad tab", { status: 400, headers: PRIVATE });
-      const response = await fetcher(`${config.databaseUrl}/rest/v1/rpc/mtm_btvn_sheet_csv6`, {
+      // Bản _real100 bỏ tài khoản/bài thử (is_test) trước khi đếm, liệt kê ca.
+      const response = await fetcher(`${config.databaseUrl}/rest/v1/rpc/mtm_btvn_sheet_csv6_real100`, {
         method: "POST", headers: databaseHeaders, body: JSON.stringify({ p_tab: tab }),
       });
       if (!response.ok) return new Response("loi du lieu " + response.status, { status: 502, headers: PRIVATE });
