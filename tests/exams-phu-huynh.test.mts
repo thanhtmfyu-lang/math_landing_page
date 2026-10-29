@@ -37,7 +37,7 @@ function fakeDb(){
     return {work:{student:{fullName:s.fullName,className:s.className},drafts:[],receipts:[{score:id===A?9:4,submittedAt:NOW-86400e3,late:false}]},material:material('L2','2026-10-18'),
      lessons:[{...material('L2','2026-10-18'),available:true,dueAt:null,expectedDueAt:null,bestScore:id===A?9:4,submittedAt:NOW-86400e3,late:false},
       {...material('L1','2026-10-15'),available:true,dueAt:NOW-2*86400e3,bestScore:id===A?5.5:3,submittedAt:NOW-3*86400e3,late:true},
-      {...material('L0','2026-10-11'),available:true,dueAt:null,expectedDueAt:NOW-5*86400e3,bestScore:null,submittedAt:null,late:null}]};}
+      {...material('L0','2026-10-16'),available:true,dueAt:null,expectedDueAt:NOW-5*86400e3,bestScore:null,submittedAt:null,late:null}]};}
    case 'mtm_btvn_my_rank':return {rank:2,score:8.1,submitted:3,total:18};
    case 'mtm_btvn_logout':childTokens.delete(a.p_session);return null;
    case 'mtm_ph_extras':{const p=ph();if(!links.has(p+'|'+a.p_student_id))throw new RpcError('42501','Not your child');
@@ -103,9 +103,9 @@ r=await handleParent(db.rpc,{ph:'logout'},cookieA,net);assert.ok(r.headers['Set-
 r=await handleParent(db.rpc,{ph:'children'},cookieA,net);assert.equal(r.status,401);
 // 8. Tổng quan: tỉ lệ đi học tháng, phần mạnh/yếu theo điểm cao nhất từng buổi.
 const sum=summarize([
- {lessonCode:'a',title:'Hàm số',date:'2026-10-02',kind:'btvn',dueAt:0,bestScore:9.5,submittedAt:1,late:false,status:'da-nop'},
- {lessonCode:'b',title:'Mũ log',date:'2026-10-05',kind:'btvn',dueAt:0,bestScore:4,submittedAt:1,late:false,status:'da-nop'},
- {lessonCode:'c',title:'Tích phân',date:'2026-10-09',kind:'btvn',dueAt:0,bestScore:null,submittedAt:null,late:false,status:'qua-han'}],
+ {lessonCode:'a',title:'Hàm số',date:'2026-10-16',kind:'btvn',dueAt:0,bestScore:9.5,submittedAt:1,late:false,status:'da-nop'},
+ {lessonCode:'b',title:'Mũ log',date:'2026-10-17',kind:'btvn',dueAt:0,bestScore:4,submittedAt:1,late:false,status:'da-nop'},
+ {lessonCode:'c',title:'Tích phân',date:'2026-10-19',kind:'btvn',dueAt:0,bestScore:null,submittedAt:null,late:false,status:'qua-han'}],
  [{date:'2026-10-02',status:'co_mat',label:''},{date:'2026-10-05',status:'vang',label:''},{date:'2026-09-28',status:'co_mat',label:''}],NOW);
 assert.deepEqual(sum.monthAttendance,{attended:1,total:2});
 assert.equal(sum.submitted,2);assert.equal(sum.dueTotal,3);
@@ -146,4 +146,48 @@ console.log('GÓC PHỤ HUYNH: 10/10 nhóm kiểm tra đạt (ghép đúng, sai 
  assert.equal(m[2].label,'Vắng có phép');
  const s=summarize([],m,Date.parse('2026-10-21T12:00:00+07:00'));
  assert.deepEqual(s.monthAttendance,{attended:2,total:3});
+}
+
+// 29/10: anh Thành hỏi "sao góc phụ huynh lại như này?" — tên lộ ghi chú nội bộ, tên bài là tên tệp, bài cũ trước sổ chính thức hiện "chưa nộp",
+// một bài vừa "làm tốt" vừa "cần luyện", buổi kế tiếp không có ngày.
+{
+ const m=await import('../server/phu-huynh/service');
+ assert.equal(m.parentDisplayName('Nguyễn Văn A (HỌC HSA TỪ 26/7 - CHƯA THU)'),'Nguyễn Văn A');
+ assert.equal(m.parentDisplayName('Trần B [ghi chú]'),'Trần B');
+ assert.equal(m.parentDisplayName('Lê C'),'Lê C');
+ const mat=(homeworkTitle:string,title='Buổi học')=>({lessonCode:'x',classNames:['2K9 8+'],date:'2026-10-21',title,homeworkTitle,videoId:null,materialUrl:null,handoutUrl:null,homeworkUrl:null}) as any;
+ assert.equal(m.parentLessonTitle(mat('Đề 07E_Đề rèn luyện số 7E_HS.pdf [Có đính chính câu 3]')),'Đề rèn luyện số 7E');
+ assert.equal(m.parentLessonTitle(mat('Đề 07E_Đề rèn luyện hàm số_HS.pdf')),'Đề rèn luyện hàm số (07E)');
+ assert.equal(m.parentLessonTitle(mat('Bất phương trình bậc nhất hai ẩn')),'Bất phương trình bậc nhất hai ẩn');
+ assert.ok(!/HS$|\.pdf|_/.test(m.parentLessonTitle(mat('Phiếu 3_Hàm số_HS.pdf'))));
+ const hw=(code:string,title:string,date:string,bestScore:number|null,status:any='da-nop')=>({lessonCode:code,title,date,kind:'btvn',dueAt:0,bestScore,submittedAt:bestScore===null?null:1,late:false,status});
+ const d=m.dedupeParentHomework([hw('a','Đề 07D','2026-10-20',0.77),hw('b','Đề 07D','2026-10-21',10),hw('c','Bài tập về nhà','2026-10-22',5),hw('e','Bài tập về nhà','2026-10-23',6)]);
+ assert.deepEqual(d.map(h=>h.lessonCode),['b','c','e'],'gộp bài trùng tên lấy lần tốt nhất; tên chung không gộp');
+ const s=m.summarize([hw('a','Đề 07D','2026-10-21',10),hw('b','Chữa nốt phiếu','2026-10-08',null,'qua-han'),hw('c','Mũ','2026-10-22',null,'qua-han')],[],NOW);
+ assert.deepEqual(s.missing.map(x=>x.lessonCode),['c'],'bài trước 15/10 không vào "chưa nộp"');
+ assert.equal(s.dueTotal,2);
+ assert.ok(!s.weak.some(w=>s.strong.some(t=>t.title===w.title)));
+ const corner=readFileSync('src/native/phu-huynh/ParentCorner.tsx','utf8');
+ assert.ok(corner.includes('bài chưa nộp tính 0 điểm')&&corner.includes('r.upcoming.slice(11,16)'));
+ const mig=readFileSync('supabase/migrations-pending/20261029_1300_ph_buoi_ke_tiep.sql','utf8');
+ assert.ok(mig.includes('hv_ca_rows')&&mig.includes("'upcoming',"));
+}
+
+// 29/10 (rà bản xem thử): cùng đề giao lại dưới tên khác / nộp lại ở buổi sau → 1 dòng, điểm ghi về buổi gốc.
+{
+ const m=await import('../server/phu-huynh/service');
+ assert.equal(m.parentExamKey('Đề 07E_Đề rèn luyện_HS.pdf'),'de-7E');
+ assert.equal(m.parentExamKey(undefined,'Đề rèn luyện 07E: Bài toán tốc độ nước dâng'),'de-7E');
+ assert.equal(m.parentExamKey('Đề rèn luyện số 7E'),'de-7E');
+ assert.equal(m.parentExamKey('Bài tập lớp 12A hàm số'),null);
+ assert.equal(m.parentExamKey('Bất phương trình bậc nhất hai ẩn'),null);
+ const hw=(code:string,title:string,date:string,bestScore:number|null,status:any)=>({lessonCode:code,title,date,kind:'btvn',dueAt:0,bestScore,submittedAt:bestScore===null&&status!=='da-nop'?null:1,late:false,status});
+ const keys:Record<string,string>={a:'de-7D',b:'de-7D',c:'de-7E',d:'de-7E'};
+ const out=m.dedupeParentHomework([hw('a','Đề 07D','2026-10-24',10,'da-nop'),hw('b','Đề rèn luyện 07D','2026-10-29',0.77,'da-nop'),
+  hw('c','Đề 07E tệp','2026-10-22',null,'qua-han'),hw('d','Đề rèn luyện 07E','2026-10-27',null,'chua-nop')],h=>keys[h.lessonCode]);
+ assert.deepEqual(out.map(h=>[h.lessonCode,h.date,h.bestScore,h.status]),[['a','2026-10-24',10,'da-nop'],['d','2026-10-27',null,'chua-nop']]);
+ const late=m.dedupeParentHomework([hw('a','Đề 07D','2026-10-24',null,'qua-han'),hw('b','Đề 07D x','2026-10-29',8,'da-nop')],h=>keys[h.lessonCode]);
+ assert.deepEqual(late.map(h=>[h.lessonCode,h.date]),[['b','2026-10-24']],'nộp ở buổi sau thì điểm ghi về buổi gốc');
+ const corner=readFileSync('src/native/phu-huynh/ParentCorner.tsx','utf8');
+ assert.ok(corner.includes("'Chưa có dữ liệu'")&&corner.includes("'Chưa có điểm'"));
 }

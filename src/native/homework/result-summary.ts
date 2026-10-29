@@ -171,7 +171,7 @@ export function createHomeworkResultSummary(state:SummaryState):string|null{
     ...(validOfficialHomeworkScore(receipt.officialScore)?['Điểm chính thức được giáo vụ xác nhận sau khi chấm đủ các phần.']:[]),
     'Nộp lúc: '+date+' (giờ Việt Nam)',
     'Thời gian làm bài: '+minutes+' phút '+seconds+' giây',
-    'Hạn nộp: '+(receipt.late===null?'Chờ xác minh':receipt.late?'Nộp muộn':'Đúng hạn'),
+    'Hạn nộp: '+(receipt.late===null?'Đã ghi nhận bài nộp':receipt.late?'Nộp muộn':'Đúng hạn'),
     ...(receipt.timedOut?['Kết thúc lượt: Hết giờ tự nộp']:[]),
     'Kết quả của lượt đã được máy chủ xác nhận.',
     'Phiếu này không được gửi tự động.',

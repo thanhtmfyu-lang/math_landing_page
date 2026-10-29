@@ -50,7 +50,7 @@ const calls=[],identity={fullName:'Giả A',phone:'0900000000',className:'Lớp 
 const props={studentCode:'FAKE',identity,classNames:['Lớp giả A','Lớp giả B'],busy:false,onCode:()=>{},onIdentity:()=>{},onLogin:x=>calls.push(x)};
 const tree=Gate(props),forms=formsOf(tree),select=walk(forms[1]).find(n=>n.type==='select');
 assert.ok(select.props.required);assert.ok(!select.props.disabled);assert.equal(select.props.value,identity.className);
-assert.equal(walk(forms[1]).filter(n=>n.type==='input').length,2);
+assert.equal(walk(forms[1]).filter(n=>n.type==='input'&&n.props.type!=='checkbox').length,2);
 let edited;walk(Gate({...props,onIdentity:x=>edited=x})).find(n=>n.type==='select').props.onChange({target:{value:'Lớp giả B'}});assert.deepEqual(edited,{...identity,className:'Lớp giả B'});
 const submit=f=>f.props.onSubmit({preventDefault(){}});
 submit(forms[1]);assert.deepEqual(calls,[identity]);

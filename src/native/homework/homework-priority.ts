@@ -21,5 +21,5 @@ export function nextHomework(lessons:HomeworkLesson[],now:number):HomeworkLesson
 
 export function homeworkPriorityReason(lesson:HomeworkLesson,now:number):string{
   const group=category(lesson,now);
-  return group===0?'Bài đang mở có hạn nộp gần nhất.':group===1?'BTVN chưa nộp đã quá hạn. Nộp bài sẽ ghi nhận muộn theo quy định.':'Bài đang mở chưa có hạn nộp được xác minh. Em kiểm tra lịch lớp trước khi làm.';
+  return group===0?'Bài đang mở có hạn nộp gần nhất.':group===1?'BTVN chưa nộp đã quá hạn. Nộp bài sẽ ghi nhận muộn theo quy định.':'Em có thể mở bài để xem nội dung và hạn nộp.';
 }

@@ -47,6 +47,6 @@ assert.ok(!ui.includes("'/api/xep-hang?")&&!ui.includes('/api/xep-hang?')&&!/dau
 assert.ok(ui.includes('fullName:state.fullName')&&ui.includes('if(!earned.length)return null'));
 assert.ok(ui.includes('Nhận giấy khen')&&ui.includes('Tải giấy khen')&&ui.includes('navigator.canShare')&&ui.includes('btvn-cert-preview'));
 const session=readFileSync(join(root,'src/native/homework/HomeworkSession.tsx'),'utf8');
-assert.ok(session.includes('<BtvnCertificates state={state}/><R104Dashboard'));
+assert.ok(session.includes('profileControl={profileControl?.(state)}/><BtvnCertificates state={state}/>'));
 assert.ok(!readFileSync(join(root,'src/native/homework/R104Dashboard.tsx'),'utf8').includes('Certificate'));
 console.log('Đạt nút giấy khen BTVN: chỉ dữ liệu của chính em, chỉ hiện khi vào top 10.');

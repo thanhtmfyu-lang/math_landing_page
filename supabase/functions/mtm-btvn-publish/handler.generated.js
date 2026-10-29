@@ -664,7 +664,8 @@ function validatePracticePresentation(input, questionOnly) {
 var class_rules_default = {
   timezone: "Asia/Ho_Chi_Minh",
   notes: [
-    "C\u1EB7p T4-T5 m\u1EDF sau T4; 2K10 Th\u1EE9 3, 6 h\u1EA1n c\xF9ng th\u1EE9 tu\u1EA7n sau theo hai gi\u1EA3 \u0111\u1ECBnh trong thi\u1EBFt k\u1EBF \u0111\u1EE3t 24."
+    "C\u1EB7p T4-T5 m\u1EDF sau T4; 2K10 Th\u1EE9 3, 6 h\u1EA1n c\xF9ng th\u1EE9 tu\u1EA7n sau theo hai gi\u1EA3 \u0111\u1ECBnh trong thi\u1EBFt k\u1EBF \u0111\u1EE3t 24.",
+    "Anh Th\xE0nh 28/10 22:44: b\xE0i giao \u1EDF ca th\u1EE9 X c\u1EE7a l\u1EDBp/th\u1EA7y n\xE0o th\xEC h\u1EA1n l\xE0 ca th\u1EE9 X tu\u1EA7n sau c\u1EE7a ch\xEDnh l\u1EDBp/th\u1EA7y \u0111\xF3 (2K9 9+/8+ b\u1ECF h\u1EA1n theo c\u1EB7p bu\u1ED5i; 2K9 XPT T3\u2192T3, T5\u2192T5)."
   ],
   classes: {
     "2K9 9+": {
@@ -681,7 +682,33 @@ var class_rules_default = {
         }
       },
       due: {
-        type: "pair_next"
+        type: "map",
+        days: {
+          "1": {
+            weekday: 1,
+            weeks: 1
+          },
+          "2": {
+            weekday: 1,
+            weeks: 1
+          },
+          "3": {
+            weekday: 3,
+            weeks: 1
+          },
+          "4": {
+            weekday: 3,
+            weeks: 1
+          },
+          "5": {
+            weekday: 5,
+            weeks: 1
+          },
+          "6": {
+            weekday: 5,
+            weeks: 1
+          }
+        }
       }
     },
     "2K14": {
@@ -712,11 +739,11 @@ var class_rules_default = {
             weeks: 1
           },
           "2": {
-            weekday: 4,
-            weeks: 0
+            weekday: 2,
+            weeks: 1
           },
           "4": {
-            weekday: 2,
+            weekday: 4,
             weeks: 1
           }
         }
@@ -736,7 +763,33 @@ var class_rules_default = {
         }
       },
       due: {
-        type: "pair_next"
+        type: "map",
+        days: {
+          "1": {
+            weekday: 2,
+            weeks: 1
+          },
+          "2": {
+            weekday: 2,
+            weeks: 1
+          },
+          "3": {
+            weekday: 4,
+            weeks: 1
+          },
+          "4": {
+            weekday: 4,
+            weeks: 1
+          },
+          "5": {
+            weekday: 6,
+            weeks: 1
+          },
+          "6": {
+            weekday: 6,
+            weeks: 1
+          }
+        }
       }
     },
     "2K10 9+": {
@@ -1454,8 +1507,10 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       for (const item of decoded) await port.upload(item.storage_path, item.bytes, item.asset.content_type, item.asset.sha256);
       const metadata = decoded.map(({ asset, bytes, storage_path }) => ({ path: asset.path, sha256: asset.sha256, content_type: asset.content_type, bytes: bytes.length, storage_path }));
       return respond(200, await port.rpc("publish", { kind, opensAt: body.opensAt, closesAt: body.closesAt, lesson_key: body.lesson_key, source_version: body.source_version, material, exam, assets: metadata, verification: proof }));
-    } catch {
-      return respond(422, { error_code: "PUBLISH_REJECTED" });
+    } catch (e) {
+      const code = e instanceof Error && /^[A-Z][A-Z0-9_]{2,59}$/.test(e.message) ? e.message : "UNCLASSIFIED";
+      console.warn("[btvn-publish] rejected", code);
+      return new Response(JSON.stringify({ error_code: "PUBLISH_REJECTED" }), { status: 422, headers: { "Content-Type": "application/json", "Cache-Control": "no-store", "X-Robots-Tag": "noindex, nofollow", "X-MTM-Reject-Code": code } });
     }
   };
 }

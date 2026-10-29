@@ -1,0 +1,324 @@
+{
+  "source": "Existing QA payload metadata, 2026-10-22; historical, not a current student login",
+  "observedAt": "2026-10-22T06:51:15.335Z",
+  "rows": [
+    {
+      "className": "2K10 8+",
+      "lessonCode": "btvn-3c910d84c7e4d0cc9dbec4ee575f502dabc36e4b-v-f0a3db8c83c9c78e6685d4df048db3ec1d39f58e",
+      "title": "ôn thi gki 1 [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-23"
+    },
+    {
+      "className": "2K10 8+",
+      "lessonCode": "2k10-cap-20261013-gk1-11-de2",
+      "title": "Đề số 2 · Giữa kỳ I Toán 11",
+      "date": "2026-10-16"
+    },
+    {
+      "className": "2K10 8+",
+      "lessonCode": "btvn-edf5cf92f9f938b72c72dd80f3d744be688cdfed-v-51a95ec7021f130514a2e74804e652c81c4ecd95",
+      "title": "Kiểm tra [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-11"
+    },
+    {
+      "className": "2K10 9+",
+      "lessonCode": "btvn-06e79aae0a9e089159b1233be73eb6f0239abf1c-v-32509d7c53b62541f81f83c19c93756ee4c99329",
+      "title": "ôn thi gki 1 [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-20"
+    },
+    {
+      "className": "2K10 9+",
+      "lessonCode": "2k10-cap-20261013-gk1-11-de2",
+      "title": "Đề số 2 · Giữa kỳ I Toán 11",
+      "date": "2026-10-13"
+    },
+    {
+      "className": "2K10 9+",
+      "lessonCode": "btvn-03dfda6f97bd48b6855c72381d67c85ca510e5eb-v-6aaad5cefe6b53949fb86068354f8fd2747ab0b5",
+      "title": "Kiểm tra [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-11"
+    },
+    {
+      "className": "2K10 9+",
+      "lessonCode": "btvn-5096431031b527b6d8370147d5d5fb86f609151f-v-88aa45310c6f81ff2846ba56609ad9e6b3724692",
+      "title": "Thống kê buổi 2 [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-09"
+    },
+    {
+      "className": "2K10 9+",
+      "lessonCode": "btvn-1c83fa16bc4ec407505253ba523d1d4e639495dd-v-9d9eb3715358bf83d45f5f0cc10bb8ebb1305479",
+      "title": "Thống kê buổi 2 [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-06"
+    },
+    {
+      "className": "2K10 Thứ 3, 6",
+      "lessonCode": "btvn-06e79aae0a9e089159b1233be73eb6f0239abf1c-v-32509d7c53b62541f81f83c19c93756ee4c99329",
+      "title": "ôn thi gki 1 [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-20"
+    },
+    {
+      "className": "2K10 Thứ 3, 6",
+      "lessonCode": "2k10-cap-20261013-gk1-11-de2",
+      "title": "Đề số 2 · Giữa kỳ I Toán 11",
+      "date": "2026-10-13"
+    },
+    {
+      "className": "2K10 Thứ 3, 6",
+      "lessonCode": "btvn-2f6ae629031e07dc50c290e5787cedc6f3e61022-v-718c6aafb9f8bb6204ec3a8d585ebe9df6672eda",
+      "title": "C3-B1-GIỚI HẠN DÃY SỐ-P3-GHÉP HS pdf.pdf [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-09"
+    },
+    {
+      "className": "2K10 Thứ 3, 6",
+      "lessonCode": "btvn-1c83fa16bc4ec407505253ba523d1d4e639495dd-v-9d9eb3715358bf83d45f5f0cc10bb8ebb1305479",
+      "title": "Thống kê buổi 2 [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-06"
+    },
+    {
+      "className": "2K10 XPT",
+      "lessonCode": "2k10xpt-20261017-b01d03-thiet-dien",
+      "title": "Bài 01 Dạng 03 · Xác định thiết diện",
+      "date": "2026-10-17"
+    },
+    {
+      "className": "2K10 XPT",
+      "lessonCode": "2k10xpt-20261012-c1b5-pt-luong-giac",
+      "title": "BTVN · Phương trình lượng giác",
+      "date": "2026-10-12"
+    },
+    {
+      "className": "2K10 XPT",
+      "lessonCode": "btvn-4cb9aa2b8f72d887fb42de75d8c28255128c8667-v-f81dd28be6bd4813be51f7b710801223ea8a0d3d",
+      "title": "Bài 02_Dạng 02. Xác định giao tuyến và thiết diện của hình chóp_HS.pdf [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-10"
+    },
+    {
+      "className": "2K11 8+",
+      "lessonCode": "btvn-03354d68f0f894f541fe652b0000d973ed9588ea-v-0807933b3424e5be1291765df247edaa5287dae3",
+      "title": "ôn tập giữa kì [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-21"
+    },
+    {
+      "className": "2K11 8+",
+      "lessonCode": "btvn-e87a2f52e9fad27ddcb6561b5c288a9470affb36-v-aa53e6fc67f84ac52b604ac7f9ebd2be5654de80",
+      "title": "[L1025]_18_10_2026_ĐỀ.pdf [Có đính chính ở cuối PDF]",
+      "date": "2026-10-18"
+    },
+    {
+      "className": "2K11 8+",
+      "lessonCode": "2k11-cap-20261014-gk1-10-de2",
+      "title": "Đề giữa kì I Toán 10 · Đề 2",
+      "date": "2026-10-14"
+    },
+    {
+      "className": "2K11 8+",
+      "lessonCode": "btvn-d61e5bbc3a16a42d6c3df101a6937aa1ede3ae3c-v-b648d16f394c6779a18dbcf1bc3b8da438b1140a",
+      "title": "Kiểm tra [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-11"
+    },
+    {
+      "className": "2K11 8+",
+      "lessonCode": "btvn-2cdb6223e16d2f20f631d08c484e944c315c83ef-v-011d316285f8dd1476ad72d71b563ddaf4f6533b",
+      "title": "ôn tập giữa kì [Có đính chính ở cuối PDF]",
+      "date": "2026-10-07"
+    },
+    {
+      "className": "2K11 9+",
+      "lessonCode": "btvn-ee0286a7bcd3e17d1374f307586862019e293094-v-ed489ed7ffeab61c9ece7d7ce99601e18f153181",
+      "title": "ôn tập giữa kì [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-22"
+    },
+    {
+      "className": "2K11 9+",
+      "lessonCode": "2k11-cap-20261014-gk1-10-de2",
+      "title": "Đề giữa kì I Toán 10 · Đề 2",
+      "date": "2026-10-15"
+    },
+    {
+      "className": "2K11 9+",
+      "lessonCode": "btvn-5de006ea4151a060455d8e71a8a2f5102e8b1e76-v-fe6d5d621012e408f696aab680cc8e8f3570d0d0",
+      "title": "Kiểm tra [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-11"
+    },
+    {
+      "className": "2K11 9+",
+      "lessonCode": "btvn-558753916363a6aaecb1d5ca8aa4047e7828033e-v-548796a4963aa166891ff01730293b94eaed79ee",
+      "title": "ôn tập giữa kì [Có đính chính ở cuối PDF]",
+      "date": "2026-10-08"
+    },
+    {
+      "className": "2K11 XPT",
+      "lessonCode": "2k11xpt-20261017-c5b2-tong-hieu-vecto",
+      "title": "BTVN P3 · Tổng và hiệu hai vectơ",
+      "date": "2026-10-17"
+    },
+    {
+      "className": "2K11 XPT",
+      "lessonCode": "2k11xpt-20261014-c2b1-bpt-bac-nhat-hai-an",
+      "title": "BTVN · Bất phương trình bậc nhất hai ẩn",
+      "date": "2026-10-14"
+    },
+    {
+      "className": "2K11 XPT",
+      "lessonCode": "btvn-0b66658a33816f9d52492e1f63b37448df823496-v-23b9a8f712d0e9c6d976b855617fb888399ba2a6",
+      "title": "Chữa dạng điểm thỏa mãn vecto [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-10"
+    },
+    {
+      "className": "2K11 XPT",
+      "lessonCode": "btvn-f15b1bb800c17d90bbfa28cb8f34f884f1af9c9c-v-0e13852785c93a8426c3dfbbe0192b06209cf562",
+      "title": "Chữa bt Mệnh đề, tập hợp [Có đính chính ở cuối PDF]",
+      "date": "2026-10-07"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "btvn-1a625e6321d9b855014884319d1410bc0208cc24-v-04fdde54665048b9fd6ead32e2e2a82bc56fb499",
+      "title": "Đề 07E_Đề rèn luyện bài toán nước dâng_HS.pdf [Có đính chính ở cuối PDF]",
+      "date": "2026-10-22"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "btvn-274c86429856867dfdb98ca3e408e44fbab2bdc2-v-633ee2dc31c519b0f94ce114d68048beca0f16d6",
+      "title": "BTVN XPS, bản đơn giản",
+      "date": "2026-10-20"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "2k9-cap-t6t7-20261016-de07a",
+      "title": "Đề 07A ứng dụng đạo hàm",
+      "date": "2026-10-17"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "2k9-cap-t4t5-20261014-de05",
+      "title": "Đề 05 · Đường tiệm cận của đồ thị hàm số",
+      "date": "2026-10-15"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "btvn-82b31752958f1d059c9486db61cbcc58643ae0d3-v-f2ab702870059b65c0b9612b2c02a9f151fa6c69",
+      "title": "chữa nốt btvn [Có đính chính ở cuối PDF]",
+      "date": "2026-10-13"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "btvn-44ec8d76be441dfbc60c1cf5e574ceead05b128e-v-b8b1d84725d00969b82bf88181ae10e9d4b5c125",
+      "title": "chữa nốt phiếu đồ thị + chữa btvn + đồ thị phần 2 [Có đính chính ở cuối PDF]",
+      "date": "2026-10-10"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "btvn-a9cdb78ae3de42e08bc613b2ae5fe3af49402ad2-v-ff3d9fa9ce55b1a5758e921cb77c3a0e51ffd8f2",
+      "title": "chữa nốt phiếu tiệm cận + chữa btvn + đồ thị phần 1 [Có đính chính ở cuối PDF]",
+      "date": "2026-10-08"
+    },
+    {
+      "className": "2K9 8+",
+      "lessonCode": "btvn-4667e0e0c174665687d7951c9963dad4eff7ce63-v-6ddf120368ca16a6b2f47f4a8259b07a2f87e3ad",
+      "title": "min max + tiệm cận [Có đính chính ở cuối PDF]",
+      "date": "2026-10-06"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "btvn-7e66eea04654df0dbc56048414a3a6db3f30acee-v-b67c520e7d8b132885850799db1a0eede74f59da",
+      "title": "Đề 07E_Đề rèn luyện bài toán nước dâng_HS.pdf [Có đính chính ở cuối PDF]",
+      "date": "2026-10-21"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "btvn-fb6fa92c1a5c9c70811edcaf28def03fc1c77664-v-ffd322da6e2dbc5f8a5705b2afc8df2cdb46b7e0",
+      "title": "BTVN XPS, bản đơn giản",
+      "date": "2026-10-19"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "2k9-cap-t6t7-20261016-de07a",
+      "title": "Đề 07A ứng dụng đạo hàm",
+      "date": "2026-10-16"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "2k9-cap-t4t5-20261014-de05",
+      "title": "Đề 05 · Đường tiệm cận của đồ thị hàm số",
+      "date": "2026-10-14"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "btvn-0a9df27b6b92e461080f4368ebdaf11202f384c8-v-45bd1caf6b42c112df7fc04385aace90f3d5e549",
+      "title": "chữa nốt btvn [Có đính chính ở cuối PDF]",
+      "date": "2026-10-12"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "btvn-c37eb09baf33b42f7cc6dfabb953a31d85af8557-v-ab4068750a4a135c4feb9b0999d4416ffe4d6a51",
+      "title": "chữa nốt phiếu đồ thị + chữa btvn + đồ thị phần 2 [Có đính chính ở cuối PDF]",
+      "date": "2026-10-09"
+    },
+    {
+      "className": "2K9 9+",
+      "lessonCode": "btvn-c24f43e15e17d498fda1598c4952e0951646f98b-v-74f5397ce811cf8ce54fab5ef1d9079dc855589b",
+      "title": "chữa nốt phiếu tiệm cận + chữa btvn + đồ thị phần 1 [Có đính chính ở cuối PDF]",
+      "date": "2026-10-07"
+    },
+    {
+      "className": "2K9 HSA (CN)",
+      "lessonCode": "btvn-1d1349a6e817fdfed5958c48293fb5bd1302394e-v-50053dafd9e818027dc8fbe7e41b25ad44aae65f",
+      "title": "Nguyên hàm, tích phân [Có đính chính ở cuối PDF]",
+      "date": "2026-10-11"
+    },
+    {
+      "className": "2K9 HSA (THỨ 5)",
+      "lessonCode": "btvn-4b7820e30b68cbe37e5e01dc8741a74529068768-v-55fb15b2d422cdde5df6709592c480ec5ce2d330",
+      "title": "hàm hợp [Có đính chính ở cuối PDF]",
+      "date": "2026-10-15"
+    },
+    {
+      "className": "2K9 HSA (THỨ 5)",
+      "lessonCode": "2k9hsa2-20261008-cd03-don-dieu-tri-tuyet-doi",
+      "title": "Chủ đề 03 · Đơn điệu hàm trị tuyệt đối",
+      "date": "2026-10-08"
+    },
+    {
+      "className": "2K9 HSA (THỨ 5)",
+      "lessonCode": "2k9hsa2-20261001-cd01-tham-so-don-dieu",
+      "title": "Chủ đề 01 · Xử lý tham số trong đơn điệu",
+      "date": "2026-10-01"
+    },
+    {
+      "className": "2K9 XPT",
+      "lessonCode": "btvn-e20283dc5dacbf586d2e9db9b9b19930f861aec8-v-5ebb253b16825b8f2eeb8fd02259cb5a5d2b58e2",
+      "title": "ôn tập véc tơ [Có đính chính ở cuối PDF]",
+      "date": "2026-10-19"
+    },
+    {
+      "className": "2K9 XPT",
+      "lessonCode": "btvn-5a3fcebbca916369cec9cc13567f56de33c83437-v-52d51dc91f2cd6e12e75bc721261f28ed0cf9ea2",
+      "title": "Đề khảo sát chất lượng chương hàm số_HS.pdf [Có đính chính ở cuối PDF]",
+      "date": "2026-10-15"
+    },
+    {
+      "className": "2K9 XPT",
+      "lessonCode": "btvn-05897ae2ddf88ee3f1e6914ffbb3b1934f2ad8d6-v-1fc3760626102d6b623ed3a0fd45687e0cf6f153",
+      "title": "https://drive.google.com/file/d/1rO-KqvXmjMtBSARRLH9xbEeD94L0f9EZ/view?usp=sharing [Có đính chính ở cuối PDF]",
+      "date": "2026-10-13"
+    },
+    {
+      "className": "2K9 XPT",
+      "lessonCode": "2k9xpt-20261012-b02-goc-tich-vo-huong",
+      "title": "BTVN Buổi 02 · Góc và tích vô hướng của hai vectơ",
+      "date": "2026-10-12"
+    },
+    {
+      "className": "2K9 XPT",
+      "lessonCode": "btvn-cc14e9646eaaff585abe56a6c7c34e049a7ae686-v-aaa806a953c1e926cd10e15b523644061feffd7d",
+      "title": "HS-K12-OTCC-CHƯƠNG 1-ĐỀ 1 pdf.pdf [Có đính chính ở cuối PDF]",
+      "date": "2026-10-08"
+    },
+    {
+      "className": "2K9 XPT",
+      "lessonCode": "btvn-488f762111509a46befadb9b17ce6cdc889bcc38-v-33476afef73cc2817dd701fdc36ebdec16117614",
+      "title": "C2-B1-VECTƠ và CÁC PHÉP TOÁN TRONG KHÔNG GIAN-P3-GHÉP-HS pdf.pdf [Có đính chính ở cuối PDF; tự luận nộp vở]",
+      "date": "2026-10-06"
+    }
+  ]
+}

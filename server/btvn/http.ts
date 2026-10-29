@@ -3,7 +3,9 @@ import {HomeworkError,GATE_ERROR} from './service';
 import type {Answers} from '../../src/native/exams/store';
 import {publicClassNames} from './class-config';
 const COOKIE='mtm_btvn_demo';
-export function homeworkCookie(token:string,secure=false){return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/api; Max-Age=${token?14400:0}${secure?'; Secure':''}`;}
+/** 28/10: HS đánh dấu "Nhớ đăng nhập" thì cookie và phiên máy chủ cùng sống 30 ngày; không đánh dấu giữ 4 giờ. */
+export const REMEMBER_SECONDS=30*86400;
+export function homeworkCookie(token:string,secure=false,maxAge=14400){return `${COOKIE}=${token}; HttpOnly; SameSite=Strict; Path=/api; Max-Age=${token?maxAge:0}${secure?'; Secure':''}`;}
 export function expireLegacyHomeworkCookie(secure=false){return `${COOKIE}=; HttpOnly; SameSite=Strict; Path=/api/btvn; Max-Age=0${secure?'; Secure':''}`;}
 export function handleHomework(service:HomeworkService,input:{method:string;body:unknown;cookie?:string;ip:string;origin?:string;host:string;secure?:boolean}) {
   const headers:Record<string,string>={'Cache-Control':'no-store, private','Content-Type':'application/json; charset=utf-8','X-Robots-Tag':'noindex, nofollow','Vary':'Cookie'};

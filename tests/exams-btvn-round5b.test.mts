@@ -22,7 +22,7 @@ submit(formsOf(HomeworkGate({...props,studentCode:''}))[1]);
 assert.deepEqual(calls.slice(2),[{studentCode:'FAKE-CODE'},identity]);
 const disabled=HomeworkGate({...props,busy:true});formsOf(disabled).forEach(submit);assert.equal(calls.length,4);
 for(const form of formsOf(disabled))assert.ok(walk(form).find(n=>n.type==='button').props.disabled);
-const inputs=forms.map(f=>walk(f).filter(n=>n.type==='input'||n.type==='select'));assert.deepEqual(inputs.map(i=>i.length),[1,3]);assert.ok(inputs.flat().every(i=>i.props.required));
+const inputs=forms.map(f=>walk(f).filter(n=>(n.type==='input'&&n.props.type!=='checkbox')||n.type==='select'));assert.deepEqual(inputs.map(i=>i.length),[1,3]);assert.ok(inputs.flat().every(i=>i.props.required));
 let changed;const editing=HomeworkGate({...props,onCode:value=>changed=value,onIdentity:value=>changed=value});
 walk(formsOf(editing)[0]).find(n=>n.type==='input').props.onChange({target:{value:'NEW-CODE'}});assert.equal(changed,'NEW-CODE');
 walk(formsOf(editing)[1]).filter(n=>n.type==='input')[1].props.onChange({target:{value:'0900000001'}});assert.deepEqual(changed,{...identity,phone:'0900000001'});
@@ -33,7 +33,7 @@ const bundle=await build({stdin:{contents:entry,resolveDir:root,loader:'tsx'},bu
 writeFileSync(out+'/gate.cjs',bundle.outputFiles[0].text);
 const rendered=(await import(pathToFileURL(out+'/gate.cjs').href)).default;
 const session=readFileSync(root+'/src/native/homework/HomeworkSession.tsx','utf8');
-assert.ok(session.includes("onLogin={input=>void run('login',input)}"));
+assert.ok(session.includes("onLogin={(input,remember)=>void run('login',input,remember)}"));
 assert.ok(!session.includes('setMode'));assert.ok(!session.includes('Quên mã'));
 assert.ok(session.includes("entryFailure(response.status,data.message)"));
 const css=readFileSync(root+'/src/native/homework/btvn-session.css','utf8');

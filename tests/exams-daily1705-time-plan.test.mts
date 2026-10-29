@@ -47,7 +47,7 @@ test('Gửi form tính đúng, đổi dữ liệu xóa kết quả cũ, sửa l�
 
 test('Có thể dùng không đăng nhập, không ở phòng bài, không chạm API/điểm/storage/đồng hồ',()=>{
   const session=readFileSync(join(root,'src/native/homework/HomeworkSession.tsx'),'utf8');
-  assert.match(session,/!checking&&\(!state\|\|!room\)&&<HomeworkTimePlan\/>/);
+  assert.match(session,/!checking&&\(!state\|\|!room\)&&<details className="btvn-extra-tools">[\s\S]*<HomeworkTimePlan\/>/);
   const code=readFileSync(join(root,file),'utf8')+readFileSync(join(root,'src/native/homework/time-plan.ts'),'utf8');
   assert.doesNotMatch(code,/fetch\(|localStorage|sessionStorage|setInterval|setTimeout|gateway|onStart|\u2014/);
   const html=require('react-dom/server').renderToStaticMarkup(React.createElement(load(file).default));

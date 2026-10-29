@@ -23,6 +23,8 @@ import {draftKey} from '../exams/store';
 import type {PracticeExam} from '../exams/data';
 import type {GateInput,HomeworkGateway,HomeworkState} from './btvn-contract';
 import MtmSourceContent from '../exams/MtmSourceContent';
+import RoomChoice from '../exams/RoomChoice';
+import MathText from '../math/MathText';
 import {RoomQuestionContext} from '../exams/RoomQuestionContext';
 import {questionLabel} from '../exams/attempt-ui';
 import {useUnsavedGuard} from '../exams/navigation-guard';
@@ -36,9 +38,19 @@ import './btvn-mobile.css';
 const ACCESS_ENDED='Máy chủ không còn xác nhận quyền xem bài. Em nhập lại mã để xem bản máy chủ đang giữ hoặc liên hệ trợ lý lớp.';
 const ACCESS_ENDED_PENDING=ACCESS_ENDED+' Phần bài chưa gửi xong có thể chưa được tính.';
 
-function HomeworkReader({exam}:{exam:PracticeExam}){
+type TextQuestion=PracticeExam['questions'][number]&{image?:string;imageAlt?:string};
+/** Đề BTVN dạng chữ (không có ảnh cắt câu) phải hiện đủ đề, phương án, các ý Đúng/Sai: phòng làm bài giao phần
+ * phương án trắc nghiệm cho khung đọc đề khi câu không có ảnh cắt (29/10: đề 07E 13 câu trống). */
+function HomeworkTextQuestion({q,label}:{q:TextQuestion;label:string}){
+  const prompt=q.prompt??q.text;
+  return <>{prompt&&<p className="ep-source-text"><MathText text={prompt}/></p>}
+    {q.image&&<figure><img src={q.image} alt={q.imageAlt||`Hình ${label}`} loading="lazy"/>{q.imageAlt&&<figcaption>{q.imageAlt}</figcaption>}</figure>}
+    {q.kind==='mc'&&<ol className="cp-choices" type="A">{q.choices.map((choice,i)=><li key={i}><RoomChoice questionId={q.id} choice={['A','B','C','D'][i]}>{choice!==['A','B','C','D'][i]&&<MathText text={choice}/>}</RoomChoice></li>)}</ol>}
+    {q.kind==='tf'&&!!q.statements?.length&&<ol className="cp-statements" type="a">{q.statements.map((statement,i)=><li key={i}><MathText text={statement}/></li>)}</ol>}</>;
+}
+export function HomeworkReader({exam}:{exam:PracticeExam}){
   const active=useContext(RoomQuestionContext);
-  return <section aria-label="Đề BTVN">{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent&&<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
+  return <section aria-label="Đề BTVN">{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent?<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>:<HomeworkTextQuestion q={q} label={questionLabel(exam,index).full}/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
 }
 function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEssay}:{state:HomeworkState & {exam:PracticeExam};gateway:HomeworkGateway;onState:(state:HomeworkState)=>void;onPendingChange:(pending:boolean)=>void;saverRef:{current:ReturnType<typeof createHomeworkSaver>|null};onOpenEssay?:()=>void}){
   const checkSelection=useState<string[]>([]);
@@ -105,7 +117,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   // 21/10: trên điện thoại nút "Bắt đầu làm bài" ở xa dưới, báo lỗi ở đầu trang nên HS tưởng bấm không ăn. Cuộn tới báo lỗi.
   useEffect(()=>{if(notice)document.querySelector('.btvn-notice-alert')?.scrollIntoView({block:'center'});},[notice]);
   const requestExit=async(run:()=>void|Promise<void>)=>{
-    if(essayPending.current){setNotice('Còn ảnh tự luận chưa nhận. Em mở Nộp ảnh tự luận, gửi lại hoặc bỏ ảnh chưa gửi trước khi rời bài.');setEssayOpen(true);return;}
+    if(essayPending.current){setNotice('Còn ảnh tự luận chưa nhận. Em mở Nộp ảnh cả bài tự luận, gửi lại hoặc bỏ ảnh chưa gửi trước khi rời bài.');setEssayOpen(true);return;}
     const generation=sessionGeneration.current,current=()=>mounted.current&&sessionGeneration.current===generation;
     let completed=false;
     setBusy(true);setNotice('');setExitClosed(false);
@@ -187,10 +199,10 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     const visible=()=>{if(document.visibilityState==='visible')check();};document.addEventListener('visibilitychange',visible);
     return()=>{alive=false;renewAssets.current=()=>{};clearInterval(timer);window.removeEventListener('mtm:retry-assets',retry);document.removeEventListener('visibilitychange',visible);};
   },[gateway,state?.lessonCode,state?.demo,state?.assetsExpiresAt,state?.opensAt,state?.closesAt,state?.solutionsAvailable,!!state?.exam]);
-  const run=async(action:'login'|'start',input?:GateInput)=>{
+  const run=async(action:'login'|'start',input?:GateInput,remember?:boolean)=>{
     const generation=sessionGeneration.current,current=()=>mounted.current&&sessionGeneration.current===generation;let completed=false;
     setBusy(true);setNotice('');try{
-      const next=await gateway.call(action,action==='login'?{gate:input}:{});
+      const next=await gateway.call(action,action==='login'?{gate:input,...(remember!==undefined?{remember}:{})}:{});
       if(!mounted.current||sessionGeneration.current!==generation+(action==='login'?1:0))return;
       completed=true;setState(next);setRoom(action==='start'||!!next.draft);setGate({fullName:'',phone:'',className:''});setStudentCode('');setPinMode('enter');
     }catch(error){if(current()){const message=error instanceof Error?error.message:'Chưa kết nối được máy chủ. Em thử lại sau.';if(message==='PIN_SETUP')setPinMode('setup');else if(message==='PIN_REQUIRED')setPinMode('enter');setNotice(message==='PIN_SETUP'?PIN_SETUP_NOTICE:message==='PIN_REQUIRED'?PIN_REQUIRED_NOTICE:message);}}finally{if(mounted.current&&(current()||completed))setBusy(false);}
@@ -207,21 +219,25 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     {leaveConfirmation}
     {state?.demo&&<p className="btvn-demo" role="note">Bản thử với học sinh giả và buổi mẫu. Chưa giao BTVN cho lớp thật.</p>}{state&&notice&&<p role="alert" className="btvn-notice-alert">{notice}</p>}{exitClosed&&<button type="button" className="btvn-btn" onClick={()=>{saverRef.current?.acceptClosed();setExitClosed(false);setNotice('Đã chọn bản máy chủ đã chấm. Em có thể rời bài.');}}>Chấp nhận bản máy chủ đã chấm</button>}
     {!state&&<header className="btvn-entry-heading"><div className="btvn-entry-bar"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><Link href="/" className="btvn-home-link">← Trang chủ</Link></div><h1>Bài tập về nhà</h1><p>Vào lớp để xem bài giảng và hoàn thành BTVN của em.</p></header>}
-    {checking?<LoadingCards label="Đang kiểm tra phiên và tải danh sách buổi học…"/>:!state?<HomeworkGate studentCode={studentCode} identity={gate} busy={busy} classNames={classNames} classesLoading={classesLoading} classesError={classesError} onReloadClasses={()=>void loadClasses()} onCode={setStudentCode} onIdentity={setGate} onLogin={input=>void run('login',input)} pinMode={pinMode} notice={notice}/>:<>
+    {checking?<LoadingCards label="Đang kiểm tra phiên và tải danh sách buổi học…"/>:!state?<HomeworkGate studentCode={studentCode} identity={gate} busy={busy} classNames={classNames} classesLoading={classesLoading} classesError={classesError} onReloadClasses={()=>void loadClasses()} onCode={setStudentCode} onIdentity={setGate} onLogin={(input,remember)=>void run('login',input,remember)} pinMode={pinMode} notice={notice}/>:<>
       <header className="btvn-top"><Link href="/" className="btvn-home-logo" aria-label="Minh Thành Math, về trang chủ"><img src="/mtm-original-logo-420w.webp" alt="Minh Thành Math"/></Link><div><b>Bài tập về nhà</b><p>Video buổi học và BTVN của lớp em</p></div><div className="btvn-me"><Link href="/" className="btvn-home-link">← Trang chủ</Link><b>{state.fullName}</b><span>{displayClassName(state)}</span><button disabled={busy} onClick={()=>void requestExit(async()=>{await gateway.call('logout');setState(null);setRoom(false);})}>Thoát</button></div></header>
-      <HomeworkBrowserHelp/>
+      {room&&<HomeworkBrowserHelp/>}
       {state.classMismatch&&<EntryNotice className={state.className}/>}
-      {!room&&<><BtvnCertificates state={state}/><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><a href="/btvn/tai-lieu" className="btvn-btn">Bài đang bổ sung và bản đơn giản</a><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
+      {!room&&<><R104Dashboard state={state} busy={busy} onSelect={code=>void selectLesson(code)} profileControl={profileControl?.(state)}/><BtvnCertificates state={state}/><a href="/btvn/tai-lieu" className="btvn-btn">Bài đang bổ sung và bản đơn giản</a><details className="r104-lesson-list r106-lesson-archive" id="r104-lesson-list"><summary><span>Toàn bộ buổi học</span><small>Video, tài liệu và nhắc lịch hạn nộp của từng buổi</small></summary><LessonCards headingLevel={2} serverNow={state.serverNow} clientReceivedAt={state.clientReceivedAt} demo={state.demo} lessons={state.lessons??[]} busy={busy} onHomework={code=>void selectLesson(code)}/></details></>}
       {room&&(state.exam||state.opensAt!==undefined||state.kind==='kiem-tra-thang')&&<><button className="btvn-btn btvn-back" disabled={busy} onClick={()=>void requestExit(()=>setRoom(false))}>← Các buổi học</button>
         {state.exam&&state.draft&&state.draft.submittedAt===null?<ManagedAttempt key={state.draft.attemptId} state={{...state,exam:state.exam}} gateway={gateway} saverRef={saverRef} onOpenEssay={canUploadEssay?()=>setEssayOpen(true):undefined} onState={next=>setState(previous=>previous?mergeHomeworkSave(previous,next):next)} onPendingChange={pending=>{remotePending.current=pending;}}/>:<HomeworkOverview key={state.lessonCode+':'+(state.draft?.attemptId??'new')} state={state} busy={busy} onRefreshReceipt={()=>void refreshReceipt()} onStart={()=>void run('start')}/>}
         {canUploadEssay&&<TuLuanUpload key={state.lessonCode+':'+state.draft!.attemptId} scope={{lessonCode:state.lessonCode,attemptId:state.draft!.attemptId}} fullName={state.fullName} closesAt={state.closesAt!} open={essayOpen} onOpenChange={setEssayOpen} onPendingChange={onEssayPending}/>}
       </>}
 
     </>}
-    {!checking&&(!state||!room)&&<HomeworkTimePlan/>}
-    {!checking&&(!state||!room)&&<HomeworkStudyRhythmTool/>}
-    {!checking&&(!state||!room)&&<HomeworkWarmupTool key={'warmup:'+(state?.lessonCode??'')}/>}
-    {!checking&&(!state||!room)&&<HomeworkSelfCheckTool key={'entry:'+(state?.lessonCode??'')}/>}
-    {!checking&&(!state||!room)&&<aside className="btvn-self-check" aria-label="Đổi nhịp luyện Toán"><Link href="/san-choi" className="btvn-btn">Đổi nhịp với Sân chơi Toán</Link><p>Luyện riêng để đổi nhịp sau khi học, không tính điểm BTVN.</p></aside>}
+    {/* 28/10 trang HS gọn: công cụ phụ gom vào một mục thu gọn ở cuối, không đẩy BTVN xuống. */}
+    {!checking&&(!state||!room)&&<details className="btvn-extra-tools"><summary><span>Công cụ học thêm</span><small>Kế hoạch giờ học, khởi động, tự kiểm tra, Sân chơi Toán</small></summary>
+      {state&&<HomeworkBrowserHelp/>}
+      <HomeworkTimePlan/>
+      <HomeworkStudyRhythmTool/>
+      <HomeworkWarmupTool key={'warmup:'+(state?.lessonCode??'')}/>
+      <HomeworkSelfCheckTool key={'entry:'+(state?.lessonCode??'')}/>
+      <aside className="btvn-self-check" aria-label="Đổi nhịp luyện Toán"><Link href="/san-choi" className="btvn-btn">Đổi nhịp với Sân chơi Toán</Link><p>Luyện riêng để đổi nhịp sau khi học, không tính điểm BTVN.</p></aside>
+    </details>}
   </section>;
 }

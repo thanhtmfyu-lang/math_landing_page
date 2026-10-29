@@ -32,8 +32,8 @@ assert.equal(homeworkLessonCaption(state),'Buổi học 14/10: Tên buổi giả
 const card=render(Cards,{lessons:[lesson],busy:false,onHomework(){}});
 assert.ok(card.includes('<h2>Đề giả kiểm thử</h2>'));
 assert.ok(card.includes('<p>Buổi học 14/10: Tên buổi giả</p>'));
-assert.equal(lessonHomeworkTitle({...lesson,homeworkTitle:undefined}),'Ghi chú giả');
-assert.equal(lessonHomeworkTitle({...lesson,homeworkTitle:' ',homeworkNote:undefined}),'Bài tập về nhà');
+assert.equal(lessonHomeworkTitle({...lesson,homeworkTitle:undefined}),'Tên buổi giả');
+assert.equal(lessonHomeworkTitle({...lesson,homeworkTitle:' ',homeworkNote:undefined}),'Tên buổi giả');
 assert.equal(homeworkLessonCaption({...state,lessons:[]}),null);
 assert.ok(readFileSync(join(root,'src/native/homework/HomeworkSession.tsx'),'utf8').includes('<PracticeAttempt isHomework'));
 assert.ok(readFileSync(join(root,'src/native/exams/FocusRoom.tsx'),'utf8').includes('<RoomNotice isHomework={props.isHomework} focused/>'));

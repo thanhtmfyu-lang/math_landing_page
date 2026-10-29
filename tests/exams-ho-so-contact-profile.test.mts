@@ -55,7 +55,7 @@ assert.match(css,/@media\(max-width:760px\)/);assert.match(css,/position:fixed/)
 const identity={fullName:'Học sinh thử đăng nhập',phone:'0000000000',className:'Lớp thử'};
 const submissions:any[]=[],tree=mount('src/native/homework/HomeworkGate.tsx',{studentCode:'MÃ THỬ',identity,busy:false,classNames:['Lớp thử'],onCode(){},onIdentity(){},onLogin:(payload:any)=>submissions.push(payload)}).tree;
 const form=all(tree,node=>node.type==='form'&&node.props['aria-labelledby']==='btvn-identity-title')[0];
-assert.ok(form);const fields=all(form,node=>node.type==='input'||node.type==='select');
+assert.ok(form);const fields=all(form,node=>(node.type==='input'&&node.props.type!=='checkbox')||node.type==='select');
 assert.equal(fields.length,3);assert.deepEqual(fields.map(field=>field.type==='select'?'className':field.props.type),['text','tel','className']);
 assert.ok(fields.every(field=>field.props.required));
 assert.ok(!all(form,node=>node.type==='input').some(field=>field.props.type==='file'));
