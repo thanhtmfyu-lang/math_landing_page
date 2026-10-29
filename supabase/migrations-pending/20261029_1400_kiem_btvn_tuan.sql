@@ -10,7 +10,7 @@ BEGIN
            (SELECT string_agg(e.key||':'||right(e.value,5), '+' ORDER BY e.key) FROM jsonb_each_text(l.material->'classDates') e),
            (SELECT string_agg(c.label, '+' ORDER BY c.label) FROM mtm_hw_private.classes c WHERE c.id = ANY(l.class_ids)),
            CASE WHEN l.active THEN 'on' ELSE 'off' END, coalesce(l.opens_at <= now(), true),
-           (l.material::text || l.exam->>'title') ILIKE '%giữa%',
+           (l.material::text || coalesce(l.exam->>'title','')) ILIKE '%giữa%',
            (SELECT count(*) FROM mtm_hw_private.btvn_work w WHERE w.lesson_code = l.code)), ' ' ORDER BY l.code)
     INTO a
     FROM mtm_hw_private.btvn_lessons l
