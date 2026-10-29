@@ -5,7 +5,7 @@ export function generatePracticeBank() {
   const root=fileURLToPath(new URL('../src/native/chapters/',import.meta.url));
   const out=join(root,'generated-bank');mkdirSync(out,{recursive:true});
   const read=name=>JSON.parse(readFileSync(join(root,name+'.json'),'utf8'));
-  const current=[...read('practice-tests'),...read('exact-tests')];
+  const current=[...read('practice-tests'),...read('exact-tests'),...read('probability-tests')];
   const ids=new Set(current.map(p=>p.exam.id));
   if(ids.size!==current.length)throw new Error('ID đề hiện hành bị trùng');
   const archived=read('archived-tests').filter(p=>!ids.has(p.exam.id));

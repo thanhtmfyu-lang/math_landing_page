@@ -2425,5 +2425,264 @@
         ]
       }
     ]
+  },
+  "10:8": {
+    "groups": [
+      {
+        "title": "Hệ thống công thức và lý thuyết",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c8-b01-v1"
+          }
+        ]
+      },
+      {
+        "title": "Quy tắc đếm (SGK bài 23)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c8-l23a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Quy tắc cộng",
+              "Quy tắc nhân",
+              "Lập số",
+              "Sơ đồ hình cây"
+            ]
+          },
+          {
+            "id": "mtm-practice-g10-c8-l23b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Quy tắc cộng",
+              "Quy tắc nhân",
+              "Lập số",
+              "Sơ đồ hình cây"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Hoán vị, chỉnh hợp và tổ hợp (SGK bài 24)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c8-l24a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Hoán vị, xếp hàng",
+              "Chỉnh hợp",
+              "Tổ hợp, chọn nhóm",
+              "Bài toán hình học đếm"
+            ]
+          },
+          {
+            "id": "mtm-practice-g10-c8-l24b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Hoán vị, xếp hàng",
+              "Chỉnh hợp",
+              "Tổ hợp, chọn nhóm",
+              "Bài toán hình học đếm"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Nhị thức Newton (SGK bài 25)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c8-l25a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Khai triển $(a+b)^4$, $(a+b)^5$",
+              "Hệ số của $x^k$",
+              "Tổng các hệ số"
+            ]
+          },
+          {
+            "id": "mtm-practice-g10-c8-l25b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Khai triển $(a+b)^4$, $(a+b)^5$",
+              "Hệ số của $x^k$",
+              "Tổng các hệ số"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Kiểm tra cuối chương",
+        "note": "Đề tổng hợp cả chương, từ nhận biết đến vận dụng.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c8-k01-v1"
+          }
+        ]
+      }
+    ]
+  },
+  "10:9": {
+    "groups": [
+      {
+        "title": "Hệ thống công thức và lý thuyết",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c9-b01-v1"
+          }
+        ]
+      },
+      {
+        "title": "Biến cố và định nghĩa cổ điển của xác suất (SGK bài 26)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c9-l26a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Không gian mẫu, biến cố",
+              "Xác suất cổ điển",
+              "Biến cố đối"
+            ]
+          },
+          {
+            "id": "mtm-practice-g10-c9-l26b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Không gian mẫu, biến cố",
+              "Xác suất cổ điển",
+              "Biến cố đối"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Thực hành tính xác suất theo định nghĩa cổ điển (SGK bài 27)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c9-l27a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Xác suất dùng tổ hợp",
+              "Xác suất dùng hoán vị",
+              "Biến cố đối, ít nhất một"
+            ]
+          },
+          {
+            "id": "mtm-practice-g10-c9-l27b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Xác suất dùng tổ hợp",
+              "Xác suất dùng hoán vị",
+              "Biến cố đối, ít nhất một"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Kiểm tra cuối chương",
+        "note": "Đề tổng hợp cả chương, từ nhận biết đến vận dụng.",
+        "items": [
+          {
+            "id": "mtm-practice-g10-c9-k01-v1"
+          }
+        ]
+      }
+    ]
+  },
+  "11:8": {
+    "groups": [
+      {
+        "title": "Hệ thống công thức và lý thuyết",
+        "items": [
+          {
+            "id": "mtm-practice-g11-c8-b01-v1"
+          }
+        ]
+      },
+      {
+        "title": "Biến cố hợp, biến cố giao, biến cố độc lập (SGK bài 28)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g11-c8-l28a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Biến cố hợp, giao",
+              "Biến cố xung khắc",
+              "Biến cố độc lập"
+            ]
+          },
+          {
+            "id": "mtm-practice-g11-c8-l28b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Biến cố hợp, giao",
+              "Biến cố xung khắc",
+              "Biến cố độc lập"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Công thức cộng xác suất (SGK bài 29)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g11-c8-l29a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Công thức cộng",
+              "Biến cố xung khắc",
+              "Biến cố đối"
+            ]
+          },
+          {
+            "id": "mtm-practice-g11-c8-l29b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Công thức cộng",
+              "Biến cố xung khắc",
+              "Biến cố đối"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Công thức nhân xác suất cho hai biến cố độc lập (SGK bài 30)",
+        "note": "Các đề trong nhóm xếp từ dễ đến khó.",
+        "items": [
+          {
+            "id": "mtm-practice-g11-c8-l30a-v1",
+            "level": "cơ bản",
+            "dangs": [
+              "Công thức nhân",
+              "Ít nhất một, đúng một",
+              "Phối hợp cộng và nhân"
+            ]
+          },
+          {
+            "id": "mtm-practice-g11-c8-l30b-v1",
+            "level": "vận dụng",
+            "dangs": [
+              "Công thức nhân",
+              "Ít nhất một, đúng một",
+              "Phối hợp cộng và nhân"
+            ]
+          }
+        ]
+      },
+      {
+        "title": "Kiểm tra cuối chương",
+        "note": "Đề tổng hợp cả chương, từ nhận biết đến vận dụng.",
+        "items": [
+          {
+            "id": "mtm-practice-g11-c8-k01-v1"
+          }
+        ]
+      }
+    ]
   }
 }

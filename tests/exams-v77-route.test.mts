@@ -43,7 +43,9 @@ for(const key of ['10:1','10:4','11:2','12:1'])test(`${key}: số Bài, tiêu đ
 });
 test('toàn ngân hàng: coverage và presentationTitle giống V76',()=>{
   const titles=(items:PracticeItem[])=>items.map(p=>({id:p.exam.id,coverage:p.coverage,title:p.presentationTitle}));
-  assert.deepEqual(plain(titles(bank)),plain(titles(oracle.bank)));
+  // 29/10/2026: bỏ ba chương xác suất mới (10:8, 10:9, 11:8) khỏi phép so với V76.
+  const old=(p:PracticeItem)=>!(p.track==='10'&&['8','9'].includes(p.chapter)||p.track==='11'&&p.chapter==='8');
+  assert.deepEqual(plain(titles(bank.filter(old))),plain(titles(oracle.bank)));
 });
 test('lộ trình và danh sách nguồn: giữ nguyên JSX V76; khung trang không nhập sequence JSON',()=>{
   const shelf=readFileSync(join(root,'src/native/chapters/PracticeShelf.tsx'),'utf8').replace(/\r\n/g,'\n');

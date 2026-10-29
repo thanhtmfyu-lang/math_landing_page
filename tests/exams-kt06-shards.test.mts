@@ -19,15 +19,17 @@ const plain=(p:unknown)=>JSON.parse(JSON.stringify(p));
 const {test,finish}=suite('KT06');
 const actual=await loadItems(Object.keys(metadata));
 const current=actual.filter(p=>!metadata[p.exam.id].archived);
-const v80Chapter=(p:PracticeItem)=>p.track==='11'&&['1','2','3','4'].includes(p.chapter);
-test('ngoài bốn chương lớp 11 nhập V80: nội dung/id/versionHash/tiêu đề và lưu trữ giống V78',()=>assert.deepEqual(plain(actual.filter(p=>!v80Chapter(p))),plain([...oracle.bank,...oracle.pilotBank].filter(p=>!v80Chapter(p)))));
+// 29/10/2026: ba chương xác suất (10:8, 10:9, 11:8) là ngân hàng mới, không có trong V78.
+const newChapter=(track:string,chapter:string)=>track==='11'&&['1','2','3','4','8'].includes(chapter)||track==='10'&&['8','9'].includes(chapter);
+const v80Chapter=(p:PracticeItem)=>newChapter(p.track,p.chapter);
+test('ngoài bốn chương lớp 11 nhập V80 và ba chương xác suất mới: nội dung/id/versionHash/tiêu đề và lưu trữ giống V78',()=>assert.deepEqual(plain(actual.filter(p=>!v80Chapter(p))),plain([...oracle.bank,...oracle.pilotBank].filter(p=>!v80Chapter(p)))));
 test('mọi shard và lộ trình V80 khớp bộ nạp ngân hàng nguồn nguyên khối',()=>assert.deepEqual(plain(actual),plain([...sourceBank,...sourcePilotBank])));
 const route=(bank:PracticeItem[],seq:Record<string,unknown>,nums:Map<string,number>,key:string)=>routeGroupsOf(seq[key]).map(g=>({...g,items:g.items.flatMap(it=>{const p=bank.find(p=>p.exam.id===it.id);return p?[{...it,number:nums.get(it.id),coverage:p.coverage,title:p.presentationTitle}]:[];})})).filter(g=>g.items.length);
 for(const track of tracks)for(const chapter of track.chapters){
   const key=track.id+':'+chapter.id,ids=chapterIds(track.id,chapter.id),loaded=await loadItems(ids);
   test(key+': chỉ tải chương này; thứ tự, mọi tiêu đề và lộ trình đúng nguồn đối chiếu',()=>{
     assert.ok(loaded.every(p=>p.track===track.id&&p.chapter===chapter.id));
-    const updated=track.id==='11'&&['1','2','3','4'].includes(chapter.id);
+    const updated=newChapter(track.id,chapter.id);
     const reference=updated?[...sourceBank,...sourcePilotBank]:[...oracle.bank,...oracle.pilotBank];
     const expected=reference.filter(p=>p.track===track.id&&p.chapter===chapter.id);
     assert.deepEqual(plain(loaded),plain(expected));

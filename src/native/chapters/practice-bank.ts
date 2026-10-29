@@ -3,10 +3,11 @@
 import tests from './practice-tests.json';
 import archives from './archived-tests.json';
 import exactTests from './exact-tests.json';
+import probabilityTests from './probability-tests.json';
 import chapterSequence from './chapter-sequence.json';
 import {chapterRoman,foundationLabel,lessonName,routeGroupsOf,type PracticeItem} from './practice-shared';
 
-const rawBank=[...tests,...exactTests] as unknown as PracticeItem[];
+const rawBank=[...tests,...exactTests,...probabilityTests] as unknown as PracticeItem[];
 export const sequences=chapterSequence as Record<string,unknown>;
 const rawIds=new Set(rawBank.map(p=>p.exam.id));
 export const sequenceNumber=new Map<string,number>();
