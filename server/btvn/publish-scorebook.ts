@@ -1,5 +1,6 @@
 import {publicClassNames} from './class-config';
 import type {ScoreRow} from './scorebook';
+import {isTestRow} from './test-scope';
 
 /** Read actions dùng cùng secret; không cho caller chọn RPC hoặc bật apply. */
 export function scorebookRpc(body:any):{name:string;payload:Record<string,unknown>}|null {
@@ -21,10 +22,10 @@ export function scorebookRpc(body:any):{name:string;payload:Record<string,unknow
 export function scorebookResult(action:string,result:any) {
  if(action==='opening_materials'){
   if(!Array.isArray(result)||result.length>20000)throw Error('INVALID_OPENING_RESULT');
-  return result.map(r=>({lessonCode:r.lessonCode,date:r.date,classNames:r.classNames,classDates:r.classDates}));
+  return result.filter(r=>!isTestRow(r)).map(r=>({lessonCode:r.lessonCode,date:r.date,classNames:r.classNames,classDates:r.classDates}));
  }
  if(action==='classes')return {classNames:publicClassNames(result)};
  if(!Array.isArray(result))throw Error('INVALID_SCOREBOOK_RESULT');
- return result.map((r:any):ScoreRow=>({studentId:r.studentId,fullName:r.fullName,className:r.className,lessonCode:r.lessonCode,title:r.title,date:r.date,dueAt:r.dueAt,expectedDueAt:r.expectedDueAt,sourceIdentity:r.sourceIdentity,
+ return result.filter(r=>!isTestRow(r)).map((r:any):ScoreRow=>({studentId:r.studentId,fullName:r.fullName,className:r.className,lessonCode:r.lessonCode,title:r.title,date:r.date,dueAt:r.dueAt,expectedDueAt:r.expectedDueAt,sourceIdentity:r.sourceIdentity,
   attempts:(Array.isArray(r.attempts)?r.attempts:[]).slice(0,50).map((x:any)=>({startedAt:typeof x?.startedAt==='number'?x.startedAt:null,submittedAt:typeof x?.submittedAt==='number'?x.submittedAt:null})),receipts:r.receipts.map((s:any)=>({score:s.score,submittedAt:s.submittedAt,late:s.late}))}));
 }

@@ -1334,6 +1334,9 @@ function publicClassNames(names) {
   return [...new Set(names.map((name) => name.trim()))].sort((a, b) => a.localeCompare(b, "vi", { numeric: true }));
 }
 
+// server/btvn/test-scope.ts
+var isTestRow = (row) => row?.is_test === true || row?.isTest === true || row?.studentIsTest === true || row?.lessonIsTest === true;
+
 // server/btvn/publish-scorebook.ts
 function scorebookRpc(body) {
   if (body.action === "opening_materials") {
@@ -1352,11 +1355,11 @@ function scorebookRpc(body) {
 function scorebookResult(action, result) {
   if (action === "opening_materials") {
     if (!Array.isArray(result) || result.length > 2e4) throw Error("INVALID_OPENING_RESULT");
-    return result.map((r) => ({ lessonCode: r.lessonCode, date: r.date, classNames: r.classNames, classDates: r.classDates }));
+    return result.filter((r) => !isTestRow(r)).map((r) => ({ lessonCode: r.lessonCode, date: r.date, classNames: r.classNames, classDates: r.classDates }));
   }
   if (action === "classes") return { classNames: publicClassNames(result) };
   if (!Array.isArray(result)) throw Error("INVALID_SCOREBOOK_RESULT");
-  return result.map((r) => ({
+  return result.filter((r) => !isTestRow(r)).map((r) => ({
     studentId: r.studentId,
     fullName: r.fullName,
     className: r.className,

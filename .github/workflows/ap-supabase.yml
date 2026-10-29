@@ -68,6 +68,16 @@ jobs:
               # Chỉ in dòng lỗi đầu, bỏ phần DETAIL (có thể chứa giá trị dòng) và che dãy số dài.
               echo "LỖI  $f (HTTP $code): $(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{6,}/***/g' | head -c 300)"; exit 1; fi
           done
+      - name: Làm mới bản báo cáo lọc tài khoản thử
+        if: inputs.migrations != ''
+        run: |
+          # Web đọc bản *_real100 chụp từ hàm gốc; sửa hàm gốc mà không làm mới thì web không thấy.
+          body=$(jq -n '{query: "do $r$begin if to_regprocedure($q$mtm_test100.refresh_reports()$q$) is not null then perform mtm_test100.refresh_reports();end if;end$r$;"}')
+          code=$(curl -sS -o /tmp/ket-qua.json -w '%{http_code}' -X POST \
+            "https://api.supabase.com/v1/projects/$PROJECT_REF/database/query" \
+            -H "Authorization: Bearer $SUPABASE_ACCESS_TOKEN" -H 'Content-Type: application/json' --data "$body")
+          if [ "$code" -ge 200 ] && [ "$code" -lt 300 ]; then echo "ĐẠT  làm mới bản báo cáo"
+          else echo "LỖI  làm mới bản báo cáo (HTTP $code): $(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{6,}/***/g' | head -c 300)"; exit 1; fi
       - uses: supabase/setup-cli@v1
         if: inputs.edge != ''
         with:

@@ -12,7 +12,7 @@ export function createRankApi(getEnv=()=>process.env,transport:typeof fetch=fetc
   try{
    if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error('Missing config');
    const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error('HTTPS required');
-   const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_arena',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_kind:kind}),signal:AbortSignal.timeout(12000)});
+   const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_arena_real100',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_kind:kind}),signal:AbortSignal.timeout(12000)});
    if(!response.ok)throw Error('RPC failed');
    let arena=publicArena(await response.json());
    // gon=1 (dải vinh danh + Bảng vàng trang chủ): chỉ nhà vô địch; ảnh chỉ giữ cho top 3 mỗi khối.
@@ -28,7 +28,7 @@ export function createRankApi(getEnv=()=>process.env,transport:typeof fetch=fetc
  try{
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error('Missing config');
   const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error('HTTPS required');
-  const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_leaderboard_class',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_cohort:cohort,p_kind:kind,p_class:cls??null}),signal:AbortSignal.timeout(8000)});
+  const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_leaderboard_class_real100',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_cohort:cohort,p_kind:kind,p_class:cls??null}),signal:AbortSignal.timeout(8000)});
   if(!response.ok)throw Error('RPC failed');
   const data=await response.json();
   if(!Array.isArray(data)||data.length>10)throw Error('Invalid rows');

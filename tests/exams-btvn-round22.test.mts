@@ -27,7 +27,7 @@ let statements:any[]=[];
 const sql:any={begin:async(fn:any)=>fn(async(parts:any,...values:any[])=>{statements.push({query:parts.join('?'),values});return [{result:[]}];})};
 const port=createPublishPort(sql,{});
 await port.rpc('scorebook',{p_from:'2026-10-01',p_apply:true});
-assert.deepEqual(statements,[{query:'SET LOCAL ROLE service_role',values:[]},{query:'SELECT public.mtm_btvn_scorebook(?::date,false) AS result',values:['2026-10-01']}]);
+assert.deepEqual(statements,[{query:'SET LOCAL ROLE service_role',values:[]},{query:'SELECT public.mtm_btvn_scorebook_real100(?::date,false) AS result',values:['2026-10-01']}]);
 statements=[];await port.rpc('classes',{});assert.equal(statements[1].query,'SELECT public.mtm_btvn_classes() AS result');
 await assert.rejects(port.rpc('arbitrary',{}));
 // Chạy cả handler đã bundle để bắt lỗi quên dựng lại Edge.

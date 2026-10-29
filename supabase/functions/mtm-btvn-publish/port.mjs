@@ -9,8 +9,8 @@ export function createPublishPort(sql,storage){return {
    if(action==='sync_attendance')rows=await tx`SELECT public.mtm_btvn_sync_attendance_roster(${sql.json(payload.p_payload)},${payload.p_apply}) AS result`;
    else if(action==='sync_due')rows=await tx`SELECT public.mtm_btvn_sync_due(${sql.json(payload.p_payload)},${payload.p_apply}) AS result`;
    else if(action==='support_report')rows=await tx`SELECT public.mtm_btvn_support_report(${payload.p_since}::timestamptz) AS result`;
-   else if(action==='scorebook')rows=await tx`SELECT public.mtm_btvn_scorebook(${payload.p_from}::date,false) AS result`;
-   else if(action==='opening_materials')rows=await tx`SELECT public.mtm_btvn_opening_materials(${payload.p_code}::text) AS result`;
+   else if(action==='scorebook')rows=await tx`SELECT public.mtm_btvn_scorebook_real100(${payload.p_from}::date,false) AS result`;
+   else if(action==='opening_materials')rows=await tx`SELECT public.mtm_btvn_opening_materials_real100(${payload.p_code}::text) AS result`;
    else rows=await tx`SELECT public.mtm_btvn_classes() AS result`;
    return rows[0].result;
   });
