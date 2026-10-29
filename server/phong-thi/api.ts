@@ -1,3 +1,4 @@
+import {productionRpc} from '../btvn/test-scope';
 import {createHash,randomBytes,scrypt as scryptCb,timingSafeEqual} from 'node:crypto';
 import {promisify} from 'node:util';
 import {allowedBtvnOrigin} from '../btvn/origin-policy';
@@ -36,7 +37,7 @@ export function createPhongThiApi(getEnv=()=>process.env as Record<string,string
  if(req.method==='POST'){const origin=h.origin;if(typeof origin!=='string'||origin!==`https://${h.host}`||!allowedBtvnOrigin(origin,env))return res.status(403).json({message:'Không thể gửi từ trang này.'});}
  const rpc=async(name:string,args:Record<string,unknown>)=>{
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error('Missing config');const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error('HTTPS required');
-  return transport(url.origin+'/rest/v1/rpc/'+name,{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(8000)});
+  return transport(url.origin+'/rest/v1/rpc/'+productionRpc(name),{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(args),signal:AbortSignal.timeout(8000)});
  };
  let body:any=req.body;
  if(req.method==='POST'){try{if(typeof body==='string')body=JSON.parse(body);}catch{return res.status(400).json({message:'Yêu cầu không hợp lệ.'});}

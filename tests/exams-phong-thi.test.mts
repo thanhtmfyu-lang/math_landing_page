@@ -155,7 +155,7 @@ assert.equal(phanViHsa(30).top,26.19);assert.ok(phanViHsa(34).top>5.18&&phanViHs
 
 // Đợt thi: lịch thật trong dot.json hợp lệ; ngoài giờ không mở được ở chế độ đợt; vẫn luyện tự do; vé ghi mã đợt.
 assert.deepEqual(validateDot(DOT),[]);
-assert.ok(DOT.some(t=>t.ma==='ks-hk1-2026'&&t.khoi)&&DOT.filter(t=>t.loai==='hsa').length===4);
+assert.ok(DOT.some(t=>t.ma==='ks-hk1-2026'&&t.khoi)&&DOT.filter(t=>t.loai==='hsa').length===5&&DOT.some(t=>t.ma==='thpt-thu-2026-11'&&t.kin));
 assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,mo:'2026-12-02T07:00:00+07:00',dong:'2026-12-01T07:00:00+07:00'}]).length>0);
 assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,mo:'2026-12-01 07:00',dong:'2026-12-02T07:00:00+07:00'}]).length>0);
 const DS:PtDot[]=[{ma:'dot-thu',ten:'Đợt thử',loai:'thpt',de:'tsa-mau',mo:'2026-11-25T07:00:00+07:00',dong:'2026-11-26T22:00:00+07:00'},
@@ -173,6 +173,16 @@ assert.equal(dotDangMo(DS,'dot-thu','tsa-mau',trong)?.ma,'dot-thu');assert.equal
  assert.equal((xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},KHACH,K,truoc,ngc) as any).body.lyDo,'ngoai-gio');
  assert.equal(xuLy('mo',{de:'tsa-mau',dot:'dot-cu'},KHACH,K,trong,ngc).status,403);
  assert.equal(xuLy('mo',{de:'tsa-mau'},KHACH,K,truoc,ngc).status,200,'ngoài giờ vẫn luyện tự do');
+ // Đề khảo sát giữ kín đến khi đợt đóng: không lên sảnh, không mở tự do, kể cả học sinh trung tâm.
+ const ds=(n:number)=>(xuLy('danh-muc',{},HS,K,n,ngc) as any).body.de.map((d:any)=>d.id);
+ assert.ok(!ds(truoc).includes('thpt-mau-01'),'đề khảo sát ẩn trước đợt');assert.ok(ds(truoc).includes('tsa-mau'),'đề đợt thường vẫn hiện');
+ assert.equal(xuLy('mo',{de:'thpt-mau-01'},HS,K,trong,ngc).status,404,'đề khảo sát không mở tự do');
+ assert.ok(ds(Date.parse('2026-11-27T10:00:00+07:00')).includes('thpt-mau-01'),'đợt đóng thì đề trở lại sảnh');
+ // Đợt kin: đề chung cũng giữ kín đến khi đóng, nhưng vẫn làm được trong đợt.
+ const ngk={dot:[{...DS[0],kin:true}]};
+ assert.ok(!(xuLy('danh-muc',{},HS,K,truoc,ngk) as any).body.de.some((d:any)=>d.id==='tsa-mau'));
+ assert.equal(xuLy('mo',{de:'tsa-mau'},KHACH,K,trong,ngk).status,404);assert.equal(xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},KHACH,K,trong,ngk).status,200);
+ assert.ok(validateDot([{...DS[0],kin:'co'}]).length>0);
  assert.equal(xuLy('mo',{de:'thpt-mau-01',dot:'dot-thu'},HS,K,trong,ngc).status,400,'đề không thuộc đợt');
  assert.equal(xuLy('mo',{de:'x',dot:'dot-null'},HS,K,Date.parse('2026-12-25T10:00:00+07:00'),ngc).status,400);
  assert.equal(xuLy('mo',{de:null,dot:'dot-null'},HS,K,Date.parse('2026-12-25T10:00:00+07:00'),ngc).status,409,'đợt chưa gán đề');
@@ -210,8 +220,8 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
  let baoLoi=0;const api=createPhongThiApi(()=>envDb,fake({mtm_pt_bao_loi:()=>{baoLoi++;return {status:baoLoi>10?'qua-nhieu':'ok'};},
   mtm_pt_dang_ky_dot:(a)=>({status:'ok',sbd:a.p_tien_to+'-'+a.p_khoi+'-0001',khoi:a.p_khoi}),
   mtm_pt_tra_cuu_dot:(a)=>a.p_sbd==='KS26-10-0001'&&a.p_tra_cuu.length===64?{dot:'ks-hk1-2026',sbd:'KS26-10-0001',khoi:'10',ten:'Nguyễn Văn An',truong:'THPT A',mtm:false}:null,
-  mtm_pt_khao_sat:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{'c1':0.5},bang:[{hang:1,sbd:'KS26-10-0001',ten:'Nguyễn Văn An',mtm:false,diem:9,phanVi:100}]}),
-  mtm_pt_xep_hang_dot:()=>[]}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
+  mtm_pt_khao_sat_real100:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{'c1':0.5},bang:[{hang:1,sbd:'KS26-10-0001',ten:'Nguyễn Văn An',mtm:false,diem:9,phanVi:100}]}),
+  mtm_pt_xep_hang_dot_real100:()=>[]}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
  const P=(body:any,cookie='')=>call(api,{method:'POST',headers:{...ORIGIN,cookie,'x-forwarded-for':'9.9.9.9'},body});
  // Không giải mã được kho (khóa thử) thì các hành động mới báo đang cập nhật, không gọi CSDL.
  const realKho=!!phongThiKey(process.env);
@@ -227,7 +237,7 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
   const apiR=createPhongThiApi(()=>envR,fake({mtm_pt_bao_loi:()=>{baoLoi++;return {status:baoLoi>10?'qua-nhieu':'ok'};},
    mtm_pt_dang_ky_dot:(a)=>({status:a.p_sdt==='0911111111'?'sdt-du':'ok',sbd:a.p_tien_to+'-'+a.p_khoi+'-0001',khoi:a.p_khoi}),
    mtm_pt_tra_cuu_dot:(a)=>a.p_sbd==='KS26-10-0001'?{dot:'ks-hk1-2026',sbd:'KS26-10-0001',khoi:'10',ten:'Nguyễn Văn An',truong:'THPT A',mtm:false}:null,
-   mtm_pt_khao_sat:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{}}),mtm_pt_ghi_luot:()=>({status:'luyen-tap',lan:1})}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
+   mtm_pt_khao_sat_real100:()=>({n:2,em:{hang:1,n:2,diem:9,phanVi:100},cau:{}}),mtm_pt_ghi_luot_real100:()=>({status:'luyen-tap',lan:1})}),()=>Date.parse('2026-11-20T10:00:00+07:00'));
   const PR=(body:any,cookie='')=>call(apiR,{method:'POST',headers:{...ORIGIN,cookie,'x-forwarded-for':'9.9.9.9'},body});
   assert.equal((await PR({action:'bao-loi',de:d0.id,ma:d0.cau[0].ma,noiDung:'Đáp án câu 1 bị sai'})).status,200);
   assert.equal(rec.at(-1)!.name,'mtm_pt_bao_loi');assert.equal(rec.at(-1)!.args.p_nguoi,'khach');assert.match(rec.at(-1)!.args.p_ip,/^[0-9a-f]{64}$/);assert.ok(!JSON.stringify(rec.at(-1)!.args).includes('9.9.9.9'));
@@ -249,7 +259,7 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
   const dmR=await call(apiR,{method:'GET',headers:{cookie:ck}});assert.equal(dmR.status,200);assert.equal(dmR.body.dot.find((t:any)=>t.ma==='ks-hk1-2026').cuaEm.sbd,'KS26-10-0001');
   const cong=kt.de.find(x=>x.tang==='cong-khai')!;
   const mR=await PR({action:'mo',de:cong.id});const nR=await PR({action:'nop',de:cong.id,ve:mR.body.ve,traLoi:{},thoiGian:{[cong.cau[0].ma]:0}});
-  assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
+  assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot_real100')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
  }
 }
 

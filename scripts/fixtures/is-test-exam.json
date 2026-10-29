@@ -1,0 +1,60 @@
+{
+  "id": "mtm-custom-is-test-20261027",
+  "title": "IS_TEST - bài QA nội bộ, không dùng cho học sinh",
+  "sourceHash": "bb42ee27e87b8e3d0e1a7dda509731a7704184a6c8e1c481a840a411941a9455",
+  "versionHash": "bb42ee27e87b8e3d0e1a7dda509731a7704184a6c8e1c481a840a411941a9455",
+  "sourceRef": "Fixture QA do Codex soạn tại scripts/fixtures/is-test-exam.json; không phải đề MTM phát hành",
+  "sourceUrl": "https://example.invalid/is-test",
+  "grade": 11,
+  "period": "GK1",
+  "durationMinutes": 120,
+  "rubricVersion": "MTM-BTVN-10-v1",
+  "questionCount": 2,
+  "answerKeyVerified": true,
+  "rubricVerified": true,
+  "publicationVerified": true,
+  "questionDisplayVerified": true,
+  "sourceMaterial": {
+    "title": "IS_TEST nội bộ",
+    "publisher": "MTM QA",
+    "version": "QA 20261027",
+    "locator": "MC01 + SELF01, chỉ dữ liệu tổng hợp"
+  },
+  "sections": [
+    {
+      "label": "Kiểm nút nộp",
+      "kind": "mc",
+      "count": 1
+    },
+    {
+      "label": "Kiểm ảnh thử",
+      "kind": "self",
+      "count": 1
+    }
+  ],
+  "questions": [
+    {
+      "id": "qa-mc",
+      "kind": "mc",
+      "prompt": "Bài thử: 1 + 1 bằng bao nhiêu?",
+      "choices": [
+        "2",
+        "3",
+        "4",
+        "5"
+      ],
+      "answer": "A",
+      "solution": "1 + 1 = 2.",
+      "sourceRef": "QA tự soạn, MC01",
+      "maxMillipoints": 10000
+    },
+    {
+      "id": "qa-photo",
+      "kind": "self",
+      "prompt": "Viết IS_TEST trên giấy trắng, chụp ảnh rồi nộp. Không chụp người hoặc dữ liệu cá nhân.",
+      "solution": "Ảnh thử có chữ IS_TEST rõ nét; không chấm điểm chính thức.",
+      "sourceRef": "QA tự soạn, SELF01",
+      "maxMillipoints": 0
+    }
+  ]
+}

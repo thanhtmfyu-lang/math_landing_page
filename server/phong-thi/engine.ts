@@ -230,7 +230,9 @@ export function baoCao(k:PtKetQua,soLauNhat=5):PtBaoCao{
 export const PT_KHOI=['10','11','12'] as const;
 export type PtKhoi=typeof PT_KHOI[number];
 /** Đợt khảo sát theo khối (có khoi): thí sinh đăng ký lấy SBD dạng {sbd}-{khối}-{số thứ tự 4 chữ số}, đề lấy theo khối; de để null. */
-export type PtDot={ma:string;ten:string;de:string|null;mo:string;dong:string;loai:PtLoai;moTa?:string;khoi?:Record<PtKhoi,string|null>;sbd?:string};
+export type PtDot={ma:string;ten:string;de:string|null;mo:string;dong:string;loai:PtLoai;moTa?:string;khoi?:Record<PtKhoi,string|null>;sbd?:string;
+ /** Đề mới ra lần đầu ở đợt này: giữ kín đến khi đợt đóng như đề khảo sát. */
+ kin?:boolean};
 export type PtDotCongKhai={ma:string;ten:string;loai:PtLoai;mo:string;dong:string;moTa?:string;trangThai:'sap-mo'|'dang-mo';de:{id:string;tieuDe:string;thoiGian:number;soCau:number;tang:PtTang}|null;
  dangKy?:{khoi:Record<PtKhoi,boolean>};cuaEm?:{sbd:string;khoi:PtKhoi;ten:string}};
 const okDotMa=(v:unknown)=>typeof v==='string'&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(v);
@@ -245,6 +247,7 @@ export function validateDot(ds:unknown):string[]{
   if(t?.khoi!==undefined){if(t.de!==null)e.push(at+'đợt khảo sát theo khối để de null');
    if(!t.khoi||typeof t.khoi!=='object'||!PT_KHOI.every(k=>t.khoi[k]===null||okId(t.khoi[k]))||Object.keys(t.khoi).some(k=>!(PT_KHOI as readonly string[]).includes(k)))e.push(at+'khoi cần id đề hoặc null cho 10, 11, 12');
    if(typeof t.sbd!=='string'||!/^[A-Z][A-Z0-9]{1,7}$/.test(t.sbd))e.push(at+'sbd là tiền tố số báo danh, ví dụ KS26');}
+  if(t?.kin!==undefined&&typeof t.kin!=='boolean')e.push(at+'kin là true hoặc false');
   const iso=/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?(Z|[+-]\d\d:\d\d)$/;
   if(!iso.test(t?.mo??'')||!iso.test(t?.dong??'')||!(Date.parse(t.dong)>Date.parse(t.mo)))e.push(at+'mo, dong là giờ ISO có múi giờ, dong sau mo');
  });
@@ -255,6 +258,13 @@ export function dotDangMo(ds:PtDot[],ma:unknown,deId:string,nay:number):PtDot|nu
  const t=ds.find(x=>x.ma===ma);return t&&t.de===deId&&Date.parse(t.mo)<=nay&&nay<Date.parse(t.dong)?t:null;
 }
 /** Thẻ "Đợt thi sắp tới / đang mở" ở sảnh: bỏ đợt đã đóng, đợt "chua-gan" và đợt gán đề không có trong kho. */
+/** Đề khảo sát (đợt có khoi) và đề của đợt đánh dấu kin chưa đóng bị ẩn khỏi sảnh và không mở tự do, để đề giữ kín đến ngày thi;
+ * đợt đóng rồi thì đề trở lại sảnh như đề luyện thường. Đợt thường khác vẫn cho luyện tự do đề của đợt như trước. */
+export function deAnTheoDot(ds:PtDot[],nay:number):Set<string>{
+ const an=new Set<string>();
+ for(const t of ds)if((t.khoi||t.kin)&&Date.parse(t.dong)>nay)for(const id of [t.de,...Object.values(t.khoi??{})])if(id&&id!=='chua-gan')an.add(id);
+ return an;
+}
 export function dotCongKhai(ds:PtDot[],kho:PtKho,nay:number):PtDotCongKhai[]{
  return ds.filter(t=>t.de!=='chua-gan'&&Date.parse(t.dong)>nay).flatMap(t=>{
   const d=t.de?kho.de.find(x=>x.id===t.de):null;if(t.de&&!d)return [];

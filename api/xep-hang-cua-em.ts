@@ -13,7 +13,7 @@ export function createMyRankApi(getEnv=()=>process.env,transport:typeof fetch=fe
  if(env.MTM_RANK_ENABLED!=='1'||env.MTM_BTVN_ENABLED!=='1')return res.status(200).json({enabled:false,row:null});
  try{
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error();const url=new URL(env.SUPABASE_URL);if(url.protocol!=='https:')throw Error();
-  const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_my_rank',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_session:session,p_cohort:body.khoi,p_kind:body.loai,p_class:body.lop??null}),signal:AbortSignal.timeout(8000)});
+  const response=await transport(url.origin+'/rest/v1/rpc/mtm_btvn_my_rank_real100',{method:'POST',headers:{apikey:env.SUPABASE_SERVICE_ROLE_KEY,Authorization:'Bearer '+env.SUPABASE_SERVICE_ROLE_KEY,'Content-Type':'application/json'},body:JSON.stringify({p_session:session,p_cohort:body.khoi,p_kind:body.loai,p_class:body.lop??null}),signal:AbortSignal.timeout(8000)});
   if(!response.ok){if(response.status===401||response.status===403)return res.status(401).json({message:'Em cần đăng nhập lại BTVN.'});throw Error();}
   const data=await response.json();return res.status(200).json({enabled:true,row:data===null?null:publicRankRow(data)});
  }catch{return res.status(503).json({message:'Chưa tải được hạng của em.'});}

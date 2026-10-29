@@ -5,7 +5,7 @@ import './tu-luan.css';
 export type TeacherEssay={id:string;studentId:string;fullName:string;className:string;lessonCode:string;attemptId:string;pageNumber:number;receivedAt:string;path:string;url?:string};
 export async function loadTeacherEssays(expectedOwner:string,lesson:string):Promise<TeacherEssay[]>{
  const {user,client}=await adminRequest(expectedOwner);
- const {data,error}=await client.rpc('mtm_tu_luan_teacher',{p_lesson:lesson||null});
+ const {data,error}=await client.rpc('mtm_tu_luan_teacher_real100',{p_lesson:lesson||null});
  if(error||!Array.isArray(data?.items))throw Error('Chưa tải được ảnh tự luận. Kiểm quyền GV/QL và migration nhận ảnh.');
  const rows=data.items as TeacherEssay[],paths=rows.map(row=>row.path);
  const urls=new Map<string,string>();
