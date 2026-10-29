@@ -1,6 +1,6 @@
 // KT-06 (Đợt 3): phần Luyện tập cần ngân hàng đề. Nạp trễ (React.lazy) từ PracticeLibrary.tsx để chữ giới thiệu,
 // nhóm và danh sách chương hiện trước khi gói đề về. Hiển thị và hành vi giữ nguyên như bản nhập tĩnh.
-import {lazy,useState} from 'react';
+import {lazy,Suspense,useState} from 'react';
 import {Link,useRoute} from '../../migration/navigation';
 import {readHistory,readDraft} from '../exams/store';
 import {localStore} from '../exams/local-store';
@@ -10,6 +10,8 @@ import {awaitingReview,AWAITING_REVIEW_NOTICE,historyOnlyAttempt,isWarmup,shelfV
 import {PracticeHistory,PracticeResume} from './PracticeSavedWork';
 
 const ChapterPractice=lazy(()=>import('./ChapterPractice'));
+const OnChuongPanel=lazy(()=>import('./OnChuongSync'));
+const ON_CHUONG=new Set(['10:8','10:9','11:8']);
 
 /** Trang một bài (?id=) hoặc một lượt đã lưu (?luot=). */
 export function PracticeDetail(){
@@ -26,7 +28,7 @@ export function PracticeDetail(){
   const returnURL=practiceURL(actualTrack,actualChapter);
   // DL-01: chỉ ngân hàng hiện hành (practice-tests + exact-tests) dùng cổng chờ phản biện; bản lưu trữ giữ như cũ.
   const closedNotice=(id:string)=>{const p=bank.find(b=>b.exam.id===id);return p&&awaitingReview(p)?AWAITING_REVIEW_NOTICE:undefined;};
-  return <ChapterPractice closedNotice={closedNotice} additionalBank={items} catalogUrl={returnURL} contextLabel={['HSA','TSA'].includes(actualTrack)?'Luyện tập theo chủ đề':'Luyện tập theo chương'} audienceLabel={tracks.find(t=>t.id===actualTrack)?.label}/>;
+  return <>{ON_CHUONG.has(actualTrack+':'+actualChapter)&&!view&&<div className="mig-container"><Suspense fallback={null}><OnChuongPanel/></Suspense></div>}<ChapterPractice closedNotice={closedNotice} additionalBank={items} catalogUrl={returnURL} contextLabel={['HSA','TSA'].includes(actualTrack)?'Luyện tập theo chủ đề':'Luyện tập theo chương'} audienceLabel={tracks.find(t=>t.id===actualTrack)?.label}/></>;
 }
 
 /** Phần thân một chương (sau tiêu đề chương): đề theo tài liệu, bài luyện, bài kết thúc chương, lịch sử. */
@@ -61,6 +63,7 @@ export function ChapterShelf({selected,chapter}:{selected:Track;chapter:Chapter}
   const sourceGroups=Array.from(new Set(exact.map(p=>`${p.sourceSequence?.fileId??p.exam.sourceHash}:${p.sourceSequence?.lesson??p.order}`))).map(key=>exact.filter(p=>`${p.sourceSequence?.fileId??p.exam.sourceHash}:${p.sourceSequence?.lesson??p.order}`===key).sort((a,b)=>(a.sourceSequence?.sequence??a.order)-(b.sourceSequence?.sequence??b.order)));
   const sourceAction=(p:PracticeItem)=>`${attempts.get(p.exam.id)?.submittedAt===null?'Làm tiếp':attempts.get(p.exam.id)?.submittedAt!=null?'Xem kết quả':'Làm'} bài ${p.sourceSequence?.sequence??p.order}`;
   return <>
+        {ON_CHUONG.has(scope)&&<Suspense fallback={null}><OnChuongPanel/></Suspense>}
         <section className="cp-saved-work" aria-label="Đọc lại bài đã lưu"><p>Nếu em vừa làm bài ở tab khác, đọc lại danh sách để xem bản lưu mới. Thao tác này giữ nguyên câu trả lời, lịch sử và các tiện ích đang mở.</p><button type="button" onClick={()=>setRefresh(old=>({scope,count:old.scope===scope?old.count+1:1}))}>Đọc lại bài đã lưu</button>{refresh.scope===scope&&<p role="status" aria-live="polite" aria-atomic="true">Đã đọc lại phần lưu truy cập được, lần {refresh.count}. Nếu có cảnh báo, danh sách có thể thiếu bài.</p>}</section>
         <PracticeResume key={'pending:'+scope} items={pending} incomplete={draftReadFailed||history.messages.length>0} snapshotAt={snapshotAt} label={['HSA','TSA'].includes(selected.id)?'chủ đề':'chương'}/>
         {chapterRoute.length>0&&<section className="cp-exact-list cp-route" aria-label="Lộ trình luyện chương"><h3>Lộ trình luyện chương</h3><p>Bài 1 hệ thống công thức và lý thuyết; sau đó luyện theo từng bài học, chuyên đề và dạng, đề sau khó hơn đề trước, có bài toán thực tế; cuối cùng là đề tổng hợp, kiểm tra chương.</p>{routeGroups.map(g=><section key={g.title||'route'} className="cp-route-group">{g.title?<h4>{g.title}</h4>:null}{g.note?<p>{g.note}</p>:null}<ol className="cp-test-grid">{g.items.map(({p,level,dangs})=>{const n=sequenceNumber.get(p.exam.id)??0;return <li key={p.exam.id}><article><span className="cp-test-index">Bài {n}{p.isFoundation?<> · Hệ thống lý thuyết</>:null}{p.isChapterEnd?<> · Tổng hợp cuối chương</>:null}{!p.isFoundation&&p.sourceSequence?.test?<> · {testLabel(p.sourceSequence.test)}</>:null}{level?<> · Mức {level}</>:null}</span><h3>{p.coverage}</h3>{dangs?.length?<p>Dạng: {dangs.join('; ')}</p>:null}<p>{p.exam.questions.length} câu · 3 phần · {p.exam.durationMinutes} phút · thang 10</p><p>{entries.filter(e=>e.exam.id===p.exam.id).length} lượt đã nộp</p><Link className="mig-button cp-action-button" href={practiceURL(selected.id,chapter.id,p.exam.id)}>{attempts.get(p.exam.id)?.submittedAt===null?'Làm tiếp':attempts.get(p.exam.id)?.submittedAt!=null?'Xem kết quả':'Làm'} bài {n}<span aria-hidden="true">→</span></Link></article></li>;})}</ol></section>)}</section>}

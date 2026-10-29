@@ -14,6 +14,7 @@ import {loadSchedule} from '../server/schedule/lich-lop';
 import {buildClassOverview} from '../server/btvn/class-overview';
 import {createProductionEssayHandler} from '../server/btvn/tu-luan';
 import {createProductionTestCleanupHandler} from '../server/btvn/test-cleanup';
+import {createOnChuongHandler} from '../server/btvn/on-chuong';
 type Req={method?:string;body?:unknown;headers:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const header=(req:Req,key:string)=>typeof req.headers[key]==='string'?req.headers[key] as string:'';
@@ -54,6 +55,12 @@ export function createBtvnApi(getEnv=()=>process.env,loadRepository:()=>Promise<
   const essayBody=req.body as Record<string,unknown>|null;
   if(typeof essayBody?.action==='string'&&essayBody.action.startsWith('essay-')){
    const result=await createProductionEssayHandler({SUPABASE_URL:env.SUPABASE_URL!,SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_SERVICE_ROLE_KEY!})(essayBody,header(req,'cookie'));
+   return res.status(result.status).json(result.body);
+  }
+  // Ôn chương xác suất 2K9 (29/10): ghi lượt đề luyện đã nộp theo phiên HS; máy chủ tự chấm lại.
+  if(typeof essayBody?.action==='string'&&essayBody.action.startsWith('on-chuong-')){
+   const supa=createClient(env.SUPABASE_URL!,env.SUPABASE_SERVICE_ROLE_KEY!,{auth:{persistSession:false,autoRefreshToken:false,detectSessionInUrl:false}});
+   const result=await createOnChuongHandler(supa)(essayBody,header(req,'cookie'));
    return res.status(result.status).json(result.body);
   }
   const factory=await loadRepository();

@@ -1,6 +1,6 @@
 type SheetConfig = { databaseUrl: string; serviceKey: string; scriptToken: string; ownerEmail: string; legacyToken?: string };
 type Fetcher = typeof fetch;
-const TABS = new Set(["diem", "xephang", "diemdanh", "zoom", "vantay", "chuyenbuoi", "cahomnay", "cachitiet", "tongquan", "hocsinh", "phanhoi"]);
+const TABS = new Set(["diem", "xephang", "diemdanh", "zoom", "vantay", "chuyenbuoi", "cahomnay", "cachitiet", "tongquan", "hocsinh", "phanhoi", "onchuongxs"]);
 const PRIVATE = { "Cache-Control": "no-store", "X-Content-Type-Options": "nosniff" };
 
 function equalSecret(a: string, b: string): boolean {
@@ -66,9 +66,12 @@ export function createSheetHandler(config: SheetConfig, fetcher: Fetcher = fetch
       const tab = url.searchParams.get("tab") ?? "";
       if (!TABS.has(tab)) return new Response("bad tab", { status: 400, headers: PRIVATE });
       // Bản _real100 bỏ tài khoản/bài thử (is_test) trước khi đếm, liệt kê ca.
-      const response = await fetcher(`${config.databaseUrl}/rest/v1/rpc/mtm_btvn_sheet_csv6_real100`, {
-        method: "POST", headers: databaseHeaders, body: JSON.stringify({ p_tab: tab }),
-      });
+      // onchuongxs (29/10): 2K9 XPS làm 22 đề ôn 3 chương xác suất, hạn 08/11; hàm riêng, cũng bỏ is_test.
+      const response = tab === "onchuongxs"
+        ? await fetcher(`${config.databaseUrl}/rest/v1/rpc/mtm_on_chuong_csv`, { method: "POST", headers: databaseHeaders, body: "{}" })
+        : await fetcher(`${config.databaseUrl}/rest/v1/rpc/mtm_btvn_sheet_csv6_real100`, {
+          method: "POST", headers: databaseHeaders, body: JSON.stringify({ p_tab: tab }),
+        });
       if (!response.ok) return new Response("loi du lieu " + response.status, { status: 502, headers: PRIVATE });
       const csv = await response.json();
       if (typeof csv !== "string") return new Response("loi du lieu", { status: 502, headers: PRIVATE });
