@@ -26,4 +26,8 @@ const html=renderToStaticMarkup(React.createElement(TruocCaTables,{sessions}));
 for(const text of ['2K9 8+ · 17:30-19:30','2/4 em cần làm lại','Làm lại đạt từ 7','Chưa làm','6,5','Lớp gốc 2K9 9+ · Chuyển đến','Chưa có bài'])assert.ok(html.includes(text),text);
 assert.ok(!/Điểm danh|Vắng|Có mặt/.test(html),'bảng đầu ca không có cột điểm danh');
 assert.ok(renderToStaticMarkup(React.createElement(TruocCaTables,{sessions:[]})).includes('chưa có ca nào'));
+// 29/10 anh Thành: có nút vào Quản trị ở chân trang và nút Báo điểm trước ca ở trang đăng nhập quản trị.
+const {readFileSync}=require('node:fs');
+assert.match(renderToStaticMarkup(React.createElement(load('src/components/Footer.tsx').Footer)),/href="\/quan-tri\/de-thi"[^>]*>Quản trị</);
+assert.match(readFileSync(join(root,'src/native/admin/AdminExams.tsx'),'utf8'),/href="\/quan-tri\/truoc-ca">Báo điểm trước ca</);
 console.log(JSON.stringify({suite:'TRUOC-CA',total:1,passed:1,failed:0}));
