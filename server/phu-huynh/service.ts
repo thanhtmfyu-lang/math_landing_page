@@ -1,6 +1,7 @@
 import {homeworkLessonCard} from '../btvn/lesson-card';
 import {visibleThiThangCards} from '../btvn/thi-thang';
 import {publicClassNames} from '../btvn/class-config';
+import {lessonHomeworkTitle} from '../../src/native/homework/presentation';
 import type {HomeworkLesson,LessonMaterial} from '../../src/native/homework/btvn-contract';
 import type {ParentChild,ParentReport,ParentHomework,ParentAttendance,ParentPaper} from '../../src/native/phu-huynh/contract';
 
@@ -45,22 +46,50 @@ export async function parentLogin(rpc:Rpc,body:Record<string,unknown>,net:string
  if(r?.pin==='wrong')throw new ParentError(401,PH_LOGIN);
  return pinResult(r,false);
 }
-export async function parentChildren(rpc:Rpc,session:string):Promise<{parentName:string|null;children:ParentChild[]}>{
+/** Tên trong sổ có thể kèm ghi chú nội bộ "(HỌC HSA TỪ 26/7 - CHƯA THU)", "[...]": phụ huynh chỉ thấy tên. */
+export const parentDisplayName=(raw:string)=>raw.normalize('NFC').replace(/\s*[([].*$/s,'').trim()||raw.trim();
+async function childrenRaw(rpc:Rpc,session:string):Promise<{parentName:string|null;children:ParentChild[]}>{
  const r:any=await rpc('mtm_ph_children',{p_session:session});
  return {parentName:typeof r?.parentName==='string'?r.parentName:null,children:(Array.isArray(r?.children)?r.children:[]).map((c:any)=>({id:String(c.id),fullName:String(c.fullName),className:String(c.className)}))};
 }
+export async function parentChildren(rpc:Rpc,session:string):Promise<{parentName:string|null;children:ParentChild[]}>{
+ const r=await childrenRaw(rpc,session);
+ return {...r,children:r.children.map(c=>({...c,fullName:parentDisplayName(c.fullName)}))};
+}
+/** Tên bài cho phụ huynh: bỏ đuôi tệp, "_HS", ghi chú đính chính; "Đề 07E_Đề rèn luyện…" chỉ giữ một chữ "Đề". */
+export function parentLessonTitle(l:LessonMaterial){
+ const t=lessonHomeworkTitle(l).replace(/(?:\s*[([]?\b(?:bản\s+)?HS\b[)\]]?)+$/i,'').trim();
+ const m=/^Đề\s+(\S+)\s+(Đề\s.+)$/i.exec(t);
+ return (m?(m[2].includes(m[1].replace(/^0+(?=.)/,''))?m[2]:m[2]+' ('+m[1]+')'):t)||'Bài tập về nhà';
+}
+/** Một bài có thể giao lại thành 2 thẻ cùng tên (lớp ghép, đăng lại): phụ huynh thấy 1 dòng, lấy lần tốt nhất. */
+export function dedupeParentHomework(rows:ParentHomework[]){
+ const better=(h:ParentHomework,c:ParentHomework)=>(h.bestScore??-1)!==(c.bestScore??-1)?(h.bestScore??-1)>(c.bestScore??-1)
+  :(h.submittedAt!==null)!==(c.submittedAt!==null)?h.submittedAt!==null:h.date>c.date;
+ const best=new Map<string,ParentHomework>(),out:ParentHomework[]=[];
+ for(const h of rows){
+  if(h.kind!=='btvn'||/^bài tập về nhà$/i.test(h.title)){out.push(h);continue;}
+  const key=h.title.normalize('NFC').toLowerCase(),cur=best.get(key);
+  if(!cur){best.set(key,h);out.push(h);continue;}
+  if(better(h,cur)){best.set(key,h);out[out.indexOf(cur)]=h;}
+ }
+ return out;
+}
+/** Sổ BTVN chính thức tính từ 15/10/2026 (cùng mốc xếp hạng): bài trước mốc không tính "chưa nộp"/"cần nộp". */
+export const PARENT_HOMEWORK_FROM='2026-10-15';
 
 /** Gom số liệu một con. Không trả SĐT, học phí, tên hay điểm học sinh khác. */
 export async function parentReport(rpc:Rpc,session:string,childId:unknown,now=Date.now()):Promise<ParentReport>{
  if(typeof childId!=='string'||!/^[0-9a-f-]{36}$/i.test(childId))throw new ParentError(400,'Chưa chọn con.');
- const {children,parentName}=await parentChildren(rpc,session);
- const child=children.find(c=>c.id===childId);
- if(!child)throw new ParentError(403,'Không xem được học sinh này.');
+ const {children:raw,parentName}=await childrenRaw(rpc,session);
+ const children=raw.map(c=>({...c,fullName:parentDisplayName(c.fullName)}));
+ const child=children.find(c=>c.id===childId),rawChild=raw.find(c=>c.id===childId);
+ if(!child||!rawChild)throw new ParentError(403,'Không xem được học sinh này.');
  const token=await rpc('mtm_ph_child_session',{p_session:session,p_student_id:childId}) as string;
  let lessons:HomeworkLesson[]=[],rank:ParentReport['rank']=null;
  try{
   const snap:any=await rpc('mtm_btvn_read',{p_session:token,p_lesson:null});
-  const className=String(snap?.work?.student?.className??child.className),fullName=String(snap?.work?.student?.fullName??child.fullName);
+  const className=String(snap?.work?.student?.className??child.className),fullName=String(snap?.work?.student?.fullName??rawChild.fullName);
   const visible=visibleThiThangCards((Array.isArray(snap?.lessons)?snap.lessons:[]) as HomeworkLesson[],fullName,className);
   // Tiến độ từng buổi lấy từ chính thẻ snapshot (điểm cao nhất, lúc nộp, hạn do RPC tính cho mọi buổi), giống trang BTVN của học sinh.
   // work chỉ chứa biên nhận của buổi đang chọn, không có work.lessons, nên không dựng lại tiến độ từ work.
@@ -74,9 +103,9 @@ export async function parentReport(rpc:Rpc,session:string,childId:unknown,now=Da
   }catch{/* Hạng là phần phụ: lỗi không chặn báo cáo. */}
  }finally{await rpc('mtm_btvn_logout',{p_session:token}).catch(()=>undefined);}
  const extras:any=await rpc('mtm_ph_extras',{p_session:session,p_student_id:childId});
- const homework:ParentHomework[]=lessons.filter(l=>l.kind!=='kiem-tra-thang'||!l.locked).map(l=>({
-  lessonCode:l.lessonCode,title:l.homeworkTitle||l.title,date:l.date,kind:l.kind??'btvn',dueAt:l.dueAt,bestScore:l.bestScore,submittedAt:l.submittedAt,late:l.late===true,
-  status:l.submittedAt?(l.late?'muon':'da-nop'):l.locked?'chua-mo':(l.dueAt!==null&&l.dueAt<now?'qua-han':'chua-nop')}));
+ const homework:ParentHomework[]=dedupeParentHomework(lessons.filter(l=>l.kind!=='kiem-tra-thang'||!l.locked).map(l=>({
+  lessonCode:l.lessonCode,title:parentLessonTitle(l),date:l.date,kind:l.kind??'btvn',dueAt:l.dueAt,bestScore:l.bestScore,submittedAt:l.submittedAt,late:l.late===true,
+  status:l.submittedAt?(l.late?'muon':'da-nop'):l.locked?'chua-mo':(l.dueAt!==null&&l.dueAt<now?'qua-han':'chua-nop')})).filter(h=>h.submittedAt!==null||h.kind!=='btvn'||h.date>=PARENT_HOMEWORK_FROM));
  const attendance=mergeAttendance(Array.isArray(extras?.attendance)?extras.attendance:[],child.className);
  const papers:ParentPaper[]=(Array.isArray(extras?.papers)?extras.papers:[]).filter((p:any)=>typeof p?.testCode==='string').map((p:any)=>({testCode:p.testCode,date:p.date??null,subject:p.subject??null,score:Number(p.score),maxScore:p.maxScore===null||p.maxScore===undefined?10:Number(p.maxScore)}));
  return {parentName,children,child,generatedAt:now,upcoming:typeof extras?.upcoming==='string'?extras.upcoming:null,attendance,homework,papers,rank,summary:summarize(homework,attendance,now)};
@@ -100,7 +129,8 @@ export function mergeAttendance(rows:any[],homeClass:string):ParentAttendance[]{
 export function summarize(homework:ParentHomework[],attendance:ParentAttendance[],now:number):ParentReport['summary']{
  const month=new Date(now+7*3600e3).toISOString().slice(0,7);
  const monthRows=attendance.filter(a=>a.date.startsWith(month)&&a.status!=='chuyen_buoi');
- const due=homework.filter(h=>h.kind!=='kiem-tra-thang'&&h.status!=='chua-mo'&&(h.submittedAt!==null||h.status==='qua-han'));
+ const counted=(h:ParentHomework)=>h.date>=PARENT_HOMEWORK_FROM;
+ const due=homework.filter(h=>h.kind!=='kiem-tra-thang'&&h.status!=='chua-mo'&&counted(h)&&(h.submittedAt!==null||h.status==='qua-han'));
  const scored=homework.filter(h=>h.kind!=='kiem-tra-thang'&&typeof h.bestScore==='number');
  const byScore=[...scored].sort((a,b)=>(b.bestScore!-a.bestScore!)||(b.date<a.date?-1:1));
  const pick=(h:ParentHomework)=>({lessonCode:h.lessonCode,title:h.title,date:h.date,score:h.bestScore!});
@@ -110,7 +140,7 @@ export function summarize(homework:ParentHomework[],attendance:ParentAttendance[
   monthAttendance:monthRows.length?{attended:monthRows.filter(a=>ATTENDED.has(a.status)).length,total:monthRows.length}:null,
   submitted:due.filter(h=>h.submittedAt!==null).length,dueTotal:due.length,
   averageScore:scored.length?Math.round(scored.reduce((s,h)=>s+h.bestScore!,0)/scored.length*100)/100:null,
-  strong,weak,missing:homework.filter(h=>h.status==='qua-han').slice(0,5).map(h=>({lessonCode:h.lessonCode,title:h.title,date:h.date}))};
+  strong,weak,missing:homework.filter(h=>h.status==='qua-han'&&counted(h)).slice(0,5).map(h=>({lessonCode:h.lessonCode,title:h.title,date:h.date}))};
 }
 
 export async function parentClasses(rpc:Rpc){return publicClassNames(await rpc('mtm_btvn_classes',{}));}

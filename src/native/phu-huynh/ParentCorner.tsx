@@ -128,11 +128,11 @@ function Report({r}:{r:ParentReport}){
  return <div className="ph-report">
   <div className="ph-stats">
    <Stat label="Lớp" value={r.child.className} note={r.child.fullName}/>
-   <Stat label="Buổi học kế tiếp" value={r.upcoming?`${weekday(r.upcoming)} ${day(r.upcoming)}`:'Theo lịch lớp'} note={<a href="/#timetable">Xem lịch học</a>}/>
+   <Stat label="Buổi học kế tiếp" value={r.upcoming?`${weekday(r.upcoming)} ${day(r.upcoming)}${/T\d{2}:\d{2}/.test(r.upcoming)?' · '+r.upcoming.slice(11,16):''}`:'Theo lịch lớp'} note={<a href="/#timetable">Xem lịch học</a>}/>
    <Stat label="Đi học tháng này" value={s.monthAttendance?`${s.monthAttendance.attended}/${s.monthAttendance.total} buổi`:'Chưa có buổi'} note={s.monthAttendance?Math.round(s.monthAttendance.attended/s.monthAttendance.total*100)+'%':''}/>
    <Stat label="BTVN đã nộp" value={`${s.submitted}/${s.dueTotal} bài`} note={s.dueTotal?Math.round(s.submitted/s.dueTotal*100)+'% đến hạn':''}/>
-   <Stat label="Điểm BTVN trung bình" value={score(s.averageScore)} note="điểm cao nhất mỗi bài, thang 10"/>
-   <Stat label="Hạng BTVN tháng trong lớp" value={r.rank?'Hạng '+r.rank.rank:'Chưa xếp'} note={r.rank?.score!==null&&r.rank?.score!==undefined?'điểm trung bình tháng '+score(r.rank.score):''}/>
+   <Stat label="Điểm BTVN trung bình" value={score(s.averageScore)} note="các bài đã nộp, lấy lần cao nhất, thang 10"/>
+   <Stat label="Hạng BTVN tháng trong lớp" value={r.rank?'Hạng '+r.rank.rank:'Chưa xếp'} note={r.rank?.score!==null&&r.rank?.score!==undefined?'điểm tháng '+score(r.rank.score)+' (bài chưa nộp tính 0 điểm)':''}/>
   </div>
   {s.missing.length>0&&<div className="ph-card ph-warn"><h2>Bài chưa nộp</h2><ul>{s.missing.map(m=><li key={m.lessonCode}>{day(m.date)}: {m.title}</li>)}</ul><p className="ph-small">Con vào <a href="/btvn">minhthanhmath.vn/btvn</a> để làm bù. Bài nộp lại vẫn được tính trong báo cáo tối.</p></div>}
   <div className="ph-two">
