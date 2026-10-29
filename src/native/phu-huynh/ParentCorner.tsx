@@ -122,7 +122,9 @@ function Report({r}:{r:ParentReport}){
   const map=new Map<string,{date:string;att?:string;attStatus?:string;hw:ParentHomework[]}>();
   for(const a of r.attendance){const row=map.get(a.date)??{date:a.date,hw:[]};row.att=row.att?row.att+', '+a.label:a.label;row.attStatus=a.status;map.set(a.date,row);}
   for(const h of r.homework){if(h.kind==='kiem-tra-thang')continue;const row=map.get(h.date)??{date:h.date,hw:[]};row.hw.push(h);map.set(h.date,row);}
-  return [...map.values()].filter(x=>x.date<=new Date(r.generatedAt+7*3600e3).toISOString().slice(0,10)).sort((a,b)=>b.date.localeCompare(a.date));
+  // Buổi hôm nay/tương lai chỉ hiện khi đã có điểm danh hoặc bài đã nộp (không tạo dòng cho buổi chưa học).
+  const today=new Date(r.generatedAt+7*3600e3).toISOString().slice(0,10);
+  return [...map.values()].filter(x=>x.date<today||x.att!==undefined||x.hw.some(h=>h.submittedAt!==null)).filter(x=>x.date<=today).sort((a,b)=>b.date.localeCompare(a.date));
  },[r]);
  const monthly=r.homework.filter(h=>h.kind==='kiem-tra-thang'&&h.bestScore!==null);
  return <div className="ph-report">
@@ -145,7 +147,7 @@ function Report({r}:{r:ParentReport}){
    {r.papers.map(p=><tr key={p.testCode+p.date}><td>{day(p.date)}</td><td>{p.subject||'Bài kiểm tra trên lớp'}</td><td>{score(p.score)}/{p.maxScore}</td></tr>)}
   </tbody></table></div>}
   <div className="ph-card"><h2>Từng buổi học</h2>{rows.length?<div className="ph-scroll"><table className="ph-table ph-days"><thead><tr><th>Ngày</th><th>Điểm danh</th><th>Bài</th><th>BTVN</th><th>Điểm</th></tr></thead><tbody>
-   {rows.map(row=>{const h=row.hw[0];return <tr key={row.date}><td className="ph-day">{weekday(row.date)} {day(row.date)}</td><td data-label="Điểm danh" className={row.attStatus==='vang'?'ph-bad':row.attStatus==='di_muon'?'ph-mid':''}>{row.att??'–'}</td><td data-label="Bài" className="ph-title">{h?.title??'–'}</td><td data-label="BTVN" className={h?.status==='qua-han'?'ph-bad':h?.status==='muon'?'ph-mid':''}>{h?STATUS[h.status]:'–'}</td><td data-label="Điểm">{h?score(h.bestScore):'–'}</td></tr>;})}
+   {rows.map(row=>{const h=row.hw[0];return <tr key={row.date}><td className="ph-day">{weekday(row.date)} {day(row.date)}</td><td data-label="Điểm danh" className={row.attStatus==='vang'?'ph-bad':row.attStatus==='di_muon'?'ph-mid':''}>{row.att??'Chưa có dữ liệu'}</td><td data-label="Bài" className="ph-title">{h?.title??'–'}</td><td data-label="BTVN" className={h?.status==='qua-han'?'ph-bad':h?.status==='muon'?'ph-mid':''}>{h?STATUS[h.status]:'–'}</td><td data-label="Điểm">{h?h.bestScore===null&&h.submittedAt!==null?'Chưa có điểm':score(h.bestScore):'–'}</td></tr>;})}
   </tbody></table></div>:<p className="ph-small">Chưa có buổi học nào được ghi.</p>}</div>
   <p className="ph-small">Cập nhật lúc {new Date(r.generatedAt).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}. Thắc mắc về số liệu, phụ huynh nhắn quản lý lớp hoặc Zalo 0967 365 413.</p>
  </div>;

@@ -172,3 +172,22 @@ console.log('GÓC PHỤ HUYNH: 10/10 nhóm kiểm tra đạt (ghép đúng, sai 
  const mig=readFileSync('supabase/migrations-pending/20261029_1300_ph_buoi_ke_tiep.sql','utf8');
  assert.ok(mig.includes('hv_ca_rows')&&mig.includes("'upcoming',"));
 }
+
+// 29/10 (rà bản xem thử): cùng đề giao lại dưới tên khác / nộp lại ở buổi sau → 1 dòng, điểm ghi về buổi gốc.
+{
+ const m=await import('../server/phu-huynh/service');
+ assert.equal(m.parentExamKey('Đề 07E_Đề rèn luyện_HS.pdf'),'de-7E');
+ assert.equal(m.parentExamKey(undefined,'Đề rèn luyện 07E: Bài toán tốc độ nước dâng'),'de-7E');
+ assert.equal(m.parentExamKey('Đề rèn luyện số 7E'),'de-7E');
+ assert.equal(m.parentExamKey('Bài tập lớp 12A hàm số'),null);
+ assert.equal(m.parentExamKey('Bất phương trình bậc nhất hai ẩn'),null);
+ const hw=(code:string,title:string,date:string,bestScore:number|null,status:any)=>({lessonCode:code,title,date,kind:'btvn',dueAt:0,bestScore,submittedAt:bestScore===null&&status!=='da-nop'?null:1,late:false,status});
+ const keys:Record<string,string>={a:'de-7D',b:'de-7D',c:'de-7E',d:'de-7E'};
+ const out=m.dedupeParentHomework([hw('a','Đề 07D','2026-10-24',10,'da-nop'),hw('b','Đề rèn luyện 07D','2026-10-29',0.77,'da-nop'),
+  hw('c','Đề 07E tệp','2026-10-22',null,'qua-han'),hw('d','Đề rèn luyện 07E','2026-10-27',null,'chua-nop')],h=>keys[h.lessonCode]);
+ assert.deepEqual(out.map(h=>[h.lessonCode,h.date,h.bestScore,h.status]),[['a','2026-10-24',10,'da-nop'],['d','2026-10-27',null,'chua-nop']]);
+ const late=m.dedupeParentHomework([hw('a','Đề 07D','2026-10-24',null,'qua-han'),hw('b','Đề 07D x','2026-10-29',8,'da-nop')],h=>keys[h.lessonCode]);
+ assert.deepEqual(late.map(h=>[h.lessonCode,h.date]),[['b','2026-10-24']],'nộp ở buổi sau thì điểm ghi về buổi gốc');
+ const corner=readFileSync('src/native/phu-huynh/ParentCorner.tsx','utf8');
+ assert.ok(corner.includes("'Chưa có dữ liệu'")&&corner.includes("'Chưa có điểm'"));
+}

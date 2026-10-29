@@ -62,18 +62,30 @@ export function parentLessonTitle(l:LessonMaterial){
  const m=/^Đề\s+(\S+)\s+(Đề\s.+)$/i.exec(t);
  return (m?(m[2].includes(m[1].replace(/^0+(?=.)/,''))?m[2]:m[2]+' ('+m[1]+')'):t)||'Bài tập về nhà';
 }
-/** Một bài có thể giao lại thành 2 thẻ cùng tên (lớp ghép, đăng lại): phụ huynh thấy 1 dòng, lấy lần tốt nhất. */
-export function dedupeParentHomework(rows:ParentHomework[]){
+/** Mã đề trong tên ("Đề 07E", "Đề rèn luyện số 7E") để nhận ra cùng một bài giao lại dưới tên khác (tên tệp / tên mô tả). */
+export function parentExamKey(...names:(string|undefined|null)[]){
+ for(const n of names){const m=/(?:^|\s)Đề(?:\s+[^\s\d]\S*){0,4}\s+(?:số\s+)?0*(\d{1,2}[A-Z])(?![0-9A-Za-z])/iu.exec((n??'').normalize('NFC').replace(/_/g,' '));if(m)return 'de-'+m[1].toUpperCase();}
+ return null;
+}
+/** Một bài có thể giao lại thành 2 thẻ (lớp ghép, đăng lại, nộp lại ở buổi sau): phụ huynh thấy 1 dòng.
+ * Lấy lượt tốt nhất (điểm cao nhất → đã nộp → còn hạn → mới hơn); có điểm thì ghi về buổi gốc (ngày sớm nhất). */
+export function dedupeParentHomework(rows:ParentHomework[],keyOf:(h:ParentHomework)=>string|null=()=>null){
+ const open=(h:ParentHomework)=>h.status==='chua-nop'?1:0;
  const better=(h:ParentHomework,c:ParentHomework)=>(h.bestScore??-1)!==(c.bestScore??-1)?(h.bestScore??-1)>(c.bestScore??-1)
-  :(h.submittedAt!==null)!==(c.submittedAt!==null)?h.submittedAt!==null:h.date>c.date;
- const best=new Map<string,ParentHomework>(),out:ParentHomework[]=[];
+  :(h.submittedAt!==null)!==(c.submittedAt!==null)?h.submittedAt!==null:open(h)!==open(c)?open(h)>open(c):h.date>c.date;
+ const groups=new Map<string,ParentHomework[]>(),order:(string|ParentHomework)[]=[];
  for(const h of rows){
-  if(h.kind!=='btvn'||/^bài tập về nhà$/i.test(h.title)){out.push(h);continue;}
-  const key=h.title.normalize('NFC').toLowerCase(),cur=best.get(key);
-  if(!cur){best.set(key,h);out.push(h);continue;}
-  if(better(h,cur)){best.set(key,h);out[out.indexOf(cur)]=h;}
+  if(h.kind!=='btvn'){order.push(h);continue;}
+  const key=keyOf(h)??(/^bài tập về nhà$/i.test(h.title)?null:'t-'+h.title.normalize('NFC').toLowerCase());
+  if(key===null){order.push(h);continue;}
+  const g=groups.get(key);if(g)g.push(h);else{groups.set(key,[h]);order.push(key);}
  }
- return out;
+ return order.map(x=>{
+  if(typeof x!=='string')return x;
+  const g=groups.get(x)!,pick=g.reduce((a,h)=>better(h,a)?h:a);
+  const first=g.reduce((a,h)=>h.date<a.date?h:a);
+  return pick.submittedAt!==null&&first.date<pick.date?{...pick,date:first.date}:pick;
+ });
 }
 /** Sổ BTVN chính thức tính từ 15/10/2026 (cùng mốc xếp hạng): bài trước mốc không tính "chưa nộp"/"cần nộp". */
 export const PARENT_HOMEWORK_FROM='2026-10-15';
@@ -103,9 +115,10 @@ export async function parentReport(rpc:Rpc,session:string,childId:unknown,now=Da
   }catch{/* Hạng là phần phụ: lỗi không chặn báo cáo. */}
  }finally{await rpc('mtm_btvn_logout',{p_session:token}).catch(()=>undefined);}
  const extras:any=await rpc('mtm_ph_extras',{p_session:session,p_student_id:childId});
+ const examKey=new Map(lessons.map(l=>[l.lessonCode,parentExamKey(l.homeworkTitle,l.title)]));
  const homework:ParentHomework[]=dedupeParentHomework(lessons.filter(l=>l.kind!=='kiem-tra-thang'||!l.locked).map(l=>({
   lessonCode:l.lessonCode,title:parentLessonTitle(l),date:l.date,kind:l.kind??'btvn',dueAt:l.dueAt,bestScore:l.bestScore,submittedAt:l.submittedAt,late:l.late===true,
-  status:l.submittedAt?(l.late?'muon':'da-nop'):l.locked?'chua-mo':(l.dueAt!==null&&l.dueAt<now?'qua-han':'chua-nop')})).filter(h=>h.submittedAt!==null||h.kind!=='btvn'||h.date>=PARENT_HOMEWORK_FROM));
+  status:l.submittedAt?(l.late?'muon':'da-nop'):l.locked?'chua-mo':(l.dueAt!==null&&l.dueAt<now?'qua-han':'chua-nop')})).filter(h=>h.submittedAt!==null||h.kind!=='btvn'||h.date>=PARENT_HOMEWORK_FROM),h=>examKey.get(h.lessonCode)??null);
  const attendance=mergeAttendance(Array.isArray(extras?.attendance)?extras.attendance:[],child.className);
  const papers:ParentPaper[]=(Array.isArray(extras?.papers)?extras.papers:[]).filter((p:any)=>typeof p?.testCode==='string').map((p:any)=>({testCode:p.testCode,date:p.date??null,subject:p.subject??null,score:Number(p.score),maxScore:p.maxScore===null||p.maxScore===undefined?10:Number(p.maxScore)}));
  return {parentName,children,child,generatedAt:now,upcoming:typeof extras?.upcoming==='string'?extras.upcoming:null,attendance,homework,papers,rank,summary:summarize(homework,attendance,now)};
