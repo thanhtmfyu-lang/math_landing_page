@@ -21,7 +21,7 @@ assert.equal(response.status, 200);
 assert.equal(response.headers.get('cache-control'), 'no-store');
 assert.match(await response.text(), /Dữ liệu thử/);
 assert.equal(calls.length, 1);
-assert.match(calls[0].url, /mtm_btvn_sheet_csv6$/);
+assert.match(calls[0].url, /mtm_btvn_sheet_csv6_real100$/);
 assert.deepEqual(JSON.parse(String(calls[0].init?.body)), { p_tab: 'hocsinh' });
 assert.equal((await handler(req('?tab=not-a-tab', { 'x-mtm-sheet-token': config.scriptToken }))).status, 400);
 assert.equal(calls.length, 1);

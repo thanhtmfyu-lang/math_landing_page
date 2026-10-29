@@ -14,7 +14,7 @@ export async function baselineDatabase(){
  const applied=[],skipped=[];
  for(const dir of ['supabase/migrations','supabase/migrations-pending']){
   // 043 is a one-off real-person data reconciliation, with no schema definitions.
-  const files=readdirSync(dir).filter(f=>f.endsWith('.sql')&&!f.includes('202610270100')&&!f.startsWith('20261027_')&&!/202610180043|202610190068|202610200075/.test(f)).sort((a,b)=>{
+  const files=readdirSync(dir).filter(f=>f.endsWith('.sql')&&!f.includes('202610270100')&&!f.includes('_is_test_')&&!f.startsWith('20261027_')&&!/202610180043|202610190068|202610200075/.test(f)).sort((a,b)=>{
    const key=f=>f.replace(/^(\d+)_([0-9]+)_/,'$1~$2_').replace(/^(\d+)_/,'$1!_');return key(a).localeCompare(key(b));
   });
   for(const file of files){

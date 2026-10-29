@@ -30,6 +30,7 @@ async function kyLink(paths: string[]): Promise<Map<string, string>> {
   return out;
 }
 
+// Tài khoản/bài thử (is_test) không vào hàng chấm: bỏ trước khi ký link ảnh, gọi model.
 Deno.serve(async (req) => {
   if (req.method !== "POST" || !MA || !bang(req.headers.get("x-mtm-token") ?? "", MA)) return new Response("forbidden", { status: 403 });
   let p: { action?: unknown; lessons?: unknown; prefix?: unknown };
@@ -47,6 +48,8 @@ Deno.serve(async (req) => {
         join mtm_hw_private.students s on s.id = w.student_id
         join mtm_hw_private.classes c on c.id = s.class_id
         where jsonb_array_length(w.receipts) > 0
+          and not s.is_test
+          and not exists (select 1 from mtm_hw_private.btvn_lessons l where l.code = w.lesson_code and l.is_test)
           and ${lessonsOk ? sql`w.lesson_code = any(${lessons as string[]}::text[])` : sql`starts_with(w.lesson_code, ${prefix})`}
         order by w.lesson_code, s.full_name, s.id
         limit 3000`;
@@ -58,6 +61,8 @@ Deno.serve(async (req) => {
       join mtm_hw_private.students s on s.id = i.student_id
       join mtm_hw_private.classes c on c.id = s.class_id
       where i.received_at is not null
+        and not s.is_test
+        and not exists (select 1 from mtm_hw_private.btvn_lessons l where l.code = i.lesson_code and l.is_test)
         and ${lessonsOk ? sql`i.lesson_code = any(${lessons as string[]}::text[])` : sql`starts_with(i.lesson_code, ${prefix})`}
       order by i.lesson_code, s.full_name, s.id, i.page_number
       limit 3000`;
