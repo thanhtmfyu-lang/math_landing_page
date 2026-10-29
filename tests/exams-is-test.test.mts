@@ -150,6 +150,23 @@ try{
   const support=await rpc('mtm_btvn_support_report',{p_since:'2000-01-01T00:00:00Z'});
   assert.deepEqual(support.map((r:any)=>r.studentId),[real]);
  });
+ await check('QA seed: no sync events for test rows; 4 QA students log in by name+phone; lessons copied as -qa',async()=>{
+  const sync=readFileSync('supabase/migrations-pending/20261029_1530_is_test_sync_capture.sql','utf8');
+  await db.exec(sync);await db.exec(sync);
+  const events="select count(*)::int from mtm_hw_private.sync_events where entity_table='students'";
+  const before=await one(events);
+  await q("update mtm_hw_private.students set school='Synthetic QA' where id=$1",[test]);assert.equal(await one(events),before);
+  await q("update mtm_hw_private.students set school='Synthetic 2' where id=$1",[real]);assert.equal(await one(events),before+1);
+  for(const label of ['2K9 9+','2K11 9+','2K9 HSA (THỨ 5)'])await q("insert into mtm_hw_private.classes(owner_id,label,grade) values($1,$2,11)",[owner,label]);
+  const seed=readFileSync('supabase/migrations-pending/20261029_1531_is_test_qa_seed.sql','utf8');
+  await db.exec(seed);await db.exec(seed);
+  assert.equal(await one("select count(*)::int from mtm_hw_private.students where is_test and source_identity like 'qa:is-test:20261029:%'"),4);
+  assert.equal(await one("select count(*)::int from mtm_hw_private.sync_events e join mtm_hw_private.students s on e.entity_key->>'id'=s.id::text where s.is_test and s.source_identity like 'qa:is-test:%'"),0);
+  const inWeek=today>='2026-10-26'&&today<='2026-11-01';
+  assert.equal(await one("select count(*)::int from mtm_hw_private.btvn_lessons where code=$1 and is_test",[lesson+'-qa']),inWeek?1:0);
+  assert.equal(await one("select count(*)::int from mtm_hw_private.btvn_lessons where code like '%-qa-qa'"),0);
+  const login=await rpc('mtm_btvn_forgot',{p_full_name:'QA Thử 2K10',p_phone:'0000000092',p_class_name:'2K10 9+'});assert.equal(login.ok,true);
+ });
  await check('Phong thi rank omits test student and test account before row_number',async()=>{
   const tk=await one("insert into mtm_phong_thi.tai_khoan(sdt,ten,mat_khau,is_test) values('0900000002','Test external','scrypt$fixture$fixture',true) returning id");
   for(const [i,sid,account,score] of [[1,real,null,8],[2,test,null,10],[3,null,tk,10]])await q("insert into mtm_phong_thi.luot(nonce,de,loai,nguoi,hoc_sinh,tai_khoan,diem,thang,dung,tong,giay,qua_gio,chi_tiet,ten_hien_thi) values($1,'qa-pt','thpt',$2,$3,$4,$5,10,1,1,100,false,'{}',$6)",['qa-nonce-'+i,'hs:fixture'+i,sid,account,score,i===1?'Real fixture':'Test fixture']);
