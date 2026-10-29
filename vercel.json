@@ -7,6 +7,12 @@
   "outputDirectory": "build",
   "rewrites": [
     {"source":"/on-cuoi-ky-1","destination":"/index.html"},
+    {"source":"/dang-nhap","destination":"/index.html"},
+    {"source":"/login","destination":"/index.html"},
+    {"source":"/hoc-sinh","destination":"/index.html"},
+    {"source":"/bai-tap","destination":"/index.html"},
+    {"source":"/bai-tap-ve-nha","destination":"/index.html"},
+    {"source":"/bang-tin","destination":"/index.html"},
     {
       "source": "/goc-hoc-tap",
       "destination": "/index.html"

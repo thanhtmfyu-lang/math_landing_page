@@ -28,7 +28,8 @@ export default function ExamReview({exam,draft,initialQuestionId,reviewRequestRe
   useEffect(()=>{if(focusQuestion!==null){const target=document.getElementById(`${instance}-card-${focusQuestion}`);target?.focus();target?.scrollIntoView({block:'start'});setFocusQuestion(null);}},[focusQuestion,instance]);
   if(draft.submittedAt===null)return null;
   const mtm=exam.rubricVersion===MTM_SCORING_VERSION;
-  const keyReady=(q:PracticeQuestion,status:string)=>!mtm||status!=='unscored'&&hasReviewableKey(q);
+  // Đề chấm trên máy chủ không mang đáp án trong bundle: thiếu khóa thì báo chưa có, không đọc .map (trang trắng 29/10).
+  const keyReady=(q:PracticeQuestion,status:string)=>hasReviewableKey(q)&&(!mtm||status!=='unscored');
   const parts=examSections(exam),selectedPart=advancedFilters?parts.find(part=>String(part.from)===section):undefined;
   const rows=reviewRows(exam,draft),visible=rows.filter(r=>(!selectedPart||r.index>=selectedPart.from&&r.index<selectedPart.to)&&(filter==='all'||(filter==='mistakes'?r.status!=='correct'&&r.status!=='self':r.status===filter)));
   const wrong=rows.filter(r=>r.status!=='correct'&&r.status!=='self').length,blank=rows.filter(r=>r.status==='unanswered').length;

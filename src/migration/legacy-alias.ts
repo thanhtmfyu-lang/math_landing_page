@@ -26,5 +26,8 @@ export function legacyLearningAlias(pathname: string, search = '', hash = ''): s
   const path = (pathname.replace(/\/+$/, '') || '/').toLowerCase();
   if (path === '/goc-hoc-tap') return '/btvn' + safeQuery(search) + safeHash(hash);
   if (path === '/bang-diem') return '/xep-hang' + safeHash(hash);
+  // 29/10: đường dẫn hay gõ nhầm trước đây ra 404 tiếng Anh của Vercel.
+  if (['/dang-nhap', '/login', '/hoc-sinh', '/bai-tap', '/bai-tap-ve-nha'].includes(path)) return '/btvn';
+  if (path === '/bang-tin') return '/';
   return null;
 }
