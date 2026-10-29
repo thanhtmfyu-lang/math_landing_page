@@ -1,7 +1,8 @@
 // API kho điểm danh chung cho Javis (bot Zalo) và máy quét Zoom: POST JSON {action,...}, header x-mtm-token = MTM_DD_TOKEN.
-// action: link_buoi_hoc (bot Zalo, xem link-buoi-hoc.ts) | find | move | cancel_move | mark | raw | session | moves | ... | pin_reset | pin_status | profile_update | missing_profile | phone_add. Xem migration 033-056.
+// action: link_buoi_hoc (bot Zalo, xem link-buoi-hoc.ts) | btvn_bot_catalog (bot Zalo, xem btvn-bot-catalog.ts) | find | move | cancel_move | mark | raw | session | moves | ... | pin_reset | pin_status | profile_update | missing_profile | phone_add. Xem migration 033-056.
 import { feedbackImageSource, prepareFeedbackImages } from "./feedback-images.ts";
 import { isLinkBuoiHoc, linkBuoiHoc } from "./link-buoi-hoc.ts";
+import { isBtvnBotCatalog, btvnBotCatalog } from "./btvn-bot-catalog.ts";
 const URL_DB = Deno.env.get("SUPABASE_URL") ?? "";
 const KHOA = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY") ?? "";
 const MA = Deno.env.get("MTM_DD_TOKEN") ?? "";
@@ -18,6 +19,7 @@ Deno.serve(async (req) => {
   let p: unknown;
   try { p = await req.json(); } catch { return Response.json({ error: "bad json" }, { status: 400 }); }
   if (isLinkBuoiHoc(p)) return linkBuoiHoc(p, { url: URL_DB, key: KHOA });
+  if (isBtvnBotCatalog(p)) return btvnBotCatalog(p, { url: URL_DB, key: KHOA });
   // Tên file phụ thuộc source+hash ảnh, retry không tạo path mới hoặc ghi đè ảnh khác.
   // Lệnh đã có journal chỉ chuẩn hóa payload để RPC kiểm replay/conflict, không upload lại.
   let skipUploads = false;
