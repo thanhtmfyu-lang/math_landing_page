@@ -7,6 +7,7 @@ import {validatePracticeExam, readyExams, PRACTICE_EXAMS, type PracticeExam} fro
 import {validateAssessment} from '../src/native/exams/assessment';
 import {practiceVersion, historyVersions, PRACTICE_ERRATA} from '../src/native/exams/practice-errata';
 import exactTests from '../src/native/chapters/exact-tests.json';
+import probabilityTests from '../src/native/chapters/probability-tests.json';
 import practiceTests from '../src/native/chapters/practice-tests.json';
 import archivedTests from '../src/native/chapters/archived-tests.json';
 import catalog from '../src/native/exams/catalog.json';
@@ -17,6 +18,7 @@ type Item = {exam: PracticeExam};
 const stores: Record<string, PracticeExam[]> = {
   'exams/catalog.json (Thi thử)': catalog as unknown as PracticeExam[],
   'chapters/exact-tests.json (đề nguồn Drive)': (exactTests as unknown as Item[]).map(p => p.exam),
+  'chapters/probability-tests.json (ba chương xác suất)': (probabilityTests as unknown as Item[]).map(p => p.exam),
   'chapters/practice-tests.json (ngân hàng cũ)': (practiceTests as unknown as Item[]).map(p => p.exam),
   'chapters/archived-tests.json (bản lưu trữ)': (archivedTests as unknown as Item[]).map(p => p.exam),
 };
