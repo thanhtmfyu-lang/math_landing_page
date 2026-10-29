@@ -155,7 +155,7 @@ assert.equal(phanViHsa(30).top,26.19);assert.ok(phanViHsa(34).top>5.18&&phanViHs
 
 // Đợt thi: lịch thật trong dot.json hợp lệ; ngoài giờ không mở được ở chế độ đợt; vẫn luyện tự do; vé ghi mã đợt.
 assert.deepEqual(validateDot(DOT),[]);
-assert.ok(DOT.some(t=>t.ma==='ks-hk1-2026'&&t.khoi)&&DOT.filter(t=>t.loai==='hsa').length===4);
+assert.ok(DOT.some(t=>t.ma==='ks-hk1-2026'&&t.khoi)&&DOT.filter(t=>t.loai==='hsa').length===5&&DOT.some(t=>t.ma==='thpt-thu-2026-11'&&t.kin));
 assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,mo:'2026-12-02T07:00:00+07:00',dong:'2026-12-01T07:00:00+07:00'}]).length>0);
 assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,mo:'2026-12-01 07:00',dong:'2026-12-02T07:00:00+07:00'}]).length>0);
 const DS:PtDot[]=[{ma:'dot-thu',ten:'Đợt thử',loai:'thpt',de:'tsa-mau',mo:'2026-11-25T07:00:00+07:00',dong:'2026-11-26T22:00:00+07:00'},
@@ -173,6 +173,16 @@ assert.equal(dotDangMo(DS,'dot-thu','tsa-mau',trong)?.ma,'dot-thu');assert.equal
  assert.equal((xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},KHACH,K,truoc,ngc) as any).body.lyDo,'ngoai-gio');
  assert.equal(xuLy('mo',{de:'tsa-mau',dot:'dot-cu'},KHACH,K,trong,ngc).status,403);
  assert.equal(xuLy('mo',{de:'tsa-mau'},KHACH,K,truoc,ngc).status,200,'ngoài giờ vẫn luyện tự do');
+ // Đề khảo sát giữ kín đến khi đợt đóng: không lên sảnh, không mở tự do, kể cả học sinh trung tâm.
+ const ds=(n:number)=>(xuLy('danh-muc',{},HS,K,n,ngc) as any).body.de.map((d:any)=>d.id);
+ assert.ok(!ds(truoc).includes('thpt-mau-01'),'đề khảo sát ẩn trước đợt');assert.ok(ds(truoc).includes('tsa-mau'),'đề đợt thường vẫn hiện');
+ assert.equal(xuLy('mo',{de:'thpt-mau-01'},HS,K,trong,ngc).status,404,'đề khảo sát không mở tự do');
+ assert.ok(ds(Date.parse('2026-11-27T10:00:00+07:00')).includes('thpt-mau-01'),'đợt đóng thì đề trở lại sảnh');
+ // Đợt kin: đề chung cũng giữ kín đến khi đóng, nhưng vẫn làm được trong đợt.
+ const ngk={dot:[{...DS[0],kin:true}]};
+ assert.ok(!(xuLy('danh-muc',{},HS,K,truoc,ngk) as any).body.de.some((d:any)=>d.id==='tsa-mau'));
+ assert.equal(xuLy('mo',{de:'tsa-mau'},KHACH,K,trong,ngk).status,404);assert.equal(xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},KHACH,K,trong,ngk).status,200);
+ assert.ok(validateDot([{...DS[0],kin:'co'}]).length>0);
  assert.equal(xuLy('mo',{de:'thpt-mau-01',dot:'dot-thu'},HS,K,trong,ngc).status,400,'đề không thuộc đợt');
  assert.equal(xuLy('mo',{de:'x',dot:'dot-null'},HS,K,Date.parse('2026-12-25T10:00:00+07:00'),ngc).status,400);
  assert.equal(xuLy('mo',{de:null,dot:'dot-null'},HS,K,Date.parse('2026-12-25T10:00:00+07:00'),ngc).status,409,'đợt chưa gán đề');
