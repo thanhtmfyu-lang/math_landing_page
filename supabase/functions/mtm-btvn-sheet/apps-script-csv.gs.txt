@@ -5,7 +5,7 @@
  * Công thức: =MTM_SHEET_CSV("diem";1). Đối số thứ hai là số lần làm mới.
  */
 var MTM_CSV_ENDPOINT_ = 'https://egljwujhgdapaxyrjskj.supabase.co/functions/v1/mtm-btvn-sheet';
-var MTM_CSV_TABS_ = ['diem', 'xephang', 'diemdanh', 'zoom', 'vantay', 'chuyenbuoi', 'cahomnay', 'cachitiet', 'tongquan', 'hocsinh', 'phanhoi'];
+var MTM_CSV_TABS_ = ['diem', 'xephang', 'diemdanh', 'zoom', 'vantay', 'chuyenbuoi', 'cahomnay', 'cachitiet', 'tongquan', 'hocsinh', 'phanhoi', 'onchuongxs'];
 
 /**
  * Đọc bảng CSV riêng tư qua header, không đưa mã vào URL.
