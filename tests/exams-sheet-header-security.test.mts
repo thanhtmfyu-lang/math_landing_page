@@ -33,9 +33,14 @@ assert.equal((await handler(feedback)).status, 200);
 assert.match(calls.at(-1)!.url, /mtm_btvn_feedback_since$/);
 const googleIdentity = createSheetHandler(config, (async (input: string | URL | Request) => String(input).includes('tokeninfo')
   ? Response.json({ iss: 'https://accounts.google.com', email_verified: 'true', email: config.ownerEmail, exp: Math.floor(Date.now() / 1000) + 300 })
-  : Response.json([])) as typeof fetch);
+  : Response.json(String(input).includes('feedback_since') ? [] : 'Học sinh,Lớp')) as typeof fetch);
 assert.equal((await googleIdentity(new Request('https://edge.invalid/', { method: 'POST', headers: { Authorization: 'Bearer ' + 'x'.repeat(120) }, body: JSON.stringify({ op: 'feedback', after: 0 }) }))).status, 200);
-assert.equal((await googleIdentity(new Request('https://edge.invalid/?tab=diem', { headers: { Authorization: 'Bearer ' + 'x'.repeat(120) } }))).status, 403, 'GET CSV chỉ nhận Script Properties header');
+assert.equal((await googleIdentity(new Request('https://edge.invalid/?tab=diem', { headers: { Authorization: 'Bearer ' + 'x'.repeat(120) } }))).status, 200, 'GET CSV nhận danh tính Google của chủ Sheet (MTM_9_TAB.gs)');
+const otherIdentity = createSheetHandler(config, (async (input: string | URL | Request) => String(input).includes('tokeninfo')
+  ? Response.json({ iss: 'https://accounts.google.com', email_verified: 'true', email: 'khac@example.invalid', exp: Math.floor(Date.now() / 1000) + 300 })
+  : Response.json('Học sinh,Lớp')) as typeof fetch);
+assert.equal((await otherIdentity(new Request('https://edge.invalid/?tab=diem', { headers: { Authorization: 'Bearer ' + 'x'.repeat(120) } }))).status, 403, 'Danh tính Google không phải chủ Sheet bị chặn');
+assert.equal((await handler(new Request('https://edge.invalid/?tab=diem', { headers: { Authorization: 'Bearer short' } }))).status, 403);
 const badIdentity = createSheetHandler(config, (async () => { throw new Error('network unavailable'); }) as typeof fetch);
 assert.equal((await badIdentity(new Request('https://edge.invalid/', { method: 'POST', headers: { Authorization: 'Bearer ' + 'x'.repeat(120) }, body: '{}' }))).status, 403);
 assert.equal((await handler(new Request('https://edge.invalid/', { method: 'POST', headers: { 'x-mtm-sheet-token': config.scriptToken }, body: JSON.stringify({ op: 'feedback', after: -1 }) }))).status, 400);

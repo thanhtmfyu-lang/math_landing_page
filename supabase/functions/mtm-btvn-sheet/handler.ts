@@ -59,7 +59,9 @@ export function createSheetHandler(config: SheetConfig, fetcher: Fetcher = fetch
     // Lùi tạm H3 ngày 19/10/2026 để IMPORTDATA cũ hoạt động trong lúc chuyển Apps Script.
     // Mã URL cũ chỉ đọc CSV bằng GET, tách khỏi mã header và quyền POST phản hồi.
     const hasLegacyToken = req.method === "GET" && equalSecret(url.searchParams.get("t") ?? "", config.legacyToken ?? "");
-    if (!hasHeader && !hasLegacyToken && !(req.method === "POST" && await isFeedbackOwner(req))) return new Response("forbidden", { status: 403, headers: PRIVATE });
+    // 29/10: MTM_9_TAB.gs trên Sheet học vụ đọc CSV bằng GET + Bearer danh tính Google của chủ Sheet (không giữ mã trong Apps Script).
+    // Cùng phép kiểm như POST phản hồi: token Google còn hạn, email đã xác minh, đúng email chủ Sheet.
+    if (!hasHeader && !hasLegacyToken && !await isFeedbackOwner(req)) return new Response("forbidden", { status: 403, headers: PRIVATE });
     if (!config.databaseUrl || !config.serviceKey) return new Response("unavailable", { status: 503, headers: PRIVATE });
     try {
       if (req.method === "POST") return await feedback(req);
