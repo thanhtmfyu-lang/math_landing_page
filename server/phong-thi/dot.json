@@ -1,7 +1,11 @@
 {
   "about": "Lịch đợt thi của Phòng thi thử (không bí mật: chỉ mã đề trong kho và giờ mở/đóng, giờ Việt Nam +07:00). de null = chưa gán đề (sảnh hiện 'sắp công bố đề'); de \"chua-gan\" = ẩn đợt. Đợt khảo sát theo khối dùng khoi {10,11,12} và tiền tố sbd; thí sinh đăng ký lấy SBD. Nguồn lịch: KE_HOACH_PHONG_THI_THU.md mục 3b.",
   "dot": [
-    {"ma": "ks-hk1-2026", "ten": "Khảo sát Toán 10–12 cuối kỳ I", "loai": "thpt", "de": null, "khoi": {"10": null, "11": null, "12": null}, "sbd": "KS26",
+    {"ma": "hsa-thu-2026-11", "ten": "Kỳ HSA số 1 · thi thử phần Toán", "loai": "hsa", "de": null, "kin": true, "mo": "2026-11-15T07:00:00+07:00", "dong": "2026-11-20T22:00:00+07:00",
+     "moTa": "50 câu, 75 phút như phần Toán và xử lý số liệu của bài HSA. Miễn phí, chấm ngay, bảng vàng công bố tối 20/11."},
+    {"ma": "thpt-thu-2026-11", "ten": "Thi thử tốt nghiệp THPT môn Toán · đợt cuối tháng 11", "loai": "thpt", "de": null, "kin": true, "mo": "2026-11-29T07:00:00+07:00", "dong": "2026-11-30T22:00:00+07:00",
+     "moTa": "22 câu, 90 phút theo cấu trúc 2025. Miễn phí, chấm ngay, có lời giải từng câu."},
+    {"ma": "ks-hk1-2026", "ten": "Khảo sát Toán 10–12 cuối kỳ I", "loai": "thpt", "de": null, "khoi": {"10": "khao-sat-hk1-lop10", "11": "khao-sat-hk1-lop11", "12": "khao-sat-hk1-lop12"}, "sbd": "KS26",
      "mo": "2026-12-05T07:00:00+07:00", "dong": "2026-12-06T22:00:00+07:00", "moTa": "Đề theo cấu trúc THPT 2025, 90 phút. Đăng ký nhận số báo danh, làm bài trong hai ngày 05–06/12."},
     {"ma": "hsa-thu-2026-12", "ten": "Thi thử HSA phần Toán · đợt tháng 12", "loai": "hsa", "de": null, "mo": "2026-12-12T07:00:00+07:00", "dong": "2026-12-13T22:00:00+07:00"},
     {"ma": "hsa-thu-2027-01a", "ten": "Thi thử HSA phần Toán · đợt 09–10/01", "loai": "hsa", "de": null, "mo": "2027-01-09T07:00:00+07:00", "dong": "2027-01-10T22:00:00+07:00"},
