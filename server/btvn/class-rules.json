@@ -1,7 +1,8 @@
 {
   "timezone": "Asia/Ho_Chi_Minh",
   "notes": [
-    "Cặp T4-T5 mở sau T4; 2K10 Thứ 3, 6 hạn cùng thứ tuần sau theo hai giả định trong thiết kế đợt 24."
+    "Cặp T4-T5 mở sau T4; 2K10 Thứ 3, 6 hạn cùng thứ tuần sau theo hai giả định trong thiết kế đợt 24.",
+    "Anh Thành 28/10 22:44: bài giao ở ca thứ X của lớp/thầy nào thì hạn là ca thứ X tuần sau của chính lớp/thầy đó (2K9 9+/8+ bỏ hạn theo cặp buổi; 2K9 XPT T3→T3, T5→T5)."
   ],
   "classes": {
     "2K9 9+": {
@@ -18,7 +19,33 @@
         }
       },
       "due": {
-        "type": "pair_next"
+        "type": "map",
+        "days": {
+          "1": {
+            "weekday": 1,
+            "weeks": 1
+          },
+          "2": {
+            "weekday": 1,
+            "weeks": 1
+          },
+          "3": {
+            "weekday": 3,
+            "weeks": 1
+          },
+          "4": {
+            "weekday": 3,
+            "weeks": 1
+          },
+          "5": {
+            "weekday": 5,
+            "weeks": 1
+          },
+          "6": {
+            "weekday": 5,
+            "weeks": 1
+          }
+        }
       }
     },
     "2K14": {
@@ -49,11 +76,11 @@
             "weeks": 1
           },
           "2": {
-            "weekday": 4,
-            "weeks": 0
+            "weekday": 2,
+            "weeks": 1
           },
           "4": {
-            "weekday": 2,
+            "weekday": 4,
             "weeks": 1
           }
         }
@@ -73,7 +100,33 @@
         }
       },
       "due": {
-        "type": "pair_next"
+        "type": "map",
+        "days": {
+          "1": {
+            "weekday": 2,
+            "weeks": 1
+          },
+          "2": {
+            "weekday": 2,
+            "weeks": 1
+          },
+          "3": {
+            "weekday": 4,
+            "weeks": 1
+          },
+          "4": {
+            "weekday": 4,
+            "weeks": 1
+          },
+          "5": {
+            "weekday": 6,
+            "weeks": 1
+          },
+          "6": {
+            "weekday": 6,
+            "weeks": 1
+          }
+        }
       }
     },
     "2K10 9+": {
