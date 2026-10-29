@@ -2,7 +2,7 @@ import {createCipheriv,createDecipheriv,createHash,createHmac,randomBytes,timing
 import {readFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {gunzipSync,gzipSync} from 'node:zlib';
-import {cham,deCongKhai,dotCongKhai,mucLuc,quyenMo,thoiGianCau,type PtDe,type PtDot,type PtKetQua,type PtKho,type PtLoai,type PtNguoiXem} from './engine';
+import {cham,deAnTheoDot,deCongKhai,dotCongKhai,mucLuc,quyenMo,thoiGianCau,type PtDe,type PtDot,type PtKetQua,type PtKho,type PtLoai,type PtNguoiXem} from './engine';
 import goiRaw from './goi.json';
 import dotRaw from './dot.json';
 
@@ -51,7 +51,8 @@ export const gioVn=(iso:string)=>new Date(Date.parse(iso)+7*3600000).toISOString
 export function xuLy(action:string,body:Body,ai:PtNguoiXem,kho:{key:Buffer;kho:PtKho}|null,nay=Date.now(),ng:PtNgCanh={}):PtTra{
  if(!kho)return {status:503,body:{message:'Phòng thi thử đang cập nhật đề. Em quay lại sau ít phút hoặc nhắn Zalo 0967 365 413.'}};
  const dsDot=ng.dot??DOT,ts=ng.thiSinh??null;
- if(action==='danh-muc')return {status:200,body:{nguoiXem:congKhaiNguoiXem(ai),de:mucLuc(kho.kho).map(d=>({...d,quyen:quyenMo(d,ai,nay)})),goi:GOI.filter(g=>g.moBan).map(({id,ten,loai,soNgay,gia,moTa})=>({id,ten,loai,soNgay,gia,moTa})),
+ const an=deAnTheoDot(dsDot,nay);
+ if(action==='danh-muc')return {status:200,body:{nguoiXem:congKhaiNguoiXem(ai),de:mucLuc(kho.kho).filter(d=>!an.has(d.id)).map(d=>({...d,quyen:quyenMo(d,ai,nay)})),goi:GOI.filter(g=>g.moBan).map(({id,ten,loai,soNgay,gia,moTa})=>({id,ten,loai,soNgay,gia,moTa})),
   dot:dotCongKhai(dsDot,kho.kho,nay).map(t=>ts&&ts.dot===t.ma?{...t,cuaEm:{sbd:ts.sbd,khoi:ts.khoi,ten:ts.ten}}:t)}};
  // Chế độ đợt: chỉ mở trong giờ; đợt khảo sát (có khoi) cần SBD, đề lấy theo khối của thí sinh.
  let dot:PtDot|null=null,deId=body.de;
@@ -63,7 +64,7 @@ export function xuLy(action:string,body:Body,ai:PtNguoiXem,kho:{key:Buffer;kho:P
   if(!(Date.parse(dot.mo)<=nay&&nay<Date.parse(dot.dong)))return {status:403,body:{lyDo:'ngoai-gio',message:NGOAI_GIO(dot,nay)}};
  }
  const de=typeof deId==='string'?kho.kho.de.find(d=>d.id===deId):undefined;
- if(!de)return {status:404,body:{message:'Không tìm thấy đề này.'}};
+ if(!de||(action==='mo'&&!dot&&an.has(de.id)))return {status:404,body:{message:'Không tìm thấy đề này.'}};
  // Đề khảo sát mở cho mọi thí sinh đã đăng ký, bất kể tầng: lúc mở theo SBD, lúc nộp theo vé đã ký có SBD của đợt đó.
  const veNop=action==='nop'?docVe(body.ve,kho.key):null,laKs=!!dot?.khoi||!!(veNop?.k&&dsDot.some(t=>t.ma===veNop.t&&t.khoi&&Object.values(t.khoi).includes(de.id)));
  const q=laKs?{mo:true as const}:quyenMo(de,ai,nay);

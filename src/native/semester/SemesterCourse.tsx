@@ -47,7 +47,7 @@ export default function SemesterCourse() {
       <div className="semester-actions"><button className="mig-button primary" onClick={scrollRegister}>Đăng ký miễn phí</button><Link className="mig-button outline" href="/btvn">Đăng nhập BTVN</Link></div></div>
       <aside><BookOpen size={36} aria-hidden="true"/><h2>Ôn cuối kỳ I</h2><p>Toán lớp 10 · 11 · 12</p><p><CalendarDays size={18} aria-hidden="true"/> Mốc mở khóa: {SEMESTER_START}</p><span>Học có lộ trình · Hiểu bản chất</span></aside>
     </section>
-    <p className="semester-sample" role="note">Bản mẫu: tên bài và tuần học minh họa, video chưa mở. Nội dung chính thức được MTM kiểm và cập nhật trước khi học.</p>
+    <p className="semester-sample" role="note">Lộ trình 4 tuần bám SGK Kết nối tri thức. Video mở dần theo tuần từ {SEMESTER_START}.</p>
     <section aria-labelledby="semester-roadmap"><div className="semester-heading"><div><span className="semester-eyebrow">LỘ TRÌNH CỦA EM</span><h2 id="semester-roadmap">Chọn khối, theo từng tuần</h2></div>
       <div className="semester-grades" role="group" aria-label="Khối lớp">{SEMESTER_GRADES.map(g=><button key={g} aria-pressed={grade===g} onClick={()=>setGrade(g)}>Lớp {g}</button>)}</div></div>
       <p>{state?.registered?'Đã đăng ký lộ trình lớp '+grade+'.':'Đăng nhập BTVN và điền form bên dưới để lưu đăng ký.'} Mỗi video có số lượt mở riêng, mặc định 3 lượt; thời gian một lượt tối đa 60 phút. Phát lại trong cùng lượt đang mở không tính thêm.</p>

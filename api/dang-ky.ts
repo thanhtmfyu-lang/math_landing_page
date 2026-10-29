@@ -15,7 +15,7 @@ export function createLeadApi(getEnv=()=>process.env,transport:typeof fetch=fetc
  if(typeof args==='string')return res.status(400).json({message:args});
  const semester=args.p_kind==='on-cuoi-ky-1',session=semesterSession(h.cookie);
  if(semester&&!session)return res.status(401).json({message:'Em đăng nhập BTVN trước khi đăng ký khóa ôn để lưu đúng tài khoản.'});
- if(semester&&env.MTM_SEMESTER_ENABLED!=='1')return res.status(503).json({message:'Đăng ký khóa ôn chưa mở. Em nhắn Zalo 0967 365 413 để được hỗ trợ.'});
+ if(semester&&env.MTM_SEMESTER_ENABLED==='0')return res.status(503).json({message:'Đăng ký khóa ôn chưa mở. Em nhắn Zalo 0967 365 413 để được hỗ trợ.'});
  if(env.MTM_LEAD_ENABLED!=='1')return res.status(200).json({enabled:false});
  try{
   if(!env.SUPABASE_URL||!env.SUPABASE_SERVICE_ROLE_KEY)throw Error('Missing config');
