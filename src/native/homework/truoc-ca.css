@@ -1,0 +1,4 @@
+.tc-pick{display:flex;flex-wrap:wrap;align-items:flex-end;gap:12px}.tc-pick label{margin:0}.tc-session h2{margin-top:0}
+.tc-warn{color:#9c1c1c;font-weight:600}.tc-ok{color:#1d6b3a;font-weight:600}
+.tc-can td{background:#fff4f2}.tc-can strong{color:#9c1c1c}.tc-dat strong{color:#1d6b3a}
+.tc-line{display:block}.tc-session small{color:#5a6f86}

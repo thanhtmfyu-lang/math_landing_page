@@ -101,7 +101,7 @@ if(REAL)for(const khoi of DV_TRACKS){const b=BANKS[khoi] as Bank;const ids=new S
 }
 
 // Phiếu thông tin học thử: bắt buộc đủ ô quản lý lớp cần, đồng ý của phụ huynh, ngày sinh khớp khối.
-const today='2026-10-20';
+const today='2026-10-20'; // Mốc cố định: buổi học thử gần nhất tính theo now truyền vào, không theo đồng hồ máy chạy test.
 const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'THPT Kim Liên',lopTruong:'10A1',phuHuynh:'Nguyễn Văn Bình',sdtPh:'+84 912 345 678',sdtHs:'0987 654 321',hinhThuc:'truc-tiep',lichChon:['2K11 XPS 9+|T5|19:30|21:30','2K11 XPS 8+|CN|15:30|17:30'],mucTieu:'diem-cao',nguon:'facebook',ghiChu:'',dongY:true,leadSource:'Nguồn: facebook'};
 {const h=validateHoSo(HS,today);assert.ok(typeof h!=='string',String(h));if(typeof h!=='string'){assert.equal(h.hoTen,'Nguyễn Văn An');assert.equal(h.sdtPh,'0912345678');assert.deepEqual(h.lichChon,['2K11 XPS 9+|T5|19:30|21:30','2K11 XPS 8+|CN|15:30|17:30']);assert.match(hoSoSummary(h,Date.parse('2026-10-20T05:00:00Z')),/Buổi 1: 2K11 XPS 9\+ Thứ 5 19:30–21:30; Buổi 2: 2K11 XPS 8\+ Chủ nhật 15:30–17:30[\s\S]*Buổi học thử gần nhất: Thứ 5 22\/10\/2026 lúc 19:30, lớp 2K11 XPS 9\+/);}
  assert.match(validateHoSo({...HS,dongY:false},today) as string,/đồng ý/);
@@ -128,7 +128,7 @@ const HS={khoi:'10',hoTen:' Nguyễn  Văn An ',ngaySinh:'2011-05-04',truong:'TH
  assert.match(((await saveHoSo({...HS,lichChon:[]},k,today,env,transport)).body as any).message,/chọn đủ ngày học/);
  assert.match(((await saveHoSo({...HS,lichChon:['2K9 XPT|T2|19:30|21:30']},k,today,env,transport)).body as any).message,/tải lại trang/);
  assert.equal(calls.length,0);
- const out=await saveHoSo(HS,k,today,env,transport);assert.equal(out.status,200);const {id,sig}=out.body as any;
+ const out=await saveHoSo(HS,k,today,env,transport,Date.parse('2026-10-20T05:00:00Z'));assert.equal(out.status,200);const {id,sig}=out.body as any;
  assert.ok(validSig(k,id,sig));assert.ok(!validSig(k,id,'0'.repeat(64)));assert.ok(!validSig(randomBytes(32),id,sig));
  const add=calls[0].args;assert.equal(add.p_phone,'0912345678');assert.equal(add.p_grade,'10');assert.equal(add.p_ho_so.ngay_sinh,'2011-05-04');assert.equal(add.p_ho_so.sdt_hoc_sinh,'0987654321');assert.equal(add.p_ho_so.lich_chon.length,2);assert.equal(add.p_ho_so.lich_chon[0].lop,'2K11 XPS 9+');assert.equal(add.p_ho_so.buoi_gan_nhat.lop,'2K11 XPS 9+');assert.match(add.p_notes,/Học thử mới/);assert.match(add.p_lead_source,/^Kiểm tra đầu vào web/);
  const {paper,picks}=assemble('10','2026-10-19',77,BANKS,PROGRESS);const res=grade(paper,picks,{},PROGRESS.khoi['10'].groups);
