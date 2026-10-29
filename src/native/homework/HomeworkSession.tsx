@@ -23,6 +23,8 @@ import {draftKey} from '../exams/store';
 import type {PracticeExam} from '../exams/data';
 import type {GateInput,HomeworkGateway,HomeworkState} from './btvn-contract';
 import MtmSourceContent from '../exams/MtmSourceContent';
+import RoomChoice from '../exams/RoomChoice';
+import MathText from '../math/MathText';
 import {RoomQuestionContext} from '../exams/RoomQuestionContext';
 import {questionLabel} from '../exams/attempt-ui';
 import {useUnsavedGuard} from '../exams/navigation-guard';
@@ -36,9 +38,19 @@ import './btvn-mobile.css';
 const ACCESS_ENDED='Máy chủ không còn xác nhận quyền xem bài. Em nhập lại mã để xem bản máy chủ đang giữ hoặc liên hệ trợ lý lớp.';
 const ACCESS_ENDED_PENDING=ACCESS_ENDED+' Phần bài chưa gửi xong có thể chưa được tính.';
 
-function HomeworkReader({exam}:{exam:PracticeExam}){
+type TextQuestion=PracticeExam['questions'][number]&{image?:string;imageAlt?:string};
+/** Đề BTVN dạng chữ (không có ảnh cắt câu) phải hiện đủ đề, phương án, các ý Đúng/Sai: phòng làm bài giao phần
+ * phương án trắc nghiệm cho khung đọc đề khi câu không có ảnh cắt (29/10: đề 07E 13 câu trống). */
+function HomeworkTextQuestion({q,label}:{q:TextQuestion;label:string}){
+  const prompt=q.prompt??q.text;
+  return <>{prompt&&<p className="ep-source-text"><MathText text={prompt}/></p>}
+    {q.image&&<figure><img src={q.image} alt={q.imageAlt||`Hình ${label}`} loading="lazy"/>{q.imageAlt&&<figcaption>{q.imageAlt}</figcaption>}</figure>}
+    {q.kind==='mc'&&<ol className="cp-choices" type="A">{q.choices.map((choice,i)=><li key={i}><RoomChoice questionId={q.id} choice={['A','B','C','D'][i]}>{choice!==['A','B','C','D'][i]&&<MathText text={choice}/>}</RoomChoice></li>)}</ol>}
+    {q.kind==='tf'&&!!q.statements?.length&&<ol className="cp-statements" type="a">{q.statements.map((statement,i)=><li key={i}><MathText text={statement}/></li>)}</ol>}</>;
+}
+export function HomeworkReader({exam}:{exam:PracticeExam}){
   const active=useContext(RoomQuestionContext);
-  return <section aria-label="Đề BTVN">{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent&&<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
+  return <section aria-label="Đề BTVN">{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent?<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>:<HomeworkTextQuestion q={q} label={questionLabel(exam,index).full}/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
 }
 function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEssay}:{state:HomeworkState & {exam:PracticeExam};gateway:HomeworkGateway;onState:(state:HomeworkState)=>void;onPendingChange:(pending:boolean)=>void;saverRef:{current:ReturnType<typeof createHomeworkSaver>|null};onOpenEssay?:()=>void}){
   const checkSelection=useState<string[]>([]);
