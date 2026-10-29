@@ -72,7 +72,7 @@ export default function PracticeAttempt({onOpenEssay,onServerStart,onServerSubmi
         {!draft?<section className="ep-card">
           <h2>Phiếu trả lời</h2><p>{isHomework?homeworkStorageNotice:storeOverride?'Bản xem thử chỉ giữ trong bộ nhớ của trang quản trị, không ghi lịch sử học sinh.':'Bài làm và kết quả lưu trên trình duyệt này. Thời gian tiếp tục tính khi bạn rời trang.'}</p>
           <p>{sections.map(s=>`${s.name}: ${s.count} câu`).join(' · ')}</p>
-          {persisted.current&&<p>Đã có bài đang làm. Hạn nộp: {formatAttemptDeadline(persisted.current.deadline)}.</p>}
+          {persisted.current&&<p>{isHomework?<>Đã có lượt đang làm, hết giờ làm lúc {formatAttemptDeadline(persisted.current.deadline)} (không phải hạn nộp bài).</>:<>Đã có bài đang làm. Hạn nộp: {formatAttemptDeadline(persisted.current.deadline)}.</>}</p>}
           <button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button>
         </section>:<>
           <div className="ep-toolbar ep-answer-toolbar">
