@@ -25,8 +25,10 @@ export async function adminRequest(expectedOwner?:string){
  const allow=await client.from('mtm_exam_admins').select('user_id').eq('user_id',user.id).maybeSingle();if(allow.error||!allow.data)throw Error('Tài khoản chưa được cấp quyền đăng đề.');
  return {client,user};
 }
-export async function signIn(email:string,password:string){const b=requireBackend();const {error}=await b.auth.signInWithPassword({email,password});if(error){
- if(error.code==='invalid_credentials')throw Error('Email hoặc mật khẩu quản trị chưa đúng. Dùng email và mật khẩu đã tạo cho quản trị đề thi MTM.');
+// Tên đăng nhập ngắn (vd "quanly") được hiểu là email @minhthanhmath.vn.
+export function loginEmail(name:string){const v=name.trim().toLowerCase();return v.includes('@')?v:`${v}@minhthanhmath.vn`;}
+export async function signIn(name:string,password:string){const b=requireBackend();const {error}=await b.auth.signInWithPassword({email:loginEmail(name),password});if(error){
+ if(error.code==='invalid_credentials')throw Error('Tên đăng nhập hoặc mật khẩu quản trị chưa đúng.');
  if(error.code==='email_not_confirmed')throw Error('Email quản trị chưa được xác nhận. Kiểm tra trạng thái tài khoản trước khi đăng nhập lại.');
  if(error.status===429)throw Error('Đăng nhập đang bị giới hạn do thử nhiều lần. Vui lòng thử lại sau.');
  if(error.name==='AuthRetryableFetchError')throw Error('Chưa kết nối được máy chủ đăng nhập. Kiểm tra kết nối mạng rồi thử lại.');
