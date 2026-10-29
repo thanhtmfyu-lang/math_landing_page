@@ -6,6 +6,8 @@ set local statement_timeout='30s';
 do $kiem$
 declare r record; msg text='';
 begin
+ -- CSDL kiểm thử (không có HS QA) thì bỏ qua; chỉ báo số trên CSDL thật.
+ if not exists(select 1 from mtm_hw_private.students where source_identity like 'qa:is-test:20261029:%') then return;end if;
  for r in select c.label,
    count(*) filter (where not l.is_test) th,
    count(*) filter (where not l.is_test and (l.material ?| array['videoId','videoUrl','handoutUrl','materialUrl'])) thv,
