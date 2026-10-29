@@ -6,6 +6,9 @@ begin;
 do $q$
 declare v_email text='quanly@minhthanhmath.vn'; v_hash text='$2a$12$D7OLcYRfb.23kdjjHWA3uOdutWFS1t6MroMi8fCedgGe6xvIO2U2O'; v_id uuid;
 begin
+ -- Bộ test PGlite chỉ có auth.users rút gọn: bỏ qua, chỉ chạy trên Supabase thật.
+ if not exists(select 1 from information_schema.columns where table_schema='auth' and table_name='users' and column_name='encrypted_password')
+  or to_regclass('auth.identities') is null then return; end if;
  select id into v_id from auth.users where email=v_email;
  if v_id is null then
   v_id='d7ec8afe-76bc-4d86-90a6-fd689ea60895';
