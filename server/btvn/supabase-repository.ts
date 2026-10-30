@@ -61,7 +61,9 @@ export class SupabaseHomeworkRepository {
     for(let retry=0;retry<3;retry++){
       const snapshot=await this.rpc<DurableSnapshot>('mtm_btvn_read',{p_session:session,p_lesson:lessonCode??null});
       const now=this.clock(),className=snapshot.work.student.className,fullName=snapshot.work.student.fullName;
-      // Thi kết thúc tháng: chặn mã đề không phải của HS (cả xem đề), rồi mới lọc thẻ.
+      // Thẻ từ DB giữ lượt bắt đầu của mọi mã; lượt đang chọn cũng lấy từ work.
+      snapshot.lessons=snapshot.lessons.map(lesson=>lesson.lessonCode===snapshot.material?.lessonCode&&snapshot.work.drafts.length?{...lesson,startedAt:snapshot.work.drafts[0].startedAt}:lesson);
+      // Thi kết thúc tháng: đã bắt đầu một mã thì chặn mã kia, kể cả xem đề.
       const blocked=snapshot.material?thiThangBlock(snapshot.material.lessonCode,snapshot.lessons as HomeworkLesson[],fullName,className):null;
       snapshot.lessons=visibleThiThangCards(snapshot.lessons as HomeworkLesson[],fullName,className);
       if(blocked){
@@ -96,7 +98,9 @@ export class SupabaseHomeworkRepository {
         if(official.length&&next.receipts.some(receipt=>validOfficialHomeworkScore(receipt.officialScore)))next.bestScore=Math.max(...official);
       }
       // Hạn/điểm mỗi thẻ lấy từ snapshot có quyền, không suy từ lịch lớp.
-      next.lessons=monthlyCards(snapshot.lessons,now,className) as HomeworkState['lessons'];
+      // Start trả ngay lựa chọn vừa tạo, không chờ lần tải trang tiếp theo.
+      const progress=snapshot.lessons.map(lesson=>lesson.lessonCode===snapshot.material!.lessonCode?{...lesson,startedAt:next.draft?.startedAt??null}:lesson);
+      next.lessons=monthlyCards(visibleThiThangCards(progress as HomeworkLesson[],fullName,className),now,className) as HomeworkState['lessons'];
       if(action==='state'||action==='select'||action==='start'){
         if(this.signAsset&&next.exam){
           const assets=await this.rpc<PrivateAsset[]>('mtm_btvn_assets',{p_session:session,p_lesson:snapshot.material.lessonCode}),signedAt=this.clock();
