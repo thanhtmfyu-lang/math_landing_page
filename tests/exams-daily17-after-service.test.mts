@@ -120,13 +120,13 @@ await asyncTest('Start lượt thường thứ năm hết giờ vẫn commit rec
 });
 
 test('Hàm thẻ chung giấu mọi liên kết, điểm và muộn trước đóng, giữ mốc nộp',()=>{
-  const f=fixture(true),progress={dueAt:T0,bestScore:10,late:true,submittedAt:T0+1,available:true};
+  const f=fixture(true),progress={startedAt:T0,dueAt:T0,bestScore:10,late:true,submittedAt:T0+1,available:true};
   const card=homeworkLessonCard(f.material,f.student.className,closesAt-1,progress);
   for(const key of ['bestScore','late','videoId','videoUrl','materialUrl','handoutUrl','homeworkUrl'] as const)assert.equal(card[key],null,key);
-  assert.deepEqual(card.homeworkUrls,[]);assert.equal(card.submittedAt,progress.submittedAt);assert.equal(card.available,true);
+  assert.deepEqual(card.homeworkUrls,[]);assert.equal(card.startedAt,progress.startedAt);assert.equal(card.submittedAt,progress.submittedAt);assert.equal(card.available,true);
   const opened=homeworkLessonCard(f.material,f.student.className,closesAt,progress);
   for(const key of ['videoId','videoUrl','materialUrl','handoutUrl','homeworkUrl'] as const)assert.equal(opened[key],f.material[key],key);
-  assert.equal(opened.bestScore,10);assert.equal(opened.late,true);
+  assert.equal(opened.bestScore,10);assert.equal(opened.late,true);assert.equal(opened.startedAt,progress.startedAt);
   const regular=homeworkLessonCard({...f.material,kind:'btvn'},f.student.className,closesAt-1,progress);
   assert.equal(regular.bestScore,10);assert.equal(regular.videoId,f.material.videoId);
 });
@@ -134,15 +134,22 @@ test('Hàm thẻ chung giấu mọi liên kết, điểm và muộn trước đ�
 await asyncTest('Service và durable dựng cùng thẻ tháng trước đóng và mở đúng closesAt',async()=>{
   const f=fixture(true);let now=T0;
   const repo=new MemoryHomeworkRepository([f.student]),service=new HomeworkService(repo,f.exam,0,'fixture',f.material.lessonCode,()=>now,[f.material]);
-  const token=service.login({studentCode:f.student.studentCode},'fixture-ip'),id=service.start(token).draft!.attemptId;now++;
+  const token=service.login({studentCode:f.student.studentCode},'fixture-ip');
+  const dbCard={...f.material,dueAt:null,bestScore:null,late:null,submittedAt:null,available:true} as HomeworkLesson;
+  const snapshot:DurableSnapshot={revision:0,exam:f.exam,material:f.material,lessons:[dbCard],work:repo.get(f.student.studentCode)!};
+  const durable=new SupabaseHomeworkRepository({async rpc(name){assert.equal(name,'mtm_btvn_read');return {data:clone(snapshot),error:null};}},async()=>{throw Error('Không gọi Edge trong kiểm thử');},()=>now);
+  assert.deepEqual(service.state(token).lessons![0],(await durable.call('fixture-session','state')).lessons![0]);
+  assert.equal(service.state(token).lessons![0].startedAt,null);
+  const id=service.start(token).draft!.attemptId;now++;
+  snapshot.work=repo.get(f.student.studentCode)!;
+  assert.deepEqual(service.state(token).lessons![0],(await durable.call('fixture-session','state')).lessons![0]);
+  assert.equal(service.state(token).lessons![0].startedAt,T0);
   service.submit(token,id,f.answers);
   const work=repo.get(f.student.studentCode)!,receipt=work.receipts[0];
-  const dbCard={...f.material,dueAt:null,bestScore:receipt.score,late:receipt.late,submittedAt:receipt.submittedAt,available:true} as HomeworkLesson;
-  const snapshot:DurableSnapshot={revision:0,exam:f.exam,material:f.material,lessons:[dbCard],work};
-  const durable=new SupabaseHomeworkRepository({async rpc(name){assert.equal(name,'mtm_btvn_read');return {data:clone(snapshot),error:null};}},async()=>{throw Error('Không gọi Edge trong kiểm thử');},()=>now);
+  snapshot.work=work;snapshot.lessons=[{...dbCard,bestScore:receipt.score,late:receipt.late,submittedAt:receipt.submittedAt} as HomeworkLesson];
   for(const time of [closesAt-1,closesAt]){
     now=time;const card=service.state(token).lessons![0],db=(await durable.call('fixture-session','state')).lessons![0];
-    assert.deepEqual(card,db);assert.equal(card.submittedAt,receipt.submittedAt);
+    assert.deepEqual(card,db);assert.equal(card.startedAt,T0);assert.equal(card.submittedAt,receipt.submittedAt);
     assert.equal(card.bestScore,time<closesAt?null:10);assert.equal(card.videoId,time<closesAt?null:f.material.videoId);
   }
   assert.deepEqual(repo.get(f.student.studentCode)!.receipts,[receipt],'Dựng thẻ không sửa biên nhận đầy đủ trong kho');
