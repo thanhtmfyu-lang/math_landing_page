@@ -100,7 +100,7 @@ export class HomeworkService {
       const receipts=entry?.receipts??[],scores=receiptScores(receipts),best=scores.length?Math.max(...scores):null;
       const receipt=receipts.filter(r=>r.score===best).at(-1);
       const lessonExam=l.lessonCode===this.lessonCode?this.exam:this.lessonExams[l.lessonCode];
-      return homeworkLessonCard(l,root.student.className,now,{pendingGrading:receipts.length>0&&!!lessonExam&&requiresManualHomeworkGrade(lessonExam,l),dueAt:entry?.effectiveDueAt??entry?.nextActualClassAt??null,bestScore:best,late:receipt?.late??null,submittedAt:receipt?.submittedAt??null,available:l.lessonCode===this.lessonCode||!!this.lessonExams[l.lessonCode]});
+      return homeworkLessonCard(l,root.student.className,now,{startedAt:entry?.drafts[0]?.startedAt??null,pendingGrading:receipts.length>0&&!!lessonExam&&requiresManualHomeworkGrade(lessonExam,l),dueAt:entry?.effectiveDueAt??entry?.nextActualClassAt??null,bestScore:best,late:receipt?.late??null,submittedAt:receipt?.submittedAt??null,available:l.lessonCode===this.lessonCode||!!this.lessonExams[l.lessonCode]});
     });
     const opensAt=this.opening(token),monthly=this.monthly(token),draft=work.drafts.at(-1)??null;
     const hidden=!!monthly&&now<(monthly.closesAt??Infinity);
