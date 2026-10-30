@@ -9,12 +9,13 @@ const targets=bases.flatMap(base=>['thi','btvn'].flatMap(phase=>[1,2].map(ma=>`$
 const name='Học sinh giả kiểm chặn',className='2K10 8+',fixture=pipelineFixture();
 const cards=targets.map(lessonCode=>({lessonCode,submittedAt:null}));
 assert.equal(targets.length,4);
-for(const slug of targets)assert.match(thiThangBlock(slug,cards,name,className)!,/tạm ẩn/);
-assert.deepEqual(visibleThiThangCards([...cards,{lessonCode:'btvn-thuong',submittedAt:null}],name,className).map(c=>c.lessonCode),['btvn-thuong']);
+for(const slug of targets)assert.doesNotMatch(thiThangBlock(slug,cards,name,className)??'',/tạm ẩn/);
+const own=assignedMa(bases[0],name,className),visible=targets.filter(slug=>slug.includes('-btvn-')||slug.endsWith(`-thi-ma-${own}`));
+assert.deepEqual(visibleThiThangCards([...cards,{lessonCode:'btvn-thuong',submittedAt:null}],name,className).map(c=>c.lessonCode),[...visible,'btvn-thuong']);
 for(const slug of targets)for(const near of [slug+'-suffix',slug.replace('2026-10','2026-11')])assert.doesNotMatch(thiThangBlock(near,cards,name,className)??'',/tạm ẩn/);
 
-// Full exam intentionally supplied by a schema-shaped fake read RPC, even after opening.
-// API with a synthetic authenticated cookie must reject before signing or committing.
+// Synthetic authenticated API: reopened lessons reach the missing-private-PDF gate;
+// the other exam code still rejects by assignment. Neither reason is temporary hiding.
 const material=(lessonCode:string)=>({...fixture.material,lessonCode,classNames:[className],classOpensAt:{[className]:'2026-10-27T00:00:00+07:00'},kind:lessonCode.includes('-thi-')?'kiem-tra-thang' as const:'btvn' as const,opensAt:0,closesAt:Date.parse('2099-01-01T00:00:00Z')});
 const lessons=targets.map(material);let selected=lessons[0],commits=0,signed=0,assets=0;
 const repo=new SupabaseHomeworkRepository({async rpc(rpc,args){
@@ -25,21 +26,22 @@ const repo=new SupabaseHomeworkRepository({async rpc(rpc,args){
 }},async()=>({}),()=>Date.parse('2026-11-01T00:00:00+07:00'),async()=>{signed++;return 'https://fake.invalid/signed';});
 const handler=createDurableHomeworkHandler(repo),input={method:'POST',cookie:'mtm_btvn_demo='+'a'.repeat(64),origin:'https://www.minhthanhmath.vn',host:'www.minhthanhmath.vn',secure:true};
 for(const slug of targets){
- for(const action of ['state','select','start','save','submit']){
-  const r=await handler({...input,body:{action,lessonCode:slug,...(['save','submit'].includes(action)?{attemptId:'fake',answers:{}}:{})}});
-  assert.equal(r.status,409,slug+' '+action);assert.match((r.body as any).message,/tạm ẩn/);assert.equal((r.body as any).exam,undefined);
+ for(const action of ['state','select','start']){
+  const r=await handler({...input,body:{action,lessonCode:slug}});
+  assert.doesNotMatch((r.body as any).message??'',/tạm ẩn/,slug+' '+action);
+  if(r.status===409)assert.match((r.body as any).message,/sẽ là BTVN/);else {assert.equal(r.status,503);assert.match((r.body as any).message,/Chưa tải đủ đề/);}
  }
- selected=material(slug);const fallback=await handler({...input,body:{action:'state'}});
- assert.equal(fallback.status,200);assert.equal((fallback.body as any).exam,null);assert.deepEqual((fallback.body as any).lessons,[]);
 }
-assert.equal(commits,0);assert.equal(signed,0);assert.equal(assets,0);
+selected=material(`${bases[0]}-thi-ma-${own===1?2:1}`);const fallback=await handler({...input,body:{action:'state'}});
+assert.equal(fallback.status,200);assert.equal((fallback.body as any).exam,null);assert.deepEqual((fallback.body as any).lessons.map((l:any)=>l.lessonCode),visible);
+assert.equal(commits,0);assert.equal(signed,0);assert.ok(assets>0);
 
-// Lessons outside the exact set (incl. 2K11 8+/9+ reopened 28/10) keep the original deterministic assignment.
-for(const [base,cls] of [['thi-thang-2026-10-2k10-9','2K10 9+'],['thi-thang-2026-10-2k10-thu-3-6','2K10 9+'],['thi-thang-2026-10-2k11-8','2K11 8+'],['thi-thang-2026-10-2k11-9','2K11 9+']]){
+// Reopened lessons and other classes keep the original deterministic assignment.
+for(const [base,cls] of [['thi-thang-2026-10-2k10-8','2K10 8+'],['thi-thang-2026-10-2k10-9','2K10 9+'],['thi-thang-2026-10-2k10-thu-3-6','2K10 9+'],['thi-thang-2026-10-2k11-8','2K11 8+'],['thi-thang-2026-10-2k11-9','2K11 9+']]){
  const own=assignedMa(base,name,cls);
  for(const phase of ['thi','btvn'])for(const ma of [1,2]){
   const slug=`${base}-${phase}-ma-${ma}`,reason=thiThangBlock(slug,[],name,cls);
   if(phase==='thi'&&ma!==own)assert.match(reason!,/sẽ là BTVN/);else assert.equal(reason,null);
  }
 }
-console.log('Đạt: chặn đúng 4 bài cả đọc/ghi/phiên có sẵn, ẩn thẻ, không ký ảnh/commit; giữ 8 bài tối nay và bài khác.');
+console.log('Đạt: mở tạm ẩn 4 bài 2K10 8+, API state/select/start không chặn tạm ẩn; giữ chia mã theo tên + lớp.');
