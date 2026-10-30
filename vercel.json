@@ -233,7 +233,8 @@
   },
   "git": {
     "deploymentEnabled": {
-      "codex/web-v13-*": false
+      "codex/web-v13-*": false,
+      "codex/an-ho-so-trung": false
     }
   }
 }
