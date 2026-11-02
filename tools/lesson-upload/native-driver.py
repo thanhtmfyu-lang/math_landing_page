@@ -22,7 +22,13 @@ def work_path(runtime,job):
  return runtime.state_root()/'web-upload'/'private'/job['id']/str(job.get('paper',1))
 def question_request(questions,scope,source):return {'questions':questions,'task_scope':scope,'sourceVersion':source}
 def main(value):
+ if value['stage']=='monthly_sympy':
+  spec=importlib.util.spec_from_file_location('monthly_sympy',Path(__file__).with_name('monthly-sympy.py'));m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+  return m.verify(value)
  runtime,bridge,worker,lock=modules();root=runtime.state_root();p=runtime.load_pipeline();stage=value['stage']
+ if stage=='monthly_essay':
+  spec=importlib.util.spec_from_file_location('monthly_essay_driver',Path(__file__).with_name('monthly-essay-driver.py'));m=importlib.util.module_from_spec(spec);spec.loader.exec_module(m)
+  return m.run(runtime,value,atomic)
  if stage=='draft':
   record=json.loads((work_path(runtime,value['job'])/'draft.json').read_text());need(record['sourceVersion']==value['sourceVersion'],'SOURCE_CHANGED');return record
  if stage=='prepare':
@@ -89,12 +95,16 @@ def main(value):
   draft['exam']=seal(draft['exam']);record={'sourceVersion':identity,'draft':draft,'extractor':{'provider':receipt['provider'],'model':receipt['actual_model']}};atomic(folder/'draft.json',record)
   return record
  if stage=='review':
-  request=question_request(value['questions'],value['task_scope'],value['sourceVersion']);key=digest(encoded(request));queue=runtime.brain_root()/'cau-noi/lesson-upload-review';requestfile=queue/'requests'/(key+'.json')
-  if requestfile.exists():need(json.loads(requestfile.read_text())=={'schema':1,'request_hash':key,**request},'REQUEST_CHANGED')
-  else:atomic(requestfile,{'schema':1,'request_hash':key,**request})
+  request=question_request(value['questions'],value['task_scope'],value['sourceVersion']);monthly=value.get('provider') is not None
+  if monthly:
+   need(value['provider'] in ('grok','agy'),'INVALID_MONTHLY_PROVIDER');request|={'task':'monthly-key','provider':value['provider']}
+  schema=2 if monthly else 1;key=digest(encoded(request));queue=runtime.brain_root()/'cau-noi/lesson-upload-review';requestfile=queue/'requests'/(key+'.json')
+  if requestfile.exists():need(json.loads(requestfile.read_text())=={'schema':schema,'request_hash':key,**request},'REQUEST_CHANGED')
+  else:atomic(requestfile,{'schema':schema,'request_hash':key,**request})
   resultfile=queue/'results'/(key+'.json')
   if not resultfile.exists():return {'status':'pending','request_hash':key,'sourceVersion':value['sourceVersion']}
   result=json.loads(resultfile.read_text());need(result.get('request_hash')==key and result.get('sourceVersion')==value['sourceVersion'] and result.get('provider') in ('grok','agy'),'REVIEW_SOURCE_CHANGED')
+  if monthly:need(result['provider']==value['provider'],'WRONG_MONTHLY_PROVIDER')
   receipt=result.get('provider_receipt');need(isinstance(receipt,dict) and digest(encoded(receipt))==result.get('receipt_hash') and receipt.get('result')==result.get('review'),'PROVIDER_RECEIPT_REQUIRED')
   models=list(receipt.get('modelUsage',{})) or [receipt.get('model')];need(','.join(models)==result.get('model') and any(receipt.get(k) for k in ('requestId','request_id','session_id','sessionId')),'PROVIDER_RECEIPT_REQUIRED')
   answers=result['review']['answers'];slots=[]
@@ -106,7 +116,7 @@ def main(value):
    else:slots.append({'question_id':q['id'],'slot':'answer','actual':actual,**({'conversion_verified':True} if result['review'].get('conversion_checks',{}).get(q['id']) is True else {})})
   need(all(result['review'].get(k) is True for k in ('certain','coverage_complete','question_only','display_complete')),'REVIEW_UNCERTAIN')
   need(set(answers)=={q['id'] for q in value['questions']} and set(result['review']['reasoning'])==set(answers),'REVIEW_COVERAGE')
-  return {k:result[k] for k in ('provider','model','receipt_hash')}|{'slots':slots}
+  return {k:result[k] for k in ('provider','model','receipt_hash')}|{'slots':slots}|({'request_hash':key,'sourceVersion':value['sourceVersion'],'sympy_checks':result['review'].get('sympy_checks')} if monthly else {})
  raise ValueError('INVALID_NATIVE_STAGE')
 
 if __name__=='__main__':

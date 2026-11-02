@@ -48,7 +48,7 @@ export function createPublishPort(sql,storage){return {
   });
  },
  async readPrivate(bucket,path){
-  if(!['mtm-lesson-private','mtm-btvn'].includes(bucket)||typeof path!=='string'||path.includes('..'))throw Error('PRIVATE_SOURCE_UNAVAILABLE');
+  if(!['mtm-lesson-private','mtm-btvn','mtm-tu-luan'].includes(bucket)||typeof path!=='string'||path.includes('..'))throw Error('PRIVATE_SOURCE_UNAVAILABLE');
   const result=await storage.from(bucket).download(path);
   if(result.error||!result.data)throw Error('PRIVATE_SOURCE_UNAVAILABLE');
   const bytes=new Uint8Array(await result.data.arrayBuffer());

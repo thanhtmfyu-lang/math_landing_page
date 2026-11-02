@@ -1,6 +1,6 @@
 """Finite Admin-PC reviewer. OFF until explicitly enabled; never schedules or publishes."""
 from __future__ import annotations
-import argparse,datetime as dt,hashlib,json,os,re,subprocess,sys
+import argparse,base64,datetime as dt,hashlib,json,os,re,subprocess,sys
 from pathlib import Path
 
 QUEUE='cau-noi/lesson-upload-review'
@@ -11,9 +11,21 @@ def encoded(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,sep
 def digest(value):return hashlib.sha256(value).hexdigest()
 def need(value,code):
  if not value:raise ValueError(code)
-def request_identity(request):return {'questions':request['questions'],'task_scope':request['task_scope'],'sourceVersion':request['sourceVersion']}
+def request_identity(request):
+ if request.get('schema')==3:return {k:request[k] for k in ['task','provider','questions','images','rubric','max_score','submission_hash','rubric_hash']}
+ return {'questions':request['questions'],'task_scope':request['task_scope'],'sourceVersion':request['sourceVersion']}|({'task':request['task'],'provider':request['provider']} if request.get('schema')==2 else {})
 def validate_request(request):
- need(request.get('schema')==1 and HASH.fullmatch(str(request.get('request_hash'))),'INVALID_REQUEST')
+ if request.get('schema')==3:
+  need(request.get('task')=='monthly-essay' and request.get('provider') in ('grok','agy','codex','claude'),'INVALID_ESSAY_PROVIDER')
+  need(isinstance(request.get('rubric'),str) and 0<len(request['rubric'])<=16000 and type(request.get('max_score')) in (int,float) and 0<request['max_score']<=10,'ESSAY_RUBRIC_REQUIRED')
+  images=request.get('images');need(isinstance(images,list) and 0<len(images)<=64,'ESSAY_IMAGES_REQUIRED');total=0
+  for i in images:
+   need(set(i)=={'sha256','page','data_base64'} and HASH.fullmatch(str(i['sha256'])),'INVALID_ESSAY_IMAGE');raw=base64.b64decode(i['data_base64'],validate=True);total+=len(raw);need(digest(raw)==i['sha256'] and raw.startswith(b'\xff\xd8\xff'),'ESSAY_IMAGE_HASH')
+  need(total<=20*1024*1024 and HASH.fullmatch(str(request.get('submission_hash'))) and HASH.fullmatch(str(request.get('rubric_hash'))),'ESSAY_SOURCE_REQUIRED')
+  need(isinstance(request.get('questions'),list) and all(isinstance(q,dict) and set(q)<=ALLOWED for q in request['questions']),'QUESTION_ONLY_REQUIRED')
+  need(digest(encoded(request_identity(request)))==request.get('request_hash'),'REQUEST_HASH_MISMATCH');return request
+ need(request.get('schema') in (1,2) and HASH.fullmatch(str(request.get('request_hash'))),'INVALID_REQUEST')
+ if request['schema']==2:need(request.get('task')=='monthly-key' and request.get('provider') in ('grok','agy'),'INVALID_MONTHLY_REVIEW')
  need(HASH.fullmatch(str(request.get('sourceVersion'))) and isinstance(request.get('task_scope'),str) and 0<len(request['task_scope'])<=300,'INVALID_SCOPE')
  qs=request.get('questions');need(isinstance(qs,list) and 0<len(qs)<=300,'INVALID_QUESTIONS')
  need(all(isinstance(q,dict) and set(q)<=ALLOWED and q.get('kind') in ('mc','tf','short','self') and isinstance(q.get('id'),str) for q in qs),'QUESTION_ONLY_REQUIRED')
@@ -54,7 +66,8 @@ def review(request,run,provider):
   'Nếu thiếu hình/dữ kiện/không chắc hoặc câu không rõ, certain:false và ghi issues, không đoán. '
   'Các đường crop chỉ là định danh nguồn; không dùng công cụ mở đường. '
   'Chỉ đánh display_complete:true nếu toàn bộ văn bản đã đủ để xác định duy nhất câu hỏi. '
-  'conversion_checks:true chỉ cho câu đã tự kiểm điều kiện/đơn vị khi chuyển thành trả lời ngắn.\n'
+  'conversion_checks:true cho câu đã tự kiểm điều kiện/đơn vị khi chuyển thành trả lời ngắn; với self, chỉ true khi đã giải đầy đủ độc lập và kiểm lời giải, không phải đổi dạng câu.\n'
+  +(' Với thi tháng, giữ nguyên loại câu; không chuyển tự luận thành TLN. Nếu thiếu dữ kiện/hình thì certain:false. CAS là lượt kiểm riêng tính từ đề, không thay bằng đồng nhất thức rời rạc.' if request.get('schema')==2 else '')
   +json.dumps(request_identity(request),ensure_ascii=False))
  prompt_path=run/'prompt.txt';prompt_path.write_text(prompt,encoding='utf-8')
  if provider=='grok':
@@ -75,22 +88,38 @@ def review(request,run,provider):
  receipt={k:envelope[k] for k in ['requestId','request_id','session_id','sessionId','modelUsage','model','stopReason'] if k in envelope}
  receipt['result']=review
  return {'schema':1,'request_hash':request['request_hash'],'sourceVersion':request['sourceVersion'],'provider':provider,'model':actual_model,'receipt_hash':digest(encoded(receipt)),'provider_receipt':receipt,'review':review,'finished_at':dt.datetime.now(dt.timezone.utc).isoformat()}
+def review_essay(request,run,provider):
+ # The operator supplies a VERIFIED multimodal bridge. No guessed CLI flags,
+ # base64-as-text, API-key fallback or substitution of another provider.
+ command=json.loads(os.environ.get('MTM_MONTHLY_IMAGE_REVIEWER','null'))
+ need(isinstance(command,list) and command and all(isinstance(v,str) for v in command) and Path(command[0]).is_absolute(),'VERIFIED_IMAGE_REVIEWER_REQUIRED')
+ environment={k:v for k,v in os.environ.items() if not k.endswith('_API_KEY')}
+ with (run/'response.json').open('w',encoding='utf-8') as stdout,(run/'stderr.private.txt').open('w',encoding='utf-8') as stderr:
+  response=subprocess.run(command+['--provider',provider],input=json.dumps(request_identity(request),ensure_ascii=False),text=True,env=environment,cwd=run,stdout=stdout,stderr=stderr,timeout=660,creationflags=getattr(subprocess,'CREATE_NO_WINDOW',0))
+ need(response.returncode==0,'ESSAY_PROVIDER_FAILED');raw=parse_json((run/'response.json').read_text(encoding='utf-8'));grade=parse_json(raw.get('result'));models=list(raw.get('modelUsage',{})) or [raw.get('model')]
+ need(raw.get('provider')==provider and not raw.get('error') and not raw.get('is_error') and all(models) and any(raw.get(k) for k in ['requestId','request_id','sessionId','session_id']),'ESSAY_PROVIDER_RECEIPT_REQUIRED')
+ need(grade.get('images_seen') is True and grade.get('image_shas')==[i['sha256'] for i in request['images']] and grade.get('submission_hash')==request['submission_hash'] and grade.get('rubric_hash')==request['rubric_hash'] and grade.get('max_score')==request['max_score'] and type(grade.get('score')) in (int,float) and 0<=grade['score']<=request['max_score'] and isinstance(grade.get('reasoning'),str) and len(grade['reasoning'])>=20,'ESSAY_GRADING_REQUIRED')
+ receipt={k:raw[k] for k in ['requestId','request_id','sessionId','session_id','modelUsage','model','provider'] if k in raw};receipt['result']=grade
+ return {'schema':3,'request_hash':request['request_hash'],'provider':provider,'model':','.join(models),'receipt_hash':digest(encoded(receipt)),'provider_receipt':receipt}
 def run_once(javis,state=STATE,invoke=review,manual=False):
  need(manual or (state/'enabled').is_file(),'PC_REVIEW_DISABLED')
+ waiting_image=False
  items=javis.get('/files/list',path=QUEUE+'/requests').get('items') or []
  for item in sorted(items,key=lambda v:v.get('name','')):
   name=item.get('name','')
   if not re.fullmatch(r'[a-f0-9]{64}\.json',name):continue
   request=validate_request(json.loads(javis.doc(QUEUE+'/requests/'+name)));key=request['request_hash'];run=state/key;run.mkdir(parents=True,exist_ok=True)
   if (run/'claim.json').exists():continue # Unknown provider outcome never replays a call.
+  if request['schema']==3 and invoke is review and not os.environ.get('MTM_MONTHLY_IMAGE_REVIEWER'):
+   waiting_image=True;continue # Do not starve key/BTVN work behind an unavailable image bridge.
   try:
    with (run/'claim.json').open('x',encoding='utf-8') as claim:json.dump({'request_hash':key,'at':dt.datetime.now(dt.timezone.utc).isoformat()},claim)
   except FileExistsError:continue
   atomic(run/'request.json',request)
-  for provider in ['grok','agy']:
+  for provider in ([request['provider']] if request['schema'] in (2,3) else ['grok','agy']):
    folder=run/provider;folder.mkdir(exist_ok=True)
    try:
-    result=invoke(request,folder,provider);validate_request(request)
+    result=(review_essay if request['schema']==3 and invoke is review else invoke)(request,folder,provider);validate_request(request)
     need(result.get('request_hash')==key and HASH.fullmatch(str(result.get('receipt_hash'))),'PROVIDER_RECEIPT_REQUIRED')
     javis.ghi(QUEUE+'/results/'+name,json.dumps(result,ensure_ascii=False,sort_keys=True))
     readback=json.loads(javis.doc(QUEUE+'/results/'+name));need(readback==result,'REVIEW_READBACK_MISMATCH')
@@ -99,7 +128,7 @@ def run_once(javis,state=STATE,invoke=review,manual=False):
    except Exception as error:atomic(folder/'failure.json',{'status':'error','error_type':type(error).__name__,'at':dt.datetime.now(dt.timezone.utc).isoformat()})
   atomic(run/'receipt.json',{'status':'needs_review','request_hash':key,'reason':'Both providers lacked a verified result; do not change teacher key'})
   return {'status':'needs_review','request_hash':key}
- return {'status':'idle'}
+ return {'status':'waiting_image_reviewer' if waiting_image else 'idle'}
 def main():
  ap=argparse.ArgumentParser();ap.add_argument('--once',action='store_true');ap.add_argument('--manual',action='store_true');ap.add_argument('--status',action='store_true');ap.add_argument('--enable',action='store_true');ap.add_argument('--disable',action='store_true');args=ap.parse_args()
  need(sum(map(bool,[args.once,args.status,args.enable,args.disable]))==1,'EXPLICIT_ACTION_REQUIRED')

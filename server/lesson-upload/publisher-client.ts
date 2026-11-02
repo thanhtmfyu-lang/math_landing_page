@@ -19,12 +19,12 @@ export function createLessonGatewayClient(url:string,secret:string,transport:typ
     throw Error('INVALID_LESSON_GATEWAY_RPC');
    }catch{return {data:null,error:{message:'WORKER_RPC_FAILED'}};}
   },
-  lessonJobStorage(job:UploadJob){return {
+  lessonJobStorage(job:UploadJob,monthly=false){return {
    async upload(path:string,bytes:Uint8Array,options:{contentType:string},hash?:string){
     const sha=hash??Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes)))).map(v=>v.toString(16).padStart(2,'0')).join('');
-    try{await call({action:'lesson_upload_asset',...fence(job),path,data_base64:Buffer.from(bytes).toString('base64'),content_type:options.contentType,sha256:sha});return {error:null};}catch{return {error:{message:'PRIVATE_UPLOAD_FAILED'}};}
+    try{await call({action:'lesson_upload_asset',...fence(job),...(monthly?{upload_kind:'monthly'}:{}),path,data_base64:Buffer.from(bytes).toString('base64'),content_type:options.contentType,sha256:sha});return {error:null};}catch{return {error:{message:'PRIVATE_UPLOAD_FAILED'}};}
    },
-   async download(path:string){try{const result=await call({action:'lesson_upload_asset_read',...fence(job),path});return {data:new Blob([Buffer.from(result.data_base64,'base64')],{type:result.content_type}),error:null};}catch{return {data:null,error:{message:'PRIVATE_UPLOAD_FAILED'}};}}
+   async download(path:string){try{const result=await call({action:'lesson_upload_asset_read',...fence(job),...(monthly?{upload_kind:'monthly'}:{}),path});return {data:new Blob([Buffer.from(result.data_base64,'base64')],{type:result.content_type}),error:null};}catch{return {data:null,error:{message:'PRIVATE_UPLOAD_FAILED'}};}}
   };}
  };
 }
