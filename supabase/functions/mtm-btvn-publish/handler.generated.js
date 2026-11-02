@@ -1745,6 +1745,73 @@ async function handleTwoPaperPublication(port, body, validate) {
   return port.rpc(pair ? "two_paper_pair_commit" : "two_paper_variant_commit", payload);
 }
 
+// server/lesson-upload/gateway.ts
+var actions = /* @__PURE__ */ new Set(["worker_claim", "worker_assert_current", "worker_checkpoint", "worker_finish", "worker_publish", "worker_materials", "worker_wait_review", "worker_pending_review", "worker_review_result"]);
+function need(value, code) {
+  if (!value) throw Error(code);
+}
+var uuid = (v) => typeof v === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v);
+async function handleLessonUploadGateway(port, body, validate) {
+  const action = body.action;
+  need(["lesson_upload_worker", "lesson_upload_source", "lesson_upload_asset", "lesson_upload_asset_read"].includes(action), "INVALID_LESSON_UPLOAD_ACTION");
+  if (action === "lesson_upload_worker") {
+    need(Object.keys(body).every((k) => ["action", "payload"].includes(k)) && body.payload && actions.has(body.payload.action), "INVALID_LESSON_WORKER_ACTION");
+    if (body.payload.action === "worker_publish") {
+      need(validate && port.readPrivate, "WORKER_VALIDATOR_REQUIRED");
+      await port.rpc("lesson_upload_gateway", { action: "worker_assert_current", upload_id: body.payload.upload_id, claim_token: body.payload.claim_token });
+      for (const field of ["payload", "variant_payload"]) {
+        const paper = body.payload[field];
+        if (!paper && field === "variant_payload") continue;
+        need(paper && Array.isArray(paper.assets) && paper.assets.length <= 500, "INVALID_WORKER_PUBLICATION");
+        const assets = [];
+        for (const asset of paper.assets) {
+          need(asset.storage_path === `btvn/${paper.lesson_key}/${paper.source_version}/${asset.path}`, "INVALID_WORKER_ASSET");
+          await port.rpc("lesson_upload_gateway", { action: "worker_asset_authorize", upload_id: body.payload.upload_id, claim_token: body.payload.claim_token, path: asset.storage_path });
+          const stored = await port.readPrivate("mtm-btvn", asset.storage_path);
+          assets.push({ ...asset, data_base64: bytesBase64(stored.bytes) });
+        }
+        let normalized;
+        const response = await validate({ ...paper, action: "publish", assets }, { async rpc(a, p) {
+          if (a === "lookup") return { status: null };
+          need(a === "publish", "INVALID_WORKER_PUBLICATION");
+          normalized = p;
+          return { status: "validated" };
+        }, async upload() {
+        } });
+        need(response.ok && normalized, "WORKER_VALIDATION_FAILED");
+        body.payload[field] = normalized;
+      }
+    }
+    return port.rpc("lesson_upload_gateway", body.payload);
+  }
+  need(Object.keys(body).every((k) => ["action", "upload_id", "claim_token", "kind", "path", "data_base64", "content_type", "sha256"].includes(k)) && uuid(body.upload_id) && uuid(body.claim_token), "INVALID_LESSON_UPLOAD_FENCE");
+  if (action === "lesson_upload_source") {
+    need(["homework", "answer", "homework2", "answer2", "handout"].includes(body.kind), "INVALID_LESSON_SOURCE_KIND");
+    const source = await port.rpc("lesson_upload_gateway", { action: "worker_source", upload_id: body.upload_id, claim_token: body.claim_token, kind: body.kind });
+    need(source?.bucket === "mtm-lesson-private" && typeof source.path === "string" && port.readPrivate, "PRIVATE_SOURCE_UNAVAILABLE");
+    const file = await port.readPrivate(source.bucket, source.path);
+    need(file.bytes.length > 0 && file.bytes.length <= 20 * 1024 * 1024, "PRIVATE_SOURCE_TOO_LARGE");
+    return { data_base64: bytesBase64(file.bytes), content_type: file.content_type };
+  }
+  need(typeof body.path === "string" && /^btvn\/[a-z0-9-]{1,160}\/[a-f0-9]{64}\/[a-zA-Z0-9_/-]+\.(png|pdf)$/.test(body.path) && !body.path.includes(".."), "INVALID_LESSON_ASSET");
+  await port.rpc("lesson_upload_gateway", { action: "worker_asset_authorize", upload_id: body.upload_id, claim_token: body.claim_token, path: body.path });
+  if (action === "lesson_upload_asset_read") {
+    need(port.readPrivate, "PRIVATE_SOURCE_UNAVAILABLE");
+    const file = await port.readPrivate("mtm-btvn", body.path);
+    return { data_base64: bytesBase64(file.bytes), content_type: file.content_type };
+  }
+  need(body.content_type === (body.path.endsWith(".png") ? "image/png" : "application/pdf") && typeof body.sha256 === "string" && /^[a-f0-9]{64}$/.test(body.sha256), "INVALID_LESSON_ASSET");
+  need(typeof body.data_base64 === "string" && body.data_base64.length % 4 === 0 && body.data_base64.length <= 21 * 1024 * 1024 && /^[A-Za-z0-9+/]*={0,2}$/.test(body.data_base64), "INVALID_LESSON_ASSET");
+  const bytes = Uint8Array.from(atob(body.data_base64), (c) => c.charCodeAt(0));
+  await port.upload(body.path, bytes, body.content_type, body.sha256);
+  return { ok: true, status: "uploaded" };
+}
+function bytesBase64(bytes) {
+  let value = "";
+  for (let i = 0; i < bytes.length; i += 32768) value += String.fromCharCode(...bytes.subarray(i, i + 32768));
+  return btoa(value);
+}
+
 // server/btvn/publish-handler.ts
 var hash = async (bytes) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer))).map((x) => x.toString(16).padStart(2, "0")).join("");
 var canonical2 = (value) => JSON.stringify(value);
@@ -1779,6 +1846,7 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       ensure3(text5.length <= 48 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
       const body = JSON.parse(text5);
       ensure3(body && typeof body === "object" && !Array.isArray(body), "INVALID_PAYLOAD");
+      if (typeof body.action === "string" && body.action.startsWith("lesson_upload_")) return respond(200, await handleLessonUploadGateway(port, body, (input, capture) => createBtvnPublishHandler(capture, secret, { ...options, ...input.verification?.status === "teacher-pending" ? { teacherPending: { requestHash: input.verification.request_hash, sourceVersion: input.source_version } } : {} })(new Request("https://worker-validation.invalid", { method: "POST", headers: { "X-MTM-Publish-Secret": secret }, body: JSON.stringify(input) }))));
       if (["publish_pair", "publish_variant"].includes(body.action)) return respond(200, await handleTwoPaperPublication(port, body, (input, capture) => createBtvnPublishHandler(capture, secret, options)(new Request("https://two-paper-validation.invalid", { method: "POST", headers: { "X-MTM-Publish-Secret": secret }, body: JSON.stringify(input) }))));
       if (["answer_correction_preview", "answer_correction_apply"].includes(body.action)) return respond(200, await handleAnswerCorrection(port, body));
       const read = scorebookRpc(body);
@@ -1847,20 +1915,23 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       ensure3(validatePracticeExam(exam).valid && exam.durationMinutes === 120, "VALIDATOR_FAILED");
       if (exam.rubricVersion === MTM_SCORING_VERSION) ensure3(mtmPracticeGradingReadiness(exam).valid, "MTM_GRADING_NOT_READY");
       const proof = body.verification;
-      ensure3(proof?.validator === true && proof.independent === true && /^[a-f0-9]{64}$/.test(proof.receipt_hash ?? "") && typeof proof.provider === "string" && proof.provider.trim().length > 0 && typeof proof.model === "string" && proof.model.trim().length > 0, "REVIEW_REQUIRED");
-      const slots = expectedSlots(exam);
-      ensure3(Array.isArray(proof.slots) && proof.slots.length === slots.length, "REVIEW_COVERAGE");
-      ensure3(typeof proof.extractor_provider === "string" && proof.extractor_provider !== proof.provider, "INDEPENDENT_PROVIDER_REQUIRED");
-      for (const slot2 of slots) {
-        const matches = proof.slots.filter((x) => x.question_id === slot2.question_id && x.slot === slot2.slot), q = exam.questions.find((q2) => q2.id === slot2.question_id);
-        ensure3(matches.length === 1 && canonical2(matches[0].expected) === canonical2(slot2.expected), "REVIEW_MISMATCH");
-        if (q.convertedFrom === "essay" || q.kind === "self" || exam.rubricVersion === "MTM-BTVN-10-v1" && q.kind === "short") ensure3(matches[0].conversion_verified === true, "CONVERSION_REVIEW_REQUIRED");
-        const actual = matches[0].actual;
-        if (q.kind === "short" && exam.rubricVersion === MTM_SCORING_VERSION) {
-          ensure3(typeof actual === "string", "REVIEW_MISMATCH");
-          const normalized = normalizeMtmShort(actual, q.shortRule);
-          ensure3(normalized !== null && q.acceptedAnswers.some((expected) => normalizeMtmShort(expected, q.shortRule) === normalized), "REVIEW_MISMATCH");
-        } else ensure3(q.kind === "short" ? typeof actual === "string" && normalizedShort(q.mode, actual) !== null && q.acceptedAnswers.some((a2) => normalizedShort(q.mode, a2) === normalizedShort(q.mode, actual)) : canonical2(actual) === canonical2(slot2.expected), "REVIEW_MISMATCH");
+      const teacherPending = !!options.teacherPending && proof?.status === "teacher-pending" && proof.independent === false && proof.teacher_source === true && proof.request_hash === options.teacherPending.requestHash && body.source_version === options.teacherPending.sourceVersion;
+      if (!teacherPending) {
+        ensure3(proof?.validator === true && proof.independent === true && /^[a-f0-9]{64}$/.test(proof.receipt_hash ?? "") && typeof proof.provider === "string" && proof.provider.trim().length > 0 && typeof proof.model === "string" && proof.model.trim().length > 0, "REVIEW_REQUIRED");
+        const slots = expectedSlots(exam);
+        ensure3(Array.isArray(proof.slots) && proof.slots.length === slots.length, "REVIEW_COVERAGE");
+        ensure3(typeof proof.extractor_provider === "string" && proof.extractor_provider !== proof.provider, "INDEPENDENT_PROVIDER_REQUIRED");
+        for (const slot2 of slots) {
+          const matches = proof.slots.filter((x) => x.question_id === slot2.question_id && x.slot === slot2.slot), q = exam.questions.find((q2) => q2.id === slot2.question_id);
+          ensure3(matches.length === 1 && canonical2(matches[0].expected) === canonical2(slot2.expected), "REVIEW_MISMATCH");
+          if (q.convertedFrom === "essay" || q.kind === "self" || exam.rubricVersion === "MTM-BTVN-10-v1" && q.kind === "short") ensure3(matches[0].conversion_verified === true, "CONVERSION_REVIEW_REQUIRED");
+          const actual = matches[0].actual;
+          if (q.kind === "short" && exam.rubricVersion === MTM_SCORING_VERSION) {
+            ensure3(typeof actual === "string", "REVIEW_MISMATCH");
+            const normalized = normalizeMtmShort(actual, q.shortRule);
+            ensure3(normalized !== null && q.acceptedAnswers.some((expected) => normalizeMtmShort(expected, q.shortRule) === normalized), "REVIEW_MISMATCH");
+          } else ensure3(q.kind === "short" ? typeof actual === "string" && normalizedShort(q.mode, actual) !== null && q.acceptedAnswers.some((a2) => normalizedShort(q.mode, a2) === normalizedShort(q.mode, actual)) : canonical2(actual) === canonical2(slot2.expected), "REVIEW_MISMATCH");
+        }
       }
       ensure3(Array.isArray(body.assets) && body.assets.length > 0 && body.assets.length <= 500, "INVALID_ASSETS");
       const assets = body.assets, paths = /* @__PURE__ */ new Set();

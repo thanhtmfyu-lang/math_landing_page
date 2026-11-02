@@ -77,7 +77,7 @@ alter table mtm_hw_private.lesson_publish_capability enable row level security;
 revoke all on mtm_hw_private.lesson_publish_capability from public,anon,authenticated,service_role,mtm_btvn_publisher;
 create table if not exists mtm_hw_private.lesson_upload_steps(
  upload_id uuid not null references mtm_hw_private.lesson_uploads(id),step integer not null check(step between 1 and 6),
- status text not null check(status in ('cho','dang','xong','loi')),detail text not null default '',updated_at timestamptz not null default clock_timestamp(),
+ status text not null check(status in ('cho','dang','xong','loi','canh_bao')),detail text not null default '',updated_at timestamptz not null default clock_timestamp(),
  primary key(upload_id,step));
 alter table mtm_hw_private.lesson_uploads enable row level security;
 alter table mtm_hw_private.lesson_upload_steps enable row level security;
@@ -140,9 +140,9 @@ begin
    update mtm_hw_private.lesson_upload_steps z set status='loi',detail='Đã thử 3 lần nhưng chưa hoàn tất. Vui lòng kiểm tra và tải lại buổi học.',updated_at=clock_timestamp()
     from mtm_hw_private.lesson_uploads x where x.id=z.upload_id and x.finished_at is null and x.attempt_count>=3
     and x.lease_until<clock_timestamp() and mtm_hw_private.lesson_upload_current(x)
-    and z.step=(select min(step) from mtm_hw_private.lesson_upload_steps zz where zz.upload_id=x.id and zz.status<>'xong');
+    and z.step=(select min(step) from mtm_hw_private.lesson_upload_steps zz where zz.upload_id=x.id and zz.status not in ('xong','canh_bao'));
    select x.* into u from mtm_hw_private.lesson_uploads x
-    where x.finished_at is null and x.attempt_count<3 and (x.lease_until is null or x.lease_until<clock_timestamp())
+    where x.is_test=qa and x.finished_at is null and x.attempt_count<3 and (x.lease_until is null or x.lease_until<clock_timestamp())
     and mtm_hw_private.lesson_upload_current(x)
     and (x.homework_path is not null or not exists(select 1 from unnest(x.class_ids) ci where not exists(
      select 1 from mtm_hw_private.btvn_lessons l where l.active and l.kind='btvn' and l.is_test=x.is_test and ci=any(l.class_ids)
@@ -170,8 +170,9 @@ begin
    return '{"ok":true}'::jsonb;end if;
   if a='worker_checkpoint' then
    st=(p->>'step')::int;stat=p->>'status';v_detail=left(coalesce(p->>'detail',''),1000);
-   if st is null or stat is null or st not between 2 and 6 or stat not in ('cho','dang','xong','loi') then raise exception 'INVALID_STEP';end if;
-   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and step<st and status<>'xong') then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
+   if st is null or stat is null or st not between 2 and 6 or stat not in ('cho','dang','xong','loi','canh_bao') then raise exception 'INVALID_STEP';end if;
+   if stat='canh_bao' and st not in (4,5) then raise exception 'INVALID_WARNING_STEP';end if;
+   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and step<st and status not in ('xong','canh_bao')) then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
    if st=6 and stat='xong' and not (u.checkpoint ? 'publish_receipts') then raise exception 'PUBLISH_RECEIPTS_REQUIRED';end if;
    if p ? 'checkpoint' and (jsonb_typeof(p->'checkpoint')<>'object'
     or (p->'checkpoint' ? 'publish_receipts' and p->'checkpoint'->'publish_receipts' is distinct from u.checkpoint->'publish_receipts')) then raise exception 'INVALID_CHECKPOINT';end if;
@@ -180,14 +181,14 @@ begin
    return '{"ok":true}'::jsonb;
   end if;
   if a='worker_finish' then
-   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and status<>'xong') then raise exception 'STEPS_INCOMPLETE';end if;
+   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and status not in ('xong','canh_bao')) then raise exception 'STEPS_INCOMPLETE';end if;
    update mtm_hw_private.lesson_uploads set finished_at=clock_timestamp(),lease_until=null where id=u.id;
    return '{"ok":true}'::jsonb;
   end if;
   if a='worker_materials' then
    if u.homework_path is not null then raise exception 'HOMEWORK_REQUIRES_PUBLISH';end if;
    if u.checkpoint ? 'publish_receipts' then return jsonb_build_object('ok',true,'publish_receipts',u.checkpoint->'publish_receipts','already_applied',true);end if;
-   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and step<5 and status<>'xong') then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
+   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and step<5 and status not in ('xong','canh_bao')) then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
    if jsonb_typeof(p->'material') is distinct from 'object' or p->'material'='{}'::jsonb
     or exists(select 1 from jsonb_object_keys(p->'material') k where k not in ('videoId','videoUrl','handoutUrl','materialUrl','title'))
     or not mtm_hw_private.lesson_payload_safe(p->'material',u) then raise exception 'UNSAFE_MATERIAL_PATCH';end if;
@@ -208,7 +209,7 @@ begin
   end if;
   if a='worker_publish' then
    if u.checkpoint ? 'publish_receipts' then return jsonb_build_object('ok',true,'publish_receipts',u.checkpoint->'publish_receipts','already_applied',true);end if;
-   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and step<6 and status<>'xong') then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
+   if exists(select 1 from mtm_hw_private.lesson_upload_steps where upload_id=u.id and step<6 and status not in ('xong','canh_bao')) then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
    payload=p->'payload';
    if not mtm_hw_private.lesson_payload_safe(payload,u) then raise exception 'PRIVATE_SOURCE_IN_PUBLISH';end if;
    if payload->>'lesson_key' is distinct from 'web-'||replace(u.id::text,'-','') then raise exception 'LESSON_CODE_MISMATCH';end if;

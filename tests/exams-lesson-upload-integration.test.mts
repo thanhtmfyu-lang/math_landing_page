@@ -93,7 +93,7 @@ await role('authenticated',owner,tx=>tx.query("insert into storage.objects(bucke
 let qaCurrentCode='';const qaCodes:string[]=[];
 for(const date of ['2026-10-26','2026-11-02']){
  const qaUpload=await call('mtm_lesson_upload_api',{p:{action:'create',class_ids:[cid],lesson_date:date,teacher_key:'thaytai',title:'QA fixture only',task_scope:'Câu 1–3',homework_path:qaSource,answer_text:'fixture',is_test:true}},'authenticated',owner);
- const qaRun=await runUploadOnce(createWorkerRepository(client),pipeline,state,'qa-fixture');assert.equal(qaRun.status,'complete',JSON.stringify({qaRun,rpcError}));checks++;
+ const qaRun=await runUploadOnce(createWorkerRepository(client,{isTest:true}),pipeline,state,'qa-fixture');assert.equal(qaRun.status,'complete',JSON.stringify({qaRun,rpcError}));checks++;
  const qaRow=(await db.query('select * from mtm_hw_private.lesson_uploads where id=$1',[qaUpload.upload_id])).rows[0];
  qaCurrentCode=qaRow.checkpoint.publish_receipts[cid].lesson_code;
  qaCodes.push(qaCurrentCode);

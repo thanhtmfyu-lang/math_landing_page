@@ -1,6 +1,6 @@
 export type Staff={user_id:string;short_name:string;display_name:string;role:'gv'|'ql'|'admin';teacher_key:string|null};
 export type LessonSession={class_id:string;class_name:string;lesson_date:string;teacher_key:string;start_time:string;end_time:string;group_key?:string;class_ids?:string[];class_dates?:Record<string,string>};
-export type UploadStep={step:number;status:'cho'|'dang'|'xong'|'loi';detail:string|null};
+export type UploadStep={step:number;status:'cho'|'dang'|'xong'|'loi'|'canh_bao';detail:string|null};
 export type LessonUpload={id:string;class_ids:string[];class_dates?:Record<string,string>;lesson_date:string;teacher_key:string;title:string;task_scope:string;version:number;created_at:string;has_homework?:boolean;has_answer?:boolean;has_handout?:boolean;has_video?:boolean;homework_uploaded?:boolean;answer_uploaded?:boolean;handout_uploaded?:boolean;video_uploaded?:boolean;steps:UploadStep[];homework2_uploaded?:boolean;answer2_uploaded?:boolean;paper2_steps?:UploadStep[];warnings?:string[]};
 export type UploadDashboard={publisher_warnings?:{class_id:string;lesson_date:string;lesson_code:string;warnings:string[]}[];staff:Staff;teachers:Staff[];sessions:LessonSession[];uploads:LessonUpload[];week_start:string;week_end:string;server_now?:string};
 export const STEP_LABELS=['Đã nhận tệp','AI đọc đề và phần cần làm','AI dựng BTVN trên web','Giải độc lập, đối chiếu đáp án GV','Gắn tài liệu và video','Đã giao cho lớp'];

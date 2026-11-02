@@ -1,0 +1,37 @@
+"""OFF installer target. Explicit finite invocation, shared native worker lock."""
+import argparse,datetime as dt,importlib,json,os,signal,subprocess,sys
+from pathlib import Path
+
+def main():
+ ap=argparse.ArgumentParser();ap.add_argument('--once',action='store_true');ap.add_argument('--review-once',action='store_true');ap.add_argument('--manual',action='store_true');ap.add_argument('--is-test',action='store_true');ap.add_argument('--status',action='store_true');ap.add_argument('--enable',action='store_true');ap.add_argument('--disable',action='store_true');a=ap.parse_args()
+ if sum(map(bool,[a.once,a.review_once,a.status,a.enable,a.disable]))!=1:raise ValueError('EXPLICIT_ACTION_REQUIRED')
+ if a.manual and not (a.once or a.review_once):raise ValueError('MANUAL_REQUIRES_FINITE_ONCE')
+ os.environ.setdefault('JAVIS_BRAIN_ROOT',str(Path(__file__).resolve().parents[3]))
+ os.environ.setdefault('BTVN_PIPELINE_DIR',str(Path(os.environ['JAVIS_BRAIN_ROOT'])/'Javis/btvn-pipeline'))
+ # Existing native runtime owns credentials and shared state; no new secretfile.
+ native_dir=os.environ.get('BTVN_NATIVE_MODULE_DIR',str(Path(os.environ['JAVIS_BRAIN_ROOT'])/'Javis/scripts/btvn-native-v1'))
+ sys.path.insert(0,native_dir)
+ from btvn_native import runtime
+ root=runtime.state_root();folder=root/'web-upload';enabled=folder/'enabled'
+ if a.status:print(json.dumps({'enabled':enabled.is_file(),'auto_poll':False,'cron_installed':False}));return
+ folder.mkdir(parents=True,exist_ok=True,mode=0o700)
+ if a.disable:enabled.unlink(missing_ok=True);print('{"enabled":false,"auto_poll":false}');return
+ # Approval's one-time release gate, not a daily hold on the existing worker.
+ if runtime.now_vn()<dt.datetime(2026,11,2,22,30,tzinfo=runtime.VN):raise ValueError('RELEASE_GATE_2230_VN')
+ if a.enable:enabled.touch(mode=0o600,exist_ok=True);print('{"enabled":true,"auto_poll":false}');return
+ if not enabled.is_file() and not a.manual:raise ValueError('WEB_UPLOAD_DISABLED')
+ import fcntl
+ with (root/'worker.lock').open('a+') as lock:
+  try:fcntl.flock(lock.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
+  except BlockingIOError:print('{"status":"busy"}');return
+  url,secret=runtime.publish_settings();env={**os.environ,'BTVN_NATIVE_MODULE_DIR':native_dir,'BTVN_PUBLISH_URL':url,'BTVN_PUBLISH_SECRET':secret,'MTM_LESSON_LOCK_FD':str(lock.fileno()),'MTM_LESSON_NATIVE_DRIVER':str(Path(__file__).with_name('native-driver.py')),'MTM_LESSON_UPLOAD_STATE_DIR':str(folder/'checkpoints')}
+  child=subprocess.Popen([env.get('BTVN_NODE','node'),str(Path(__file__).with_name('runner.mjs')),'--review-once' if a.review_once else '--once',*(['--is-test'] if a.is_test else [])],env=env,pass_fds=(lock.fileno(),),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
+  try:stdout,stderr=child.communicate(timeout=850)
+  except subprocess.TimeoutExpired:
+   os.killpg(child.pid,signal.SIGKILL);child.communicate();raise ValueError('FINITE_WORKER_TIMEOUT')
+  # Runner emits only status/code. No stdout from native modules or credentials.
+  if child.returncode:raise ValueError('FINITE_WORKER_FAILED')
+  status=json.loads(stdout);print(json.dumps({k:status[k] for k in ['status','code'] if k in status}))
+if __name__=='__main__':
+ try:main()
+ except Exception as error:print(json.dumps({'status':'blocked','error_type':type(error).__name__}));raise SystemExit(1)

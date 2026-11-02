@@ -2,6 +2,11 @@
 const sha=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
 export function createPublishPort(sql,storage){return {
  async rpc(action,payload){
+  if(action==='lesson_upload_gateway')return sql.begin(async tx=>{
+   await tx`SET LOCAL ROLE service_role`;
+   const rows=await tx`SELECT public.mtm_lesson_upload_gateway(${sql.json(payload)}) AS result`;
+   return rows[0].result;
+  });
   if(['two_paper_pair_preflight','two_paper_variant_preflight','two_paper_pair_commit','two_paper_variant_commit'].includes(action))return sql.begin(async tx=>{
    await tx`SET LOCAL ROLE service_role`;
    const rows=await tx`SELECT public.mtm_btvn_two_paper_publish(${action},${sql.json(payload)}) AS result`;
@@ -31,6 +36,14 @@ export function createPublishPort(sql,storage){return {
    const rows=await tx`SELECT public.mtm_btvn_pipeline(${action},${sql.json(payload)}) AS result`;
    return rows[0].result;
   });
+ },
+ async readPrivate(bucket,path){
+  if(!['mtm-lesson-private','mtm-btvn'].includes(bucket)||typeof path!=='string'||path.includes('..'))throw Error('PRIVATE_SOURCE_UNAVAILABLE');
+  const result=await storage.from(bucket).download(path);
+  if(result.error||!result.data)throw Error('PRIVATE_SOURCE_UNAVAILABLE');
+  const bytes=new Uint8Array(await result.data.arrayBuffer());
+  if(!bytes.length||bytes.length>20*1024*1024)throw Error('PRIVATE_SOURCE_TOO_LARGE');
+  return {bytes,content_type:result.data.type};
  },
  async upload(path,bytes,type,hash){
   if(!/^btvn\/[a-z0-9-]{1,160}\/[a-f0-9]{64}\/[a-zA-Z0-9][a-zA-Z0-9_/-]*\.(png|pdf)$/.test(path)||path.includes('//')||!['application/pdf','image/png'].includes(type)||!path.endsWith(type==='image/png'?'.png':'.pdf')||bytes.length<8||bytes.length>15*1024*1024||await sha(bytes)!==hash)throw Error('Invalid publisher asset');

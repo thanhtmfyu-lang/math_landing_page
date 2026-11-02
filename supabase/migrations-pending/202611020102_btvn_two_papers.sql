@@ -7,6 +7,10 @@ alter table mtm_hw_private.lesson_uploads add column if not exists homework2_pat
 alter table mtm_hw_private.lesson_uploads add column if not exists answer2_path text;
 alter table mtm_hw_private.lesson_uploads add column if not exists answer2_text text;
 alter table mtm_hw_private.lesson_uploads add column if not exists task_scope2 text;
+-- Closed until the separately installed gateway supplies authoritative timing.
+create or replace function mtm_hw_private.lesson_teacher_pending_allowed(u mtm_hw_private.lesson_uploads,proof jsonb,source text,paper int) returns boolean
+language sql stable set search_path='' as $$select false$$;
+revoke all on function mtm_hw_private.lesson_teacher_pending_allowed(mtm_hw_private.lesson_uploads,jsonb,text,int) from public,anon,authenticated,service_role,mtm_btvn_publisher;
 create or replace function mtm_hw_private.lesson_payload_safe(p jsonb,u mtm_hw_private.lesson_uploads) returns boolean
 language sql immutable set search_path='' as $$
  select p is not null and p::text !~* 'mtm-lesson-private'
@@ -17,7 +21,7 @@ language sql immutable set search_path='' as $$
 $$;
 create table if not exists mtm_hw_private.lesson_upload_paper2_steps(
  upload_id uuid not null references mtm_hw_private.lesson_uploads(id),step int not null check(step between 1 and 6),
- status text not null check(status in ('cho','dang','xong','loi')),detail text not null default '',updated_at timestamptz not null default clock_timestamp(),primary key(upload_id,step));
+ status text not null check(status in ('cho','dang','xong','loi','canh_bao')),detail text not null default '',updated_at timestamptz not null default clock_timestamp(),primary key(upload_id,step));
 create table if not exists mtm_hw_private.btvn_second_papers(
  lesson_code text primary key references mtm_hw_private.btvn_lessons(code),exam jsonb not null,assets jsonb not null,
  source_version text not null check(source_version ~ '^[a-f0-9]{64}$'),verification jsonb not null);
@@ -84,8 +88,9 @@ begin
   if a='worker_checkpoint' and p->>'paper'='2' then
    if u.homework2_path is null then raise exception 'PAPER_TWO_REQUIRED';end if;
    st=(p->>'step')::int;stat=p->>'status';cp=coalesce(p->'checkpoint','{}');
-   if st is null or st not between 2 and 6 or stat is null or stat not in ('cho','dang','xong','loi') then raise exception 'INVALID_STEP';end if;
-   if exists(select 1 from mtm_hw_private.lesson_upload_paper2_steps where upload_id=u.id and step<st and status<>'xong') then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
+   if st is null or st not between 2 and 6 or stat is null or stat not in ('cho','dang','xong','loi','canh_bao') then raise exception 'INVALID_STEP';end if;
+   if stat='canh_bao' and st not in (4,5) then raise exception 'INVALID_WARNING_STEP';end if;
+   if exists(select 1 from mtm_hw_private.lesson_upload_paper2_steps where upload_id=u.id and step<st and status not in ('xong','canh_bao')) then raise exception 'PRIOR_STEP_INCOMPLETE';end if;
    if st=6 and stat='xong' and not(u.checkpoint ? 'publish_receipts') then raise exception 'PUBLISH_RECEIPTS_REQUIRED';end if;
    if jsonb_typeof(cp)<>'object' or cp ? 'publish_receipts' then raise exception 'INVALID_CHECKPOINT';end if;
    update mtm_hw_private.lesson_upload_paper2_steps set status=stat,detail=left(coalesce(p->>'detail',''),1000),updated_at=clock_timestamp() where upload_id=u.id and step=st;
@@ -93,19 +98,19 @@ begin
    return '{"ok":true}'::jsonb;
   end if;
   if a='worker_publish' and u.homework2_path is not null then
-   if exists(select 1 from mtm_hw_private.lesson_upload_paper2_steps where upload_id=u.id and step<6 and status<>'xong') then raise exception 'PAPER_TWO_INCOMPLETE';end if;
+   if exists(select 1 from mtm_hw_private.lesson_upload_paper2_steps where upload_id=u.id and step<6 and status not in ('xong','canh_bao')) then raise exception 'PAPER_TWO_INCOMPLETE';end if;
    v=p->'variant_payload';
    if v is null or not mtm_hw_private.lesson_payload_safe(v,u) or position(coalesce(u.homework2_path,'unmatchable') in v::text)>0 or (u.answer2_path is not null and position(u.answer2_path in v::text)>0)
     or v->>'lesson_key' is distinct from p->'payload'->>'lesson_key' or coalesce(v->>'source_version','') !~ '^[a-f0-9]{64}$'
     or jsonb_typeof(v->'exam'->'questions') is distinct from 'array' or jsonb_array_length(v->'exam'->'questions')=0
     or nullif(v->'exam'->>'id','') is null or v->'exam'->>'id'=p->'payload'->'exam'->>'id' or jsonb_typeof(v->'assets') is distinct from 'array'
-    or coalesce(v->'verification'->>'provider','') not in ('grok','agy') then raise exception 'INVALID_SECOND_PAPER';end if;
+    or (coalesce(v->'verification'->>'provider','') not in ('grok','agy') and not mtm_hw_private.lesson_teacher_pending_allowed(u,v->'verification',v->>'source_version',2)) then raise exception 'INVALID_SECOND_PAPER';end if;
    r=public.mtm_lesson_upload_api_before_two_papers(p);
    insert into mtm_hw_private.btvn_second_papers values(v->>'lesson_key',v->'exam',v->'assets',v->>'source_version',v->'verification') on conflict(lesson_code) do nothing;
    delete from mtm_hw_private.btvn_publication_warnings where lesson_code=v->>'lesson_key';
    return r;
   end if;
-  if a='worker_finish' and exists(select 1 from mtm_hw_private.lesson_upload_paper2_steps where upload_id=u.id and status<>'xong') then raise exception 'STEPS_INCOMPLETE';end if;
+  if a='worker_finish' and exists(select 1 from mtm_hw_private.lesson_upload_paper2_steps where upload_id=u.id and status not in ('xong','canh_bao')) then raise exception 'STEPS_INCOMPLETE';end if;
  end if;
  return public.mtm_lesson_upload_api_before_two_papers(p);
 end$$;
@@ -142,6 +147,7 @@ declare base text=regexp_replace(p_lesson,'-de-[12]$','');sid uuid;paper int;cho
 begin
  if not exists(select 1 from mtm_hw_private.btvn_second_papers where lesson_code=base) then return public.mtm_btvn_commit_before_two_papers(p_session,p_lesson,p_revision,p_drafts,p_receipts);end if;
  -- Authorization includes owner/class/test/active/cleanup gates before the choice write.
+ perform pg_advisory_xact_lock(hashtextextended('btvn-answer-correction:'||base,0));
  r=public.mtm_btvn_read_scoped100(p_session,base);sid=mtm_hw_private.btvn_student(p_session);
  perform pg_advisory_xact_lock(hashtextextended('btvn-paper-choice:'||sid::text||':'||base,0));
  select c.paper into chosen from mtm_hw_private.btvn_paper_choices c where c.student_id=sid and c.lesson_code=base;
@@ -150,12 +156,16 @@ begin
  if chosen is not null and chosen<>paper then return '{"ok":false}'::jsonb;end if;
  if paper=2 then select exam into e from mtm_hw_private.btvn_second_papers where lesson_code=base;else e=r->'exam';end if;
  for d in select value from jsonb_array_elements(p_drafts) loop
+  -- A previously submitted attempt retains its historical key/version. Only
+  -- exact existing submitted bytes may pass; new/open drafts need current key.
+  if d->'submittedAt' is not null and d->'submittedAt'<>'null'::jsonb and exists(select 1 from jsonb_array_elements(r->'work'->'drafts') old where old=d and old->'submittedAt' is not null and old->'submittedAt'<>'null'::jsonb) then continue;end if;
   if d->>'examId' is distinct from e->>'id' or d->'examVersionHash' is distinct from e->'versionHash'
    or (e->>'rubricVersion'='MTM-EQUAL-QUESTION-10-20261016-v1' and d->'answerKeyVersion' is distinct from e->'answerKeyVersion') then raise exception 'CORRECTION_RELOAD_REQUIRED';end if;
  end loop;
  -- Keep every existing submission and first-start identity byte-for-byte.
  if jsonb_array_length(r->'work'->'drafts')>0 and (p_drafts->0->>'attemptId' is distinct from r->'work'->'drafts'->0->>'attemptId' or p_drafts->0->'startedAt' is distinct from r->'work'->'drafts'->0->'startedAt') then return '{"ok":false}'::jsonb;end if;
  if exists(select 1 from jsonb_array_elements(r->'work'->'receipts') old where not p_receipts @> jsonb_build_array(old)) then return '{"ok":false}'::jsonb;end if;
+ if exists(select 1 from jsonb_array_elements(r->'work'->'drafts') old where old->'submittedAt' is not null and old->'submittedAt'<>'null'::jsonb and not p_drafts @> jsonb_build_array(old)) then raise exception 'CORRECTION_HISTORY_CHANGED';end if;
  -- The correction wrapper reads only canonical paper 1. Its complete version
  -- checks are performed above against the selected immutable paper instead.
  r=public.mtm_btvn_commit_before_answer_correction(p_session,base,p_revision,p_drafts,p_receipts);

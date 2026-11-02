@@ -5,25 +5,27 @@ import {youtubeVideoId} from '../btvn/lesson-materials';
 import {normalizedShort} from '../../src/native/exams/assessment';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 
-export type UploadJob={homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;due_at_by_class:Record<string,string>;checkpoint:Record<string,any>};
+export type UploadJob={paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;due_at_by_class:Record<string,string>;checkpoint:Record<string,any>};
 export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[]};
 export type Draft={exam:PracticeExam;assets:PublishAsset[]};
-export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string};
+export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string;pending?:boolean};
+export type PendingReview={status:'pending';request_hash:string;sourceVersion:string};
 export type IndependentReview={provider:'grok'|'agy';model:string;receipt_hash:string;slots:{question_id:string;slot:string;actual:unknown;conversion_verified?:boolean}[]};
 export interface Pipeline {
- extractor:{provider:'codex';model:string};
+ extractor:{provider:'codex'|'chatgpt-oauth'|'openai';model:string};
  /** Input has private GV answers. Return statement-only questions separately. */
  read(job:UploadJob):Promise<Extraction>;
  build(job:UploadJob,source:Extraction):Promise<Draft>;
  /** Separate provider/session, statement-only input: never the draft/teacher key. */
- review(input:{questions:unknown[];task_scope:string;sourceVersion:string}):Promise<IndependentReview>;
+ review(input:{questions:unknown[];task_scope:string;sourceVersion:string}):Promise<IndependentReview|PendingReview>;
  /** Idempotent private handout copying/signing. Never return a raw answer URL. */
  materials(job:UploadJob,idempotencyKey:string):Promise<PreparedMaterials>;
 }
 export interface WorkerRepository {
  claim(workerId:string):Promise<UploadJob|null>;
  current(job:UploadJob):Promise<void>;
- step(job:UploadJob,step:number,status:'dang'|'xong'|'loi',detail:string,checkpoint:Record<string,unknown>,paper?:1|2):Promise<void>;
+ step(job:UploadJob,step:number,status:'dang'|'xong'|'loi'|'canh_bao',detail:string,checkpoint:Record<string,unknown>,paper?:1|2):Promise<void>;
+ waitReview?(job:UploadJob,request:PendingReview):Promise<{allowed:boolean}>;
  publishBundle?(job:UploadJob,primary:unknown,second:unknown):Promise<void>;
  finish(job:UploadJob):Promise<void>;
  /** Existing publisher validates first; RPC does atomic lease/version/receipt commit. */
@@ -61,9 +63,9 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
  if(job.homework2_path)return runUploadPair(repo,pipeline,state,workerId,job);
  let step=2,mismatchDetail='';const cp={...job.checkpoint};
  const save=async(stage:string,value:unknown)=>{cp[stage]=await state.save(job.id,stage,value);};
- const mark=async(n:number,status:'dang'|'xong'|'loi',detail='')=>{await repo.current(job);await repo.step(job,n,status,detail,cp);};
+ const mark=async(n:number,status:'dang'|'xong'|'loi'|'canh_bao',detail='')=>{await repo.current(job);await repo.step(job,n,status,detail,cp);};
  try{
-  validateJob(job);ensure(pipeline.extractor.provider==='codex'&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
+  validateJob(job);ensure(['codex','chatgpt-oauth','openai'].includes(pipeline.extractor.provider)&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
   await mark(2,'dang');
   const source:Extraction=cp.source?await state.load(cp.source):await pipeline.read(job);
   ensure(/^[a-f0-9]{64}$/.test(source.sourceVersion)&&Array.isArray(source.questions),'INVALID_EXTRACTION');
@@ -72,9 +74,17 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   const draft:Draft|null=job.homework_path?(cp.draft?await state.load(cp.draft):await pipeline.build(job,source)):null;
   if(draft){ensure(validatePracticeExam(draft.exam).valid,'DRAFT_INVALID');verifyTeacher(draft,source);ensure(digest(source.questions)===digest(reviewQuestions(draft.exam)),'QUESTION_SOURCE_MISMATCH');}
   await save('draft',draft);await mark(3,'xong',draft?'':'Không áp dụng: buổi này chỉ có học liệu/video.');step=4;await mark(4,'dang');
-  let proof:any=null;
+  let proof:any=null,teacherPending=false;
   if(draft){
-   const review:IndependentReview=cp.review?await state.load(cp.review):await pipeline.review({questions:reviewQuestions(draft.exam),task_scope:job.task_scope,sourceVersion:source.sourceVersion});
+   const result:IndependentReview|PendingReview=cp.review?await state.load(cp.review):await pipeline.review({questions:reviewQuestions(draft.exam),task_scope:job.task_scope,sourceVersion:source.sourceVersion});
+   if('status' in result&&result.status==='pending'){
+    ensure(repo.waitReview&&/^[a-f0-9]{64}$/.test(result.request_hash)&&result.sourceVersion===source.sourceVersion,'PENDING_REVIEW_AUTHORITY_REQUIRED');
+    const permission=await repo.waitReview(job,result);
+    if(!permission.allowed)return {status:'waiting_review' as const,uploadId:job.id};
+    teacherPending=true;proof={validator:true,independent:false,teacher_source:true,status:'teacher-pending',request_hash:result.request_hash,extractor_provider:pipeline.extractor.provider};
+   }
+   if(!teacherPending){
+   const review=result as IndependentReview;
    ensure(review&&['grok','agy'].includes(review.provider)&&review.model?.trim()&&/^[a-f0-9]{64}$/.test(review.receipt_hash),'INDEPENDENT_REVIEW_REQUIRED');
    const slots=verifyTeacher(draft,source);ensure(Array.isArray(review.slots)&&review.slots.length===slots.length,'REVIEW_COVERAGE');
    proof={validator:true,independent:true,provider:review.provider,model:review.model,receipt_hash:review.receipt_hash,extractor_provider:pipeline.extractor.provider,slots:slots.map(s=>{
@@ -92,20 +102,21 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
    const response=await validator(publishRequest(job,source,draft,proof,{handoutUrl:null,materialUrl:null},secret));
    ensure(response.ok&&accepted,'INDEPENDENT_ANSWER_MISMATCH');
    await save('review',review);
+   }
   }
-  await mark(4,'xong',draft?'':'Không áp dụng: không có BTVN cần giải độc lập.');step=5;await mark(5,'dang');
+  await mark(4,teacherPending?'canh_bao':'xong',teacherPending?'Chưa kiểm chéo — máy sẽ kiểm sau':draft?'':'Không áp dụng: không có BTVN cần giải độc lập.');step=5;await mark(5,'dang');
   const materials=cp.materials?await state.load(cp.materials):await pipeline.materials(job,'lesson-upload:'+job.id+':materials');
-  ensure(materials&&(!job.handout_path||materials.handoutUrl||materials.materialUrl),'MATERIALS_REQUIRED');
+  ensure(materials&&(!job.handout_path||materials.handoutUrl||materials.materialUrl||materials.pending===true),'MATERIALS_REQUIRED');
   for(const url of [materials.handoutUrl,materials.materialUrl])if(url){
    const u=new URL(url);ensure(u.protocol==='https:'&&!u.username&&!u.password&&!/^\/storage\/v1\/object\/(public|sign)\//.test(u.pathname)&&!u.searchParams.has('token')&&!u.searchParams.has('access_token'),'PRIVATE_MATERIAL_REQUIRED');
    ensure(materials.access==='authenticated'&&materials.studentSafe===true&&/^[a-f0-9]{64}$/.test(materials.receipt_hash??''),'PRIVATE_MATERIAL_PROOF_REQUIRED');
    ensure(!job.answer_path||!decodeURIComponent(u.pathname).includes(job.answer_path),'ANSWER_ASSET_FORBIDDEN');
   }
-  await save('materials',materials);await mark(5,'xong');step=6;await mark(6,'dang');
+  await save('materials',materials);await mark(5,materials.pending?'canh_bao':'xong',materials.pending?'Tài liệu đang chờ đường truy cập xác thực; BTVN vẫn được giao.':'');step=6;await mark(6,'dang');
   // current() here plus the atomic DB fence prevent stale jobs publishing after a reupload.
   await repo.current(job);
   if(draft){
-   const secret='lesson-upload-service-validation-'.repeat(2),handler=createBtvnPublishHandler(repo.publisher(job),secret);
+   const secret='lesson-upload-service-validation-'.repeat(2),handler=createBtvnPublishHandler(repo.publisher(job),secret,teacherPending?{teacherPending:{requestHash:proof.request_hash,sourceVersion:source.sourceVersion}}:{});
    const response=await handler(publishRequest(job,source,draft,proof,materials,secret));
    ensure(response.ok&&['da_dang','already_published'].includes((await response.json()).status),'PUBLISH_NOT_CONFIRMED');
   }else{
@@ -134,9 +145,9 @@ function publishRequest(job:UploadJob,source:Extraction,draft:Draft,proof:unknow
  * There is still one lesson, work row, deadline and ranking entry for the session. */
 async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:PrivateState,workerId:string,job:UploadJob){
  ensure(repo.publishBundle,'BUNDLE_REPOSITORY_REQUIRED');
- const payloads:unknown[]=[];
+ const payloads:unknown[]=[],waiting:unknown[]=[];
  for(const paper of [1,2] as const){
-  const projected:UploadJob={...job,homework2_path:null,homework_path:paper===1?job.homework_path:job.homework2_path!,answer_path:paper===1?job.answer_path:job.answer2_path??null,answer_text:paper===1?job.answer_text:job.answer2_text??null,task_scope:paper===1?job.task_scope:job.task_scope2||job.task_scope,checkpoint:job.checkpoint['paper'+paper]??{}};
+  const projected:UploadJob={...job,paper,homework2_path:null,homework_path:paper===1?job.homework_path:job.homework2_path!,answer_path:paper===1?job.answer_path:job.answer2_path??null,answer_text:paper===1?job.answer_text:job.answer2_text??null,task_scope:paper===1?job.task_scope:job.task_scope2||job.task_scope,checkpoint:job.checkpoint['paper'+paper]??{}};
   let claimed=false;
   const port=repo.publisher(job);
   const inner:WorkerRepository={
@@ -146,12 +157,14 @@ async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:Priva
     // Completion can only follow the real atomic commit, never the local capture.
     if(n===6&&status==='xong')return;
     await repo.step(job,n,status,detail,{['paper'+paper]:checkpoint},paper);
-   },async finish(){},publisher(){return {upload:port.upload.bind(port),async rpc(action,payload){if(action==='lookup')return {status:null};ensure(action==='publish','INVALID_BUNDLE_ACTION');payloads[paper-1]=payload;return {status:'da_dang'};}};}
+   },waitReview:repo.waitReview?(_j,request)=>repo.waitReview!(projected,request):undefined,async finish(){},publisher(){return {upload:port.upload.bind(port),async rpc(action,payload){if(action==='lookup')return {status:null};ensure(action==='publish','INVALID_BUNDLE_ACTION');payloads[paper-1]=payload;return {status:'da_dang'};}};}
   };
   const privatePaperState:PrivateState={save:(id,stage,value)=>state.save(id+'-de-'+paper,stage,value),load:ref=>state.load(ref)};
   const result=await runUploadOnce(inner,pipeline,privatePaperState,workerId);
+  if(result.status==='waiting_review'){waiting.push(result);continue;}
   if(result.status!=='complete')return result;
  }
+ if(waiting.length)return {status:'waiting_review' as const,uploadId:job.id};
  await repo.current(job);await repo.publishBundle(job,payloads[0],payloads[1]);
  for(const paper of [1,2] as const)await repo.step(job,6,'xong','',{},paper);
  await repo.finish(job);return {status:'complete' as const,uploadId:job.id};
