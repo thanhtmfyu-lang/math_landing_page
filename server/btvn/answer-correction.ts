@@ -6,7 +6,7 @@ import type {HomeworkReceipt} from '../../src/native/homework/btvn-contract';
 type Work = {student_id:string;revision:number;drafts:Draft[];receipts:HomeworkReceipt[]};
 export type CorrectionSnapshot = {exam:PracticeExam;work:Work[]};
 type Patch = {question_id:string;answer?:'A'|'B'|'C'|'D';acceptedAnswers?:string[];mode?:'numeric'|'rational'|'exact'};
-export type CorrectionRequest = {action:'answer_correction_preview'|'answer_correction_apply';lesson_key:string;request_id:string;
+export type CorrectionRequest = {action:'answer_correction_preview'|'answer_correction_apply'|'answer_correction_future_only_preview'|'answer_correction_future_only_apply';lesson_key:string;request_id:string;
   lenh_ref:string;approved_via:string;patches:Patch[];expected_plan_sha256?:string};
 function ensure(v:unknown,code:string):asserts v {if(!v)throw Error(code);}
 const object=(v:unknown):v is Record<string,any>=>!!v&&typeof v==='object'&&!Array.isArray(v);
@@ -21,7 +21,7 @@ export async function correctionHash(v:unknown) {
 export function validateCorrectionRequest(v:unknown):asserts v is CorrectionRequest {
   ensure(object(v),'CORRECTION_SCHEMA');
   ensure(Object.keys(v).every(k=>['action','lesson_key','request_id','lenh_ref','approved_via','patches','expected_plan_sha256'].includes(k)),'CORRECTION_SCHEMA');
-  ensure(['answer_correction_preview','answer_correction_apply'].includes(v.action),'CORRECTION_ACTION');
+  ensure(['answer_correction_preview','answer_correction_apply','answer_correction_future_only_preview','answer_correction_future_only_apply'].includes(v.action),'CORRECTION_ACTION');
   ensure(/^[a-z0-9-]{1,160}$/.test(v.lesson_key??'')&&/^[A-Za-z0-9_-]{12,160}$/.test(v.request_id??''),'CORRECTION_ID');
   ensure(typeof v.lenh_ref==='string'&&v.lenh_ref.length>=8&&v.lenh_ref.length<=500&&typeof v.approved_via==='string'&&v.approved_via.length>=8&&v.approved_via.length<=500,'CORRECTION_AUTHORITY_REQUIRED');
   ensure(Array.isArray(v.patches)&&v.patches.length>0&&v.patches.length<=50,'CORRECTION_PATCHES');
@@ -34,7 +34,7 @@ export function validateCorrectionRequest(v:unknown):asserts v is CorrectionRequ
     if(Object.hasOwn(p,'answer'))ensure(['A','B','C','D'].includes(p.answer),'CORRECTION_CHOICE');
     else ensure(Array.isArray(p.acceptedAnswers)&&p.acceptedAnswers.length>0&&p.acceptedAnswers.length<=20&&p.acceptedAnswers.every((x:unknown)=>typeof x==='string'&&x.trim()===x&&x.length>0&&x.length<=500)&&new Set(p.acceptedAnswers).size===p.acceptedAnswers.length,'CORRECTION_SHORT');
   }
-  if(v.action==='answer_correction_apply')ensure(/^[a-f0-9]{64}$/.test(v.expected_plan_sha256??''),'CORRECTION_PREVIEW_REQUIRED');
+  if(v.action.endsWith('_apply'))ensure(/^[a-f0-9]{64}$/.test(v.expected_plan_sha256??''),'CORRECTION_PREVIEW_REQUIRED');
 }
 /** Reuse the exact submission engine. No I/O, guessed answers, score deltas or rescaling. */
 export async function planAnswerCorrection(snapshot:CorrectionSnapshot,request:CorrectionRequest) {
@@ -60,6 +60,13 @@ export async function planAnswerCorrection(snapshot:CorrectionSnapshot,request:C
     if(exam.rubricVersion===MTM_SCORING_VERSION) {q.answerVerified=true;q.answerConflict=false;}
   }
   ensure(validatePracticeExam(exam).valid,'CORRECTION_NEW_KEY_INVALID');
+  // Future-only never grades or rewrites any existing work, even a submitted draft.
+  if(request.action.startsWith('answer_correction_future_only_')) {
+    ensure(!snapshot.work.some(row=>row.drafts.some(d=>d.submittedAt===null)),'CORRECTION_ACTIVE_ATTEMPT_HOLD');
+    const plan={exam,work:structuredClone(snapshot.work)};
+    const plan_sha256=await correctionHash({mode:'future_only',request_id:request.request_id,lesson_key:request.lesson_key,lenh_ref:request.lenh_ref,approved_via:request.approved_via,patches:request.patches,snapshot,plan});
+    return {plan,plan_sha256,students:snapshot.work.length,attempts:0,changed:0,question_ids:request.patches.map(p=>p.question_id)};
+  }
   let attempts=0,changed=0;const studentIds=new Set<string>();
   const work=snapshot.work.map(row=>{
     ensure(object(row)&&typeof row.student_id==='string'&&!studentIds.has(row.student_id)&&Number.isSafeInteger(row.revision)&&row.revision>=0&&Array.isArray(row.drafts)&&Array.isArray(row.receipts),'CORRECTION_WORK');studentIds.add(row.student_id);
@@ -93,10 +100,11 @@ export async function handleAnswerCorrection(port:{rpc(action:string,payload:Rec
   validateCorrectionRequest(body);
   // A read/retry cannot apply a second correction. The DB journal binds authority + exact patches.
   const binding={lesson_key:body.lesson_key,request_id:body.request_id,lenh_ref:body.lenh_ref,approved_via:body.approved_via,patches:body.patches};
-  const snapshot=await port.rpc('answer_correction_snapshot',binding);
+  const futureOnly=body.action.startsWith('answer_correction_future_only_');
+  const snapshot=await port.rpc(futureOnly?'answer_correction_future_snapshot':'answer_correction_snapshot',binding);
   if(snapshot?.already_applied===true)return snapshot.result;
   const result=await planAnswerCorrection(snapshot,body);
-  if(body.action==='answer_correction_preview')return {status:'preview',plan_sha256:result.plan_sha256,students:result.students,attempts:result.attempts,changed:result.changed,question_ids:result.question_ids};
+  if(body.action.endsWith('_preview'))return {status:'preview',plan_sha256:result.plan_sha256,students:result.students,attempts:result.attempts,changed:result.changed,question_ids:result.question_ids};
   ensure(body.expected_plan_sha256===result.plan_sha256,'CORRECTION_STALE_PREVIEW');
-  return port.rpc('answer_correction_commit',{...binding,expected_snapshot:snapshot,new_exam:result.plan.exam,updated_work:result.plan.work,plan_sha256:result.plan_sha256});
+  return port.rpc(futureOnly?'answer_correction_future_commit':'answer_correction_commit',{...binding,expected_snapshot:snapshot,new_exam:result.plan.exam,updated_work:result.plan.work,plan_sha256:result.plan_sha256});
 }
