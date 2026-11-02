@@ -25,6 +25,6 @@ Hai mã buổi hiện hành được đọc từ catalog chỉ đọc và lưu t
 
 ## Kiểm đã chạy
 
-21 ca logic correction, 18 ca SQL PGlite về giao dịch/quyền/backup/CAS/replay, cùng hồi quy BTVN và MTM. Các nguồn đều là fixture. Chưa triển khai cloud; chưa chấm lại điểm thật.
+21 ca logic correction, 21 ca SQL PGlite về giao dịch/quyền/backup/CAS/replay và chống ghi khóa cũ cho cả rubric MTM/lẫn thang cũ, cùng hồi quy BTVN và MTM. Các nguồn đều là fixture. Chưa triển khai cloud; chưa chấm lại điểm thật.
 
 Rollback giữ nguyên ledger/bản sao, không xóa lịch sử. Nếu chưa có correction live thì có thể quay publisher về bản trước và thu quyền RPC mới sau khi xác minh không có caller đang dùng. Nếu đã áp correction, không tự copy điểm cũ trở lại; lập kế hoạch correction mới từ snapshot hiện hành để tránh đè bài nộp sau lần sửa.
