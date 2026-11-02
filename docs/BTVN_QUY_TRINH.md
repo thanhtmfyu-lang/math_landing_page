@@ -13,3 +13,27 @@ Hai đề dùng chung một `lessonCode` gốc, một `btvn_work` của mỗi h�
 Trước bàn giao phải kiểm hai khóa khác nhau, chọn Đề 2 chấm theo khóa Đề 2, không lộ khóa trước nộp, khóa đề kia sau bắt đầu, tiến độ khi thiếu Đề 2, chỉ một buổi trong bài làm/bảng điểm và không sửa biên nhận cũ. Test local không thay cho đăng nhập học sinh thử trên bản đã triển khai.
 
 Triển khai theo thư duyệt hiện hành. Với thư 1905 ngày 02/11, merge/migration/đăng/bảng điểm chỉ sau 22:30 giờ Việt Nam và đủ điều kiện của từng bước; gặp lỗi dừng bước đó. Không gửi PH/HS, không sửa tay CSDL, không sửa các guard bảo vệ. Hợp đồng worker và các phụ thuộc triển khai còn thiếu nằm trong [LESSON_UPLOAD_WORKER.md](LESSON_UPLOAD_WORKER.md).
+
+## Bổ sung bài đã kiểm qua publisher hiện có
+
+Edge `mtm-btvn-publish` có hai action hữu hạn, xác thực bằng publish secret hiện hành. Không cấp service-role cho PC/VPS và không dùng tài khoản giáo viên giả để nhập bù.
+
+```json
+{
+  "action": "publish_variant",
+  "lesson_key": "canonical-buoi-da-co",
+  "expected_source_version": "SHA256-cua-nguon-de-1-dang-phuc-vu",
+  "paper": "payload publish chuan cua De 2",
+  "review_evidence": {
+    "grok": {"model": "model-thuc", "receipt_hash": "SHA256-bien-nhan"},
+    "agy": {"model": "model-thuc", "receipt_hash": "SHA256-bien-nhan"},
+    "sympy": {"status": "PASS", "receipt_hash": "SHA256-ket-qua-kiem"}
+  }
+}
+```
+
+`paper` là **object**, gồm các trường của action `publish` hiện có: `action:'publish'`, `kind:'btvn'`, `lesson_key` bằng canonical, `source_version` SHA256, `material`, `exam` đúng `PracticeExam`, `assets` có byte base64 và SHA, `verification` đầy đủ từng slot theo production validator. Không nhận trực tiếp pack đề + map đáp án thô. `material.classNames`, `classDates`, `date` phải khớp chính xác bài gốc; `exam.id` của hai đề phải khác nhau. Ghim và đọc lại nguồn trước khi đăng. Đề 1, hạn, bài làm và biên nhận không bị thay. Học sinh đã có lượt trước khi bổ sung Đề 2 giữ khóa Đề 1, không bị chuyển đề hoặc chấm lại.
+
+Buổi hoàn toàn chưa có bài dùng `{action:'publish_pair',primary:<payload publish Đề 1>,second:<payload publish Đề 2>,review_evidence:<như trên>}`. Hai payload cùng canonical và cùng lớp/ngày; validator kiểm cả hai trước khi ghi tệp. RPC commit đăng một lesson + khóa Đề 2 riêng trong cùng giao dịch. Bài đã có một đề phải dùng `publish_variant`; không thay bằng `publish_pair` để ghi đè bài cũ.
+
+Replay cùng source/exam/assets trả `already_published` và không tải lại tệp; khác source hoặc khóa Đề 2 đã nhận thì dừng. Các action chỉ trả trạng thái, mã buổi, số đề và xác nhận giữ receipt, không trả dữ liệu học sinh. Ảnh/PDF đề và lời giải tiếp tục nằm private và chỉ ký theo quyền đọc hiện hành.

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {baselineDatabase} from '../scripts/is-test-db.mjs';
 import {pipelineFixture} from './btvn-pipeline-fixture';
-import {expectedSlots} from '../server/btvn/publish-handler';
+import {createBtvnPublishHandler,expectedSlots} from '../server/btvn/publish-handler';
 import {runUploadOnce,reviewQuestions,type Pipeline} from '../server/lesson-upload/worker';
 import {createWorkerRepository} from '../server/lesson-upload/supabase-worker';
 import {SupabaseHomeworkRepository} from '../server/btvn/supabase-repository';
@@ -70,5 +70,31 @@ try{
  assert.equal((await db.query('select warnings from mtm_hw_private.btvn_publication_warnings where lesson_code=$1',[code])).rows.length,0,'a full pair must clear its publication warning');checks++;
  assert.equal(JSON.stringify((await db.query('select receipts from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].receipts),old);checks++;
  for(const roleName of ['anon','authenticated']){await assert.rejects(()=>role(roleName,undefined,tx=>tx.exec('select * from mtm_hw_private.btvn_second_papers')));checks++;}
+ // Prepared backfill uses the existing Edge secret and finite RPC, without
+ // staff uploads or direct DB writes. Existing attempts remain on paper 1.
+ const firstSingle=await repo.call(token,'start',singleCode);
+ const oldSingle=await repo.call(token,'submit',singleCode,firstSingle.draft!.attemptId,{'mc-1':'D','tf-1':[true,false,true,false],'sa-1':'2.5'});
+ const singleReceipts=JSON.stringify(oldSingle.receipts),singleDue=oldSingle.dueAt;
+ const evidence={grok:{model:'synthetic-grok',receipt_hash:'1'.repeat(64)},agy:{model:'synthetic-agy',receipt_hash:'2'.repeat(64)},sympy:{status:'PASS',receipt_hash:'3'.repeat(64)}};
+ const prepared=(f:typeof fixture,key:string,date:string)=>({...f,action:'publish',kind:'btvn',lesson_key:key,material:{...f.material,lessonCode:key,classNames:['2K10 9+'],date,classDates:{'2K10 9+':date}}});
+ const secret='synthetic-pair-publication-'.repeat(3);let uploaded=0;
+ const publishPort={async rpc(action:string,payload:any){assert(['two_paper_pair_preflight','two_paper_pair_commit','two_paper_variant_preflight','two_paper_variant_commit'].includes(action));return call('mtm_btvn_two_paper_publish',{p_action:action,p_payload:payload});},async upload(path:string,bytes:Uint8Array,type:string){uploaded++;await role('service_role',undefined,tx=>tx.query('insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)',['mtm-btvn',path,JSON.stringify({mimetype:type,size:bytes.length})]));stored.set(path,bytes);}};
+ const handler=createBtvnPublishHandler(publishPort,secret);
+ const request=(body:any,key=secret)=>handler(new Request('https://fixture.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':key},body:JSON.stringify(body)}));
+ const attach={action:'publish_variant',lesson_key:singleCode,expected_source_version:'c'.repeat(64),paper:{...prepared(second,singleCode,'2026-11-02'),source_version:'b'.repeat(64)},review_evidence:evidence};
+ assert.equal((await request(attach,'wrong')).status,401);assert.equal(uploaded,0);checks++;
+ assert.equal((await request({...attach,review_evidence:{...evidence,sympy:{status:'FAIL',receipt_hash:'3'.repeat(64)}}})).status,422);assert.equal(uploaded,0);checks++;
+ assert.equal((await request({...attach,expected_source_version:'d'.repeat(64)})).status,422);assert.equal(uploaded,0);checks++;
+ const attached=await request(attach);assert.equal(attached.status,200,attached.headers.get('X-MTM-Reject-Code')??'');checks++;
+ const beforeReplay=uploaded;assert.equal((await (await request(attach)).json()).status,'already_published');assert.equal(uploaded,beforeReplay);checks++;
+ const unchanged=await repo.call(token,'state',singleCode);assert.equal(unchanged.paperChoice?.paper,1);assert.equal(unchanged.paperChoice?.locked,true);assert.equal(JSON.stringify(unchanged.receipts),singleReceipts);assert.equal(unchanged.dueAt,singleDue);checks++;
+ await assert.rejects(()=>repo.call(token,'select',singleCode+'-de-2'));checks++;
+ const pairKey='fixture-pair-publisher',pairBody={action:'publish_pair',primary:prepared(fixture,pairKey,'2026-10-19'),second:{...prepared(second,pairKey,'2026-10-19'),source_version:'b'.repeat(64)},review_evidence:evidence};
+ const paired=await request(pairBody);assert.equal(paired.status,200,paired.headers.get('X-MTM-Reject-Code')??'');assert.equal((await paired.json()).papers,2);checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_lessons where code=$1',[pairKey])).rows[0].n,1);checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_second_papers where lesson_code=$1',[pairKey])).rows[0].n,1);checks++;
+ const beforePairReplay=uploaded;assert.equal((await (await request(pairBody)).json()).status,'already_published');assert.equal(uploaded,beforePairReplay);checks++;
+ const beforeInvalid=uploaded;const bad=structuredClone(pairBody);bad.second.exam.questions[0].answer='B';
+ assert.equal((await request(bad)).status,422);assert.equal(uploaded,beforeInvalid,'validate both papers before any upload');checks++;
  console.log(`${checks} ca hai đề full schema: 2 pipeline, 2 key, chọn Đề 2 chấm 10, khóa Đề 1, không lộ key, 1 lesson/work, giữ receipt và luyện lại: đạt; giả lập local không mạng.`);
 }finally{await db.close();}

@@ -2,6 +2,11 @@
 const sha=async bytes=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',bytes))).map(x=>x.toString(16).padStart(2,'0')).join('');
 export function createPublishPort(sql,storage){return {
  async rpc(action,payload){
+  if(['two_paper_pair_preflight','two_paper_variant_preflight','two_paper_pair_commit','two_paper_variant_commit'].includes(action))return sql.begin(async tx=>{
+   await tx`SET LOCAL ROLE service_role`;
+   const rows=await tx`SELECT public.mtm_btvn_two_paper_publish(${action},${sql.json(payload)}) AS result`;
+   return rows[0].result;
+  });
   if(['answer_correction_snapshot','answer_correction_commit'].includes(action))return sql.begin(async tx=>{
    await tx`SET LOCAL ROLE service_role`;
    const rows=await tx`SELECT public.mtm_btvn_answer_correction(${action},${sql.json(payload)}) AS result`;

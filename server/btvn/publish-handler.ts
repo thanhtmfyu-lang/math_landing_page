@@ -8,6 +8,7 @@ import {scheduleEnvironment} from '../schedule/lich-lop';
 import {attendanceRpc} from './publish-attendance';
 import {scorebookRpc,scorebookResult} from './publish-scorebook';
 import {handleAnswerCorrection} from './answer-correction';
+import {handleTwoPaperPublication} from './publish-two-papers';
 export type PublishAsset={path:string;sha256:string;content_type:string;data_base64:string};
 export interface PublishPort {
  rpc(action:string,payload:Record<string,unknown>):Promise<any>;
@@ -37,6 +38,7 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
  try{
   const text=await request.text();ensure(text.length<=48*1024*1024,'PAYLOAD_TOO_LARGE');
   const body=JSON.parse(text);ensure(body&&typeof body==='object'&&!Array.isArray(body),'INVALID_PAYLOAD');
+  if(['publish_pair','publish_variant'].includes(body.action))return respond(200,await handleTwoPaperPublication(port,body,(input,capture)=>createBtvnPublishHandler(capture,secret,options)(new Request('https://two-paper-validation.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify(input)}))));
   if(['answer_correction_preview','answer_correction_apply'].includes(body.action))return respond(200,await handleAnswerCorrection(port,body));
   const read=scorebookRpc(body);
   if(read)return respond(200,scorebookResult(read.name,await port.rpc(read.name,read.payload)));

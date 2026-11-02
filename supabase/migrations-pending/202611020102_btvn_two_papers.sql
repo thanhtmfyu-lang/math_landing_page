@@ -125,6 +125,8 @@ begin
   return r;
  end if;
  select c.paper into chosen from mtm_hw_private.btvn_paper_choices c where c.student_id=sid and c.lesson_code=base;
+ -- Attaching paper 2 never changes the paper of an existing first attempt.
+ if chosen is null and (jsonb_array_length(r->'work'->'drafts')>0 or jsonb_array_length(r->'work'->'receipts')>0) then chosen=1;end if;
  paper=coalesce(case when p_lesson ~ '-de-[12]$' then right(p_lesson,1)::int end,chosen,1);
  if chosen is not null and chosen<>paper then raise exception 'PAPER_CHOICE_LOCKED' using errcode='40001';end if;
  if paper=2 and jsonb_typeof(r->'exam')='object' then r=jsonb_set(r,'{exam}',second.exam);end if;
@@ -143,6 +145,7 @@ begin
  r=public.mtm_btvn_read_scoped100(p_session,base);sid=mtm_hw_private.btvn_student(p_session);
  perform pg_advisory_xact_lock(hashtextextended('btvn-paper-choice:'||sid::text||':'||base,0));
  select c.paper into chosen from mtm_hw_private.btvn_paper_choices c where c.student_id=sid and c.lesson_code=base;
+ if chosen is null and (jsonb_array_length(r->'work'->'drafts')>0 or jsonb_array_length(r->'work'->'receipts')>0) then chosen=1;end if;
  paper=coalesce(case when p_lesson ~ '-de-[12]$' then right(p_lesson,1)::int end,chosen,1);
  if chosen is not null and chosen<>paper then return '{"ok":false}'::jsonb;end if;
  if paper=2 then select exam into e from mtm_hw_private.btvn_second_papers where lesson_code=base;else e=r->'exam';end if;
@@ -198,4 +201,54 @@ drop policy if exists btvn_pipeline_insert on storage.objects;
 create policy btvn_pipeline_insert on storage.objects for insert to mtm_btvn_publisher
  with check(bucket_id='mtm-btvn' and name ~ '^btvn/[a-z0-9-]{1,160}/[0-9a-f]{64}/[a-zA-Z0-9_/-]+\.(png|pdf)$'
   and name !~ '(^|/)\.\.(/|$)' and (public.mtm_btvn_pipeline('lookup',jsonb_build_object('lesson_key',split_part(name,'/',2)))->>'status') is distinct from 'da_dang');
+
+-- Prepared, independently reviewed backfill through the existing publisher.
+-- No teacher account, source-upload UUID, DB edit or student data is required.
+create or replace function public.mtm_btvn_two_paper_publish(p_action text,p_payload jsonb) returns jsonb
+language plpgsql security definer set search_path='' as $$
+<<two_paper>>
+declare pair boolean=p_action in ('two_paper_pair_preflight','two_paper_pair_commit');apply boolean=p_action in ('two_paper_pair_commit','two_paper_variant_commit');
+ code text;first jsonb;second jsonb;proof jsonb=p_payload->'review_evidence';l mtm_hw_private.btvn_lessons;existing mtm_hw_private.btvn_second_papers;scope mtm_hw_private.btvn_publish_scope;r jsonb;provider text;
+begin
+ if coalesce(auth.role(),'')<>'service_role' and coalesce(current_setting('role',true),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501';end if;
+ if p_action not in ('two_paper_pair_preflight','two_paper_variant_preflight','two_paper_pair_commit','two_paper_variant_commit') or p_action is null or octet_length(p_payload::text)>8388608 then raise exception 'INVALID_TWO_PAPER_ACTION';end if;
+ first=p_payload->'primary';second=p_payload->'second';code=case when pair then first->>'lesson_key' else p_payload->>'lesson_key' end;
+ if coalesce(code,'')!~'^[a-z0-9-]{1,150}$' or second->>'lesson_key' is distinct from code or second->>'kind' is distinct from 'btvn'
+  or coalesce(second->>'source_version','')!~'^[a-f0-9]{64}$' or jsonb_typeof(second->'exam'->'questions') is distinct from 'array'
+  or coalesce(jsonb_array_length(second->'exam'->'questions'),0)=0 or jsonb_typeof(second->'assets') is distinct from 'array' then raise exception 'INVALID_SECOND_PAPER';end if;
+ foreach provider in array array['grok','agy'] loop
+  if nullif(btrim(proof->provider->>'model'),'') is null or coalesce(proof->provider->>'receipt_hash','')!~'^[a-f0-9]{64}$' then raise exception 'TWO_PROVIDER_EVIDENCE_REQUIRED';end if;
+ end loop;
+ if proof->'sympy'->>'status' is distinct from 'PASS' or coalesce(proof->'sympy'->>'receipt_hash','')!~'^[a-f0-9]{64}$' then raise exception 'SYMPY_EVIDENCE_REQUIRED';end if;
+ perform pg_advisory_xact_lock(hashtextextended('btvn-answer-correction:'||code,0));
+ perform pg_advisory_xact_lock(hashtextextended('btvn-publish:'||code,0));
+ select * into scope from mtm_hw_private.btvn_publish_scope where singleton;
+ if scope.owner_id is null then raise exception 'PUBLISH_SCOPE_REQUIRED' using errcode='42501';end if;
+ select * into l from mtm_hw_private.btvn_lessons bl where bl.code=two_paper.code for update;
+ select * into existing from mtm_hw_private.btvn_second_papers where lesson_code=code;
+ if l.code is not null and (not l.active or l.publish_status<>'da_dang' or l.kind<>'btvn' or l.owner_id<>scope.owner_id or not l.class_ids<@scope.class_ids) then raise exception 'PRIMARY_LESSON_UNAVAILABLE' using errcode='42501';end if;
+ if pair then
+  if first->>'lesson_key' is distinct from code or first->>'kind' is distinct from 'btvn' or first->'exam'->>'id' is not distinct from second->'exam'->>'id'
+   or first->'material'->'classNames' is distinct from second->'material'->'classNames' or first->'material'->'classDates' is distinct from second->'material'->'classDates'
+   or first->'material'->>'date' is distinct from second->'material'->>'date' then raise exception 'TWO_PAPER_LESSON_MISMATCH';end if;
+  if l.code is not null and (l.source_version is distinct from first->>'source_version' or l.exam is distinct from first->'exam' or existing.lesson_code is null) then raise exception 'EXISTING_SINGLE_USE_VARIANT';end if;
+ else
+  if l.code is null or not l.active or l.publish_status<>'da_dang' or l.kind<>'btvn' or l.owner_id<>scope.owner_id or not l.class_ids<@scope.class_ids then raise exception 'PRIMARY_LESSON_UNAVAILABLE' using errcode='42501';end if;
+  if l.source_version is distinct from p_payload->>'expected_source_version' then raise exception 'PRIMARY_SOURCE_CHANGED';end if;
+  if l.exam->>'id' is not distinct from second->'exam'->>'id' or l.material->'classNames' is distinct from second->'material'->'classNames'
+   or coalesce(l.material->'classDates','{}') is distinct from coalesce(second->'material'->'classDates','{}') or l.material->>'date' is distinct from second->'material'->>'date' then raise exception 'TWO_PAPER_LESSON_MISMATCH';end if;
+ end if;
+ if existing.lesson_code is not null and (existing.source_version is distinct from second->>'source_version' or existing.exam is distinct from second->'exam' or existing.assets is distinct from second->'assets') then raise exception 'SECOND_PAPER_IMMUTABLE';end if;
+ if not apply then return jsonb_build_object('status','ready','lesson_key',code,'already_published',existing.lesson_code is not null);end if;
+ if pair and l.code is null then
+  r=public.mtm_btvn_pipeline('publish',first);
+  if r->>'status' not in ('da_dang','already_published') then raise exception 'PUBLICATION_FAILED';end if;
+ end if;
+ insert into mtm_hw_private.btvn_second_papers(lesson_code,exam,assets,source_version,verification)
+ values(code,second->'exam',second->'assets',second->>'source_version',second->'verification'||jsonb_build_object('review_evidence',proof)) on conflict(lesson_code) do nothing;
+ delete from mtm_hw_private.btvn_publication_warnings where lesson_code=code;
+ return jsonb_build_object('status',case when existing.lesson_code is not null then 'already_published' else 'da_dang' end,'lesson_key',code,'papers',2,'warnings','[]'::jsonb,'receipts_unchanged',true);
+end$$;
+revoke all on function public.mtm_btvn_two_paper_publish(text,jsonb) from public,anon,authenticated,mtm_btvn_publisher;
+grant execute on function public.mtm_btvn_two_paper_publish(text,jsonb) to service_role;
 commit;
