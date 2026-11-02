@@ -87,6 +87,6 @@ jobs:
         run: |
           IFS=',' read -ra fs <<< "$EDGE"
           for e in "${fs[@]}"; do e=$(echo "$e" | xargs); [ -z "$e" ] && continue
-            supabase functions deploy "$e" --project-ref "$PROJECT_REF" --use-api >/tmp/deploy.log 2>&1 \
+            supabase functions deploy "$e" --project-ref "$PROJECT_REF" --use-api --yes >/tmp/deploy.log 2>&1 \
               && echo "ĐẠT  Edge $e" || { echo "LỖI  Edge $e"; tail -5 /tmp/deploy.log | grep -vi token; exit 1; }
           done
