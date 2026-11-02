@@ -262,4 +262,38 @@ begin
 end$$;
 revoke all on function public.mtm_btvn_two_paper_publish(text,jsonb) from public,anon,authenticated,mtm_btvn_publisher;
 grant execute on function public.mtm_btvn_two_paper_publish(text,jsonb) to service_role;
+-- Read-only publication evidence. No raw exam/key, student identity or signed URL.
+create or replace function mtm_hw_private.btvn_paper_publication_receipt(e jsonb,a jsonb,source text) returns jsonb
+language sql immutable set search_path='' as $$
+ select jsonb_build_object('source_version',source,'exam_version_hash',e->>'versionHash','answer_key_version',e->>'answerKeyVersion',
+ 'exam_sha256',encode(sha256(convert_to(e::text,'UTF8')),'hex'),'exam_hash_algorithm','sha256-postgresql-jsonb-text',
+ 'question_count',coalesce(jsonb_array_length(e->'questions'),0),'assets',(select coalesce(jsonb_agg(jsonb_build_object('path',x->>'path','sha256',x->>'sha256','storage_path',x->>'storage_path','content_type',x->>'content_type','bytes',x->'bytes')),'[]') from jsonb_array_elements(coalesce(a,'[]')) x),'storage_bucket','mtm-btvn','storage_private',true,
+ 'documents',jsonb_build_object('questions',jsonb_build_object('path',e->'mtmDocuments'->'questions'->>'url','sha256',e->'mtmDocuments'->'questions'->>'sha256'),
+ 'solutions',jsonb_build_object('path',e->'mtmDocuments'->'solutions'->>'url','sha256',e->'mtmDocuments'->'solutions'->>'sha256')),
+ 'source_pdf',jsonb_build_object('sha256',e->'sourcePdf'->>'sha256','bytes',e->'sourcePdf'->'bytes','total_pages',e->'sourcePdf'->'totalPages','question_pages',e->'sourcePdf'->'questionPages'))
+$$;
+revoke all on function mtm_hw_private.btvn_paper_publication_receipt(jsonb,jsonb,text) from public,anon,authenticated,service_role,mtm_btvn_publisher;
+create or replace function public.mtm_btvn_publication_receipt(p_code text) returns jsonb
+language plpgsql stable security definer set search_path='' as $$
+declare l mtm_hw_private.btvn_lessons;s mtm_hw_private.btvn_second_papers;scope mtm_hw_private.btvn_publish_scope;m jsonb;dues jsonb;due_hash text;history_hash text;
+begin
+ if coalesce(auth.role(),'')<>'service_role' and coalesce(current_setting('role',true),'')<>'service_role' then raise exception 'SERVICE_ROLE_REQUIRED' using errcode='42501';end if;
+ if coalesce(p_code,'')!~'^[a-z0-9-]{1,160}$' then raise exception 'INVALID_LESSON_CODE';end if;
+ select * into scope from mtm_hw_private.btvn_publish_scope where singleton;
+ select * into l from mtm_hw_private.btvn_lessons where code=p_code;
+ if l.code is null then return '{"status":"not_found","paper_count":0}';end if;
+ if scope.owner_id is null or l.owner_id<>scope.owner_id or not l.class_ids<@scope.class_ids then raise exception 'OUTSIDE_PUBLISH_SCOPE' using errcode='42501';end if;
+ select * into s from mtm_hw_private.btvn_second_papers where lesson_code=p_code;
+ select coalesce(jsonb_object_agg(key,value),'{}') into m from jsonb_each(l.material) where key=any(array['lessonCode','classNames','classDates','classOpensAt','date','title','titleSource','homeworkScope','homeworkScopeSource','videoId','videoUrl','materialUrl','handoutUrl','homeworkUrl','homeworkNote','kind','opensAt','closesAt','expectedDueAt','dueAt']);
+ select coalesce(jsonb_object_agg(label,case when due_at is null then null else to_char(due_at at time zone 'UTC','YYYY-MM-DD"T"HH24:MI:SS.MS"Z"') end),'{}') into dues from (
+  select c.label,coalesce((u.due_at_by_class->>c.id::text)::timestamptz,mtm_hw_private.btvn_planned_due(c.label,coalesce(l.material->'classDates'->>c.label,l.material->>'date')::date)) due_at
+  from mtm_hw_private.classes c left join mtm_hw_private.lesson_uploads u on 'web-'||replace(u.id::text,'-','')=l.code where c.id=any(l.class_ids)) d;
+ select encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_object('student',w.student_id,'expected_due_at',w.expected_due_at,'next_actual_class_at',w.next_actual_class_at) order by w.student_id),'[]')::text,'UTF8')),'hex'),
+ encode(sha256(convert_to(coalesce(jsonb_agg(jsonb_build_object('student',w.student_id,'drafts',w.drafts,'receipts',w.receipts) order by w.student_id),'[]')::text,'UTF8')),'hex') into due_hash,history_hash from mtm_hw_private.btvn_work w where w.lesson_code=l.code;
+ return jsonb_build_object('status',l.publish_status,'lesson_key',l.code,'active',l.active,'is_test',l.is_test,'paper_count',case when s.lesson_code is null then 1 else 2 end,
+ 'canonical',mtm_hw_private.btvn_paper_publication_receipt(l.exam,l.assets,l.source_version)||jsonb_build_object('material',m,'material_sha256',encode(sha256(convert_to(l.material::text,'UTF8')),'hex'),'due_by_class',dues,'due_basis','canonical_web_snapshot_or_current_class_rule','work_due_sha256',due_hash,'work_history_sha256',history_hash),
+ 'second_paper',case when s.lesson_code is not null then mtm_hw_private.btvn_paper_publication_receipt(s.exam,s.assets,s.source_version) else null end);
+end$$;
+revoke all on function public.mtm_btvn_publication_receipt(text) from public,anon,authenticated,mtm_btvn_publisher;
+grant execute on function public.mtm_btvn_publication_receipt(text) to service_role;
 commit;

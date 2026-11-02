@@ -9,6 +9,7 @@ import {SupabaseHomeworkRepository} from '../server/btvn/supabase-repository';
 import {weekProgress} from '../src/native/lesson-upload/model';
 import {handleTwoPaperPublication} from '../server/btvn/publish-two-papers';
 import {createLessonGatewayClient} from '../server/lesson-upload/publisher-client';
+import {handleAnswerCorrection} from '../server/btvn/answer-correction';
 
 const {db}=await baselineDatabase();let checks=0;
 try{
@@ -149,5 +150,24 @@ try{
   return {...await pipeline.read(job),privateAnswerHashes:['6'.repeat(64)]};
  }};
  assert.equal((await runUploadOnce(createWorkerRepository(gatewayClient),mixed,state,'mixed-answer-sources')).status,'complete');assert.deepEqual(seen,[1,2]);checks++;
- console.log(`${checks} ca hai đề full schema: hai key,1buổi,timer20m,hậu kiểm không đổi điểm,gateway Edge/private assets,mixed sources: đạt; dữ liệu giả local.`);
+ const futureKey='fixture-future-before-variant';
+ const normalHandler=createBtvnPublishHandler({...publishPort,async rpc(a:string,p:any){return call('mtm_btvn_pipeline',{p_action:a,p_payload:p},'mtm_btvn_publisher');}},secret);
+ const futurePublished=await normalHandler(new Request('https://fixture.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({...prepared(fixture,futureKey,'2026-10-19'),source_version:'c'.repeat(64)})}));assert.equal(futurePublished.status,200,futurePublished.headers.get('X-MTM-Reject-Code')??'');checks++;
+ const firstFuture=await repo.call(token,'start',futureKey);const oldFuture=await repo.call(token,'submit',futureKey,firstFuture.draft!.attemptId,{'mc-1':'D','tf-1':[true,false,true,false],'sa-1':'2.5'});
+ const futureOriginal=(await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0],futureWorkBefore=(await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows;
+ const correctionPort={upload:publishPort.upload,async rpc(a:string,p:any){return call('mtm_btvn_answer_correction_future_only',{p_action:a,p});}};
+ const correction={action:'answer_correction_future_only_preview' as const,lesson_key:futureKey,request_id:'fixture-pair-future-correction',lenh_ref:'fixture-authority-1905',approved_via:'fixture-approved-user',patches:[{question_id:'sa-1',acceptedAnswers:['2/3'],mode:'rational' as const}]};
+ const previewFuture=await handleAnswerCorrection(correctionPort,correction);await handleAnswerCorrection(correctionPort,{...correction,action:'answer_correction_future_only_apply',expected_plan_sha256:previewFuture.plan_sha256});
+ const correctedBeforeAttach=(await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0];assert.equal(correctedBeforeAttach.source_version,futureOriginal.source_version);assert.deepEqual(correctedBeforeAttach.material,futureOriginal.material);assert.deepEqual((await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows,futureWorkBefore);checks++;
+ const metadataBeforeAttach=await call('mtm_btvn_publication_receipt',{p_code:futureKey});assert.deepEqual(correctedBeforeAttach.exam.questions[1],futureOriginal.exam.questions[1]);
+ assert.equal((await request({...attach,lesson_key:futureKey,paper:{...prepared(second,futureKey,'2026-10-19'),source_version:'b'.repeat(64)}})).status,200);assert.deepEqual((await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0],correctedBeforeAttach);assert.deepEqual((await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows,futureWorkBefore);checks++;
+ const metadataAfterAttach=await call('mtm_btvn_publication_receipt',{p_code:futureKey});assert.deepEqual(metadataAfterAttach.canonical,metadataBeforeAttach.canonical);assert.equal(metadataAfterAttach.paper_count,2);checks++;
+ const afterFutureStart=await repo.call(token,'start',futureKey),afterFutureSubmit=await repo.call(token,'submit',futureKey,afterFutureStart.draft!.attemptId,{'mc-1':'D','tf-1':[true,false,true,false],'sa-1':'2/3'});assert.equal(afterFutureSubmit.receipts.at(-1)!.score,10);assert.deepEqual(afterFutureSubmit.receipts.slice(0,oldFuture.receipts.length),oldFuture.receipts);checks++;
+ const newPaper2Start=await repo.call(token2,'start',futureKey+'-de-2'),newPaper2Submit=await repo.call(token2,'submit',futureKey+'-de-2',newPaper2Start.draft!.attemptId,{'mc-1':'A','tf-1':[true,false,true,false],'sa-1':'2.5'});assert.equal(newPaper2Submit.receipts[0].score,10);assert.equal(newPaper2Submit.paperChoice?.paper,2);checks++;
+ const inspectPort={...publishPort,async rpc(a:string,p:any){assert.equal(a,'publication_receipt');return call('mtm_btvn_publication_receipt',{p_code:p.lesson_key});}},inspect=createBtvnPublishHandler(inspectPort,secret);
+ const inspectRequest=(key:string,auth=secret)=>inspect(new Request('https://fixture.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':auth},body:JSON.stringify({action:'publication_receipt',lesson_key:key})}));
+ const receiptResponse=await inspectRequest(futureKey),publication=await receiptResponse.json();assert.equal(receiptResponse.status,200);assert.equal(publication.paper_count,2);assert.equal(publication.canonical.exam_version_hash,correctedBeforeAttach.exam.versionHash);assert.equal(publication.second_paper.source_version,'b'.repeat(64));assert.deepEqual(publication.canonical.material,correctedBeforeAttach.material);assert(Object.hasOwn(publication.canonical.due_by_class,'2K10 9+'));assert.equal(publication.canonical.storage_private,true);assert.match(publication.canonical.exam_sha256,/^[a-f0-9]{64}$/);assert.equal(publication.canonical.exam,undefined);assert(!JSON.stringify(publication).includes('data_base64'));assert(!JSON.stringify(publication).includes('"acceptedAnswers"'));assert(!JSON.stringify(publication).includes(sid));checks++;
+ const afterInspect=await (await inspectRequest(futureKey)).json();assert.equal(afterInspect.canonical.work_history_sha256,publication.canonical.work_history_sha256);assert.equal(afterInspect.canonical.work_due_sha256,publication.canonical.work_due_sha256);assert.equal((await inspectRequest(futureKey,'wrong')).status,401);assert.equal((await (await inspectRequest('fixture-missing')).json()).status,'not_found');checks++;
+ for(const roleName of ['anon','authenticated','mtm_btvn_publisher']){await assert.rejects(()=>call('mtm_btvn_publication_receipt',{p_code:futureKey},roleName));checks++;}
+ console.log(`${checks} ca hai đề full schema: hai key,1buổi,timer20m,hậu kiểm giữđiểm,private gateway,mixed source,future-only trướcvariant,receiptreadonly: đạt; dữ liệu giả local.`);
 }finally{await db.close();}
