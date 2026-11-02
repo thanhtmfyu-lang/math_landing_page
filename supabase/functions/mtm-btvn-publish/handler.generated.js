@@ -141,44 +141,44 @@ function compile(source) {
     const id = "mtm:" + encodeURIComponent(versions.examId) + ":" + encodeURIComponent(versions.examVersion) + ":" + (index + 1);
     const q = record(raw) ? raw : {};
     const found = contentType(q), errors = [];
-    const fail = (code, message) => errors.push(issue(code, message, id));
+    const fail2 = (code, message) => errors.push(issue(code, message, id));
     counts[found.type]++;
-    if (found.type === "UNKNOWN") fail("AMBIGUOUS_TYPE", "N\u1ED9i dung/c\u1EA5u tr\xFAc thi\u1EBFu b\u1EB1ng ch\u1EE9ng ho\u1EB7c ch\u1EE9a nhi\u1EC1u lo\u1EA1i c\xE2u m\xE2u thu\u1EABn.");
-    if (found.conflict || q.sourceStructureConflict === true) fail("SOURCE_STRUCTURE_CONFLICT", "N\u1ED9i dung, s\u1ED1 \xFD/ph\u01B0\u01A1ng \xE1n ho\u1EB7c th\u1EE9 t\u1EF1 nh\xE3n kh\xF4ng kh\u1EDBp d\u1EEF li\u1EC7u c\xE2u.");
+    if (found.type === "UNKNOWN") fail2("AMBIGUOUS_TYPE", "N\u1ED9i dung/c\u1EA5u tr\xFAc thi\u1EBFu b\u1EB1ng ch\u1EE9ng ho\u1EB7c ch\u1EE9a nhi\u1EC1u lo\u1EA1i c\xE2u m\xE2u thu\u1EABn.");
+    if (found.conflict || q.sourceStructureConflict === true) fail2("SOURCE_STRUCTURE_CONFLICT", "N\u1ED9i dung, s\u1ED1 \xFD/ph\u01B0\u01A1ng \xE1n ho\u1EB7c th\u1EE9 t\u1EF1 nh\xE3n kh\xF4ng kh\u1EDBp d\u1EEF li\u1EC7u c\xE2u.");
     const hinted = { mc: "TN", tf: "DS", short: "TLN", TN: "TN", DS: "DS", TLN: "TLN" }[String(q.kind)];
     if (q.kind !== void 0 && (hinted === void 0 || hinted !== found.type))
-      fail("TYPE_CONFLICT", "Nh\xE3n lo\u1EA1i c\xE2u kh\xF4ng kh\u1EDBp c\u1EA5u tr\xFAc nh\u1EADn di\u1EC7n, c\u1EA7n ki\u1EC3m ngu\u1ED3n.");
+      fail2("TYPE_CONFLICT", "Nh\xE3n lo\u1EA1i c\xE2u kh\xF4ng kh\u1EDBp c\u1EA5u tr\xFAc nh\u1EADn di\u1EC7n, c\u1EA7n ki\u1EC3m ngu\u1ED3n.");
     const content = q.sourceContent;
     const hasSourceContent = record(content) && Array.isArray(content.questions) && content.questions.length > 0 && Array.from(content.questions).every((segment) => record(segment) && (text(segment.path) || text(segment.text)));
     if (!text(q.prompt) && !text(q.text) && !hasSourceContent)
-      fail("CONTENT_MISSING", "Thi\u1EBFu n\u1ED9i dung c\xE2u ho\u1EB7c tham chi\u1EBFu c\xE1c m\u1EA3nh n\u1ED9i dung ngu\u1ED3n.");
-    if (q.answerConflict === true) fail("KEY_CONFLICT", "\u0110\xE1p \xE1n \u0111\u01B0\u1EE3c \u0111\xE1nh d\u1EA5u m\xE2u thu\u1EABn.");
+      fail2("CONTENT_MISSING", "Thi\u1EBFu n\u1ED9i dung c\xE2u ho\u1EB7c tham chi\u1EBFu c\xE1c m\u1EA3nh n\u1ED9i dung ngu\u1ED3n.");
+    if (q.answerConflict === true) fail2("KEY_CONFLICT", "\u0110\xE1p \xE1n \u0111\u01B0\u1EE3c \u0111\xE1nh d\u1EA5u m\xE2u thu\u1EABn.");
     if (q.answerVerified === false || source.answerKeyVerified !== true)
-      fail("KEY_UNVERIFIED", "\u0110\xE1p \xE1n c\xE2u ch\u01B0a \u0111\u01B0\u1EE3c x\xE1c minh.");
+      fail2("KEY_UNVERIFIED", "\u0110\xE1p \xE1n c\xE2u ch\u01B0a \u0111\u01B0\u1EE3c x\xE1c minh.");
     if (q.issues !== void 0) {
-      if (!Array.isArray(q.issues) || !q.issues.every(text)) fail("INVALID_ISSUES", "Danh s\xE1ch l\u1ED7i c\xE2u kh\xF4ng h\u1EE3p l\u1EC7.");
-      else q.issues.forEach((reason) => fail("QUESTION_REVIEW", reason));
+      if (!Array.isArray(q.issues) || !q.issues.every(text)) fail2("INVALID_ISSUES", "Danh s\xE1ch l\u1ED7i c\xE2u kh\xF4ng h\u1EE3p l\u1EC7.");
+      else q.issues.forEach((reason) => fail2("QUESTION_REVIEW", reason));
     }
     if (found.type === "TN") {
       if (own(q, "choices") && !Array.isArray(q.choices) || found.choices.length < 2 || found.choices.length > 26 || !Array.from(found.choices).every(text) || new Set(found.choices).size !== found.choices.length)
-        fail("TN_CHOICES", "TN c\u1EA7n c\xE1c ph\u01B0\u01A1ng \xE1n ph\xE2n bi\u1EC7t, kh\xF4ng r\u1ED7ng, t\u1EEB 2 \u0111\u1EBFn 26 ph\u01B0\u01A1ng \xE1n.");
+        fail2("TN_CHOICES", "TN c\u1EA7n c\xE1c ph\u01B0\u01A1ng \xE1n ph\xE2n bi\u1EC7t, kh\xF4ng r\u1ED7ng, t\u1EEB 2 \u0111\u1EBFn 26 ph\u01B0\u01A1ng \xE1n.");
       if (typeof q.answer !== "string" || !/^[A-Z]$/.test(q.answer) || q.answer.charCodeAt(0) - 65 >= found.choices.length)
-        fail("TN_KEY", "Thi\u1EBFu ho\u1EB7c sai kh\xF3a m\u1ED9t \u0111\xE1p \xE1n TN.");
-      if (own(q, "acceptedAnswers")) fail("KEY_CONFLICT", "TN ch\u1EE9a th\xEAm kh\xF3a tr\u1EA3 l\u1EDDi ng\u1EAFn.");
+        fail2("TN_KEY", "Thi\u1EBFu ho\u1EB7c sai kh\xF3a m\u1ED9t \u0111\xE1p \xE1n TN.");
+      if (own(q, "acceptedAnswers")) fail2("KEY_CONFLICT", "TN ch\u1EE9a th\xEAm kh\xF3a tr\u1EA3 l\u1EDDi ng\u1EAFn.");
     } else if (found.type === "DS") {
       if (own(q, "statements") && !Array.isArray(q.statements) || found.statements.length !== 4 || !Array.from(found.statements).every(text))
-        fail("DS_STATEMENTS", "DS ph\u1EA3i c\xF3 \u0111\xFAng b\u1ED1n \xFD a, b, c, d c\xF3 n\u1ED9i dung.");
+        fail2("DS_STATEMENTS", "DS ph\u1EA3i c\xF3 \u0111\xFAng b\u1ED1n \xFD a, b, c, d c\xF3 n\u1ED9i dung.");
       if (!Array.isArray(q.answer) || q.answer.length !== 4 || !Array.from(q.answer).every((v) => typeof v === "boolean"))
-        fail("DS_KEY", "DS c\u1EA7n \u0111\xFAng b\u1ED1n \u0111\xE1p \xE1n boolean \u0111\xE3 x\xE1c minh.");
-      if (own(q, "acceptedAnswers")) fail("KEY_CONFLICT", "DS ch\u1EE9a th\xEAm kh\xF3a tr\u1EA3 l\u1EDDi ng\u1EAFn.");
+        fail2("DS_KEY", "DS c\u1EA7n \u0111\xFAng b\u1ED1n \u0111\xE1p \xE1n boolean \u0111\xE3 x\xE1c minh.");
+      if (own(q, "acceptedAnswers")) fail2("KEY_CONFLICT", "DS ch\u1EE9a th\xEAm kh\xF3a tr\u1EA3 l\u1EDDi ng\u1EAFn.");
     } else if (found.type === "TLN") {
       const r = q.shortRule;
       if (!record(r) || Object.keys(r).some((key) => !["verified", "evidence", "mode", "whitespace", "unit", "decimalPlaces"].includes(key)) || r.verified !== true || !text(r.evidence) || !["exact", "decimal", "rational"].includes(String(r.mode)) || r.whitespace !== void 0 && !["trim", "collapse"].includes(String(r.whitespace)) || r.unit !== void 0 && (!text(r.unit) || r.unit !== r.unit.trim()) || r.decimalPlaces !== void 0 && (r.mode !== "decimal" || !Number.isSafeInteger(r.decimalPlaces) || r.decimalPlaces < 0 || r.decimalPlaces > 100)) {
-        fail("TLN_RULE", "Thi\u1EBFu quy t\u1EAFc ch\u1EA5p nh\u1EADn TLN \u0111\xE3 x\xE1c minh ho\u1EB7c quy t\u1EAFc \u0111\u1ECBnh d\u1EA1ng kh\xF4ng h\u1EE3p l\u1EC7.");
+        fail2("TLN_RULE", "Thi\u1EBFu quy t\u1EAFc ch\u1EA5p nh\u1EADn TLN \u0111\xE3 x\xE1c minh ho\u1EB7c quy t\u1EAFc \u0111\u1ECBnh d\u1EA1ng kh\xF4ng h\u1EE3p l\u1EC7.");
       } else if (!Array.isArray(q.acceptedAnswers) || !q.acceptedAnswers.length || !Array.from(q.acceptedAnswers).every((a) => text(a) && normalizeMtmShort(a, r) !== null)) {
-        fail("TLN_KEY", "Thi\u1EBFu \u0111\xE1p \xE1n TLN ho\u1EB7c \u0111\xE1p \xE1n vi ph\u1EA1m quy t\u1EAFc \u0111\u01A1n v\u1ECB/\u0111\u1ECBnh d\u1EA1ng \u0111\xE3 ch\u1ED1t.");
+        fail2("TLN_KEY", "Thi\u1EBFu \u0111\xE1p \xE1n TLN ho\u1EB7c \u0111\xE1p \xE1n vi ph\u1EA1m quy t\u1EAFc \u0111\u01A1n v\u1ECB/\u0111\u1ECBnh d\u1EA1ng \u0111\xE3 ch\u1ED1t.");
       }
-      if (own(q, "answer")) fail("KEY_CONFLICT", "TLN c\xF3 kh\xF3a answer ri\xEAng ngo\xE0i acceptedAnswers, c\u1EA7n \u0111\u1ED1i chi\u1EBFu.");
+      if (own(q, "answer")) fail2("KEY_CONFLICT", "TLN c\xF3 kh\xF3a answer ri\xEAng ngo\xE0i acceptedAnswers, c\u1EA7n \u0111\u1ED1i chi\u1EBFu.");
     }
     return {
       id,
@@ -253,26 +253,26 @@ function scoreMtmAttempt(attempt, answers) {
   for (const id of Object.keys(submitted)) if (!known.has(id)) pending.push(issue("UNKNOWN_RESPONSE", "B\xE0i l\xE0m c\xF3 ID kh\xF4ng thu\u1ED9c phi\xEAn b\u1EA3n \u0111\u1EC1 \u0111\xE3 kh\xF3a.", id));
   const rows = exam.questions.map((q) => {
     const errors = [...q.issues];
-    const fail = (code, message) => errors.push(issue(code, message, q.id));
-    if (invalidSubmission) fail("SUBMISSION_FORMAT", "Ch\u01B0a \u0111\u1ECDc \u0111\u01B0\u1EE3c b\u1EA3ng b\xE0i l\xE0m, kh\xF4ng th\u1EC3 coi c\xE2u n\xE0y l\xE0 sai ho\u1EB7c b\u1ECF tr\u1ED1ng.");
+    const fail2 = (code, message) => errors.push(issue(code, message, q.id));
+    if (invalidSubmission) fail2("SUBMISSION_FORMAT", "Ch\u01B0a \u0111\u1ECDc \u0111\u01B0\u1EE3c b\u1EA3ng b\xE0i l\xE0m, kh\xF4ng th\u1EC3 coi c\xE2u n\xE0y l\xE0 sai ho\u1EB7c b\u1ECF tr\u1ED1ng.");
     const answer = own(submitted, q.id) ? submitted[q.id] : void 0;
-    const blank = answer === void 0 || answer === null || typeof answer === "string" && !answer.trim();
+    const blank2 = answer === void 0 || answer === null || typeof answer === "string" && !answer.trim();
     let earned = ZERO, correctCount = null;
-    if (!errors.length && !blank) {
+    if (!errors.length && !blank2) {
       const source = q.source;
       if (q.type === "TN") {
         const choice = Array.isArray(answer) && answer.length === 1 ? answer[0] : answer;
         earned = typeof choice === "string" && choice === source.answer ? q.maxScore : ZERO;
       } else if (q.type === "DS") {
         if (!Array.isArray(answer) || answer.length > 4 || !Array.from(answer).every((x) => x === null || x === void 0 || typeof x === "boolean"))
-          fail("DS_RESPONSE", "B\xE0i l\xE0m DS ph\u1EA3i c\xF3 t\u1ED1i \u0111a b\u1ED1n gi\xE1 tr\u1ECB boolean ho\u1EB7c \xFD b\u1ECF tr\u1ED1ng.");
+          fail2("DS_RESPONSE", "B\xE0i l\xE0m DS ph\u1EA3i c\xF3 t\u1ED1i \u0111a b\u1ED1n gi\xE1 tr\u1ECB boolean ho\u1EB7c \xFD b\u1ECF tr\u1ED1ng.");
         else {
           const key = source.answer;
           correctCount = Array.from({ length: 4 }, (_, i) => typeof answer[i] === "boolean" && answer[i] === key[i]).filter(Boolean).length;
           earned = exam.dsTable[correctCount];
         }
       } else if (q.type === "TLN") {
-        if (typeof answer !== "string") fail("TLN_RESPONSE", "B\xE0i l\xE0m TLN ph\u1EA3i l\xE0 v\u0103n b\u1EA3n.");
+        if (typeof answer !== "string") fail2("TLN_RESPONSE", "B\xE0i l\xE0m TLN ph\u1EA3i l\xE0 v\u0103n b\u1EA3n.");
         else {
           const rule = source.shortRule;
           const normalized = normalizeMtmShort(answer, rule);
@@ -540,6 +540,58 @@ function validateAssessment(input) {
   if (input.rubricVersion === "MTM-BTVN-10-v1" ? total <= 0 : total !== 1e4) errors.push(input.rubricVersion === "MTM-BTVN-10-v1" ? "exam: BTVN needs positive scored total" : "exam: total must equal 10000 millipoints");
   return { valid: !errors.length, errors };
 }
+var blank = (v) => v === void 0 || v === null || typeof v === "string" && !v.trim();
+function scoreAssessment(input, submitted, attemptId) {
+  if (record3(input) && input.rubricVersion === MTM_SCORING_VERSION) return scoreMtmEqualAssessment(input, submitted, attemptId);
+  const gate = validateAssessment(input);
+  if (!gate.valid) return { ok: false, errors: gate.errors };
+  if (!record3(submitted)) return { ok: false, errors: ["answers: object required"] };
+  const exam = input, known = new Set(exam.questions.map((q) => q.id));
+  const errors = Object.keys(submitted).filter((id) => !known.has(id)).map((id) => "answers: unknown question " + id);
+  const rows = [];
+  const manualPending = [];
+  for (const q of exam.questions) {
+    const a = Object.hasOwn(submitted, q.id) ? submitted[q.id] : void 0;
+    let earned = 0;
+    if (q.kind === "self") {
+      earned = 0;
+    } else if (q.kind === "essay") {
+      if (!blank(a) && typeof a !== "string") errors.push(q.id + ": essay answer must be text");
+      if (!blank(a)) {
+        manualPending.push(q.id);
+        earned = null;
+      }
+    } else if (!blank(a)) {
+      if (q.kind === "mc") {
+        if (typeof a !== "string" || !choices.includes(a)) errors.push(q.id + ": invalid A-D answer");
+        else earned = a === q.answer ? q.maxMillipoints : 0;
+      } else if (q.kind === "tf") {
+        if (!Array.isArray(a) || a.length !== 4 || !Array.from(a).every((x) => x === null || typeof x === "boolean")) errors.push(q.id + ": four boolean/null answers required");
+        else earned = q.pointsByCorrectCount[a.reduce((count, x, i) => count + (x === q.answer[i] ? 1 : 0), 0)];
+      } else {
+        if (typeof a !== "string") errors.push(q.id + ": short answer must be text");
+        else {
+          const normalized = normalizedShort(q.mode, a);
+          if (normalized === null) errors.push(q.id + ": malformed numeric answer");
+          else earned = q.acceptedAnswers.some((s) => normalizedShort(q.mode, s) === normalized) ? q.maxMillipoints : 0;
+        }
+      }
+    }
+    rows.push({ id: q.id, earnedMillipoints: earned, maxMillipoints: q.maxMillipoints });
+  }
+  if (errors.length) return { ok: false, errors };
+  const rawEarned = rows.reduce((sum, row) => sum + (row.earnedMillipoints ?? 0), 0);
+  const rawMax = rows.reduce((sum, row) => sum + row.maxMillipoints, 0);
+  const earnedMillipoints = exam.rubricVersion === "MTM-BTVN-10-v1" ? Math.round(rawEarned / rawMax * 1e4) : rawEarned;
+  return {
+    ok: true,
+    earnedMillipoints,
+    maxMillipoints: 1e4,
+    finalMillipoints: manualPending.length ? null : earnedMillipoints,
+    manualPending,
+    rows
+  };
+}
 
 // src/native/exams/mtm-profile.ts
 var MTM_PROFILE = Object.freeze({ id: "MTM-12MC-4TF-6SHORT-v1", questionCount: 22, mc: 12, tf: 4, short: 6 });
@@ -580,6 +632,21 @@ function validatePracticeProfile(input) {
   if (offset !== e.questions.length || !equalQuestion && offset > 300) errors.push("Complete section counts required");
   return { valid: !errors.length, errors };
 }
+function scorePracticeAssessment(input, answers, attemptId) {
+  const g = validatePracticeProfile(input);
+  return g.valid ? scoreAssessment(input, answers, attemptId) : { ok: false, errors: g.errors };
+}
+
+// src/native/exams/short-format.ts
+var fields = ["mode", "whitespace", "unit", "decimalPlaces"];
+var record4 = (value) => value !== null && typeof value === "object" && !Array.isArray(value);
+var engineMode = (mode) => mode === "numeric" ? "decimal" : mode;
+function validPublicShortFormat(value, questionMode) {
+  if (!record4(value) || Object.keys(value).some((key) => !fields.includes(key)) || !Object.hasOwn(value, "mode") || !["exact", "decimal", "rational"].includes(String(value.mode)) || value.mode !== engineMode(questionMode)) return false;
+  if (value.whitespace !== void 0 && (typeof value.whitespace !== "string" || !["trim", "collapse"].includes(value.whitespace))) return false;
+  if (value.unit !== void 0 && (typeof value.unit !== "string" || !value.unit.trim() || value.unit !== value.unit.trim())) return false;
+  return value.decimalPlaces === void 0 || value.mode === "decimal" && Number.isSafeInteger(value.decimalPlaces) && value.decimalPlaces >= 0 && value.decimalPlaces <= 100;
+}
 
 // src/native/exams/data.ts
 var GRADES = [10, 11, 12];
@@ -614,6 +681,118 @@ function validatePracticeExam(input) {
   if (!gate.valid || !isRecord(input)) return gate;
   if (input.responseMode !== void 0) return { valid: false, errors: ["Question-only transport is not a complete scoring exam"] };
   return validatePracticePresentation(input, false);
+}
+function validateQuestionOnlyPracticeExam(input) {
+  if (!isRecord(input)) return { valid: false, errors: ["exam: object required"] };
+  if (input.rubricVersion === MTM_SCORING_VERSION) return validateEqualQuestionPublicExam(input);
+  const errors = [];
+  if (input.responseMode !== "questions-only") errors.push("Explicit question-only homework transport required");
+  const homework = input.rubricVersion === "MTM-BTVN-10-v1";
+  const flexible = homework || input.rubricVersion === FLEX_RUBRIC;
+  if (!boundedText(input.sourceRef, 2e4) || !isSha256(input.sourceHash) || input.answerKeyVerified !== true || input.rubricVerified !== true) errors.push("Invalid verified source or rubric");
+  if (!Array.isArray(input.questions) || !input.questions.length || input.questions.length > 300) return { valid: false, errors: [...errors, "Complete bounded questions required"] };
+  if (input.questionCount !== input.questions.length || !Number.isSafeInteger(input.questionCount)) errors.push("Question count mismatch");
+  const id = input.id;
+  if (flexible && (!boundedText(id, 120) || !["mtm-custom-", "mtm-preview-", "mtm-practice-", "mtm-hsa-"].some((prefix) => id.startsWith(prefix)))) errors.push("Flexible profile requires a custom edition");
+  const units2 = (n) => Number.isSafeInteger(n) && n >= 0 && n <= 1e4;
+  const ids = /* @__PURE__ */ new Set();
+  let total = 0;
+  for (const q of input.questions) {
+    if (!isRecord(q)) {
+      errors.push("Question object required");
+      continue;
+    }
+    if (!boundedText(q.id, 120) || q.id !== q.id.trim() || ids.has(q.id)) errors.push("Invalid or duplicate question id");
+    else ids.add(q.id);
+    if (!boundedText(q.sourceRef, 2e4)) errors.push("Question source required");
+    if (!units2(q.maxMillipoints) || (q.kind === "self" ? q.maxMillipoints !== 0 : q.maxMillipoints === 0)) errors.push("Invalid question points");
+    else total += q.maxMillipoints;
+    if ("answer" in q || "acceptedAnswers" in q || "solution" in q || "solutionBlocks" in q || "shortRule" in q) errors.push("Private answer fields must be absent");
+    if ("shortFormat" in q) errors.push("Public short format requires the explicit MTM rubric");
+    if (q.kind === "mc") {
+      if (!Array.isArray(q.choices) || q.choices.length !== 4 || !Array.from(q.choices).every((c) => boundedText(c, 2e4)) || new Set(q.choices).size !== 4) errors.push("Four distinct choices required");
+    } else if (q.kind === "tf") {
+      const schedule = q.pointsByCorrectCount;
+      if (!Array.isArray(schedule) || schedule.length !== 5 || !Array.from(schedule).every(units2) || schedule[0] !== 0 || schedule[4] !== q.maxMillipoints || schedule.some((n, i) => i > 0 && n < schedule[i - 1])) errors.push("Invalid true/false point schedule");
+    } else if (q.kind === "short") {
+      if (!["numeric", "rational", "exact"].includes(q.mode)) errors.push("Explicit short answer mode required");
+    } else if (q.kind !== "self" || !homework) errors.push("Unsupported homework question kind");
+  }
+  if (homework ? total <= 0 : total !== 1e4) errors.push(homework ? "Homework needs a positive scored total" : "Total must equal 10000 millipoints");
+  if (!flexible) {
+    if (input.questionCount !== MTM_PROFILE.questionCount) errors.push("MTM profile requires exactly 22 questions");
+    input.questions.forEach((q, i) => {
+      const expected = i < MTM_PROFILE.mc ? "mc" : i < MTM_PROFILE.mc + MTM_PROFILE.tf ? "tf" : "short";
+      if (!isRecord(q) || q.kind !== expected) errors.push("MTM profile requires source order: 12 MC, 4 TF, 6 short");
+    });
+  }
+  if (flexible || input.sections !== void 0) {
+    if (!Array.isArray(input.sections) || !input.sections.length || input.sections.length > 12) errors.push("Sections required");
+    else {
+      let offset = 0;
+      for (const section of input.sections) {
+        if (!isRecord(section) || !boundedText(section.label, 100) || !(homework ? ["mc", "tf", "short", "self"] : ["mc", "tf", "short", "mixed"]).includes(section.kind) || !Number.isSafeInteger(section.count) || section.count < 1 || section.count > 300) {
+          errors.push("Invalid section");
+          continue;
+        }
+        const count = section.count, questions = input.questions.slice(offset, offset + count);
+        if (questions.length !== count || questions.some((q) => !isRecord(q) || (section.kind === "mixed" ? !["mc", "tf", "short"].includes(q.kind) : q.kind !== section.kind))) errors.push("Section/question mismatch");
+        offset += count;
+      }
+      if (offset !== input.questions.length) errors.push("Complete section counts required");
+    }
+  }
+  if (errors.length) return { valid: false, errors };
+  return validatePracticePresentation(input, true);
+}
+function validateEqualQuestionPublicExam(input) {
+  const errors = [];
+  if (input.responseMode !== "questions-only") errors.push("Explicit question-only homework transport required");
+  if (!boundedText(input.sourceRef, 2e4) || !isSha256(input.sourceHash) || input.answerKeyVerified !== true || input.rubricVerified !== true) errors.push("Invalid verified source or rubric");
+  if (!boundedText(input.answerKeyVersion, 160)) errors.push("Explicit answer key version required");
+  if (input.sourceComplete !== void 0 && typeof input.sourceComplete !== "boolean") errors.push("Invalid sourceComplete");
+  if (!Array.isArray(input.questions) || !input.questions.length) return { valid: false, errors: [...errors, "Complete questions required"] };
+  if (!Number.isSafeInteger(input.questionCount) || input.questionCount !== input.questions.length) errors.push("Question count mismatch");
+  const milli = 1e4 / input.questions.length;
+  const ids = /* @__PURE__ */ new Set();
+  for (const q of input.questions) {
+    if (!isRecord(q)) {
+      errors.push("Question object required");
+      continue;
+    }
+    if (!boundedText(q.id, 120) || q.id !== q.id.trim() || ids.has(q.id)) errors.push("Invalid or duplicate question id");
+    else ids.add(q.id);
+    if (!boundedText(q.sourceRef, 2e4)) errors.push("Question source required");
+    if (!isMtmQuestionPoints(q.maxPoints, input.questions.length)) errors.push("Question maxPoints must equal exact 10/N");
+    if (q.maxMillipoints !== milli) errors.push("Question millipoints must derive from 10000/N");
+    if ("answer" in q || "acceptedAnswers" in q || "solution" in q || "solutionBlocks" in q || "shortRule" in q) errors.push("Private answer fields must be absent");
+    if ((q.kind === "short" || "shortFormat" in q) && (q.kind !== "short" || !validPublicShortFormat(q.shortFormat, String(q.mode)))) errors.push("Invalid public short input format");
+    if (q.kind === "mc") {
+      if (!Array.isArray(q.choices) || q.choices.length !== 4 || !Array.from(q.choices).every((c) => boundedText(c, 2e4)) || new Set(q.choices).size !== 4) errors.push("Four distinct choices required");
+    } else if (q.kind === "tf") {
+      if (!validEqualQuestionSchedule(q.pointsByCorrectCount, milli)) errors.push("Invalid MTM true/false compatibility schedule");
+    } else if (q.kind === "short") {
+      if (!["numeric", "rational", "exact"].includes(q.mode)) errors.push("Explicit short answer mode required");
+    } else errors.push("Unsupported MTM question kind");
+  }
+  if (input.sections !== void 0) {
+    if (!Array.isArray(input.sections) || !input.sections.length) errors.push("Invalid sections");
+    else {
+      let offset = 0;
+      for (const section of input.sections) {
+        if (!isRecord(section) || !boundedText(section.label, 100) || !["mc", "tf", "short"].includes(section.kind) || !Number.isSafeInteger(section.count) || section.count < 1) {
+          errors.push("Invalid section");
+          continue;
+        }
+        const count = section.count, questions = input.questions.slice(offset, offset + count);
+        if (questions.length !== count || questions.some((q) => !isRecord(q) || q.kind !== section.kind)) errors.push("Section/question mismatch");
+        offset += count;
+      }
+      if (offset !== input.questions.length) errors.push("Complete section counts required");
+    }
+  }
+  if (errors.length) return { valid: false, errors };
+  return validatePracticePresentation(input, true);
 }
 function validEqualQuestionSchedule(value, milli) {
   const expected = [0, milli / 10, milli / 4, milli / 2, milli];
@@ -1293,7 +1472,7 @@ function classOpeningTimes(material, rules, strict = false) {
 }
 
 // server/btvn/publish-attendance.ts
-var record4 = (v) => v && typeof v === "object" && !Array.isArray(v);
+var record5 = (v) => v && typeof v === "object" && !Array.isArray(v);
 var text4 = (v, max) => typeof v === "string" && v.trim().length > 0 && v.length <= max && !/[\x00-\x1f\x7f]/.test(v);
 var validAttendanceLabel = (v) => typeof v === "string" && /^2K\d{1,2}(?: (?:[89]\+|XPT|Thứ [2-7], [2-7]|HSA \((?:CN|THỨ 5)\)))?$/.test(v);
 var ensure = (v) => {
@@ -1310,20 +1489,20 @@ function attendanceRpc(body, rules = classRules) {
   ensure(body.apply === void 0 || typeof body.apply === "boolean");
   if (body.action === "sync_attendance") {
     ensure(Array.isArray(body.rows) && body.rows.length > 0 && body.rows.length <= 1e4);
-    for (const r of body.rows) ensure(record4(r) && Object.keys(r).every((k) => ["label", "fullName", "phone", "source", "school"].includes(k)) && validAttendanceLabel(r.label) && text4(r.fullName, 160) && typeof r.phone === "string" && /^0\d{9}$/.test(r.phone) && (r.source === void 0 || text4(r.source, 200)) && (r.school === void 0 || typeof r.school === "string" && r.school.length <= 160 && !/[\u0000-\u001f\u007f-\u009f]/.test(r.school)));
+    for (const r of body.rows) ensure(record5(r) && Object.keys(r).every((k) => ["label", "fullName", "phone", "source", "school"].includes(k)) && validAttendanceLabel(r.label) && text4(r.fullName, 160) && typeof r.phone === "string" && /^0\d{9}$/.test(r.phone) && (r.source === void 0 || text4(r.source, 200)) && (r.school === void 0 || typeof r.school === "string" && r.school.length <= 160 && !/[\u0000-\u001f\u007f-\u009f]/.test(r.school)));
     return { name: "sync_attendance", payload: { p_payload: { rows: body.rows }, p_apply: body.apply ?? false } };
   }
   ensure(Array.isArray(body.sessions) && body.sessions.length <= 2e3);
   let count = 0;
   const ids = /* @__PURE__ */ new Set();
   for (const s of body.sessions) {
-    ensure(record4(s) && Object.keys(s).every((k) => ["classKey", "label", "startsAt", "sourceIdentity", "attendees", "cancelled", "replacesAt"].includes(k)) && validAttendanceLabel(s.label) && text4(s.classKey, 100) && date(s.startsAt) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+07:00$/.test(s.startsAt) && text4(s.sourceIdentity, 300) && !ids.has(s.sourceIdentity) && Array.isArray(s.attendees) && s.attendees.length <= 1e3);
+    ensure(record5(s) && Object.keys(s).every((k) => ["classKey", "label", "startsAt", "sourceIdentity", "attendees", "cancelled", "replacesAt"].includes(k)) && validAttendanceLabel(s.label) && text4(s.classKey, 100) && date(s.startsAt) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+07:00$/.test(s.startsAt) && text4(s.sourceIdentity, 300) && !ids.has(s.sourceIdentity) && Array.isArray(s.attendees) && s.attendees.length <= 1e3);
     ids.add(s.sourceIdentity);
     ensure(s.cancelled === void 0 || typeof s.cancelled === "boolean");
     ensure(s.replacesAt === void 0 || date(s.replacesAt) && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:00\+07:00$/.test(s.replacesAt) && s.replacesAt !== s.startsAt && s.cancelled !== true);
     count += s.attendees.length;
     ensure(count <= 2e4);
-    for (const a of s.attendees) ensure(record4(a) && Object.keys(a).every((k) => ["name", "phone", "status"].includes(k)) && text4(a.name, 160) && typeof a.phone === "string" && /^0\d{9}$/.test(a.phone) && typeof a.status === "string" && ["", "C", "M", "L", "K", "ON", "P", "PH P"].includes(a.status));
+    for (const a of s.attendees) ensure(record5(a) && Object.keys(a).every((k) => ["name", "phone", "status"].includes(k)) && text4(a.name, 160) && typeof a.phone === "string" && /^0\d{9}$/.test(a.phone) && typeof a.status === "string" && ["", "C", "M", "L", "K", "ON", "P", "PH P"].includes(a.status));
   }
   return { name: "sync_due", payload: { p_payload: { sessions: body.sessions, classRules: rules }, p_apply: body.apply ?? false } };
 }
@@ -1374,13 +1553,163 @@ function scorebookResult(action, result) {
   }));
 }
 
+// src/native/exams/store.ts
+var STORAGE_PREFIX = "mtm:exam:v1:";
+var MAX_SHORT_LENGTH = 500;
+var validDraftExam = (exam, options) => ((options.allowQuestionOnly === true || exam.serverGraded === true) && exam.responseMode === "questions-only" ? validateQuestionOnlyPracticeExam(exam) : validatePracticeExam(exam)).valid;
+var fail = (code, message) => ({ ok: false, code, message });
+var validTime = (value) => Number.isSafeInteger(value) && value >= 0 && value <= 864e13;
+var validRevision = (value) => Number.isSafeInteger(value) && value >= 0;
+function validateDraft(value, exam, options = {}) {
+  if (!validDraftExam(exam, options)) return fail("exam", "\u0110\u1EC1 ch\u01B0a \u0111\u1EE7 \u0111i\u1EC1u ki\u1EC7n m\u1EDF l\xE0m b\xE0i.");
+  if (!isRecord(value)) return fail("shape", "B\u1EA3n l\u01B0u kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
+  const fields2 = ["version", "examId", "examVersionHash", "rubricVersion", "attemptId", "startedAt", "deadline", "updatedAt", "answers", "submittedAt", "revision"];
+  if (exam.rubricVersion === MTM_SCORING_VERSION) fields2.push("answerKeyVersion");
+  if (Object.keys(value).length !== fields2.length || !fields2.every((key) => Object.hasOwn(value, key))) return fail("shape", "B\u1EA3n l\u01B0u c\xF3 c\u1EA5u tr\xFAc kh\xE1c. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
+  if (value.version !== 1 || value.examId !== exam.id || value.examVersionHash !== exam.versionHash || value.rubricVersion !== exam.rubricVersion) return fail("version", "B\u1EA3n l\u01B0u thu\u1ED9c \u0111\u1EC1 ho\u1EB7c phi\xEAn b\u1EA3n kh\xE1c. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
+  if (exam.rubricVersion === MTM_SCORING_VERSION && value.answerKeyVersion !== exam.answerKeyVersion) return fail("version", "B\u1EA3n l\u01B0u thu\u1ED9c phi\xEAn b\u1EA3n \u0111\xE1p \xE1n kh\xE1c. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
+  if (!boundedText(value.attemptId, 160) || value.attemptId.trim() !== value.attemptId) return fail("attempt", "M\xE3 l\u01B0\u1EE3t l\xE0m trong b\u1EA3n l\u01B0u kh\xF4ng h\u1EE3p l\u1EC7.");
+  if (!validTime(value.startedAt) || !validTime(value.deadline) || !validTime(value.updatedAt) || !validRevision(value.revision)) return fail("time", "Th\u1EDDi gian ho\u1EB7c s\u1ED1 l\u1EA7n l\u01B0u kh\xF4ng h\u1EE3p l\u1EC7.");
+  if (value.deadline <= value.startedAt || value.deadline - value.startedAt !== exam.durationMinutes * 6e4 || value.updatedAt < value.startedAt) return fail("time", "Th\u1EDDi h\u1EA1n trong b\u1EA3n l\u01B0u kh\xF4ng kh\u1EDBp th\u1EDDi l\u01B0\u1EE3ng \u0111\u1EC1.");
+  if (value.submittedAt !== null && (!validTime(value.submittedAt) || value.submittedAt < value.startedAt || value.submittedAt > value.updatedAt)) return fail("time", "Th\u1EDDi \u0111i\u1EC3m n\u1ED9p b\xE0i kh\xF4ng h\u1EE3p l\u1EC7.");
+  if (!isRecord(value.answers)) return fail("answers", "\u0110\xE1p \xE1n trong b\u1EA3n l\u01B0u kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");
+  const questions = new Map(exam.questions.map((q) => [q.id, q]));
+  for (const [id, answer] of Object.entries(value.answers)) {
+    const question = questions.get(id);
+    if (!question) return fail("unknown-answer", "B\u1EA3n l\u01B0u c\xF3 c\xE2u tr\u1EA3 l\u1EDDi kh\xF4ng thu\u1ED9c \u0111\u1EC1 n\xE0y.");
+    const valid = question.kind === "mc" ? answer === null || ["A", "B", "C", "D"].includes(answer) : question.kind === "tf" ? Array.isArray(answer) && answer.length === 4 && Array.from(answer).every((x) => x === null || typeof x === "boolean") : typeof answer === "string" && answer.length <= MAX_SHORT_LENGTH;
+    if (!valid) return fail("answers", "C\xF3 c\xE2u tr\u1EA3 l\u1EDDi kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
+  }
+  return { ok: true, value: JSON.parse(JSON.stringify(value)) };
+}
+var HISTORY_KEY = STORAGE_PREFIX + "history";
+var HISTORY_BYTE_LIMIT = 1024 * 1024;
+
+// src/native/exams/result.ts
+function resultFor(exam, draft) {
+  const validated = validateDraft(draft, exam);
+  if (!validated.ok || draft.submittedAt === null) return null;
+  const answers = { ...draft.answers };
+  const invalidNumeric = [];
+  if (exam.rubricVersion === MTM_SCORING_VERSION) {
+    const score = scorePracticeAssessment(exam, answers, draft.attemptId);
+    return { score, mtm: score.ok ? score.mtm : void 0, invalidNumeric };
+  }
+  for (const q of exam.questions) {
+    const value = answers[q.id];
+    if (q.kind === "short" && q.mode !== "exact" && typeof value === "string" && value.trim() && normalizedShort(q.mode, value) === null) {
+      invalidNumeric.push(q.id);
+      answers[q.id] = "";
+    }
+  }
+  return { score: scorePracticeAssessment(exam, answers), invalidNumeric };
+}
+
+// server/btvn/answer-correction.ts
+function ensure2(v, code) {
+  if (!v) throw Error(code);
+}
+var object = (v) => !!v && typeof v === "object" && !Array.isArray(v);
+function canonicalCorrection(v) {
+  if (Array.isArray(v)) return "[" + v.map(canonicalCorrection).join(",") + "]";
+  if (object(v)) return "{" + Object.keys(v).sort().map((k) => JSON.stringify(k) + ":" + canonicalCorrection(v[k])).join(",") + "}";
+  return JSON.stringify(v);
+}
+async function correctionHash(v) {
+  return Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", new TextEncoder().encode(canonicalCorrection(v))))).map((x) => x.toString(16).padStart(2, "0")).join("");
+}
+function validateCorrectionRequest(v) {
+  ensure2(object(v), "CORRECTION_SCHEMA");
+  ensure2(Object.keys(v).every((k) => ["action", "lesson_key", "request_id", "lenh_ref", "approved_via", "patches", "expected_plan_sha256"].includes(k)), "CORRECTION_SCHEMA");
+  ensure2(["answer_correction_preview", "answer_correction_apply"].includes(v.action), "CORRECTION_ACTION");
+  ensure2(/^[a-z0-9-]{1,160}$/.test(v.lesson_key ?? "") && /^[A-Za-z0-9_-]{12,160}$/.test(v.request_id ?? ""), "CORRECTION_ID");
+  ensure2(typeof v.lenh_ref === "string" && v.lenh_ref.length >= 8 && v.lenh_ref.length <= 500 && typeof v.approved_via === "string" && v.approved_via.length >= 8 && v.approved_via.length <= 500, "CORRECTION_AUTHORITY_REQUIRED");
+  ensure2(Array.isArray(v.patches) && v.patches.length > 0 && v.patches.length <= 50, "CORRECTION_PATCHES");
+  const seen = /* @__PURE__ */ new Set();
+  for (const p of v.patches) {
+    ensure2(object(p) && Object.keys(p).every((k) => ["question_id", "answer", "acceptedAnswers"].includes(k)), "CORRECTION_PATCH_SCHEMA");
+    ensure2(typeof p.question_id === "string" && p.question_id.trim() === p.question_id && p.question_id.length > 0 && !seen.has(p.question_id), "CORRECTION_DUPLICATE_QUESTION");
+    seen.add(p.question_id);
+    ensure2((Object.hasOwn(p, "answer") ? 1 : 0) + (Object.hasOwn(p, "acceptedAnswers") ? 1 : 0) === 1, "CORRECTION_PATCH_SCHEMA");
+    if (Object.hasOwn(p, "answer")) ensure2(["A", "B", "C", "D"].includes(p.answer), "CORRECTION_CHOICE");
+    else ensure2(Array.isArray(p.acceptedAnswers) && p.acceptedAnswers.length > 0 && p.acceptedAnswers.length <= 20 && p.acceptedAnswers.every((x) => typeof x === "string" && x.trim() === x && x.length > 0 && x.length <= 500) && new Set(p.acceptedAnswers).size === p.acceptedAnswers.length, "CORRECTION_SHORT");
+  }
+  if (v.action === "answer_correction_apply") ensure2(/^[a-f0-9]{64}$/.test(v.expected_plan_sha256 ?? ""), "CORRECTION_PREVIEW_REQUIRED");
+}
+async function planAnswerCorrection(snapshot, request) {
+  validateCorrectionRequest(request);
+  ensure2(object(snapshot) && validatePracticeExam(snapshot.exam).valid && Array.isArray(snapshot.work), "CORRECTION_SNAPSHOT");
+  const old = snapshot.exam, exam = structuredClone(old);
+  ensure2(!exam.questions.some((q) => q.kind === "self"), "CORRECTION_MANUAL_GRADING_HOLD");
+  const patchHash = await correctionHash(request.patches);
+  if (exam.rubricVersion === MTM_SCORING_VERSION) exam.answerKeyVersion = "corrected-" + patchHash;
+  else exam.versionHash = await correctionHash({ previousVersion: old.versionHash, patches: request.patches });
+  for (const patch of request.patches) {
+    const q = exam.questions.find((q2) => q2.id === patch.question_id);
+    ensure2(q, "CORRECTION_QUESTION_NOT_FOUND");
+    if (q.kind === "mc") {
+      ensure2(patch.answer && !patch.acceptedAnswers, "CORRECTION_KIND");
+      q.answer = patch.answer;
+    } else {
+      ensure2(q.kind === "short" && patch.acceptedAnswers && !patch.answer, "CORRECTION_KIND");
+      q.acceptedAnswers = [...patch.acceptedAnswers];
+    }
+    if (exam.rubricVersion === MTM_SCORING_VERSION) {
+      q.answerVerified = true;
+      q.answerConflict = false;
+    }
+  }
+  ensure2(validatePracticeExam(exam).valid, "CORRECTION_NEW_KEY_INVALID");
+  let attempts = 0, changed = 0;
+  const studentIds = /* @__PURE__ */ new Set();
+  const work = snapshot.work.map((row) => {
+    ensure2(object(row) && typeof row.student_id === "string" && !studentIds.has(row.student_id) && Number.isSafeInteger(row.revision) && row.revision >= 0 && Array.isArray(row.drafts) && Array.isArray(row.receipts), "CORRECTION_WORK");
+    studentIds.add(row.student_id);
+    const drafts = row.drafts.map((d) => {
+      ensure2(validateDraft(d, old).ok, "CORRECTION_OLD_DRAFT_INVALID");
+      return exam.rubricVersion === MTM_SCORING_VERSION ? { ...d, answerKeyVersion: exam.answerKeyVersion } : { ...d, examVersionHash: exam.versionHash };
+    });
+    ensure2(new Set(drafts.map((d) => d.attemptId)).size === drafts.length, "CORRECTION_DUPLICATE_ATTEMPT");
+    ensure2(new Set(row.receipts.map((r) => r.attemptId)).size === row.receipts.length, "CORRECTION_DUPLICATE_RECEIPT");
+    ensure2(drafts.filter((d) => d.submittedAt !== null).length === row.receipts.length, "CORRECTION_MISSING_RECEIPT");
+    const receipts = row.receipts.map((receipt) => {
+      ensure2(!Object.hasOwn(receipt, "officialScore") && receipt.gradingPending !== true, "CORRECTION_MANUAL_OVERRIDE_HOLD");
+      const draft = drafts.find((d) => d.attemptId === receipt.attemptId);
+      ensure2(draft && draft.submittedAt !== null && draft.submittedAt === receipt.submittedAt, "CORRECTION_MISSING_ANSWERS");
+      const result = resultFor(exam, draft);
+      ensure2(result?.score.ok, "CORRECTION_GRADING_FAILED");
+      const mtm = result.mtm;
+      ensure2(!mtm || mtm.officialDisplayTotal !== null, "CORRECTION_PENDING_KEY_HOLD");
+      const score = mtm ? Number(mtm.officialDisplayTotal) : result.score.earnedMillipoints / 1e3;
+      ensure2(Number.isFinite(score) && score >= 0 && score <= 10, "CORRECTION_SCORE");
+      attempts++;
+      if (receipt.score !== score) changed++;
+      return { ...receipt, score, ...mtm ? { mtm, rubricVersion: MTM_SCORING_VERSION } : {} };
+    });
+    return { ...row, drafts, receipts };
+  });
+  const plan = { exam, work };
+  const plan_sha256 = await correctionHash({ request_id: request.request_id, lesson_key: request.lesson_key, lenh_ref: request.lenh_ref, approved_via: request.approved_via, patches: request.patches, snapshot, plan });
+  return { plan, plan_sha256, students: work.length, attempts, changed, question_ids: request.patches.map((p) => p.question_id) };
+}
+async function handleAnswerCorrection(port, body) {
+  validateCorrectionRequest(body);
+  const binding = { lesson_key: body.lesson_key, request_id: body.request_id, lenh_ref: body.lenh_ref, approved_via: body.approved_via, patches: body.patches };
+  const snapshot = await port.rpc("answer_correction_snapshot", binding);
+  if (snapshot?.already_applied === true) return snapshot.result;
+  const result = await planAnswerCorrection(snapshot, body);
+  if (body.action === "answer_correction_preview") return { status: "preview", plan_sha256: result.plan_sha256, students: result.students, attempts: result.attempts, changed: result.changed, question_ids: result.question_ids };
+  ensure2(body.expected_plan_sha256 === result.plan_sha256, "CORRECTION_STALE_PREVIEW");
+  return port.rpc("answer_correction_commit", { ...binding, expected_snapshot: snapshot, new_exam: result.plan.exam, updated_work: result.plan.work, plan_sha256: result.plan_sha256 });
+}
+
 // server/btvn/publish-handler.ts
 var hash = async (bytes) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer))).map((x) => x.toString(16).padStart(2, "0")).join("");
 var canonical2 = (value) => JSON.stringify(value);
 function expectedSlots(exam) {
   return exam.questions.flatMap((q) => q.kind === "tf" ? q.answer.map((expected, i) => ({ question_id: q.id, slot: "abcd"[i], expected })) : [{ question_id: q.id, slot: "answer", expected: q.kind === "self" ? "self" : q.kind === "short" ? q.acceptedAnswers : q.answer }]);
 }
-function ensure2(value, message) {
+function ensure3(value, message) {
   if (!value) throw Error(message);
 }
 function references(exam) {
@@ -1388,7 +1717,7 @@ function references(exam) {
   for (const q of exam.questions) for (const s of [...q.sourceContent?.questions ?? [], ...q.sourceContent?.solutions ?? []]) refs.push(s);
   refs.push(...exam.sourceInstructions ?? [], ...exam.solutionInstructions ?? []);
   for (const pdf of [exam.sourcePdf, exam.mtmDocuments?.questions, exam.mtmDocuments?.solutions]) if (pdf) {
-    ensure2(pdf.url.startsWith("/exam-assets/"), "PDF_MUST_BE_PRIVATE");
+    ensure3(pdf.url.startsWith("/exam-assets/"), "PDF_MUST_BE_PRIVATE");
     refs.push({ path: pdf.url.slice(1), sha256: pdf.sha256 });
   }
   return refs;
@@ -1405,105 +1734,106 @@ function createBtvnPublishHandler(port, secret, options = {}) {
     if (diff) return respond(401, { error_code: "UNAUTHORIZED" });
     try {
       const text5 = await request.text();
-      ensure2(text5.length <= 48 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
+      ensure3(text5.length <= 48 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
       const body = JSON.parse(text5);
-      ensure2(body && typeof body === "object" && !Array.isArray(body), "INVALID_PAYLOAD");
+      ensure3(body && typeof body === "object" && !Array.isArray(body), "INVALID_PAYLOAD");
+      if (["answer_correction_preview", "answer_correction_apply"].includes(body.action)) return respond(200, await handleAnswerCorrection(port, body));
       const read = scorebookRpc(body);
       if (read) return respond(200, scorebookResult(read.name, await port.rpc(read.name, read.payload)));
       const scheduleEnv = options.scheduleEnv ?? scheduleEnvironment();
       const rules = ["sync_due", "publish", "update_material"].includes(body.action) ? await loadClassRules(scheduleEnv, options.scheduleTransport) : classRules;
       const attendance = attendanceRpc(body, rules);
       if (attendance) {
-        ensure2(new TextEncoder().encode(text5).length <= 10 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
+        ensure3(new TextEncoder().encode(text5).length <= 10 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
         return respond(200, await port.rpc(attendance.name, attendance.payload));
       }
-      ensure2(["lookup", "publish", "error", "update_material"].includes(body.action) && /^[a-z0-9-]{1,160}$/.test(body.lesson_key), "INVALID_ACTION");
+      ensure3(["lookup", "publish", "error", "update_material"].includes(body.action) && /^[a-z0-9-]{1,160}$/.test(body.lesson_key), "INVALID_ACTION");
       const previous = await port.rpc("lookup", { lesson_key: body.lesson_key });
       if (body.action === "lookup") return respond(200, previous);
       if (body.action === "update_material") {
-        ensure2(previous.status === "da_dang", "LESSON_NOT_PUBLISHED");
-        ensure2(Object.keys(body).every((k) => ["action", "lesson_key", "material"].includes(k)), "INVALID_UPDATE");
+        ensure3(previous.status === "da_dang", "LESSON_NOT_PUBLISHED");
+        ensure3(Object.keys(body).every((k) => ["action", "lesson_key", "material"].includes(k)), "INVALID_UPDATE");
         const patch = body.material;
-        ensure2(patch && typeof patch === "object" && !Array.isArray(patch) && Object.keys(patch).length > 0, "INVALID_UPDATE");
+        ensure3(patch && typeof patch === "object" && !Array.isArray(patch) && Object.keys(patch).length > 0, "INVALID_UPDATE");
         const allowed = ["videoId", "videoUrl", "materialUrl", "handoutUrl", "homeworkNote", "title", "titleSource", "classOpensAt"];
-        ensure2(Object.keys(patch).every((k) => allowed.includes(k)), "INVALID_UPDATE");
+        ensure3(Object.keys(patch).every((k) => allowed.includes(k)), "INVALID_UPDATE");
         for (const [key, value] of Object.entries(patch)) {
-          if (key === "titleSource") ensure2(value === "sheet" || value === "auto", "INVALID_TITLE_SOURCE");
-          else if (key === "videoId") ensure2(value === null || typeof value === "string" && /^[a-zA-Z0-9_-]{11}$/.test(value), "INVALID_VIDEO");
+          if (key === "titleSource") ensure3(value === "sheet" || value === "auto", "INVALID_TITLE_SOURCE");
+          else if (key === "videoId") ensure3(value === null || typeof value === "string" && /^[a-zA-Z0-9_-]{11}$/.test(value), "INVALID_VIDEO");
           else if (["videoUrl", "materialUrl", "handoutUrl"].includes(key)) {
             if (value !== null) {
-              ensure2(typeof value === "string" && value.length <= 4096, "INVALID_MATERIAL_LINK");
+              ensure3(typeof value === "string" && value.length <= 4096, "INVALID_MATERIAL_LINK");
               const url = new URL(value);
-              ensure2(url.protocol === "https:" && !url.username && !url.password, "INVALID_MATERIAL_LINK");
+              ensure3(url.protocol === "https:" && !url.username && !url.password, "INVALID_MATERIAL_LINK");
             }
           } else if (key === "classOpensAt") {
-            ensure2(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0 && Object.entries(value).every(([name, date2]) => name.length > 0 && name.length <= 100 && typeof date2 === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(date2) && Number.isFinite(Date.parse(date2)) && (/* @__PURE__ */ new Date(date2.slice(0, 10) + "T00:00:00Z")).toISOString().slice(0, 10) === date2.slice(0, 10)), "INVALID_CLASS_OPENING");
-          } else ensure2(typeof value === "string" && value.length <= 300 && (key !== "title" || value.trim().length > 0), "INVALID_MATERIAL");
+            ensure3(value && typeof value === "object" && !Array.isArray(value) && Object.keys(value).length > 0 && Object.entries(value).every(([name, date2]) => name.length > 0 && name.length <= 100 && typeof date2 === "string" && /^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}(?:\.\d+)?(?:Z|[+-]\d{2}:\d{2})$/.test(date2) && Number.isFinite(Date.parse(date2)) && (/* @__PURE__ */ new Date(date2.slice(0, 10) + "T00:00:00Z")).toISOString().slice(0, 10) === date2.slice(0, 10)), "INVALID_CLASS_OPENING");
+          } else ensure3(typeof value === "string" && value.length <= 300 && (key !== "title" || value.trim().length > 0), "INVALID_MATERIAL");
         }
         return respond(200, await port.rpc("update_material", { lesson_key: body.lesson_key, material: patch }));
       }
       if (previous.status === "da_dang") return respond(200, { status: "already_published" });
-      ensure2(/^[a-f0-9]{64}$/.test(body.source_version ?? ""), "INVALID_VERSION");
+      ensure3(/^[a-f0-9]{64}$/.test(body.source_version ?? ""), "INVALID_VERSION");
       const kind = body.kind ?? "btvn";
-      ensure2(["btvn", "kiem-tra-thang"].includes(kind), "INVALID_KIND");
-      if (kind === "kiem-tra-thang") ensure2(typeof body.opensAt === "string" && typeof body.closesAt === "string" && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.opensAt) && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.closesAt) && Number.isFinite(Date.parse(body.opensAt)) && Date.parse(body.opensAt) >= Date.parse("2026-10-15T00:00:00+07:00") && Date.parse(body.closesAt) > Date.parse(body.opensAt), "INVALID_MONTHLY_WINDOW");
+      ensure3(["btvn", "kiem-tra-thang"].includes(kind), "INVALID_KIND");
+      if (kind === "kiem-tra-thang") ensure3(typeof body.opensAt === "string" && typeof body.closesAt === "string" && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.opensAt) && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.closesAt) && Number.isFinite(Date.parse(body.opensAt)) && Date.parse(body.opensAt) >= Date.parse("2026-10-15T00:00:00+07:00") && Date.parse(body.closesAt) > Date.parse(body.opensAt), "INVALID_MONTHLY_WINDOW");
       const m = body.material;
-      ensure2(m?.homeworkScope === void 0 || typeof m.homeworkScope === "string" && m.homeworkScope.length > 0 && m.homeworkScope.length <= 300, "INVALID_HOMEWORK_SCOPE");
-      ensure2(m?.homeworkScopeSource === void 0 || ["sheet", "auto", "whole_file"].includes(m.homeworkScopeSource), "INVALID_HOMEWORK_SCOPE_SOURCE");
-      ensure2(m?.homeworkScope === void 0 === (m?.homeworkScopeSource === void 0), "INVALID_HOMEWORK_SCOPE");
-      ensure2(m?.titleSource === void 0 || m.titleSource === "sheet" || m.titleSource === "auto", "INVALID_TITLE_SOURCE");
-      ensure2(m?.lessonCode === body.lesson_key && Array.isArray(m.classNames) && m.classNames.length > 0 && m.classNames.length <= 50 && new Set(m.classNames).size === m.classNames.length && m.classNames.every((x) => typeof x === "string" && x.length > 0 && x.length <= 100), "INVALID_MATERIAL");
-      ensure2(/^\d{4}-\d{2}-\d{2}$/.test(m.date) && new Date(m.date).toISOString().slice(0, 10) === m.date && typeof m.title === "string" && m.title.length > 0 && m.title.length <= 300, "INVALID_MATERIAL");
+      ensure3(m?.homeworkScope === void 0 || typeof m.homeworkScope === "string" && m.homeworkScope.length > 0 && m.homeworkScope.length <= 300, "INVALID_HOMEWORK_SCOPE");
+      ensure3(m?.homeworkScopeSource === void 0 || ["sheet", "auto", "whole_file"].includes(m.homeworkScopeSource), "INVALID_HOMEWORK_SCOPE_SOURCE");
+      ensure3(m?.homeworkScope === void 0 === (m?.homeworkScopeSource === void 0), "INVALID_HOMEWORK_SCOPE");
+      ensure3(m?.titleSource === void 0 || m.titleSource === "sheet" || m.titleSource === "auto", "INVALID_TITLE_SOURCE");
+      ensure3(m?.lessonCode === body.lesson_key && Array.isArray(m.classNames) && m.classNames.length > 0 && m.classNames.length <= 50 && new Set(m.classNames).size === m.classNames.length && m.classNames.every((x) => typeof x === "string" && x.length > 0 && x.length <= 100), "INVALID_MATERIAL");
+      ensure3(/^\d{4}-\d{2}-\d{2}$/.test(m.date) && new Date(m.date).toISOString().slice(0, 10) === m.date && typeof m.title === "string" && m.title.length > 0 && m.title.length <= 300, "INVALID_MATERIAL");
       const link = (v) => {
         if (v === null || v === void 0 || v === "") return null;
-        ensure2(typeof v === "string" && v.length <= 4096, "INVALID_MATERIAL_LINK");
+        ensure3(typeof v === "string" && v.length <= 4096, "INVALID_MATERIAL_LINK");
         const u = new URL(v);
-        ensure2(u.protocol === "https:" && !u.username && !u.password, "INVALID_MATERIAL_LINK");
+        ensure3(u.protocol === "https:" && !u.username && !u.password, "INVALID_MATERIAL_LINK");
         return u.href;
       };
       const classDates = m.classDates ?? {};
-      ensure2(classDates && typeof classDates === "object" && !Array.isArray(classDates) && Object.entries(classDates).every(([name, date2]) => m.classNames.includes(name) && typeof date2 === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date2) && new Date(date2).toISOString().slice(0, 10) === date2), "INVALID_CLASS_DATES");
+      ensure3(classDates && typeof classDates === "object" && !Array.isArray(classDates) && Object.entries(classDates).every(([name, date2]) => m.classNames.includes(name) && typeof date2 === "string" && /^\d{4}-\d{2}-\d{2}$/.test(date2) && new Date(date2).toISOString().slice(0, 10) === date2), "INVALID_CLASS_DATES");
       const material = { lessonCode: m.lessonCode, classNames: m.classNames, date: m.date, title: m.title, titleSource: m.titleSource ?? "sheet", homeworkScope: m.homeworkScope, homeworkScopeSource: m.homeworkScopeSource, classDates, classOpensAt: classOpeningTimes({ ...m, classDates }, rules, !!scheduleEnv.MTM_LICH_LOP_CSV), videoId: m.videoId ?? null, materialUrl: link(m.materialUrl), handoutUrl: link(m.handoutUrl), homeworkUrl: null, videoUrl: link(m.videoUrl), homeworkNote: typeof m.homeworkNote === "string" ? m.homeworkNote.slice(0, 300) : void 0 };
-      ensure2(material.videoId === null || /^[a-zA-Z0-9_-]{11}$/.test(material.videoId), "INVALID_VIDEO");
+      ensure3(material.videoId === null || /^[a-zA-Z0-9_-]{11}$/.test(material.videoId), "INVALID_VIDEO");
       if (body.action === "error") {
-        ensure2(/^[A-Z0-9_]{1,80}$/.test(body.error_code ?? ""), "INVALID_ERROR");
+        ensure3(/^[A-Z0-9_]{1,80}$/.test(body.error_code ?? ""), "INVALID_ERROR");
         const reason = typeof body.reason === "string" && body.reason.length <= 1e3 && !/(https?:|@|bearer|sk-|secret|token|password|otp)/i.test(body.reason) ? body.reason.replace(/[\x00-\x1f]/g, " ") : "Kh\xF4ng \u0111\u1EA1t b\u1ED9 ki\u1EC3m; xem receipt ri\xEAng c\u1EE7a worker.";
         return respond(200, await port.rpc("error", { lesson_key: body.lesson_key, source_version: body.source_version, material, error_code: body.error_code, reason }));
       }
       const exam = body.exam;
-      ensure2(validatePracticeExam(exam).valid && exam.durationMinutes === 120, "VALIDATOR_FAILED");
-      if (exam.rubricVersion === MTM_SCORING_VERSION) ensure2(mtmPracticeGradingReadiness(exam).valid, "MTM_GRADING_NOT_READY");
+      ensure3(validatePracticeExam(exam).valid && exam.durationMinutes === 120, "VALIDATOR_FAILED");
+      if (exam.rubricVersion === MTM_SCORING_VERSION) ensure3(mtmPracticeGradingReadiness(exam).valid, "MTM_GRADING_NOT_READY");
       const proof = body.verification;
-      ensure2(proof?.validator === true && proof.independent === true && /^[a-f0-9]{64}$/.test(proof.receipt_hash ?? "") && typeof proof.provider === "string" && proof.provider.trim().length > 0 && typeof proof.model === "string" && proof.model.trim().length > 0, "REVIEW_REQUIRED");
+      ensure3(proof?.validator === true && proof.independent === true && /^[a-f0-9]{64}$/.test(proof.receipt_hash ?? "") && typeof proof.provider === "string" && proof.provider.trim().length > 0 && typeof proof.model === "string" && proof.model.trim().length > 0, "REVIEW_REQUIRED");
       const slots = expectedSlots(exam);
-      ensure2(Array.isArray(proof.slots) && proof.slots.length === slots.length, "REVIEW_COVERAGE");
-      ensure2(typeof proof.extractor_provider === "string" && proof.extractor_provider !== proof.provider, "INDEPENDENT_PROVIDER_REQUIRED");
+      ensure3(Array.isArray(proof.slots) && proof.slots.length === slots.length, "REVIEW_COVERAGE");
+      ensure3(typeof proof.extractor_provider === "string" && proof.extractor_provider !== proof.provider, "INDEPENDENT_PROVIDER_REQUIRED");
       for (const slot2 of slots) {
         const matches = proof.slots.filter((x) => x.question_id === slot2.question_id && x.slot === slot2.slot), q = exam.questions.find((q2) => q2.id === slot2.question_id);
-        ensure2(matches.length === 1 && canonical2(matches[0].expected) === canonical2(slot2.expected), "REVIEW_MISMATCH");
-        if (q.convertedFrom === "essay" || q.kind === "self" || exam.rubricVersion === "MTM-BTVN-10-v1" && q.kind === "short") ensure2(matches[0].conversion_verified === true, "CONVERSION_REVIEW_REQUIRED");
+        ensure3(matches.length === 1 && canonical2(matches[0].expected) === canonical2(slot2.expected), "REVIEW_MISMATCH");
+        if (q.convertedFrom === "essay" || q.kind === "self" || exam.rubricVersion === "MTM-BTVN-10-v1" && q.kind === "short") ensure3(matches[0].conversion_verified === true, "CONVERSION_REVIEW_REQUIRED");
         const actual = matches[0].actual;
         if (q.kind === "short" && exam.rubricVersion === MTM_SCORING_VERSION) {
-          ensure2(typeof actual === "string", "REVIEW_MISMATCH");
+          ensure3(typeof actual === "string", "REVIEW_MISMATCH");
           const normalized = normalizeMtmShort(actual, q.shortRule);
-          ensure2(normalized !== null && q.acceptedAnswers.some((expected) => normalizeMtmShort(expected, q.shortRule) === normalized), "REVIEW_MISMATCH");
-        } else ensure2(q.kind === "short" ? typeof actual === "string" && normalizedShort(q.mode, actual) !== null && q.acceptedAnswers.some((a2) => normalizedShort(q.mode, a2) === normalizedShort(q.mode, actual)) : canonical2(actual) === canonical2(slot2.expected), "REVIEW_MISMATCH");
+          ensure3(normalized !== null && q.acceptedAnswers.some((expected) => normalizeMtmShort(expected, q.shortRule) === normalized), "REVIEW_MISMATCH");
+        } else ensure3(q.kind === "short" ? typeof actual === "string" && normalizedShort(q.mode, actual) !== null && q.acceptedAnswers.some((a2) => normalizedShort(q.mode, a2) === normalizedShort(q.mode, actual)) : canonical2(actual) === canonical2(slot2.expected), "REVIEW_MISMATCH");
       }
-      ensure2(Array.isArray(body.assets) && body.assets.length > 0 && body.assets.length <= 500, "INVALID_ASSETS");
+      ensure3(Array.isArray(body.assets) && body.assets.length > 0 && body.assets.length <= 500, "INVALID_ASSETS");
       const assets = body.assets, paths = /* @__PURE__ */ new Set();
       let bytesTotal = 0;
       const decoded = await Promise.all(assets.map(async (asset) => {
-        ensure2(typeof asset.path === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_/-]*\.(png|pdf)$/.test(asset.path) && !asset.path.split("/").includes("..") && !asset.path.includes("//") && !paths.has(asset.path), "INVALID_PATH");
+        ensure3(typeof asset.path === "string" && /^[a-zA-Z0-9][a-zA-Z0-9_/-]*\.(png|pdf)$/.test(asset.path) && !asset.path.split("/").includes("..") && !asset.path.includes("//") && !paths.has(asset.path), "INVALID_PATH");
         paths.add(asset.path);
-        ensure2(/^[a-f0-9]{64}$/.test(asset.sha256) && ["application/pdf", "image/png"].includes(asset.content_type) && asset.path.endsWith(asset.content_type === "image/png" ? ".png" : ".pdf"), "INVALID_ASSET");
-        ensure2(typeof asset.data_base64 === "string" && /^[A-Za-z0-9+/]*={0,2}$/.test(asset.data_base64) && asset.data_base64.length <= 21 * 1024 * 1024, "INVALID_BASE64");
+        ensure3(/^[a-f0-9]{64}$/.test(asset.sha256) && ["application/pdf", "image/png"].includes(asset.content_type) && asset.path.endsWith(asset.content_type === "image/png" ? ".png" : ".pdf"), "INVALID_ASSET");
+        ensure3(typeof asset.data_base64 === "string" && /^[A-Za-z0-9+/]*={0,2}$/.test(asset.data_base64) && asset.data_base64.length <= 21 * 1024 * 1024, "INVALID_BASE64");
         const raw = atob(asset.data_base64), bytes = Uint8Array.from(raw, (c) => c.charCodeAt(0));
         bytesTotal += bytes.length;
-        ensure2(bytes.length >= 8 && bytes.length <= 15 * 1024 * 1024 && bytesTotal <= 32 * 1024 * 1024 && await hash(bytes) === asset.sha256, "ASSET_HASH_MISMATCH");
-        ensure2(asset.content_type === "image/png" ? bytes.slice(0, 8).every((x, i) => x === [137, 80, 78, 71, 13, 10, 26, 10][i]) : new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-", "INVALID_FILE_SIGNATURE");
+        ensure3(bytes.length >= 8 && bytes.length <= 15 * 1024 * 1024 && bytesTotal <= 32 * 1024 * 1024 && await hash(bytes) === asset.sha256, "ASSET_HASH_MISMATCH");
+        ensure3(asset.content_type === "image/png" ? bytes.slice(0, 8).every((x, i) => x === [137, 80, 78, 71, 13, 10, 26, 10][i]) : new TextDecoder().decode(bytes.slice(0, 5)) === "%PDF-", "INVALID_FILE_SIGNATURE");
         return { asset, bytes, storage_path: `btvn/${body.lesson_key}/${body.source_version}/${asset.path}` };
       }));
-      for (const ref of references(exam)) ensure2(assets.some((a2) => a2.path === ref.path && a2.sha256 === ref.sha256), "ASSET_REFERENCE_MISSING");
+      for (const ref of references(exam)) ensure3(assets.some((a2) => a2.path === ref.path && a2.sha256 === ref.sha256), "ASSET_REFERENCE_MISSING");
       for (const item of decoded) await port.upload(item.storage_path, item.bytes, item.asset.content_type, item.asset.sha256);
       const metadata = decoded.map(({ asset, bytes, storage_path }) => ({ path: asset.path, sha256: asset.sha256, content_type: asset.content_type, bytes: bytes.length, storage_path }));
       return respond(200, await port.rpc("publish", { kind, opensAt: body.opensAt, closesAt: body.closesAt, lesson_key: body.lesson_key, source_version: body.source_version, material, exam, assets: metadata, verification: proof }));
