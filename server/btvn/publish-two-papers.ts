@@ -25,6 +25,12 @@ export async function handleTwoPaperPublication(port:PublishPort,body:any,valida
  // check repeats under the lesson lock in the atomic commit below.
  const payload=pair?{primary:normalized[0],second:normalized[1],review_evidence:evidence}:{lesson_key:code,expected_source_version:body.expected_source_version,second:normalized[0],review_evidence:evidence};
  const preflight=await port.rpc(pair?'two_paper_pair_preflight':'two_paper_variant_preflight',payload);
+ // The primary source is authoritative for historical opening/deadline data.
+ // Validation above checks the paper, but must never reschedule an old lesson.
+ if(!pair){
+  requireValue(preflight?.canonical_material&&typeof preflight.canonical_material==='object','CANONICAL_MATERIAL_REQUIRED');
+  payload.second.material=structuredClone(preflight.canonical_material);
+ }
  if(preflight?.already_published===true)return {status:'already_published',lesson_key:code,papers:2,warnings:[],receipts_unchanged:true};
  for(const asset of assets)await port.upload(asset.path,asset.bytes,asset.type,asset.hash);
  return port.rpc(pair?'two_paper_pair_commit':'two_paper_variant_commit',payload);

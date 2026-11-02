@@ -7,6 +7,7 @@ import {runUploadOnce,reviewQuestions,type Pipeline} from '../server/lesson-uplo
 import {createWorkerRepository} from '../server/lesson-upload/supabase-worker';
 import {SupabaseHomeworkRepository} from '../server/btvn/supabase-repository';
 import {weekProgress} from '../src/native/lesson-upload/model';
+import {handleTwoPaperPublication} from '../server/btvn/publish-two-papers';
 
 const {db}=await baselineDatabase();let checks=0;
 try{
@@ -96,5 +97,11 @@ try{
  const beforePairReplay=uploaded;assert.equal((await (await request(pairBody)).json()).status,'already_published');assert.equal(uploaded,beforePairReplay);checks++;
  const beforeInvalid=uploaded;const bad=structuredClone(pairBody);bad.second.exam.questions[0].answer='B';
  assert.equal((await request(bad)).status,422);assert.equal(uploaded,beforeInvalid,'validate both papers before any upload');checks++;
+ for(const [label,date,original,recomputed] of [['2K10 8+','2026-10-23','2026-10-20T14:30:00Z','2026-10-23T14:30:00Z'],['2K10 XPT','2026-10-26','2026-10-27T14:30:00Z','2026-10-26T14:30:00Z'],['2K11 9+','2026-10-22','2026-10-21T14:30:00Z','2026-10-22T14:30:00Z']]){
+  const canonical={date,classDates:{[label]:date},classNames:[label],classOpensAt:{[label]:original},dueAt:'2026-11-01T15:59:59Z',retained:'original metadata'};let committed:any;
+  const pinPort={async rpc(action:string,payload:any){if(action.endsWith('preflight'))return {canonical_material:canonical};committed=payload;return {status:'da_dang'};},async upload(){}};
+  await handleTwoPaperPublication(pinPort,{...attach,paper:{action:'publish',kind:'btvn'}},async(_input,p)=>{await p.rpc('publish',{lesson_key:singleCode,material:{...canonical,classOpensAt:{[label]:recomputed}}});return new Response('{}');});
+  assert.deepEqual(committed.second.material,canonical);assert.equal(committed.second.material.classOpensAt[label],original);checks++;
+ }
  console.log(`${checks} ca hai đề full schema: 2 pipeline, 2 key, chọn Đề 2 chấm 10, khóa Đề 1, không lộ key, 1 lesson/work, giữ receipt và luyện lại: đạt; giả lập local không mạng.`);
 }finally{await db.close();}

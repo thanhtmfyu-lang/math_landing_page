@@ -239,7 +239,8 @@ begin
    or coalesce(l.material->'classDates','{}') is distinct from coalesce(second->'material'->'classDates','{}') or l.material->>'date' is distinct from second->'material'->>'date' then raise exception 'TWO_PAPER_LESSON_MISMATCH';end if;
  end if;
  if existing.lesson_code is not null and (existing.source_version is distinct from second->>'source_version' or existing.exam is distinct from second->'exam' or existing.assets is distinct from second->'assets') then raise exception 'SECOND_PAPER_IMMUTABLE';end if;
- if not apply then return jsonb_build_object('status','ready','lesson_key',code,'already_published',existing.lesson_code is not null);end if;
+ if not apply then return jsonb_build_object('status','ready','lesson_key',code,'already_published',existing.lesson_code is not null,'canonical_material',case when not pair then l.material else null end);end if;
+ if not pair and second->'material' is distinct from l.material then raise exception 'CANONICAL_MATERIAL_CHANGED';end if;
  if pair and l.code is null then
   r=public.mtm_btvn_pipeline('publish',first);
   if r->>'status' not in ('da_dang','already_published') then raise exception 'PUBLICATION_FAILED';end if;
