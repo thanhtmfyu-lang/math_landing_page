@@ -12,6 +12,11 @@ export function createPublishPort(sql,storage){return {
    const rows=await tx`SELECT public.mtm_btvn_two_paper_publish(${action},${sql.json(payload)}) AS result`;
    return rows[0].result;
   });
+  if(['answer_correction_future_snapshot','answer_correction_future_commit'].includes(action))return sql.begin(async tx=>{
+   await tx`SET LOCAL ROLE service_role`;
+   const rows=await tx`SELECT public.mtm_btvn_answer_correction_future_only(${action},${sql.json(payload)}) AS result`;
+   return rows[0].result;
+  });
   if(['answer_correction_snapshot','answer_correction_commit'].includes(action))return sql.begin(async tx=>{
    await tx`SET LOCAL ROLE service_role`;
    const rows=await tx`SELECT public.mtm_btvn_answer_correction(${action},${sql.json(payload)}) AS result`;

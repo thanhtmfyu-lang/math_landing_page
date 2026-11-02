@@ -42,7 +42,7 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
   const body=JSON.parse(text);ensure(body&&typeof body==='object'&&!Array.isArray(body),'INVALID_PAYLOAD');
   if(typeof body.action==='string'&&body.action.startsWith('lesson_upload_'))return respond(200,await handleLessonUploadGateway(port,body,(input,capture)=>createBtvnPublishHandler(capture,secret,{...options,...(input.verification?.status==='teacher-pending'?{teacherPending:{requestHash:input.verification.request_hash,sourceVersion:input.source_version}}:{})})(new Request('https://worker-validation.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify(input)}))));
   if(['publish_pair','publish_variant'].includes(body.action))return respond(200,await handleTwoPaperPublication(port,body,(input,capture)=>createBtvnPublishHandler(capture,secret,options)(new Request('https://two-paper-validation.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify(input)}))));
-  if(['answer_correction_preview','answer_correction_apply'].includes(body.action))return respond(200,await handleAnswerCorrection(port,body));
+  if(['answer_correction_preview','answer_correction_apply','answer_correction_future_only_preview','answer_correction_future_only_apply'].includes(body.action))return respond(200,await handleAnswerCorrection(port,body));
   const read=scorebookRpc(body);
   if(read)return respond(200,scorebookResult(read.name,await port.rpc(read.name,read.payload)));
   const scheduleEnv=options.scheduleEnv??scheduleEnvironment();

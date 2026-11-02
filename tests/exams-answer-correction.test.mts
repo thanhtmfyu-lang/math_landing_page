@@ -5,6 +5,7 @@ import {resultFor} from '../src/native/exams/result';
 import {pipelineFixture} from './btvn-pipeline-fixture';
 import {createBtvnPublishHandler} from '../server/btvn/publish-handler';
 import {MTM_SCORING_VERSION} from '../src/native/exams/mtm-scoring';
+import {selfCorrectionFixture} from './answer-correction-self-fixture';
 let checks=0;
 const request:CorrectionRequest={action:'answer_correction_preview',lesson_key:'fixture-only',request_id:'fixture-correction-20261102',lenh_ref:'fixture-authority-only',approved_via:'fixture-user-scope',patches:[{question_id:'mc-1',answer:'A'},{question_id:'sa-1',acceptedAnswers:['3']}]};
 const exam=pipelineFixture().exam;
@@ -34,6 +35,7 @@ const open=must(createDraft(exam,'open-fixture',1000));
 const withOpen={exam,work:[{...snapshot.work[0],drafts:[draft,open]}]};
 assert.equal((await planAnswerCorrection(withOpen,request)).plan.work[0].drafts[1].submittedAt,null);checks++;
 await assert.rejects(()=>planAnswerCorrection({...snapshot,work:[{...snapshot.work[0],receipts:[{...receipt,officialScore:5}]}]},request),/CORRECTION_MANUAL_OVERRIDE_HOLD/);checks++;
+await assert.rejects(()=>planAnswerCorrection({...snapshot,work:[{...snapshot.work[0],receipts:[{...receipt,gradingPending:true}]}]},request),/CORRECTION_MANUAL_OVERRIDE_HOLD/);checks++;
 const mtmExam={...exam,rubricVersion:MTM_SCORING_VERSION,answerKeyVersion:'fixture-key-v1',sourceComplete:true,
  questions:exam.questions.map(q=>({...q,maxPoints:{numerator:'10',denominator:'3'},maxMillipoints:10000/3,answerVerified:true,
   ...(q.kind==='tf'?{pointsByCorrectCount:[0,10000/30,10000/12,10000/6,10000/3]}:{}),
@@ -50,4 +52,44 @@ const handler=createBtvnPublishHandler(port,'x'.repeat(40));calls.length=0;
 assert.equal((await handler(new Request('https://example.invalid',{method:'POST',body:JSON.stringify(request)}))).status,401);assert.equal(calls.length,0);checks++;
 const response=await handler(new Request('https://example.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':'x'.repeat(40)},body:JSON.stringify(request)}));
 assert.equal(response.status,200);const publicBody=await response.text();assert.ok(!publicBody.includes('student_id')&&!publicBody.includes('drafts')&&!publicBody.includes('answers'));checks++;
+const self=selfCorrectionFixture(),beforeSelf=canonicalCorrection(self.snapshot);
+const selfPlan=await planAnswerCorrection(self.snapshot,self.request);
+assert.equal(selfPlan.attempts,2);assert.equal(selfPlan.changed,2);
+for(let i=0;i<2;i++) {
+  const old=self.snapshot.work[0].receipts[i],next=selfPlan.plan.work[0].receipts[i];
+  assert.equal(old.score,4); // Only the four TF statements were correct under the old numeric key.
+  assert.equal(next.score,7);
+  assert.equal(next.score-old.score,3); // Exact weight of sa-1; self contributes zero.
+  const {score:oldScore,...oldFields}=old,{score:newScore,...newFields}=next;
+  assert.deepEqual(newFields,oldFields);
+  assert.deepEqual(selfPlan.plan.work[0].drafts[i].answers,self.snapshot.work[0].drafts[i].answers);
+  assert.ok(validateDraft(selfPlan.plan.work[0].drafts[i],selfPlan.plan.exam).ok);checks++;
+}
+assert.deepEqual(selfPlan.plan.exam.questions.at(-1),self.snapshot.exam.questions.at(-1));
+assert.equal(canonicalCorrection(self.snapshot),beforeSelf);checks++;
+const noMode={...self.request,patches:[{question_id:'sa-1',acceptedAnswers:['2/3']}]};
+await assert.rejects(()=>planAnswerCorrection(self.snapshot,noMode),/CORRECTION_NEW_KEY_INVALID/);checks++;
+for(const patches of [
+  [{question_id:'sa-1',acceptedAnswers:['2/0'],mode:'rational'}],
+  [{question_id:'sa-1',acceptedAnswers:['2/3','4/6'],mode:'rational'}],
+  [{question_id:'sa-1',acceptedAnswers:['2/3'],mode:'unsupported'}],
+  [{question_id:'sa-1',mode:'rational'}],
+  [{question_id:'mc-1',answer:'A',mode:'rational'}],
+  [{question_id:'self-1',acceptedAnswers:['2/3'],mode:'rational'}],
+  [{question_id:'self-1',answer:'A'}],
+]) {await assert.rejects(()=>planAnswerCorrection(self.snapshot,{...self.request,patches} as any));checks++;}
+const ruleConflict=structuredClone(self.snapshot);
+const short=ruleConflict.exam.questions.find(q=>q.id==='sa-1');
+if(short?.kind!=='short')throw Error('fixture short');
+short.shortRule={verified:true,evidence:'fixture-only',mode:'decimal'};
+await assert.rejects(()=>planAnswerCorrection(ruleConflict,self.request),/CORRECTION_SHORT_RULE_CONFLICT/);checks++;
+const numericRulePlan=await planAnswerCorrection(ruleConflict,{...self.request,patches:[{question_id:'sa-1',acceptedAnswers:['3'],mode:'numeric'}]});
+const numericQuestion=numericRulePlan.plan.exam.questions[2];assert.equal(numericQuestion.kind,'short');
+assert.equal(numericQuestion.kind==='short'&&numericQuestion.mode,'numeric');checks++;
+short.shortRule={verified:true,evidence:'fixture-only',mode:'rational'};
+assert.equal((await planAnswerCorrection(ruleConflict,self.request)).plan.work[0].receipts[0].score,7);checks++;
+const machineOnly=await planAnswerCorrection(self.snapshot,{...self.request,patches:[{question_id:'mc-1',answer:'A'}]});
+assert.deepEqual(machineOnly.plan.exam.questions.find(q=>q.id==='sa-1'),self.snapshot.exam.questions.find(q=>q.id==='sa-1'));
+assert.equal(machineOnly.plan.work[0].receipts[0].officialScore,8.25);checks++;
+assert.notEqual(machineOnly.plan_sha256,selfPlan.plan_sha256);checks++;
 console.log(`${checks} ca sửa đáp án/chấm lại đạt (fixture, không kết nối kho).`);
