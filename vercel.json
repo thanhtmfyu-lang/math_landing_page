@@ -234,6 +234,7 @@
   "git": {
     "deploymentEnabled": {
       "codex/web-v13-*": false,
+      "codex/cong-up-btvn-gv": false,
       "codex/ra-soat-a-answer-regrade-20261102": false,
       "codex/sua-dap-an-de-tu-luan": false
     }

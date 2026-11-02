@@ -17,10 +17,10 @@ const validScore=(score:number)=>Number.isFinite(score)&&score>=0&&score<=10;
 export function HomeworkDeadline({lesson,dueAt}:{lesson?:HomeworkLesson;dueAt:number|null}){
   return <p className="btvn-deadline">{displayHomeworkDeadline(lesson,dueAt)}</p>;
 }
-export default function HomeworkOverview({state,busy,onStart,onRefreshReceipt}:{state:HomeworkState;busy:boolean;onStart:()=>void;onRefreshReceipt?:()=>void}){
+export default function HomeworkOverview({state,busy,onStart,onRefreshReceipt,onSelectPaper}:{state:HomeworkState;busy:boolean;onStart:()=>void;onRefreshReceipt?:()=>void;onSelectPaper?:(code:string)=>void}){
   const [solutions,setSolutions]=useState(false),[video,setVideo]=useState(false);
   const receiptStatusId=useId()+'-receipt-status';
-  const lesson=state.lessons?.find(l=>l.lessonCode===state.lessonCode);
+  const lesson=state.lessons?.find(l=>l.lessonCode===(state.paperChoice?.base??state.lessonCode));
   const receipts=[...state.receipts].filter(Boolean).sort((a,b)=>b.attemptNumber-a.attemptNumber);
   const hidden=monthlyResultsHidden(state);
   const current=acknowledgedHomeworkReceipt(state);
@@ -48,6 +48,7 @@ export default function HomeworkOverview({state,busy,onStart,onRefreshReceipt}:{
     ?reviewRows(state.exam,state.draft).filter(({q,status})=>q.kind==='tf'&&(status==='wrong'||status==='partial'||status==='unanswered')&&!hasReadableTfStatements(q)).length:0;
   return <div id="btvn-summary" className="btvn-detail r106-homework-overview">
     <div className="btvn-heading"><p className="btvn-eyebrow">{displayClassName(state)} · {submittedReceipt?(monthly?'KẾT QUẢ KIỂM TRA THÁNG':'KẾT QUẢ BTVN'):hiddenSubmission?'ĐÃ NỘP':awaitingReceipt?'ĐANG XÁC NHẬN KẾT QUẢ':'CHUẨN BỊ LÀM BÀI'}</p><h1>{homeworkTitle(state)}</h1>{homeworkDisplayNote(lesson,state.exam?.title)&&<p className="btvn-sub">{homeworkDisplayNote(lesson,state.exam?.title)}</p>}{homeworkLessonCaption(state)&&<p className="btvn-sub">{homeworkLessonCaption(state)}</p>}</div>
+    {state.paperChoice&&onSelectPaper&&<fieldset disabled={busy||state.paperChoice.locked} className="btvn-sheet"><legend>Chọn một đề BTVN</legend><p>Em chọn Đề 1 hoặc Đề 2. Khi bắt đầu lượt 1, đề còn lại sẽ khóa.</p>{([1,2] as const).map(paper=><button type="button" className="btvn-btn" key={paper} aria-pressed={state.paperChoice!.paper===paper} onClick={()=>onSelectPaper(state.paperChoice!.base+'-de-'+paper)}>Đề {paper}{state.paperChoice!.paper===paper?' · Đang chọn':''}</button>)}{state.paperChoice.locked&&<p role="status">Đã khóa Đề {state.paperChoice.paper} theo lượt đầu. Điểm và hạn nộp tính chung một BTVN của buổi này.</p>}</fieldset>}
     {submittedReceipt&&<div className="btvn-result-meta"><span>{scoreNeedsReview?'Bài đã nộp. Điểm đang được đối soát.':'Bài đã nộp và lưu kết quả.'}</span><strong className={'btvn-chip'+(bestHasScore?' success':'')}>Điểm cao nhất: {best}</strong></div>}
     {belowSeven&&<div className="btvn-redo" role="alert"><strong>Em chưa đạt từ 7 điểm trở lên.</strong> {remaining>0?'Hãy làm lại bài này nhé (em còn '+remaining+' lượt).':'Em đã dùng hết lượt, hãy xem lời giải và ôn lại các câu sai nhé.'}<small>Điểm lần nộp đầu tính lên bảng xếp hạng lớp trên web. Điểm cao nhất trong các lần làm BTVN là điểm gửi phụ huynh.</small></div>}
     {monthly&&<p role="status">Kiểm tra cuối tháng · Chỉ 1 lượt. Mở: {state.opensAt&&homeworkDate(state.opensAt)}. Đóng: {state.closesAt&&homeworkDate(state.closesAt)} (giờ Việt Nam). {!canReview&&'Lời giải chỉ mở sau giờ đóng.'}</p>}

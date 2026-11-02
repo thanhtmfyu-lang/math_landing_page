@@ -8,10 +8,13 @@ import {scheduleEnvironment} from '../schedule/lich-lop';
 import {attendanceRpc} from './publish-attendance';
 import {scorebookRpc,scorebookResult} from './publish-scorebook';
 import {handleAnswerCorrection} from './answer-correction';
+import {handleTwoPaperPublication} from './publish-two-papers';
+import {handleLessonUploadGateway} from '../lesson-upload/gateway';
 export type PublishAsset={path:string;sha256:string;content_type:string;data_base64:string};
 export interface PublishPort {
  rpc(action:string,payload:Record<string,unknown>):Promise<any>;
  upload(path:string,bytes:Uint8Array,type:string,sha256:string):Promise<void>;
+ readPrivate?(bucket:string,path:string):Promise<{bytes:Uint8Array;content_type:string}>;
 }
 const hash=async(bytes:Uint8Array)=>Array.from(new Uint8Array(await crypto.subtle.digest('SHA-256',Uint8Array.from(bytes).buffer))).map(x=>x.toString(16).padStart(2,'0')).join('');
 const canonical=(value:unknown):string=>JSON.stringify(value);
@@ -26,7 +29,7 @@ function references(exam:PracticeExam){
  return refs;
 }
 /** Factory thuần: test tiêm port giả; không đọc env hoặc mạng khi import. */
-export function createBtvnPublishHandler(port:PublishPort,secret:string,options:{scheduleEnv?:Record<string,string|undefined>;scheduleTransport?:typeof fetch}={}){return async(request:Request)=>{
+export function createBtvnPublishHandler(port:PublishPort,secret:string,options:{scheduleEnv?:Record<string,string|undefined>;scheduleTransport?:typeof fetch;teacherPending?:{requestHash:string;sourceVersion:string}}={}){return async(request:Request)=>{
  const respond=(status:number,body:unknown)=>new Response(JSON.stringify(body),{status,headers:{'Content-Type':'application/json','Cache-Control':'no-store','X-Robots-Tag':'noindex, nofollow'}});
  if(request.method!=='POST')return respond(405,{error_code:'POST_REQUIRED'});
  // So hash có chiều dài cố định; không trả khác biệt giữa secret sai/thiếu.
@@ -37,6 +40,9 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
  try{
   const text=await request.text();ensure(text.length<=48*1024*1024,'PAYLOAD_TOO_LARGE');
   const body=JSON.parse(text);ensure(body&&typeof body==='object'&&!Array.isArray(body),'INVALID_PAYLOAD');
+  if(body.action==='publication_receipt'){ensure(Object.keys(body).every(k=>['action','lesson_key'].includes(k))&&typeof body.lesson_key==='string'&&/^[a-z0-9-]{1,160}$/.test(body.lesson_key),'INVALID_PUBLICATION_RECEIPT');return respond(200,await port.rpc('publication_receipt',{lesson_key:body.lesson_key}));}
+  if(typeof body.action==='string'&&body.action.startsWith('lesson_upload_'))return respond(200,await handleLessonUploadGateway(port,body,(input,capture)=>createBtvnPublishHandler(capture,secret,{...options,...(input.verification?.status==='teacher-pending'?{teacherPending:{requestHash:input.verification.request_hash,sourceVersion:input.source_version}}:{})})(new Request('https://worker-validation.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify(input)}))));
+  if(['publish_pair','publish_variant'].includes(body.action))return respond(200,await handleTwoPaperPublication(port,body,(input,capture)=>createBtvnPublishHandler(capture,secret,options)(new Request('https://two-paper-validation.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify(input)}))));
   if(['answer_correction_preview','answer_correction_apply','answer_correction_future_only_preview','answer_correction_future_only_apply'].includes(body.action))return respond(200,await handleAnswerCorrection(port,body));
   const read=scorebookRpc(body);
   if(read)return respond(200,scorebookResult(read.name,await port.rpc(read.name,read.payload)));
@@ -89,6 +95,8 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
   const exam=body.exam as PracticeExam;ensure(validatePracticeExam(exam).valid&&exam.durationMinutes===120,'VALIDATOR_FAILED');
   if(exam.rubricVersion===MTM_SCORING_VERSION)ensure(mtmPracticeGradingReadiness(exam).valid,'MTM_GRADING_NOT_READY');
   const proof=body.verification;
+  const teacherPending=!!options.teacherPending&&proof?.status==='teacher-pending'&&proof.independent===false&&proof.teacher_source===true&&proof.request_hash===options.teacherPending.requestHash&&body.source_version===options.teacherPending.sourceVersion;
+  if(!teacherPending){
   ensure(proof?.validator===true&&proof.independent===true&&/^[a-f0-9]{64}$/.test(proof.receipt_hash??'')&&typeof proof.provider==='string'&&proof.provider.trim().length>0&&typeof proof.model==='string'&&proof.model.trim().length>0,'REVIEW_REQUIRED');
   const slots=expectedSlots(exam);ensure(Array.isArray(proof.slots)&&proof.slots.length===slots.length,'REVIEW_COVERAGE');
   ensure(typeof proof.extractor_provider==='string'&&proof.extractor_provider!==proof.provider,'INDEPENDENT_PROVIDER_REQUIRED');
@@ -102,6 +110,7 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
     const normalized=normalizeMtmShort(actual,q.shortRule!);
     ensure(normalized!==null&&q.acceptedAnswers.some(expected=>normalizeMtmShort(expected,q.shortRule!)===normalized),'REVIEW_MISMATCH');
    }else ensure(q.kind==='short'?typeof actual==='string'&&normalizedShort(q.mode,actual)!==null&&q.acceptedAnswers.some(a=>normalizedShort(q.mode,a)===normalizedShort(q.mode,actual)):canonical(actual)===canonical(slot.expected),'REVIEW_MISMATCH');
+  }
   }
   ensure(Array.isArray(body.assets)&&body.assets.length>0&&body.assets.length<=500,'INVALID_ASSETS');
   const assets=body.assets as PublishAsset[],paths=new Set<string>();let bytesTotal=0;

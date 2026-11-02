@@ -14,7 +14,10 @@ export async function baselineDatabase(){
  const applied=[],skipped=[];
  for(const dir of ['supabase/migrations','supabase/migrations-pending']){
   // 043 is a one-off real-person data reconciliation, with no schema definitions.
-  const files=readdirSync(dir).filter(f=>f.endsWith('.sql')&&!f.includes('202610270100')&&!f.includes('_is_test_')&&!f.startsWith('20261027_')&&!/202610180043|202610190068|202610200075/.test(f)).sort((a,b)=>{
+  // This is the PRE-100 baseline: callers apply 100 themselves. The staff upload
+  // migration also depends on 100's is_test columns; its full-chain test applies
+  // it only after 100, rather than weakening the production scope guards.
+  const files=readdirSync(dir).filter(f=>f.endsWith('.sql')&&!f.includes('202610270100')&&!f.includes('_is_test_')&&!f.startsWith('20261027_')&&!/^20261102010[123]_/.test(f)&&!/202610180043|202610190068|202610200075/.test(f)).sort((a,b)=>{
    const key=f=>f.replace(/^(\d+)_([0-9]+)_/,'$1~$2_').replace(/^(\d+)_/,'$1!_');return key(a).localeCompare(key(b));
   });
   for(const file of files){

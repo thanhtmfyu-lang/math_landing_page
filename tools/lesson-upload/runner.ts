@@ -1,0 +1,11 @@
+import {createLessonGatewayClient} from '../../server/lesson-upload/publisher-client';
+import {createWorkerRepository} from '../../server/lesson-upload/supabase-worker';
+import {createPrivateFileState} from '../../server/lesson-upload/private-state';
+import {createLessonUploadPipeline} from '../../server/lesson-upload/native-adapter';
+import {runUploadOnce} from '../../server/lesson-upload/worker';
+import {reviewUploadOnce} from '../../server/lesson-upload/review-backfill';
+const args=process.argv.slice(2);
+if(!['--once','--review-once'].includes(args[0])||args.length>2||args.length===2&&args[1]!=='--is-test')throw Error('EXPLICIT_ONCE_REQUIRED');
+const db=createLessonGatewayClient(process.env.BTVN_PUBLISH_URL!,process.env.BTVN_PUBLISH_SECRET!),pipeline=await createLessonUploadPipeline({db}),state=createPrivateFileState(process.env.MTM_LESSON_UPLOAD_STATE_DIR!);
+const result=args[0]==='--review-once'?await reviewUploadOnce(db,pipeline,state,args.includes('--is-test')):await runUploadOnce(createWorkerRepository(db,{isTest:args.includes('--is-test')}),pipeline,state,'vps-web-upload');
+console.log(JSON.stringify({status:result.status,...('code' in result?{code:result.code}:{})}));
