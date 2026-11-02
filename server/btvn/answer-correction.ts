@@ -5,7 +5,7 @@ import {MTM_SCORING_VERSION} from '../../src/native/exams/mtm-scoring';
 import type {HomeworkReceipt} from '../../src/native/homework/btvn-contract';
 type Work = {student_id:string;revision:number;drafts:Draft[];receipts:HomeworkReceipt[]};
 export type CorrectionSnapshot = {exam:PracticeExam;work:Work[]};
-type Patch = {question_id:string;answer?:'A'|'B'|'C'|'D';acceptedAnswers?:string[]};
+type Patch = {question_id:string;answer?:'A'|'B'|'C'|'D';acceptedAnswers?:string[];mode?:'numeric'|'rational'|'exact'};
 export type CorrectionRequest = {action:'answer_correction_preview'|'answer_correction_apply';lesson_key:string;request_id:string;
   lenh_ref:string;approved_via:string;patches:Patch[];expected_plan_sha256?:string};
 function ensure(v:unknown,code:string):asserts v {if(!v)throw Error(code);}
@@ -27,9 +27,10 @@ export function validateCorrectionRequest(v:unknown):asserts v is CorrectionRequ
   ensure(Array.isArray(v.patches)&&v.patches.length>0&&v.patches.length<=50,'CORRECTION_PATCHES');
   const seen=new Set();
   for(const p of v.patches) {
-    ensure(object(p)&&Object.keys(p).every(k=>['question_id','answer','acceptedAnswers'].includes(k)),'CORRECTION_PATCH_SCHEMA');
+    ensure(object(p)&&Object.keys(p).every(k=>['question_id','answer','acceptedAnswers','mode'].includes(k)),'CORRECTION_PATCH_SCHEMA');
     ensure(typeof p.question_id==='string'&&p.question_id.trim()===p.question_id&&p.question_id.length>0&&!seen.has(p.question_id),'CORRECTION_DUPLICATE_QUESTION');seen.add(p.question_id);
     ensure((Object.hasOwn(p,'answer')?1:0)+(Object.hasOwn(p,'acceptedAnswers')?1:0)===1,'CORRECTION_PATCH_SCHEMA');
+    if(Object.hasOwn(p,'mode'))ensure(Object.hasOwn(p,'acceptedAnswers')&&['numeric','rational','exact'].includes(p.mode),'CORRECTION_SHORT_MODE');
     if(Object.hasOwn(p,'answer'))ensure(['A','B','C','D'].includes(p.answer),'CORRECTION_CHOICE');
     else ensure(Array.isArray(p.acceptedAnswers)&&p.acceptedAnswers.length>0&&p.acceptedAnswers.length<=20&&p.acceptedAnswers.every((x:unknown)=>typeof x==='string'&&x.trim()===x&&x.length>0&&x.length<=500)&&new Set(p.acceptedAnswers).size===p.acceptedAnswers.length,'CORRECTION_SHORT');
   }
@@ -40,14 +41,22 @@ export async function planAnswerCorrection(snapshot:CorrectionSnapshot,request:C
   validateCorrectionRequest(request);
   ensure(object(snapshot)&&validatePracticeExam(snapshot.exam).valid&&Array.isArray(snapshot.work),'CORRECTION_SNAPSHOT');
   const old=snapshot.exam,exam=structuredClone(old);
-  ensure(!exam.questions.some(q=>q.kind==='self'),'CORRECTION_MANUAL_GRADING_HOLD');
+  const hasSelf=exam.questions.some(q=>q.kind==='self');
   const patchHash=await correctionHash(request.patches);
   if(exam.rubricVersion===MTM_SCORING_VERSION)exam.answerKeyVersion='corrected-'+patchHash;
   else exam.versionHash=await correctionHash({previousVersion:old.versionHash,patches:request.patches});
   for(const patch of request.patches) {
     const q=exam.questions.find(q=>q.id===patch.question_id);ensure(q,'CORRECTION_QUESTION_NOT_FOUND');
-    if(q.kind==='mc') {ensure(patch.answer&&!patch.acceptedAnswers,'CORRECTION_KIND');q.answer=patch.answer;}
-    else {ensure(q.kind==='short'&&patch.acceptedAnswers&&!patch.answer,'CORRECTION_KIND');q.acceptedAnswers=[...patch.acceptedAnswers];}
+    if(q.kind==='mc') {ensure(patch.answer&&!patch.acceptedAnswers&&!patch.mode,'CORRECTION_KIND');q.answer=patch.answer;}
+    else {
+      ensure(q.kind==='short'&&patch.acceptedAnswers&&!patch.answer,'CORRECTION_KIND');
+      q.acceptedAnswers=[...patch.acceptedAnswers];
+      if(patch.mode!==undefined) {
+        // An existing verified rule must agree; this endpoint cannot rewrite its evidence/constraints.
+        ensure(!q.shortRule||q.shortRule.mode===(patch.mode==='numeric'?'decimal':patch.mode),'CORRECTION_SHORT_RULE_CONFLICT');
+        q.mode=patch.mode;
+      }
+    }
     if(exam.rubricVersion===MTM_SCORING_VERSION) {q.answerVerified=true;q.answerConflict=false;}
   }
   ensure(validatePracticeExam(exam).valid,'CORRECTION_NEW_KEY_INVALID');
@@ -62,7 +71,9 @@ export async function planAnswerCorrection(snapshot:CorrectionSnapshot,request:C
     ensure(new Set(row.receipts.map(r=>r.attemptId)).size===row.receipts.length,'CORRECTION_DUPLICATE_RECEIPT');
     ensure(drafts.filter(d=>d.submittedAt!==null).length===row.receipts.length,'CORRECTION_MISSING_RECEIPT');
     const receipts=row.receipts.map(receipt=>{
-      ensure(!Object.hasOwn(receipt,'officialScore')&&receipt.gradingPending!==true,'CORRECTION_MANUAL_OVERRIDE_HOLD');
+      // self has zero machine points. Recompute only score; preserve all teacher fields,
+      // including officialScore, gradingPending and any stored comments, without a delta.
+      ensure(hasSelf||!Object.hasOwn(receipt,'officialScore')&&receipt.gradingPending!==true,'CORRECTION_MANUAL_OVERRIDE_HOLD');
       const draft=drafts.find(d=>d.attemptId===receipt.attemptId);
       ensure(draft&&draft.submittedAt!==null&&draft.submittedAt===receipt.submittedAt,'CORRECTION_MISSING_ANSWERS');
       const result=resultFor(exam,draft);ensure(result?.score.ok,'CORRECTION_GRADING_FAILED');
