@@ -65,6 +65,11 @@ create index if not exists lesson_uploads_date_idx on mtm_hw_private.lesson_uplo
 create index if not exists lesson_uploads_queue_idx on mtm_hw_private.lesson_uploads(created_at) where finished_at is null;
 create index if not exists lesson_uploads_group_idx on mtm_hw_private.lesson_uploads(group_key,version desc);
 create index if not exists lesson_uploads_classes_idx on mtm_hw_private.lesson_uploads using gin(class_ids);
+-- MTM_LESSON_WEB_PRECEDENCE stays OFF until the web worker has real receipts.
+create table if not exists mtm_hw_private.lesson_upload_settings(singleton boolean primary key default true check(singleton),web_precedence boolean not null default false);
+insert into mtm_hw_private.lesson_upload_settings values(true,false) on conflict do nothing;
+alter table mtm_hw_private.lesson_upload_settings enable row level security;
+revoke all on mtm_hw_private.lesson_upload_settings from public,anon,authenticated,service_role,mtm_btvn_publisher;
 -- An unforgeable in-transaction capability. Caller-set GUCs are never authority.
 create table if not exists mtm_hw_private.lesson_publish_capability(
  txid bigint primary key,upload_id uuid not null references mtm_hw_private.lesson_uploads(id),claim_token uuid not null);
@@ -126,7 +131,7 @@ begin
    select x.* into u from mtm_hw_private.lesson_uploads x where (p->>'class_id')::uuid=any(x.class_ids)
     and x.homework_path is not null and x.is_test=qa
     and x.class_dates->>(p->>'class_id')=p->>'lesson_date' order by x.created_at desc limit 1;
-   return jsonb_build_object('web_wins',u.id is not null,'upload_id',u.id);
+   return jsonb_build_object('web_wins',u.id is not null and (select web_precedence from mtm_hw_private.lesson_upload_settings where singleton),'upload_id',u.id);
   end if;
   if a='worker_claim' then
    if length(coalesce(p->>'worker_id','')) not between 1 and 100 then raise exception 'WORKER_ID_REQUIRED';end if;
@@ -327,7 +332,7 @@ begin
    if p_action='error' then return public.mtm_btvn_pipeline_before_lesson_upload(p_action,p_payload);end if;
    select array_agg(label) filter(where not blocked),array_agg(label) filter(where blocked) into kept,excluded
    from (select label,exists(select 1 from mtm_hw_private.lesson_uploads x cross join unnest(x.class_ids) c
-    where not x.is_test and x.homework_path is not null and x.class_names->>c::text=label
+    where (select web_precedence from mtm_hw_private.lesson_upload_settings where singleton) and not x.is_test and x.homework_path is not null and x.class_names->>c::text=label
     and x.class_dates->>c::text=coalesce(mat->'classDates'->>label,mat->>'date')) blocked
     from jsonb_array_elements_text(mat->'classNames') label) scope;
    if cardinality(excluded)>0 then

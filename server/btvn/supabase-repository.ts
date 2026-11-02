@@ -12,7 +12,7 @@ import {validOfficialHomeworkScore} from '../../src/native/homework/grading-poli
 import {thiThangBlock,visibleThiThangCards} from './thi-thang';
 
 export interface RpcTransport {rpc(name:string,args:Record<string,unknown>):Promise<{data:unknown;error:null|{code?:string}}>}
-export type DurableSnapshot={revision:number;work:StudentWork;exam?:PracticeExam;material?:LessonMaterial;lessons:LessonMaterial[];officialGrades?:Record<string,number>};
+export type DurableSnapshot={paperChoice?:HomeworkState["paperChoice"];revision:number;work:StudentWork;exam?:PracticeExam;material?:LessonMaterial;lessons:LessonMaterial[];officialGrades?:Record<string,number>};
 const monthlyCards=(lessons:LessonMaterial[],now:number,className:string)=>lessons.map(l=>homeworkLessonCard(l,className,now));
 /** Server-only. Không liệt kê học sinh, không giữ mã thô trong repository.
  * Mỗi request đọc snapshot có quyền; CAS DB là điểm commit duy nhất.
@@ -85,7 +85,7 @@ export class SupabaseHomeworkRepository {
       const service=new HomeworkService(memory,snapshot.exam,0,'private',snapshot.material.lessonCode,this.clock,[snapshot.material]);
       const token=service.login({studentCode:code},'internal');
       const next=action==='start'?service.start(token):action==='save'?service.save(token,attemptId??'',answers??{}):action==='submit'?service.submit(token,attemptId??'',answers??{}):service.state(token);
-      next.demo=false;next.serverNow=this.clock();
+      next.demo=false;next.serverNow=this.clock();next.paperChoice=snapshot.paperChoice;
       if(monthly){next.kind='kiem-tra-thang';next.opensAt=snapshot.material.opensAt;next.closesAt=snapshot.material.closesAt;next.canStart=now<snapshot.material.closesAt!;next.essayUploadAvailable=snapshot.exam.questions.some(q=>q.kind==='self');}
       // Điểm chấm tay do RPC owner cung cấp, chỉ ghép vào response. Không sửa
       // biên nhận gốc hoặc ghi metadata này trở lại giao dịch commit.
@@ -121,7 +121,7 @@ export class SupabaseHomeworkRepository {
       if(committed.ok){
         // Save chỉ xác nhận bản vừa commit, không đọc/ký lại đề và tài sản.
         if(action==='save'&&next.draft?.submittedAt===null)return {...next,serverNow:this.clock(),exam:null,lessons:undefined,saveOnly:true,revision:snapshot.revision+1};
-        if(action==='start'){next.serverNow=this.clock();return next;}
+        if(action==='start'){next.serverNow=this.clock();if(next.paperChoice)next.paperChoice={...next.paperChoice,locked:true};return next;}
         return this.call(session,'state',snapshot.material.lessonCode);
       }
     }

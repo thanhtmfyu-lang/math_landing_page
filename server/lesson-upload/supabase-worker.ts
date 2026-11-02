@@ -13,7 +13,8 @@ export function createWorkerRepository(db:any):WorkerRepository {
  return {
   async claim(workerId){const data=await call({action:'worker_claim',worker_id:workerId,lease_seconds:900});return data?.job??null;},
   async current(job){const data=await fenced(job,'worker_assert_current');if(data?.ok!==true)throw Error('CLAIM_LOST');},
-  async step(job,step,status,detail,checkpoint){await fenced(job,'worker_checkpoint',{step,status,detail,checkpoint});},
+  async step(job,step,status,detail,checkpoint,paper=1){await fenced(job,'worker_checkpoint',{step,status,detail,checkpoint,paper});},
+  async publishBundle(job,primary,second){const result=await fenced(job,'worker_publish',{payload:primary,variant_payload:second});if(!result?.publish_receipts)throw Error('PUBLISH_NOT_CONFIRMED');},
   async finish(job){await fenced(job,'worker_finish');},
   publisher(job){return {
    async rpc(action,payload){

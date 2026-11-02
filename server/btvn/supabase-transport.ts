@@ -16,7 +16,7 @@ export function createSupabaseRepository(env:{SUPABASE_URL:string;SUPABASE_SERVI
   const handler=createHomeworkHandler({publishableKey:env.MTM_HOMEWORK_PUBLISHABLE_KEY,origins:[origin],networkKey:async()=>trustedNetworkKey,rpc:async(name,args)=>await db.rpc(name,args),download:async()=>{throw Error('Adapter BTVN không mở tải PDF');}});
   // 20/10: HS có phiên bị đứng ở "Đang kiểm tra phiên" khi Postgres chậm/khóa. RPC chỉ đọc có hạn chờ
   // để trả 503 + thử lại; RPC ghi (commit, đăng nhập) không cắt giữa chừng để tránh ghi rồi báo lỗi.
-  return new SupabaseHomeworkRepository({rpc:async(name,args)=>READ_RPCS.has(name)?await db.rpc(productionRpc(name),args).abortSignal(AbortSignal.timeout(READ_RPC_MS)):await db.rpc(productionRpc(name),args)},async body=>{
+  return new SupabaseHomeworkRepository({rpc:async(name,args)=>READ_RPCS.has(name)?await db.rpc(name==='mtm_btvn_read'?'mtm_btvn_two_paper_read':productionRpc(name),args).abortSignal(AbortSignal.timeout(READ_RPC_MS)):await db.rpc(name==='mtm_btvn_read'?'mtm_btvn_two_paper_read':productionRpc(name),args)},async body=>{
     const response=await handler(new Request(env.SUPABASE_URL+'/functions/v1/mtm-homework-access',{method:'POST',headers:{Origin:origin,apikey:env.MTM_HOMEWORK_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}));
     if(!response.ok)throw new HomeworkError(response.status,response.status===429?'Em đã thử nhiều lần. Chờ 15 phút rồi thử lại.':response.status===401?GATE_ERROR:BUSY);return response.json();
   },Date.now,batchSigner(path=>withTimeout(db.storage.from('mtm-btvn').createSignedUrls(path,SIGNED_ASSET_SECONDS),READ_RPC_MS)));

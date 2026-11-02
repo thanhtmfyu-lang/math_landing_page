@@ -15,7 +15,7 @@ const revision={...upload,id:'ban-moi',version:2,has_answer:false,has_video:fals
 const dashboard:UploadDashboard={staff:{user_id:'a',short_name:'thanh',display_name:'Thay Thanh',teacher_key:'thanh',role:'gv'},teachers:[],week_start:'2026-11-02',week_end:'2026-11-08',sessions:[base,paired,{...base,class_id:'lop-c',lesson_date:'2026-11-07'}],uploads:[upload,revision],server_now:'2026-11-03T14:00:00Z'};
 const progress=weekProgress(dashboard);
 assert.equal(progress.total,2,'only completed scheduled sessions count');
-assert.equal(progress.bars.find(b=>b.kind==='homework')?.percent,100);
+assert.equal(progress.bars.find(b=>b.kind==='homework')?.percent,50);
 assert.equal(progress.bars.find(b=>b.kind==='answer')?.percent,0,'new version replaces old asset state');
 assert.equal(progress.bars.find(b=>b.kind==='ai')?.percent,0,'receiving files is not AI completion');
 assert.equal(weekProgress({...dashboard,sessions:[]}).bars[0].percent,0,'zero denominator stays finite');

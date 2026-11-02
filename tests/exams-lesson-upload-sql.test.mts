@@ -140,6 +140,9 @@ const pair=await rpc({...input,class_ids:[pairA],teacher_key:'thaythanh',homewor
 const paired=(await db.query('select * from mtm_hw_private.lesson_uploads where id=$1',[pair.upload_id])).rows[0];assert.deepEqual(paired.class_ids.sort(),[pairA,pairB].sort());assert.equal(paired.class_dates[pairB],'2026-11-03');assert.equal(new Date(paired.due_at_by_class[pairB]).toISOString(),'2026-11-10T12:00:00.000Z');checks++;
 for(const action of ['worker_claim','worker_checkpoint','worker_publish','sheet_precedence']){await assert.rejects(()=>rpc({action,worker_id:'fixture'}),/SERVICE_ROLE_REQUIRED/);checks++;}
 const worker=(p:any)=>rpc(p,'','service_role');
+assert.equal((await worker({action:'sheet_precedence',class_id:cid,lesson_date:'2026-11-02'})).web_wins,false);checks++;
+// Fixture-only enable to exercise the existing precedence checks after the default-OFF assertion.
+await db.exec('update mtm_hw_private.lesson_upload_settings set web_precedence=true where singleton');
 assert.equal((await worker({action:'sheet_precedence',class_id:cid,lesson_date:'2026-11-02'})).web_wins,true);checks++;
 const job=(await worker({action:'worker_claim',worker_id:'fixture'})).job;assert.equal(job.id,two.upload_id);assert.equal(job.version,2);assert.equal(job.answer_text,'1C');checks++;
 assert.equal((await worker({action:'worker_claim',worker_id:'fixture2'})).job.id,pair.upload_id);checks++;

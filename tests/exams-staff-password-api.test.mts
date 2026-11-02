@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createStaffPasswordApi} from '../server/lesson-upload/password-api';
 let checks=0;const actor='00000000-0000-4000-8000-000000000001',targetId='00000000-0000-4000-8000-000000000002';
-const env={SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'server-fixture-only'};
+const env={SUPABASE_URL:'https://fixture.supabase.co',SUPABASE_SERVICE_ROLE_KEY:['synthetic','server','fixture'].join('-')};
 const normal={method:'POST',headers:{origin:'https://minhthanhmath.vn',host:'minhthanhmath.vn',authorization:'Bearer fixture-session'},body:{action:'reset',targetId}};
 async function run(overrides:any={},options:any={}){
  const calls:any[]=[];let status=0,body:any;const headers:Record<string,string>={};

@@ -1,0 +1,74 @@
+import assert from 'node:assert/strict';
+import {readFileSync} from 'node:fs';
+import {baselineDatabase} from '../scripts/is-test-db.mjs';
+import {pipelineFixture} from './btvn-pipeline-fixture';
+import {expectedSlots} from '../server/btvn/publish-handler';
+import {runUploadOnce,reviewQuestions,type Pipeline} from '../server/lesson-upload/worker';
+import {createWorkerRepository} from '../server/lesson-upload/supabase-worker';
+import {SupabaseHomeworkRepository} from '../server/btvn/supabase-repository';
+import {weekProgress} from '../src/native/lesson-upload/model';
+
+const {db}=await baselineDatabase();let checks=0;
+try{
+ await db.exec(readFileSync('supabase/migrations-pending/202610270100_is_test.sql','utf8'));
+ await db.exec("alter role service_role bypassrls;create function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claim.role',true),'')$$;grant select,insert on storage.objects to service_role,authenticated;grant usage on schema storage to service_role,authenticated;");
+ for(const name of ['202611020101_cong_up_btvn_gv.sql','202611020102_btvn_two_papers.sql'])await db.exec(readFileSync('supabase/migrations-pending/'+name,'utf8'));
+ const owner='11111111-1111-4111-8111-111111111111',teacher='11111111-1111-4111-8111-111111111112',cid='22222222-2222-4222-8222-222222222222',sid='33333333-3333-4333-8333-333333333333';
+ await db.query('insert into auth.users values($1),($2)',[owner,teacher]);
+ await db.query("insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key) values($1,'fixture-admin','Admin thử','admin','thaythanh'),($2,'fixture-gv','GV thử','gv','thaytai')",[owner,teacher]);
+ await db.query("insert into mtm_hw_private.classes(id,owner_id,label,grade) values($1,$2,'2K10 9+',11)",[cid,owner]);
+ await db.query('insert into mtm_hw_private.btvn_publish_scope values(true,$1,array[$2::uuid])',[owner,cid]);
+ await db.exec("insert into mtm_hw_private.timetable(class_label,weekday,start_hm,end_hm,teacher) values('2K10 9+',1,'17:30','19:30','Trần Thanh Anh Tài')");
+ await db.query("insert into mtm_hw_private.students(id,owner_id,class_id,full_name,school,school_class,public_alias) values($1,$2,$3,'Học sinh giả thử','Trường thử','11 thử','MTM-000000000001')",[sid,owner,cid]);
+ async function role(name:string,uid:string|undefined,fn:(tx:any)=>Promise<any>){return db.transaction(async(tx:any)=>{await tx.exec('set local role '+name);await tx.query("select set_config('request.jwt.claim.role',$1,true),set_config('request.jwt.claim.sub',$2,true)",[name,uid??'']);return fn(tx);});}
+ async function call(name:string,args:Record<string,unknown>,roleName='service_role',uid?:string){return role(roleName,uid,async(tx:any)=>(await tx.query(`select public.${name}(${Object.keys(args).map((k,i)=>k+' => $'+(i+1)).join(',')}) result`,Object.values(args))).rows[0].result);}
+ const path1=teacher+'/44444444-4444-4444-8444-444444444444/homework.pdf',path2=path1.replace('homework.pdf','homework2.pdf');
+ for(const path of [path1,path2])await role('authenticated',teacher,tx=>tx.query("insert into storage.objects(bucket_id,name,metadata) values('mtm-lesson-private',$1,'{\"mimetype\":\"application/pdf\",\"size\":1000}')",[path]));
+ const input={action:'create',class_ids:[cid],lesson_date:'2026-10-26',teacher_key:'thaytai',title:'Hai đề thử local',task_scope:'Câu 1–3',homework_path:path1,answer_text:'1D; ĐS: Đ S Đ S; TLN:2.5',homework2_path:path2,answer2_text:'1A; ĐS: Đ S Đ S; TLN:2.5'};
+ await assert.rejects(()=>call('mtm_lesson_upload_api',{p:{...input,answer2_text:null}},'authenticated',teacher),/PAPER_TWO_ANSWERS_REQUIRED/);checks++;
+ const upload=await call('mtm_lesson_upload_api',{p:input},'authenticated',teacher),code='web-'+upload.upload_id.replaceAll('-','');
+ await assert.rejects(()=>call('mtm_lesson_upload_api',{p:{action:'worker_web_precedence',enabled:true}}),/LIVE_WEB_RECEIPT_REQUIRED/);checks++;
+ const fixture=pipelineFixture(),second=structuredClone(fixture);
+ second.exam.id+='-de-2';second.exam.versionHash='b'.repeat(64);(second.exam.questions[0] as any).answer='A';
+ second.verification.slots=second.verification.slots.map(s=>s.question_id==='mc-1'?{...s,actual:'A',expected:'A'}:s);
+ let active=fixture,reads=0,reviews=0,builds=0;const stored=new Map<string,Uint8Array>();let rpcError:any;
+ const client={async rpc(name:string,args:Record<string,unknown>){try{return {data:await call(name==='mtm_btvn_read'?'mtm_btvn_two_paper_read':name,args),error:null};}catch(error:any){rpcError={code:error.code,message:error.message};return {data:null,error:rpcError};}},storage:{from(bucket:string){return {async upload(path:string,bytes:Uint8Array,opts:any){try{await role('service_role',undefined,tx=>tx.query('insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)',[bucket,path,JSON.stringify({mimetype:opts.contentType,size:bytes.length})]));stored.set(path,bytes);return {error:null};}catch(error:any){return {error};}},async download(path:string){const bytes=stored.get(path);return bytes?{data:new Blob([bytes]),error:null}:{data:null,error:{message:'missing'}};}};}}};
+ const pipeline:Pipeline={extractor:{provider:'codex',model:'synthetic-codex'},async read(job){reads++;active=job.homework_path===path2?second:fixture;return {sourceVersion:active===second?'b'.repeat(64):'c'.repeat(64),questions:reviewQuestions(active.exam),teacherSlots:expectedSlots(active.exam)};},async build(){builds++;return {exam:active.exam,assets:active.assets};},async review(input){reviews++;assert(!JSON.stringify(input).includes('expected'));assert(!JSON.stringify(input).includes('acceptedAnswers'));return {provider:'grok',model:'synthetic-grok',receipt_hash:'d'.repeat(64),slots:active.verification.slots};},async materials(){return {handoutUrl:null,materialUrl:null};}};
+ const stateRows=new Map<string,unknown>(),state={async save(id:string,stage:string,v:unknown){const ref=id+'/'+stage;stateRows.set(ref,structuredClone(v));return ref;},async load(ref:string){return structuredClone(stateRows.get(ref));}};
+ const result=await runUploadOnce(createWorkerRepository(client),pipeline,state,'synthetic-pair');assert.equal(result.status,'complete',JSON.stringify({result,rpcError}));checks++;
+ assert.equal(reads,2);assert.equal(builds,2);assert.equal(reviews,2);checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_lessons where active and $1=any(class_ids)',[cid])).rows[0].n,1);checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_second_papers where lesson_code=$1',[code])).rows[0].n,1);checks++;
+ assert.equal((await db.query("select count(*) n from mtm_hw_private.lesson_upload_paper2_steps where upload_id=$1 and status='xong'",[upload.upload_id])).rows[0].n,6);checks++;
+ const dashboard=await call('mtm_lesson_upload_api',{p:{action:'dashboard',from:'2026-10-26',to:'2026-11-01'}},'authenticated',owner);
+ assert(dashboard.uploads[0].homework2_uploaded);assert(dashboard.uploads[0].answer2_uploaded);assert.equal(dashboard.uploads[0].paper2_steps.length,6);assert(!JSON.stringify(dashboard).includes(path2));checks++;
+ const progress=weekProgress(dashboard,new Date('2026-11-02T15:30:00Z'));assert.equal(progress.bars[0].done,2);assert.equal(progress.bars[0].total,2);assert.equal(progress.bars[0].percent,100);checks++;
+ const token='f'.repeat(64);await db.query("insert into mtm_hw_private.btvn_identity_sessions values(mtm_hw_private.token_digest('btvn-identity',$1),$2,clock_timestamp()+interval '1 hour',null)",[token,sid]);
+ const repo=new SupabaseHomeworkRepository(client,async()=>({}),Date.now,async path=>'https://fixture.invalid/'+path+'?token=fixture');
+ const selected=await repo.call(token,'select',code+'-de-2');assert.equal(selected.paperChoice?.paper,2);assert.equal(selected.paperChoice?.locked,false);assert.equal(selected.lessons?.length,1);assert.equal(selected.exam?.id,second.exam.id);assert(!JSON.stringify(selected).includes('acceptedAnswers'));assert(!JSON.stringify(selected).includes('"answer":"A"'));checks++;
+ const started=await repo.call(token,'start',code+'-de-2');assert(started.draft);checks++;
+ await assert.rejects(()=>repo.call(token,'select',code+'-de-1'));checks++;
+ const submitted=await repo.call(token,'submit',code+'-de-2',started.draft!.attemptId,{'mc-1':'A','tf-1':[true,false,true,false],'sa-1':'2.5'});
+ assert(submitted.receipts.length===1,JSON.stringify({rpcError,submitted}));assert.equal(submitted.receipts[0].score,10,'paper 2 must use its own A key rather than paper 1 D');checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].n,1);checks++;
+ const old=JSON.stringify((await db.query('select receipts from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].receipts);
+ const restored=await repo.call(token,'state',code);assert.equal(restored.paperChoice?.paper,2);assert.equal(restored.paperChoice?.locked,true);checks++;
+ assert.equal(JSON.stringify((await db.query('select receipts from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].receipts),old);checks++;
+ const retry=await repo.call(token,'start',code+'-de-2');assert.equal(retry.attemptsUsed,2);checks++;
+ const sid2='33333333-3333-4333-8333-333333333334',token2='e'.repeat(64);
+ await db.query("insert into mtm_hw_private.students(id,owner_id,class_id,full_name,school,school_class,public_alias) values($1,$2,$3,'Học sinh giả thứ hai','Trường thử','11 thử','MTM-000000000002')",[sid2,owner,cid]);
+ await db.query("insert into mtm_hw_private.btvn_identity_sessions values(mtm_hw_private.token_digest('btvn-identity',$1),$2,clock_timestamp()+interval '1 hour',null)",[token2,sid2]);
+ const race=await Promise.allSettled([repo.call(token2,'start',code+'-de-1'),repo.call(token2,'start',code+'-de-2')]);
+ assert.equal(race.filter(r=>r.status==='fulfilled').length,1,'two concurrent starts must choose one paper');checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid2,code])).rows[0].n,1);checks++;
+ const single=await call('mtm_lesson_upload_api',{p:{...input,lesson_date:'2026-11-02',homework2_path:null,answer2_text:null}},'authenticated',teacher);
+ assert.equal((await runUploadOnce(createWorkerRepository(client),pipeline,state,'synthetic-single')).status,'complete');checks++;
+ const singleCode='web-'+single.upload_id.replaceAll('-','');
+ const singleState=await repo.call(token,'state',singleCode);assert.equal(singleState.paperChoice,undefined);checks++;
+ const warnings=await call('mtm_lesson_upload_api',{p:{action:'dashboard',from:'2026-11-02',to:'2026-11-08'}},'authenticated',owner);
+ assert(warnings.uploads[0].warnings[0].includes('Thiếu Đề 2'));assert(warnings.publisher_warnings[0].warnings[0].includes('Thiếu Đề 2'));checks++;
+ assert.equal((await db.query('select warnings from mtm_hw_private.btvn_publication_warnings where lesson_code=$1',[code])).rows.length,0,'a full pair must clear its publication warning');checks++;
+ assert.equal(JSON.stringify((await db.query('select receipts from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].receipts),old);checks++;
+ for(const roleName of ['anon','authenticated']){await assert.rejects(()=>role(roleName,undefined,tx=>tx.exec('select * from mtm_hw_private.btvn_second_papers')));checks++;}
+ console.log(`${checks} ca hai đề full schema: 2 pipeline, 2 key, chọn Đề 2 chấm 10, khóa Đề 1, không lộ key, 1 lesson/work, giữ receipt và luyện lại: đạt; giả lập local không mạng.`);
+}finally{await db.close();}

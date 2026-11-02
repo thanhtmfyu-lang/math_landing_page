@@ -37,6 +37,7 @@ await db.exec('create schema mtm_test100;create table mtm_test100.cleanup_jobs(s
 await db.exec(isolation.slice(isolation.indexOf('create function mtm_test100.guard_flag()'),isolation.indexOf('create trigger is_test100_pt_flag')));
 await db.exec(isolation.slice(isolation.indexOf('create function public.mtm_btvn_read_scoped100('),isolation.indexOf('-- Durable tombstone:')));
 await db.exec(readFileSync(root+'/supabase/migrations-pending/202611020101_cong_up_btvn_gv.sql','utf8'));checks++;
+await db.exec(readFileSync(root+'/supabase/migrations-pending/202611020102_btvn_two_papers.sql','utf8'));
 const owner='11111111-1111-4111-8111-111111111111',teacher='11111111-1111-4111-8111-111111111112',cid='22222222-2222-4222-8222-222222222222',sid='33333333-3333-4333-8333-333333333333';
 await db.query('insert into auth.users values($1),($2)',[owner,teacher]);
 await db.query("insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key,active) values($1,'thaytai','Trần Thanh Anh Tài','gv','thaytai',true)",[teacher]);
@@ -144,6 +145,7 @@ const videoRun=await runUploadOnce(createWorkerRepository(client),pipeline,state
 assert.equal((await db.query('select material from mtm_hw_private.btvn_lessons where code=$1',[sheet.lesson_key])).rows[0].material.videoId,'abcdefghijk');checks++;
 assert.equal((await db.query('select material from mtm_hw_private.btvn_lessons where code=$1',[qaCurrentCode])).rows[0].material.videoId,null);checks++;
 assert.equal((await db.query('select finished_at from mtm_hw_private.lesson_uploads where id=$1',[videoUpload.upload_id])).rows[0].finished_at instanceof Date,true);checks++;
+await call('mtm_lesson_upload_api',{p:{action:'worker_web_precedence',enabled:true}});checks++;
 // Mixed-class fallback preserves the unrelated class instead of skipping its
 // homework because another class/date is owned by a teacher's web upload.
 await db.query('update mtm_hw_private.btvn_publish_scope set class_ids=$1',[[cid,unrelatedClass]]);

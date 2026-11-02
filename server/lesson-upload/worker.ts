@@ -5,7 +5,7 @@ import {youtubeVideoId} from '../btvn/lesson-materials';
 import {normalizedShort} from '../../src/native/exams/assessment';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 
-export type UploadJob={id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;due_at_by_class:Record<string,string>;checkpoint:Record<string,any>};
+export type UploadJob={homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;due_at_by_class:Record<string,string>;checkpoint:Record<string,any>};
 export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[]};
 export type Draft={exam:PracticeExam;assets:PublishAsset[]};
 export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string};
@@ -23,7 +23,8 @@ export interface Pipeline {
 export interface WorkerRepository {
  claim(workerId:string):Promise<UploadJob|null>;
  current(job:UploadJob):Promise<void>;
- step(job:UploadJob,step:number,status:'dang'|'xong'|'loi',detail:string,checkpoint:Record<string,unknown>):Promise<void>;
+ step(job:UploadJob,step:number,status:'dang'|'xong'|'loi',detail:string,checkpoint:Record<string,unknown>,paper?:1|2):Promise<void>;
+ publishBundle?(job:UploadJob,primary:unknown,second:unknown):Promise<void>;
  finish(job:UploadJob):Promise<void>;
  /** Existing publisher validates first; RPC does atomic lease/version/receipt commit. */
  publisher(job:UploadJob):PublishPort;
@@ -57,6 +58,7 @@ export function reviewQuestions(exam:PracticeExam){return exam.questions.map(q=>
 /** One claim per tick, no scheduling/startup side effect. Unknown error text never reaches progress. */
 export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,state:PrivateState,workerId:string){
  const job=await repo.claim(workerId);if(!job)return {status:'idle' as const};
+ if(job.homework2_path)return runUploadPair(repo,pipeline,state,workerId,job);
  let step=2,mismatchDetail='';const cp={...job.checkpoint};
  const save=async(stage:string,value:unknown)=>{cp[stage]=await state.save(job.id,stage,value);};
  const mark=async(n:number,status:'dang'|'xong'|'loi',detail='')=>{await repo.current(job);await repo.step(job,n,status,detail,cp);};
@@ -127,5 +129,31 @@ function material(job:UploadJob,links:{handoutUrl:string|null;materialUrl:string
 }
 function publishRequest(job:UploadJob,source:Extraction,draft:Draft,proof:unknown,links:{handoutUrl:string|null;materialUrl:string|null},secret:string){
  return new Request('https://lesson-worker.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({action:'publish',kind:'btvn',lesson_key:job.lesson_code,source_version:source.sourceVersion,material:material(job,links),exam:draft.exam,assets:draft.assets,verification:proof})});
+}
+/** Both papers are independently validated, uploaded and checkpointed before one atomic publication.
+ * There is still one lesson, work row, deadline and ranking entry for the session. */
+async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:PrivateState,workerId:string,job:UploadJob){
+ ensure(repo.publishBundle,'BUNDLE_REPOSITORY_REQUIRED');
+ const payloads:unknown[]=[];
+ for(const paper of [1,2] as const){
+  const projected:UploadJob={...job,homework2_path:null,homework_path:paper===1?job.homework_path:job.homework2_path!,answer_path:paper===1?job.answer_path:job.answer2_path??null,answer_text:paper===1?job.answer_text:job.answer2_text??null,task_scope:paper===1?job.task_scope:job.task_scope2||job.task_scope,checkpoint:job.checkpoint['paper'+paper]??{}};
+  let claimed=false;
+  const port=repo.publisher(job);
+  const inner:WorkerRepository={
+   async claim(){if(claimed)return null;claimed=true;return projected;},current:()=>repo.current(job),
+   async step(_j,n,status,detail,checkpoint){
+    job.checkpoint={...job.checkpoint,['paper'+paper]:checkpoint};
+    // Completion can only follow the real atomic commit, never the local capture.
+    if(n===6&&status==='xong')return;
+    await repo.step(job,n,status,detail,{['paper'+paper]:checkpoint},paper);
+   },async finish(){},publisher(){return {upload:port.upload.bind(port),async rpc(action,payload){if(action==='lookup')return {status:null};ensure(action==='publish','INVALID_BUNDLE_ACTION');payloads[paper-1]=payload;return {status:'da_dang'};}};}
+  };
+  const privatePaperState:PrivateState={save:(id,stage,value)=>state.save(id+'-de-'+paper,stage,value),load:ref=>state.load(ref)};
+  const result=await runUploadOnce(inner,pipeline,privatePaperState,workerId);
+  if(result.status!=='complete')return result;
+ }
+ await repo.current(job);await repo.publishBundle(job,payloads[0],payloads[1]);
+ for(const paper of [1,2] as const)await repo.step(job,6,'xong','',{},paper);
+ await repo.finish(job);return {status:'complete' as const,uploadId:job.id};
 }
 export const privateStateDigest=digest;

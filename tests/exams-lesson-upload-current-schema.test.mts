@@ -11,6 +11,8 @@ try{
  const sql=readFileSync('supabase/migrations-pending/202611020101_cong_up_btvn_gv.sql','utf8');
  await db.exec(sql);checks++;
  await db.exec(sql);checks++;
+ await db.exec(readFileSync('supabase/migrations-pending/202611020102_btvn_two_papers.sql','utf8'));checks++;
+ await db.exec(readFileSync('supabase/migrations-pending/202611020102_btvn_two_papers.sql','utf8'));checks++;
  assert.equal((await db.query('select count(*) n from public.mtm_staff')).rows[0].n,0);checks++;
  assert.equal((await db.query("select public from storage.buckets where id='mtm-lesson-private'")).rows[0].public,false);checks++;
  // Current production reader/report functions still compile with the new

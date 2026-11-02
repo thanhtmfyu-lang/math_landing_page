@@ -1,5 +1,17 @@
 # Worker cổng giáo viên — bản mã chờ Claude duyệt và triển khai
 
+## Bổ sung 02/11 theo thư 1745 và 1905
+
+Luật thường trực: **BTVN luôn đủ 2 đề, HS chọn 1, khóa đề kia lượt 1**. Quy trình chi tiết: [BTVN_QUY_TRINH.md](BTVN_QUY_TRINH.md). Migration `202611020102_btvn_two_papers.sql` thêm nguồn riêng của Đề 2, sáu trạng thái riêng, khóa chọn và bảng khóa đề private. Hai đề được worker dựng/kiểm riêng rồi đăng nguyên tử dưới một buổi. Không thêm hàng lesson/work thứ hai để tránh đếm hai lần trong bảng điểm, hạng và J39. Chưa áp migration thật.
+
+Publisher vẫn nhận một đề và lưu cảnh báo thiếu Đề 2; dashboard quản lý hiển thị cảnh báo từ publisher theo đúng lớp/ngày, kể cả nguồn Sheet. Thanh BTVN và đáp án đếm số đề trên tổng số buổi nhân 2.
+
+`MTM_LESSON_WEB_PRECEDENCE` mặc định TẮT, lưu trong `lesson_upload_settings.web_precedence`. Service-only RPC `mtm_lesson_upload_api({p:{action:'worker_web_precedence',enabled:true}})` chỉ bật khi đã có biên nhận web thật hoàn thành; `enabled:false` tắt. Đây là cờ DB của route, không phải biến môi trường được giả định đã bật. Giữ Sheet dự phòng cho đến khi worker web thực chạy.
+
+**Phụ thuộc chưa hoàn tất của thư 1625:** adapter native, đăng ký identity web vào ledger/reconciler hiện có, hàng review PC Grok/agy và biên nhận provider thật; xử lý đăng bằng đáp án GV sau 20 phút với trạng thái vàng và review bù; tuyến handout xác thực bền vững với trạng thái vàng; launcher riêng cùng `worker.lock`, cài VPS ở trạng thái TẮT và chạy thử `is_test`. Không được coi interface hiện tại là adapter đã nối hoặc báo đạt ≤15 phút. Worker hiện tại vẫn chặn khi chưa có review thật; không dựng biên nhận AI từ đáp án GV để giả hoàn thành ngoại lệ 20 phút. Không bật worker/preference trước khi các phụ thuộc này được kiểm trên tuyến thật.
+
+Kiểm bổ sung local: full schema + hai source/khóa khác nhau; chọn Đề 2 chấm đúng khóa Đề 2; khóa Đề 1 sau start; chỉ một lesson/work; giữ receipt cũ và luyện lại. Đây là dữ liệu giả trong PGlite, không có tác động DB thật.
+
 Không áp migration, không tạo cron và không chạy đăng thật trong đợt này. Chưa có bằng chứng worker đang chạy, đủ hạn mức AI hoặc up → tài khoản học sinh ≤ 15 phút. Bộ test dùng nguồn giả, không gửi AI thật và không đăng dữ liệu thật.
 
 ## Đường thực thi
