@@ -9,6 +9,8 @@ export function lessonUploadRoutePlugin(){
    const index=bundle['index.html'];
    if(!index||index.type!=='asset')throw Error('Thiếu index.html cho cổng lên bài.');
    this.emitFile({type:'asset',fileName:'quan-tri/len-bai/index.html',source:index.source});
+   this.emitFile({type:'asset',fileName:'quan-tri/index.html',source:index.source});
+   this.emitFile({type:'asset',fileName:'quan-tri/doi-mat-khau/index.html',source:index.source});
   }},
  };
 }

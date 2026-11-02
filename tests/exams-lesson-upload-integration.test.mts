@@ -39,8 +39,8 @@ await db.exec(isolation.slice(isolation.indexOf('create function public.mtm_btvn
 await db.exec(readFileSync(root+'/supabase/migrations-pending/202611020101_cong_up_btvn_gv.sql','utf8'));checks++;
 const owner='11111111-1111-4111-8111-111111111111',teacher='11111111-1111-4111-8111-111111111112',cid='22222222-2222-4222-8222-222222222222',sid='33333333-3333-4333-8333-333333333333';
 await db.query('insert into auth.users values($1),($2)',[owner,teacher]);
-await db.query("insert into public.mtm_staff values($1,'thaytai','Trần Thanh Anh Tài','gv','thaytai',true)",[teacher]);
-await db.query("insert into public.mtm_staff values($1,'thaythanh','Thầy Thành','admin','thaythanh',true)",[owner]);
+await db.query("insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key,active) values($1,'thaytai','Trần Thanh Anh Tài','gv','thaytai',true)",[teacher]);
+await db.query("insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key,active) values($1,'thaythanh','Thầy Thành','admin','thaythanh',true)",[owner]);
 await db.query("insert into mtm_hw_private.classes(id,owner_id,label,grade) values($1,$2,'2K10 9+',11)",[cid,owner]);
 await db.query('insert into mtm_hw_private.btvn_publish_scope values(true,$1,array[$2::uuid])',[owner,cid]);
 await db.exec("insert into mtm_hw_private.timetable(class_label,weekday,start_hm,end_hm,teacher) values('2K10 9+',1,'17:30','19:30','Trần Thanh Anh Tài')");

@@ -3,6 +3,13 @@ import {readFileSync,existsSync} from 'node:fs';
 import {pathToFileURL} from 'node:url';
 const {PGlite}=process.env.MTM_PGLITE_MODULE?await import(pathToFileURL(process.env.MTM_PGLITE_MODULE).href):await import('@electric-sql/pglite');
 const db=new PGlite();let checks=0;
+// PGlite 0.2.17's bundled pgcrypto cannot load EVP_bf_cbc. This isolated
+// namespace tests seed invocation/uniqueness and Auth trigger semantics ONLY;
+// its digest is NOT bcrypt and must never be used in a deployed database.
+await db.exec(`create schema fixture_crypto;
+create function fixture_crypto.gen_random_bytes(n int) returns bytea language sql volatile as $$select sha256(convert_to(gen_random_uuid()::text,'UTF8'))$$;
+create function fixture_crypto.gen_salt(t text,n int) returns text language sql volatile as $$select gen_random_uuid()::text$$;
+create function fixture_crypto.crypt(p text,s text) returns text language sql volatile as $$select encode(sha256(convert_to(p||s,'UTF8')),'hex')$$;`);
 await db.exec(`create role anon;create role authenticated;create role service_role;create role mtm_btvn_publisher;
 create schema auth;create schema storage;create schema mtm_hw_private;
 create function auth.uid() returns uuid language sql stable as $$select nullif(current_setting('request.jwt.claim.sub',true),'')::uuid$$;
@@ -39,10 +46,16 @@ end$$;
 revoke all on function public.mtm_btvn_pipeline(text,jsonb) from public;
 grant execute on function public.mtm_btvn_pipeline(text,jsonb) to mtm_btvn_publisher;`);
 const root=process.env.MTM_ROOT!;
-const sql=readFileSync(root+'/supabase/migrations-pending/202611020101_cong_up_btvn_gv.sql','utf8');
+const productionSql=readFileSync(root+'/supabase/migrations-pending/202611020101_cong_up_btvn_gv.sql','utf8');
+assert(productionSql.includes("%1$I.crypt(encode(%1$I.gen_random_bytes(32),'hex'),%1$I.gen_salt('bf',12))"));checks++;
+assert(!/\$2[aby]\$\d{2}\$/.test(productionSql));checks++;
+const sql=productionSql.replace("select n.nspname into crypto_schema from pg_extension e join pg_namespace n on n.oid=e.extnamespace where e.extname='pgcrypto'","select 'fixture_crypto' into crypto_schema");
 await db.exec(sql);checks++;
 assert.equal((await db.query('select count(*) n from public.mtm_staff')).rows[0].n,8);checks++;
 assert.equal((await db.query('select count(*) n from public.mtm_exam_admins')).rows[0].n,0);checks++;
+assert.equal((await db.query('select count(*) n from public.mtm_staff where must_change_password')).rows[0].n,8);checks++;
+assert.equal((await db.query('select count(distinct encrypted_password) n from auth.users')).rows[0].n,8);checks++;
+
 const staff=Object.fromEntries((await db.query('select user_id,short_name from public.mtm_staff')).rows.map((r:any)=>[r.short_name,r.user_id]));
 await db.query("update auth.users set encrypted_password='fixture-existing-password' where id=$1",[staff.thaytai]);
 await db.exec(sql);checks++;
@@ -62,6 +75,33 @@ async function asRole(role:string,uid:string|undefined,fn:(tx:any)=>Promise<any>
  await tx.exec('set local role '+role);await tx.query("select set_config('request.jwt.claim.role',$1,true),set_config('request.jwt.claim.sub',$2,true)",[role,uid??'']);return fn(tx);
 });}
 async function rpc(p:any,who='thaytai',role='authenticated'){return asRole(role,staff[who],async(tx:any)=>(await tx.query('select public.mtm_lesson_upload_api($1) result',[JSON.stringify(p)])).rows[0].result);}
+// Dedicated Password V2 assertions use the actual seeded locked accounts.
+const locked='thayhieu';
+await assert.rejects(()=>rpc({action:'dashboard'},locked),/PASSWORD_CHANGE_REQUIRED/);checks++;
+assert.equal((await asRole('authenticated',staff[locked],tx=>tx.query('select public.mtm_lesson_storage_access($1,true) allowed',[staff[locked]+'/20000000-0000-4000-8000-000000000099/homework.pdf']))).rows[0].allowed,false);checks++;
+await assert.rejects(()=>asRole('authenticated',staff.hang,tx=>tx.query('select public.mtm_staff_password_roster()')),/MANAGER_REQUIRED/);checks++;
+await assert.rejects(()=>asRole('authenticated',staff.hang,tx=>tx.query('update public.mtm_staff set must_change_password=false')));checks++;
+await db.query("update auth.users set raw_user_meta_data='{\"must_change_password\":false}' where id=$1",[staff[locked]]);
+assert.equal((await db.query('select must_change_password flag from public.mtm_staff where user_id=$1',[staff[locked]])).rows[0].flag,true);checks++;
+await db.query('update auth.users set encrypted_password=encrypted_password where id=$1',[staff[locked]]);
+assert.equal((await db.query('select must_change_password flag from public.mtm_staff where user_id=$1',[staff[locked]])).rows[0].flag,true);checks++;
+// Simulate Auth writing new bcrypt hashes; the AFTER UPDATE trigger unlocks.
+await db.exec("update auth.users set encrypted_password=fixture_crypto.crypt('synthetic-fixture-only-new-secret',fixture_crypto.gen_salt('bf',4))");
+assert.equal((await db.query('select count(*) n from public.mtm_staff where must_change_password')).rows[0].n,0);checks++;
+await assert.rejects(()=>asRole('authenticated',staff.hang,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2)',[staff.hang,staff[locked]])));checks++;
+await assert.rejects(()=>asRole('service_role',undefined,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2)',[staff.thaytai,staff[locked]])),/MANAGER_REQUIRED/);checks++;
+await assert.rejects(()=>asRole('service_role',undefined,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2)',[staff.hang,staff[locked]])),/REGISTERED_EMAIL_REQUIRED/);checks++;
+await db.query('update public.mtm_staff set recovery_email=$1,recovery_email_verified_at=now() where user_id=$2',['wrong@example.test',staff[locked]]);
+await assert.rejects(()=>asRole('service_role',undefined,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2)',[staff.hang,staff[locked]])),/REGISTERED_EMAIL_REQUIRED/);checks++;
+await db.query('update public.mtm_staff set recovery_email=$1 where user_id=$2',[locked+'@minhthanhmath.vn',staff[locked]]);
+const reset=await asRole('service_role',undefined,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2) data',[staff.hang,staff[locked]]));
+assert.deepEqual(reset.rows[0].data,{email:locked+'@minhthanhmath.vn'});checks++;
+await assert.rejects(()=>rpc({action:'dashboard'},locked),/PASSWORD_CHANGE_REQUIRED/);checks++;
+await assert.rejects(()=>asRole('service_role',undefined,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2)',[staff.hang,staff[locked]])),/RESET_RATE_LIMIT/);checks++;
+await assert.rejects(()=>asRole('service_role',undefined,tx=>tx.query('select public.mtm_staff_password_reset_target($1,$2)',[staff.hang,staff.thaytai])),/RESET_RATE_LIMIT/);checks++;
+const roster=(await asRole('authenticated',staff.hang,tx=>tx.query('select public.mtm_staff_password_roster() data'))).rows[0].data;
+assert.equal(roster.length,8);assert(!JSON.stringify(roster).includes('@'));checks++;
+await db.exec("update auth.users set encrypted_password=fixture_crypto.crypt('synthetic-fixture-second-secret',fixture_crypto.gen_salt('bf',4))");
 const range={from:'2026-11-02',to:'2026-11-08'};
 const context=await rpc({action:'dashboard',...range});
 assert.equal(context.classes.length,1);assert.equal(context.classes[0].id,cid);checks++;

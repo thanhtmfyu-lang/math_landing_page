@@ -1,4 +1,4 @@
--- Review-only migration. Never apply automatically. No existing password reset.
+-- Review-only migration. Never apply automatically. Password V2: runtime randomness, no retained secret.
 begin;
 set local lock_timeout='5s';
 set local statement_timeout='60s';
@@ -6,11 +6,16 @@ create table if not exists public.mtm_staff(
  user_id uuid primary key references auth.users(id), short_name text unique not null,
  display_name text not null, role text not null check(role in ('gv','ql','admin')),
  teacher_key text, active boolean not null default true);
+-- Existing accounts remain usable; only newly seeded accounts start locked.
+alter table public.mtm_staff add column if not exists must_change_password boolean not null default false;
+alter table public.mtm_staff add column if not exists recovery_email text;
+alter table public.mtm_staff add column if not exists recovery_email_verified_at timestamptz;
+alter table public.mtm_staff add column if not exists password_reset_requested_at timestamptz;
 alter table public.mtm_staff enable row level security;
 revoke all on public.mtm_staff from public,anon,authenticated,service_role;
 create or replace function public.mtm_lesson_staff() returns jsonb
 language sql stable security definer set search_path='' as $$
- select to_jsonb(s) from public.mtm_staff s where s.user_id=auth.uid() and s.active
+ select jsonb_build_object('user_id',s.user_id,'short_name',s.short_name,'display_name',s.display_name,'role',s.role,'teacher_key',s.teacher_key,'must_change_password',s.must_change_password) from public.mtm_staff s where s.user_id=auth.uid() and s.active
 $$;
 revoke all on function public.mtm_lesson_staff() from public,anon;
 grant execute on function public.mtm_lesson_staff() to authenticated;
@@ -78,7 +83,7 @@ insert into storage.buckets(id,name,public,file_size_limit,allowed_mime_types)
  on conflict(id) do update set public=false,file_size_limit=excluded.file_size_limit,allowed_mime_types=excluded.allowed_mime_types;
 create or replace function public.mtm_lesson_storage_access(p_path text,p_write boolean default false) returns boolean
 language sql stable security definer set search_path='' as $$
- select exists(select 1 from public.mtm_staff s where s.user_id=auth.uid() and s.active
+ select exists(select 1 from public.mtm_staff s where s.user_id=auth.uid() and s.active and not s.must_change_password
  and p_path ~ '^[0-9a-f-]{36}/[0-9a-f-]{36}/[a-zA-Z0-9_.-]+\.(pdf|jpg|jpeg|png)$'
  and (split_part(p_path,'/',1)=s.user_id::text or (not p_write and s.role in ('ql','admin'))))
 $$;
@@ -231,11 +236,12 @@ begin
  end if;
  select * into staff from public.mtm_staff where user_id=auth.uid() and active;
  if staff.user_id is null then raise exception 'STAFF_REQUIRED' using errcode='42501';end if;
+ if staff.must_change_password then raise exception 'PASSWORD_CHANGE_REQUIRED' using errcode='42501';end if;
  if qa and staff.role not in ('ql','admin') then raise exception 'MANAGER_REQUIRED' using errcode='42501';end if;
  df=coalesce((p->>'from')::date,today-(extract(isodow from today)::int-1));dt=coalesce((p->>'to')::date,df+6);
  if dt<df or dt>df+31 then raise exception 'INVALID_DATE_RANGE';end if;
  if a in ('dashboard','catalog') then
-  return jsonb_build_object('staff',to_jsonb(staff),'server_now',clock_timestamp(),'week_start',df,'week_end',dt,'schedule_source','mtm_hw_private.timetable',
+  return jsonb_build_object('staff',public.mtm_lesson_staff(),'server_now',clock_timestamp(),'week_start',df,'week_end',dt,'schedule_source','mtm_hw_private.timetable',
    'teachers',coalesce((select jsonb_agg(jsonb_build_object('user_id',user_id,'short_name',short_name,'role',role,'teacher_key',teacher_key,'display_name',display_name)) from public.mtm_staff where active and teacher_key is not null),'[]'),
    'classes',coalesce((select jsonb_agg(distinct jsonb_build_object('id',s.class_id,'name',s.class_name,'teacher_key',s.teacher_key)) from mtm_hw_private.lesson_sessions(df,dt) s where staff.role in ('ql','admin') or s.teacher_key=staff.teacher_key),'[]'),
    'sessions',coalesce((select jsonb_agg(to_jsonb(s)||jsonb_build_object('class_ids',(select jsonb_agg(distinct ss.class_id) from mtm_hw_private.lesson_sessions(df-1,dt+1) ss where ss.group_key=s.group_key))) from mtm_hw_private.lesson_sessions(df,dt) s where staff.role in ('ql','admin') or s.teacher_key=staff.teacher_key),'[]'),
@@ -414,37 +420,106 @@ revoke all on function mtm_hw_private.lesson_web_due(uuid,text),mtm_hw_private.b
  from public,anon,authenticated,service_role;
 
 do $accounts$
-declare r record;uid uuid;
+declare r record;uid uuid;created boolean;crypto_schema text;
 begin
  -- PGlite reduced auth schema: skip all auth writes, exercise authorization with fixtures.
  if not exists(select 1 from information_schema.columns where table_schema='auth' and table_name='users' and column_name='encrypted_password')
  or to_regclass('auth.identities') is null then return;end if;
+ select n.nspname into crypto_schema from pg_extension e join pg_namespace n on n.oid=e.extnamespace where e.extname='pgcrypto';
+ if crypto_schema is null then raise exception 'PGCRYPTO_REQUIRED';end if;
  for r in select * from (values
- ('thaythanh','Thầy Thành','admin','thaythanh','$2a$12$ZKTWqgtMO62CRSHfO7G/O.f5i/xOybzhPVVoOW.HM29CZcqB2hfF.','e94aaa1a-e614-4d64-9593-8af9e7599e85'::uuid),
- ('thaytai','Trần Thanh Anh Tài','gv','thaytai','$2a$12$3ztzgln.CmsqtA2mIXhvIeTLSsIIFB/2b/RNnImFseC4t0ZlDx4Q6','62dbacb9-325a-4b68-961f-c8679d5ef2da'::uuid),
- ('thayhieu','Trần Đức Hiếu','gv','thayhieu','$2a$12$EZvqO/4K0PZ.dNJx9RnyneXfenQa0GnCrvcOuUBBrzZI/2vJrNndK','517eca93-7228-46bf-82fa-3553bab714b9'::uuid),
- ('thayhoang','Nguyễn Duy Hoàng','gv','thayhoang','$2a$12$MCsMAcN2Tr0Tf0po6vdAtuCDfVS1IxDU6VpSBPOn3ziZ1o6b4QQuK','48f2d66d-65cf-4518-84a6-42462a2ff9f9'::uuid),
- ('thaygiang','Giang','gv','thaygiang','$2a$12$xe2PTEAxT2Hjj8pEaLC71.M95Bau0c0YAhyYkGKD3fj/AoBFt/tui','941993d4-070c-4ef7-9d82-594552b039d8'::uuid),
- ('hang','Đào Minh Hằng','ql',null,'$2a$12$weFDz5SekTGAK2SIohGgje2nEKp27iK6joTfJiUC7Ok199QIzhJIS','bbfbb466-5b3f-41db-bf88-4c7c303460c5'::uuid),
- ('vietanh','Cao Việt Anh','ql',null,'$2a$12$TuzKKCaQyq6GhUM7bU9lV.ACCK5PWqsJ946KoyygrDxSoRRHnSg4S','7837e06e-9442-418a-a763-dd41dd821854'::uuid),
- ('dung','Bùi Tiến Dũng','ql',null,'$2a$12$eJxI86jXWQnWaI20DHGez.QoeOwPdEFeo7UtLjpqoarFlpzLqVnwq','67285f91-85a8-4630-bfda-e5902b2a14cb'::uuid)
- ) as seed(short_name,display_name,staff_role,teacher_key,password_hash,new_id) loop
+ ('thaythanh','Thầy Thành','admin','thaythanh','e94aaa1a-e614-4d64-9593-8af9e7599e85'::uuid),
+ ('thaytai','Trần Thanh Anh Tài','gv','thaytai','62dbacb9-325a-4b68-961f-c8679d5ef2da'::uuid),
+ ('thayhieu','Trần Đức Hiếu','gv','thayhieu','517eca93-7228-46bf-82fa-3553bab714b9'::uuid),
+ ('thayhoang','Nguyễn Duy Hoàng','gv','thayhoang','48f2d66d-65cf-4518-84a6-42462a2ff9f9'::uuid),
+ ('thaygiang','Giang','gv','thaygiang','941993d4-070c-4ef7-9d82-594552b039d8'::uuid),
+ ('hang','Đào Minh Hằng','ql',null,'bbfbb466-5b3f-41db-bf88-4c7c303460c5'::uuid),
+ ('vietanh','Cao Việt Anh','ql',null,'7837e06e-9442-418a-a763-dd41dd821854'::uuid),
+ ('dung','Bùi Tiến Dũng','ql',null,'67285f91-85a8-4630-bfda-e5902b2a14cb'::uuid)
+ ) as seed(short_name,display_name,staff_role,teacher_key,new_id) loop
+  created=false;
   select id into uid from auth.users where lower(email)=r.short_name||'@minhthanhmath.vn';
   if uid is null then
-   uid=r.new_id;
-   insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
+   uid=r.new_id;created=true;
+   -- A random value is generated and bcrypt-hashed inside this INSERT only.
+   -- Dynamic schema lookup supports pgcrypto in public or extensions. No plaintext variable/log.
+   execute format($seed$insert into auth.users(instance_id,id,aud,role,email,encrypted_password,email_confirmed_at,raw_app_meta_data,raw_user_meta_data,created_at,updated_at,
     confirmation_token,recovery_token,email_change_token_new,email_change,email_change_token_current,phone_change,phone_change_token,reauthentication_token)
-   values('00000000-0000-0000-0000-000000000000',uid,'authenticated','authenticated',r.short_name||'@minhthanhmath.vn',r.password_hash,now(),
-    '{"provider":"email","providers":["email"]}'::jsonb,jsonb_build_object('ten',r.display_name),now(),now(),'','','','','','','','');
+   values('00000000-0000-0000-0000-000000000000',$1,'authenticated','authenticated',$2,%1$I.crypt(encode(%1$I.gen_random_bytes(32),'hex'),%1$I.gen_salt('bf',12)),now(),
+    '{"provider":"email","providers":["email"]}'::jsonb,jsonb_build_object('ten',$3::text),now(),now(),'','','','','','','','')$seed$,crypto_schema) using uid,r.short_name||'@minhthanhmath.vn',r.display_name;
    insert into auth.identities(id,provider_id,user_id,identity_data,provider,last_sign_in_at,created_at,updated_at)
    values(gen_random_uuid(),uid::text,uid,jsonb_build_object('sub',uid::text,'email',r.short_name||'@minhthanhmath.vn','email_verified',true),'email',now(),now(),now());
   end if;
   -- Existing passwords/roles remain unchanged on replays; no exam-admin grants.
-  insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key)
-   values(uid,r.short_name,r.display_name,r.staff_role,r.teacher_key) on conflict do nothing;
+  insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key,must_change_password)
+   values(uid,r.short_name,r.display_name,r.staff_role,r.teacher_key,created) on conflict do nothing;
  end loop;
  insert into public.mtm_staff(user_id,short_name,display_name,role)
  select id,'quanly','Quản lý MTM','ql' from auth.users where lower(email)='quanly@minhthanhmath.vn' on conflict do nothing;
 end $accounts$;
+
+-- Only Auth's persisted password update can clear this flag. A browser cannot
+-- clear it via user_metadata, an RPC parameter, or a write to mtm_staff.
+create or replace function mtm_hw_private.staff_password_changed() returns trigger
+language plpgsql security definer set search_path='' as $$
+begin
+ if nullif(new.encrypted_password,'') is not null and new.encrypted_password is distinct from old.encrypted_password then
+  update public.mtm_staff set must_change_password=false where user_id=new.id;
+ end if;
+ return new;
+end$$;
+revoke all on function mtm_hw_private.staff_password_changed() from public,anon,authenticated,service_role;
+do $$begin
+ if exists(select 1 from information_schema.columns where table_schema='auth' and table_name='users' and column_name='encrypted_password') then
+  drop trigger if exists mtm_staff_password_changed on auth.users;
+  create trigger mtm_staff_password_changed after update of encrypted_password on auth.users
+   for each row execute function mtm_hw_private.staff_password_changed();
+ end if;
+end$$;
+
+-- Read-only roster excludes recovery destinations. Changing a registered contact
+-- is an owner-only personnel operation, never a field on the reset request.
+create or replace function public.mtm_staff_password_roster() returns jsonb
+language plpgsql security definer set search_path='' as $$
+begin
+ if not exists(select 1 from public.mtm_staff where user_id=auth.uid() and active and role in ('ql','admin') and not must_change_password)
+ then raise exception 'MANAGER_REQUIRED' using errcode='42501';end if;
+ return coalesce((select jsonb_agg(jsonb_build_object('user_id',user_id,'display_name',display_name,'short_name',short_name,'role',role,
+  'must_change_password',must_change_password,'recovery_ready',recovery_email is not null and recovery_email_verified_at is not null) order by display_name)
+  from public.mtm_staff where active),'[]');
+end$$;
+revoke all on function public.mtm_staff_password_roster() from public,anon,service_role;
+grant execute on function public.mtm_staff_password_roster() to authenticated;
+
+-- Called ONLY by the server after getUser(bearer). The browser cannot nominate
+-- an actor or recipient, and cannot invoke this service-only function directly.
+create or replace function public.mtm_staff_password_reset_target(p_actor uuid,p_target uuid) returns jsonb
+language plpgsql security definer set search_path='' as $$
+declare target public.mtm_staff;email text;confirmed timestamptz;
+begin
+ if not exists(select 1 from public.mtm_staff where user_id=p_actor and active and role in ('ql','admin') and not must_change_password)
+ then raise exception 'MANAGER_REQUIRED' using errcode='42501';end if;
+ -- Global lock per actor and per target prevents concurrent mail bursts.
+ perform pg_advisory_xact_lock(hashtextextended('staff-reset-actor:'||p_actor::text,0));
+ if exists(select 1 from mtm_hw_private.staff_reset_requests where actor=p_actor and requested_at>clock_timestamp()-interval '1 minute')
+ then raise exception 'RESET_RATE_LIMIT';end if;
+ select * into target from public.mtm_staff where user_id=p_target and active for update;
+ if target.user_id is null then raise exception 'STAFF_REQUIRED';end if;
+ if target.password_reset_requested_at>clock_timestamp()-interval '1 minute' then raise exception 'RESET_RATE_LIMIT';end if;
+ select u.email,u.email_confirmed_at into email,confirmed from auth.users u where u.id=p_target;
+ if confirmed is null or target.recovery_email_verified_at is null or nullif(btrim(target.recovery_email),'') is null
+  or lower(target.recovery_email) is distinct from lower(email)
+ then raise exception 'REGISTERED_EMAIL_REQUIRED';end if;
+ update public.mtm_staff set password_reset_requested_at=clock_timestamp(),must_change_password=true where user_id=p_target;
+ insert into mtm_hw_private.staff_reset_requests(actor,target_id) values(p_actor,p_target);
+ return jsonb_build_object('email',email);
+end$$;
+create table if not exists mtm_hw_private.staff_reset_requests(
+ id bigint generated always as identity primary key,actor uuid not null,target_id uuid not null,requested_at timestamptz not null default clock_timestamp());
+create index if not exists staff_reset_actor_at on mtm_hw_private.staff_reset_requests(actor,requested_at desc);
+alter table mtm_hw_private.staff_reset_requests enable row level security;
+revoke all on mtm_hw_private.staff_reset_requests from public,anon,authenticated,service_role;
+revoke all on function public.mtm_staff_password_reset_target(uuid,uuid) from public,anon,authenticated;
+grant execute on function public.mtm_staff_password_reset_target(uuid,uuid) to service_role;
 
 commit;
