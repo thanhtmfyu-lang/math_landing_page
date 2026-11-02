@@ -233,7 +233,8 @@
   },
   "git": {
     "deploymentEnabled": {
-      "codex/web-v13-*": false
+      "codex/web-v13-*": false,
+      "codex/ra-soat-a-answer-regrade-20261102": false
     }
   }
 }
