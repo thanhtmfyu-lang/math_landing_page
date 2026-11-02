@@ -1621,26 +1621,27 @@ async function correctionHash(v) {
 function validateCorrectionRequest(v) {
   ensure2(object(v), "CORRECTION_SCHEMA");
   ensure2(Object.keys(v).every((k) => ["action", "lesson_key", "request_id", "lenh_ref", "approved_via", "patches", "expected_plan_sha256"].includes(k)), "CORRECTION_SCHEMA");
-  ensure2(["answer_correction_preview", "answer_correction_apply"].includes(v.action), "CORRECTION_ACTION");
+  ensure2(["answer_correction_preview", "answer_correction_apply", "answer_correction_future_only_preview", "answer_correction_future_only_apply"].includes(v.action), "CORRECTION_ACTION");
   ensure2(/^[a-z0-9-]{1,160}$/.test(v.lesson_key ?? "") && /^[A-Za-z0-9_-]{12,160}$/.test(v.request_id ?? ""), "CORRECTION_ID");
   ensure2(typeof v.lenh_ref === "string" && v.lenh_ref.length >= 8 && v.lenh_ref.length <= 500 && typeof v.approved_via === "string" && v.approved_via.length >= 8 && v.approved_via.length <= 500, "CORRECTION_AUTHORITY_REQUIRED");
   ensure2(Array.isArray(v.patches) && v.patches.length > 0 && v.patches.length <= 50, "CORRECTION_PATCHES");
   const seen = /* @__PURE__ */ new Set();
   for (const p of v.patches) {
-    ensure2(object(p) && Object.keys(p).every((k) => ["question_id", "answer", "acceptedAnswers"].includes(k)), "CORRECTION_PATCH_SCHEMA");
+    ensure2(object(p) && Object.keys(p).every((k) => ["question_id", "answer", "acceptedAnswers", "mode"].includes(k)), "CORRECTION_PATCH_SCHEMA");
     ensure2(typeof p.question_id === "string" && p.question_id.trim() === p.question_id && p.question_id.length > 0 && !seen.has(p.question_id), "CORRECTION_DUPLICATE_QUESTION");
     seen.add(p.question_id);
     ensure2((Object.hasOwn(p, "answer") ? 1 : 0) + (Object.hasOwn(p, "acceptedAnswers") ? 1 : 0) === 1, "CORRECTION_PATCH_SCHEMA");
+    if (Object.hasOwn(p, "mode")) ensure2(Object.hasOwn(p, "acceptedAnswers") && ["numeric", "rational", "exact"].includes(p.mode), "CORRECTION_SHORT_MODE");
     if (Object.hasOwn(p, "answer")) ensure2(["A", "B", "C", "D"].includes(p.answer), "CORRECTION_CHOICE");
     else ensure2(Array.isArray(p.acceptedAnswers) && p.acceptedAnswers.length > 0 && p.acceptedAnswers.length <= 20 && p.acceptedAnswers.every((x) => typeof x === "string" && x.trim() === x && x.length > 0 && x.length <= 500) && new Set(p.acceptedAnswers).size === p.acceptedAnswers.length, "CORRECTION_SHORT");
   }
-  if (v.action === "answer_correction_apply") ensure2(/^[a-f0-9]{64}$/.test(v.expected_plan_sha256 ?? ""), "CORRECTION_PREVIEW_REQUIRED");
+  if (v.action.endsWith("_apply")) ensure2(/^[a-f0-9]{64}$/.test(v.expected_plan_sha256 ?? ""), "CORRECTION_PREVIEW_REQUIRED");
 }
 async function planAnswerCorrection(snapshot, request) {
   validateCorrectionRequest(request);
   ensure2(object(snapshot) && validatePracticeExam(snapshot.exam).valid && Array.isArray(snapshot.work), "CORRECTION_SNAPSHOT");
   const old = snapshot.exam, exam = structuredClone(old);
-  ensure2(!exam.questions.some((q) => q.kind === "self"), "CORRECTION_MANUAL_GRADING_HOLD");
+  const hasSelf = exam.questions.some((q) => q.kind === "self");
   const patchHash = await correctionHash(request.patches);
   if (exam.rubricVersion === MTM_SCORING_VERSION) exam.answerKeyVersion = "corrected-" + patchHash;
   else exam.versionHash = await correctionHash({ previousVersion: old.versionHash, patches: request.patches });
@@ -1648,11 +1649,15 @@ async function planAnswerCorrection(snapshot, request) {
     const q = exam.questions.find((q2) => q2.id === patch.question_id);
     ensure2(q, "CORRECTION_QUESTION_NOT_FOUND");
     if (q.kind === "mc") {
-      ensure2(patch.answer && !patch.acceptedAnswers, "CORRECTION_KIND");
+      ensure2(patch.answer && !patch.acceptedAnswers && !patch.mode, "CORRECTION_KIND");
       q.answer = patch.answer;
     } else {
       ensure2(q.kind === "short" && patch.acceptedAnswers && !patch.answer, "CORRECTION_KIND");
       q.acceptedAnswers = [...patch.acceptedAnswers];
+      if (patch.mode !== void 0) {
+        ensure2(!q.shortRule || q.shortRule.mode === (patch.mode === "numeric" ? "decimal" : patch.mode), "CORRECTION_SHORT_RULE_CONFLICT");
+        q.mode = patch.mode;
+      }
     }
     if (exam.rubricVersion === MTM_SCORING_VERSION) {
       q.answerVerified = true;
@@ -1660,6 +1665,12 @@ async function planAnswerCorrection(snapshot, request) {
     }
   }
   ensure2(validatePracticeExam(exam).valid, "CORRECTION_NEW_KEY_INVALID");
+  if (request.action.startsWith("answer_correction_future_only_")) {
+    ensure2(!snapshot.work.some((row) => row.drafts.some((d) => d.submittedAt === null)), "CORRECTION_ACTIVE_ATTEMPT_HOLD");
+    const plan2 = { exam, work: structuredClone(snapshot.work) };
+    const plan_sha2562 = await correctionHash({ mode: "future_only", request_id: request.request_id, lesson_key: request.lesson_key, lenh_ref: request.lenh_ref, approved_via: request.approved_via, patches: request.patches, snapshot, plan: plan2 });
+    return { plan: plan2, plan_sha256: plan_sha2562, students: snapshot.work.length, attempts: 0, changed: 0, question_ids: request.patches.map((p) => p.question_id) };
+  }
   let attempts = 0, changed = 0;
   const studentIds = /* @__PURE__ */ new Set();
   const work = snapshot.work.map((row) => {
@@ -1673,7 +1684,7 @@ async function planAnswerCorrection(snapshot, request) {
     ensure2(new Set(row.receipts.map((r) => r.attemptId)).size === row.receipts.length, "CORRECTION_DUPLICATE_RECEIPT");
     ensure2(drafts.filter((d) => d.submittedAt !== null).length === row.receipts.length, "CORRECTION_MISSING_RECEIPT");
     const receipts = row.receipts.map((receipt) => {
-      ensure2(!Object.hasOwn(receipt, "officialScore") && receipt.gradingPending !== true, "CORRECTION_MANUAL_OVERRIDE_HOLD");
+      ensure2(hasSelf || !Object.hasOwn(receipt, "officialScore") && receipt.gradingPending !== true, "CORRECTION_MANUAL_OVERRIDE_HOLD");
       const draft = drafts.find((d) => d.attemptId === receipt.attemptId);
       ensure2(draft && draft.submittedAt !== null && draft.submittedAt === receipt.submittedAt, "CORRECTION_MISSING_ANSWERS");
       const result = resultFor(exam, draft);
@@ -1695,12 +1706,13 @@ async function planAnswerCorrection(snapshot, request) {
 async function handleAnswerCorrection(port, body) {
   validateCorrectionRequest(body);
   const binding = { lesson_key: body.lesson_key, request_id: body.request_id, lenh_ref: body.lenh_ref, approved_via: body.approved_via, patches: body.patches };
-  const snapshot = await port.rpc("answer_correction_snapshot", binding);
+  const futureOnly = body.action.startsWith("answer_correction_future_only_");
+  const snapshot = await port.rpc(futureOnly ? "answer_correction_future_snapshot" : "answer_correction_snapshot", binding);
   if (snapshot?.already_applied === true) return snapshot.result;
   const result = await planAnswerCorrection(snapshot, body);
-  if (body.action === "answer_correction_preview") return { status: "preview", plan_sha256: result.plan_sha256, students: result.students, attempts: result.attempts, changed: result.changed, question_ids: result.question_ids };
+  if (body.action.endsWith("_preview")) return { status: "preview", plan_sha256: result.plan_sha256, students: result.students, attempts: result.attempts, changed: result.changed, question_ids: result.question_ids };
   ensure2(body.expected_plan_sha256 === result.plan_sha256, "CORRECTION_STALE_PREVIEW");
-  return port.rpc("answer_correction_commit", { ...binding, expected_snapshot: snapshot, new_exam: result.plan.exam, updated_work: result.plan.work, plan_sha256: result.plan_sha256 });
+  return port.rpc(futureOnly ? "answer_correction_future_commit" : "answer_correction_commit", { ...binding, expected_snapshot: snapshot, new_exam: result.plan.exam, updated_work: result.plan.work, plan_sha256: result.plan_sha256 });
 }
 
 // server/btvn/publish-handler.ts
@@ -1737,7 +1749,7 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       ensure3(text5.length <= 48 * 1024 * 1024, "PAYLOAD_TOO_LARGE");
       const body = JSON.parse(text5);
       ensure3(body && typeof body === "object" && !Array.isArray(body), "INVALID_PAYLOAD");
-      if (["answer_correction_preview", "answer_correction_apply"].includes(body.action)) return respond(200, await handleAnswerCorrection(port, body));
+      if (["answer_correction_preview", "answer_correction_apply", "answer_correction_future_only_preview", "answer_correction_future_only_apply"].includes(body.action)) return respond(200, await handleAnswerCorrection(port, body));
       const read = scorebookRpc(body);
       if (read) return respond(200, scorebookResult(read.name, await port.rpc(read.name, read.payload)));
       const scheduleEnv = options.scheduleEnv ?? scheduleEnvironment();
