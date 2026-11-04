@@ -59,6 +59,15 @@ export class SupabaseHomeworkRepository {
     return this.rpc('mtm_btvn_set_due',{p_student_id:studentId,p_lesson:lessonCode,p_starts_at:new Date(startsAt).toISOString(),p_source_identity:sourceIdentity});
   }
   async call(session:string,action:'state'|'select'|'start'|'save'|'submit',lessonCode?:string,attemptId?:string,answers?:Answers):Promise<HomeworkState>{
+    // Read the canonical choice before asking SQL for a different variant.
+    // The SQL guard uses serialization failure; PostgREST can retry that error
+    // until the read timeout hides its message. The canonical read is authorized
+    // by the same session. Keep the SQL guard as the final race fence.
+    if(action==='select'&&lessonCode&&/-de-[12]$/.test(lessonCode)){
+      const base=lessonCode.replace(/-de-[12]$/,''),requested=Number(lessonCode.at(-1));
+      const choice=(await this.rpc<DurableSnapshot>('mtm_btvn_read',{p_session:session,p_lesson:base})).paperChoice;
+      if(choice?.count===2&&choice.locked&&choice.paper!==requested)throw new HomeworkError(409,'Đã chọn đề, không đổi được');
+    }
     // Hai lần thử lại chỉ khi CAS báo xung đột; mọi lỗi quyền/lưu khác dừng ngay.
     for(let retry=0;retry<3;retry++){
       const snapshot=await this.rpc<DurableSnapshot>('mtm_btvn_read',{p_session:session,p_lesson:lessonCode??null});
