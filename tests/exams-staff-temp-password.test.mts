@@ -42,5 +42,14 @@ try{
  }
  const other=new SupabaseHomeworkRepository({rpc:async()=>({data:null,error:{code:'P0001',message:'PRIVATE_OTHER_ERROR'}})},async()=>null);
  await assert.rejects(()=>other.call('fixture','state'),(e:any)=>e.status===503&&!e.message.includes('PRIVATE'));checks++;
+ const canonicalCalls:any[]=[];
+ const locked=new SupabaseHomeworkRepository({rpc:async(name,args)=>{
+  canonicalCalls.push({name,args});
+  // A read of the other variant would be retried by the database gateway.
+  assert.equal(args.p_lesson,'synthetic-qa');
+  return {data:{paperChoice:{count:2,paper:2,locked:true}},error:null};
+ }},async()=>null);
+ await assert.rejects(()=>locked.call('fixture','select','synthetic-qa-de-1'),(e:any)=>e.status===409&&e.message==='Đã chọn đề, không đổi được');
+ assert.equal(canonicalCalls.length,1);assert.equal(canonicalCalls[0].args.p_session,'fixture');checks++;
  console.log(`${checks} ca tuyến mật khẩu tạm và khóa đề đạt; fixture only, bcrypt không được mô phỏng là kiểm live.`);
 }finally{await db.close();}
