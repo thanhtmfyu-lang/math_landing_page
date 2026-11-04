@@ -50,7 +50,7 @@ try{
  const repo=new SupabaseHomeworkRepository(client,async()=>({}),Date.now,async path=>'https://fixture.invalid/'+path+'?token=fixture');
  const selected=await repo.call(token,'select',code+'-de-2');assert.equal(selected.paperChoice?.paper,2);assert.equal(selected.paperChoice?.locked,false);assert.equal(selected.lessons?.length,1);assert.equal(selected.exam?.id,second.exam.id);assert(!JSON.stringify(selected).includes('acceptedAnswers'));assert(!JSON.stringify(selected).includes('"answer":"A"'));checks++;
  const started=await repo.call(token,'start',code+'-de-2');assert(started.draft);checks++;
- await assert.rejects(()=>repo.call(token,'select',code+'-de-1'));checks++;
+ await assert.rejects(()=>repo.call(token,'select',code+'-de-1'),(e:any)=>e.status===409&&e.message==='Đã chọn đề, không đổi được');checks++;
  const submitted=await repo.call(token,'submit',code+'-de-2',started.draft!.attemptId,{'mc-1':'A','tf-1':[true,false,true,false],'sa-1':'2.5'});
  assert(submitted.receipts.length===1,JSON.stringify({rpcError,submitted}));assert.equal(submitted.receipts[0].score,10,'paper 2 must use its own A key rather than paper 1 D');checks++;
  assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].n,1);checks++;

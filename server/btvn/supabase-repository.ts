@@ -11,7 +11,7 @@ import {homeworkLessonCard} from './lesson-card';
 import {validOfficialHomeworkScore} from '../../src/native/homework/grading-policy';
 import {thiThangBlock,visibleThiThangCards} from './thi-thang';
 
-export interface RpcTransport {rpc(name:string,args:Record<string,unknown>):Promise<{data:unknown;error:null|{code?:string}}>}
+export interface RpcTransport {rpc(name:string,args:Record<string,unknown>):Promise<{data:unknown;error:null|{code?:string;message?:string}}>}
 export type DurableSnapshot={paperChoice?:HomeworkState["paperChoice"];revision:number;work:StudentWork;exam?:PracticeExam;material?:LessonMaterial;lessons:LessonMaterial[];officialGrades?:Record<string,number>};
 const monthlyCards=(lessons:LessonMaterial[],now:number,className:string)=>lessons.map(l=>homeworkLessonCard(l,className,now));
 /** Server-only. Không liệt kê học sinh, không giữ mã thô trong repository.
@@ -45,7 +45,9 @@ export class SupabaseHomeworkRepository {
     return result.session as string;
   }
   private async rpc<T>(name:string,args:Record<string,unknown>):Promise<T>{
-    const out=await this.db.rpc(name,args);if(out.error)throw new HomeworkError(out.error.code==='42501'?401:out.error.code==='40001'?409:503,out.error.code==='42501'?GATE_ERROR:out.error.code==='40001'?'Bài đã thay đổi ở tab khác. Tải lại để tiếp tục.':'Chưa kết nối được máy chủ. Em thử lại sau.');return out.data as T;
+    const out=await this.db.rpc(name,args);
+    if(out.error?.message==='PAPER_CHOICE_LOCKED')throw new HomeworkError(409,'Đã chọn đề, không đổi được');
+    if(out.error)throw new HomeworkError(out.error.code==='42501'?401:out.error.code==='40001'?409:503,out.error.code==='42501'?GATE_ERROR:out.error.code==='40001'?'Bài đã thay đổi ở tab khác. Tải lại để tiếp tục.':'Chưa kết nối được máy chủ. Em thử lại sau.');return out.data as T;
   }
   async logout(session:string){await this.rpc('mtm_btvn_logout',{p_session:session});}
   async remember(session:string){return (await this.rpc<boolean>('mtm_btvn_remember',{p_session:session}))===true;}
