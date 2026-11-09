@@ -1,6 +1,6 @@
 import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
-import {baoCao,cham,deCongKhai,dotCongKhai,dotDangMo,kiemBaoLoi,kiemDangKyDot,mucLuc,normShort,tenDe,phanViHsa,quyenMo,tenRutGon,thoiGianCau,validateDe,validateDot,type PtDe,type PtDot,type PtKho} from '../server/phong-thi/engine';
+import {baoCao,cham,deAnTheoDot,deCongKhai,dotCongKhai,dotDangMo,kiemBaoLoi,kiemDangKyDot,mucLuc,normShort,tenDe,phanViHsa,quyenMo,tenRutGon,thoiGianCau,validateDe,validateDot,type PtDe,type PtDot,type PtKho} from '../server/phong-thi/engine';
 import {DOT,docVe,dongGoi,kyVe,moGoi,phongThiKey,loadKho,xuLy} from '../server/phong-thi/handler';
 import {createPhongThiApi,chuanSdt,bamMatKhau,dungMatKhau,ipBam,taoMaTraCuu} from '../server/phong-thi/api';
 
@@ -257,7 +257,8 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
   assert.equal((await PR({action:'tra-cuu-sbd',sbd:'KS26-11-0009',maTraCuu:'ABCDEFGHJK'})).status,401);
   // Danh mục có đợt, kèm SBD của em; nộp bài ghi thời gian từng câu, mã đợt.
   const dmR=await call(apiR,{method:'GET',headers:{cookie:ck}});assert.equal(dmR.status,200);assert.equal(dmR.body.dot.find((t:any)=>t.ma==='ks-hk1-2026').cuaEm.sbd,'KS26-10-0001');
-  const cong=kt.de.find(x=>x.tang==='cong-khai')!;
+  // Đề công khai đang luyện tự do được (không bị giữ kín vì nằm trong đợt chưa đóng).
+  const an=deAnTheoDot(DOT,Date.parse('2026-11-20T10:00:00+07:00')),cong=kt.de.find(x=>x.tang==='cong-khai'&&!an.has(x.id))!;
   const mR=await PR({action:'mo',de:cong.id});const nR=await PR({action:'nop',de:cong.id,ve:mR.body.ve,traLoi:{},thoiGian:{[cong.cau[0].ma]:0}});
   assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot_real100')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
  }
