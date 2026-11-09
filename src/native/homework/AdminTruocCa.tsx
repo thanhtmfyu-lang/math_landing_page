@@ -8,14 +8,28 @@ import './truoc-ca.css';
 /** Một dòng từ mtm_truoc_ca_admin: một em trong một ca, kèm một bài tới hạn ở ca (hoặc không có bài). */
 export type TruocCaRow={ca:string;gio:string;hocSinh:string;lopGoc:string;nguon:string;bai:string|null;diem:number|null;soLan:number};
 export type TruocCaData={day:string;generatedAt:string;rows:TruocCaRow[]};
-export type TruocCaStatus='Chưa làm'|'Dưới 7'|'Đạt'|'Chưa có bài';
+export type TruocCaStatus='Chưa làm'|'Dưới 7'|'Đạt'|'Chờ chấm'|'Chưa có bài';
 export type TruocCaStudent={hocSinh:string;lopGoc:string;nguon:string;items:{bai:string;diem:number|null;soLan:number}[];status:TruocCaStatus};
 export type TruocCaSession={ca:string;gio:string;students:TruocCaStudent[];canLam:number};
 /** Luật J39: chưa nộp bài tới hạn hoặc điểm dưới 7 thì làm lại đạt từ 7 mới vào lớp. */
 export function studentStatus(items:TruocCaStudent['items']):TruocCaStatus{
  if(!items.length)return 'Chưa có bài';
- if(items.some(x=>x.soLan===0||x.diem===null))return 'Chưa làm';
- return items.some(x=>(x.diem as number)<7)?'Dưới 7':'Đạt';
+ if(items.some(x=>x.soLan===0))return 'Chưa làm';
+ if(items.some(x=>x.diem!==null&&x.diem<7))return 'Dưới 7';
+ return items.some(x=>x.diem===null)?'Chờ chấm':'Đạt';
+}
+/** 09/11: hai đề cùng bài (Đề 1/Đề 2, số 01/02, Mã 101/102) đăng thành 2 bài riêng thì HS chỉ làm 1 đề:
+ * gộp thành một dòng, lấy điểm cao nhất. Chỉ gộp khi tên chỉ khác nhau ở số đề. */
+export function paperKey(bai:string){
+ const key=bai.replace(/\s*\(Mã \d+\)/g,'').replace(/(Đề số|Đề|số)\s*0*\d+(?![\d\s]*và)/gi,'#').replace(/\s+/g,' ').trim();
+ return key===bai.replace(/\s+/g,' ').trim()?bai:key;
+}
+export function mergePapers(items:TruocCaStudent['items']):TruocCaStudent['items']{
+ const groups=new Map<string,TruocCaStudent['items']>();
+ for(const item of items){const k=paperKey(item.bai);if(!groups.has(k))groups.set(k,[]);groups.get(k)!.push(item);}
+ return [...groups.values()].map(g=>{if(g.length===1)return g[0];
+  const scores=g.map(x=>x.diem).filter((x):x is number=>x!==null);
+  return {bai:g.map(x=>x.bai).join(' / ')+' (chọn 1 đề)',diem:scores.length?Math.max(...scores):null,soLan:g.reduce((n,x)=>n+x.soLan,0)};});
 }
 export function groupTruocCa(rows:TruocCaRow[]):TruocCaSession[]{
  const sessions=new Map<string,{ca:string;gio:string;students:Map<string,TruocCaStudent>}>();
@@ -26,10 +40,10 @@ export function groupTruocCa(rows:TruocCaRow[]):TruocCaSession[]{
   if(!students.has(row.hocSinh))students.set(row.hocSinh,{hocSinh:row.hocSinh,lopGoc:row.lopGoc,nguon:row.nguon,items:[],status:'Chưa có bài'});
   if(row.bai)students.get(row.hocSinh)!.items.push({bai:row.bai,diem:row.diem,soLan:row.soLan});
  }
- return [...sessions.values()].map(s=>{const students=[...s.students.values()].map(x=>({...x,status:studentStatus(x.items)}));
+ return [...sessions.values()].map(s=>{const students=[...s.students.values()].map(x=>{const items=mergePapers(x.items);return {...x,items,status:studentStatus(items)};});
   return {ca:s.ca,gio:s.gio,students,canLam:students.filter(x=>x.status==='Chưa làm'||x.status==='Dưới 7').length};});
 }
-export const diemText=(item:{diem:number|null;soLan:number})=>item.soLan===0||item.diem===null?'Chưa làm':item.diem.toLocaleString('vi-VN',{maximumFractionDigits:2});
+export const diemText=(item:{diem:number|null;soLan:number})=>item.soLan===0?'Chưa làm':item.diem===null?'Đã nộp, chờ chấm':item.diem.toLocaleString('vi-VN',{maximumFractionDigits:2});
 export function vnToday(now=new Date()){return new Intl.DateTimeFormat('en-CA',{timeZone:'Asia/Ho_Chi_Minh'}).format(now);}
 export async function loadTruocCa(expectedOwner:string,day:string):Promise<TruocCaData>{
  const {user,client}=await adminRequest(expectedOwner);
@@ -44,11 +58,11 @@ export function TruocCaTables({sessions}:{sessions:TruocCaSession[]}){
   <h2>{s.ca} · {s.gio}</h2>
   <p className={s.canLam?'tc-warn':'tc-ok'}>{s.canLam?`${s.canLam}/${s.students.length} em cần làm lại BTVN đạt từ 7 trước khi vào lớp.`:`Cả ${s.students.length} em đã đạt BTVN tới hạn (hoặc ca chưa có bài tới hạn).`}</p>
   <div className="hw-table"><table><thead><tr><th>Học sinh</th><th>BTVN tới hạn</th><th>Điểm</th><th>Cần làm</th></tr></thead><tbody>
-   {s.students.map(st=><tr key={st.hocSinh} className={'tc-'+(st.status==='Đạt'?'dat':st.status==='Chưa có bài'?'none':'can')}>
+   {s.students.map(st=><tr key={st.hocSinh} className={'tc-'+(st.status==='Đạt'?'dat':st.status==='Chưa có bài'||st.status==='Chờ chấm'?'none':'can')}>
     <td>{st.hocSinh}{st.lopGoc!==s.ca&&<small>Lớp gốc {st.lopGoc}{st.nguon&&st.nguon!=='Lớp gốc'?' · '+st.nguon:''}</small>}</td>
     <td>{st.items.length?st.items.map(x=><span key={x.bai} className="tc-line">{x.bai}</span>):'Chưa có bài'}</td>
     <td>{st.items.length?st.items.map(x=><span key={x.bai} className="tc-line">{diemText(x)}</span>):''}</td>
-    <td><strong>{st.status==='Chưa làm'||st.status==='Dưới 7'?'Làm lại đạt từ 7':st.status==='Đạt'?'Đạt':''}</strong></td>
+    <td><strong>{st.status==='Chưa làm'||st.status==='Dưới 7'?'Làm lại đạt từ 7':st.status==='Đạt'||st.status==='Chờ chấm'?st.status:''}</strong></td>
    </tr>)}
   </tbody></table></div>
  </section>)}</>;
