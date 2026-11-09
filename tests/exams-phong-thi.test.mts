@@ -182,6 +182,10 @@ assert.equal(dotDangMo(DS,'dot-thu','tsa-mau',trong)?.ma,'dot-thu');assert.equal
  const ngk={dot:[{...DS[0],kin:true}]};
  assert.ok(!(xuLy('danh-muc',{},HS,K,truoc,ngk) as any).body.de.some((d:any)=>d.id==='tsa-mau'));
  assert.equal(xuLy('mo',{de:'tsa-mau'},KHACH,K,trong,ngk).status,404);assert.equal(xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},KHACH,K,trong,ngk).status,200);
+ // Đợt kin trước giờ mở và sau giờ đóng: máy chủ không trả câu hỏi khi mở theo đợt; trước khi đóng cũng không mở tự do được.
+ for(const ai of [KHACH,HS]){const a=xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},ai,K,truoc,ngk) as any;assert.equal(a.status,403);assert.equal(a.body.lyDo,'ngoai-gio');assert.ok(!a.body.de);
+  const b=xuLy('mo',{de:'tsa-mau'},ai,K,truoc,ngk) as any;assert.equal(b.status,404);assert.ok(!b.body.de);
+  const c=xuLy('mo',{de:'tsa-mau',dot:'dot-thu'},ai,K,Date.parse('2026-11-27T10:00:00+07:00'),ngk) as any;assert.equal(c.status,403);assert.ok(!c.body.de);}
  assert.ok(validateDot([{...DS[0],kin:'co'}]).length>0);
  assert.equal(xuLy('mo',{de:'thpt-mau-01',dot:'dot-thu'},HS,K,trong,ngc).status,400,'đề không thuộc đợt');
  assert.equal(xuLy('mo',{de:'x',dot:'dot-null'},HS,K,Date.parse('2026-12-25T10:00:00+07:00'),ngc).status,400);
@@ -258,6 +262,10 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
   // Danh mục có đợt, kèm SBD của em; nộp bài ghi thời gian từng câu, mã đợt.
   const dmR=await call(apiR,{method:'GET',headers:{cookie:ck}});assert.equal(dmR.status,200);assert.equal(dmR.body.dot.find((t:any)=>t.ma==='ks-hk1-2026').cuaEm.sbd,'KS26-10-0001');
   // Đề công khai đang luyện tự do được (không bị giữ kín vì nằm trong đợt chưa đóng).
+  // Đề đợt tháng 11 giữ kín trên lịch thật: trước 07:00 15/11 không mở được theo đợt lẫn tự do.
+  {const KT={key:phongThiKey(process.env)!,kho:kt};for(const t of DOT.filter(x=>x.kin&&x.de)){const d=kt.de.find(x=>x.id===t.de);if(!d)continue;
+   assert.equal(xuLy('mo',{de:d.id,dot:t.ma},HS,KT,Date.parse(t.mo)-60000).status,403,t.ma+' trước giờ mở');assert.equal(xuLy('mo',{de:d.id},HS,KT,Date.parse(t.mo)-60000).status,404,t.ma+' tự do trước đóng');
+   assert.equal(xuLy('mo',{de:d.id,dot:t.ma},HS,KT,Date.parse(t.dong)+60000).status,403,t.ma+' sau giờ đóng');}}
   const an=deAnTheoDot(DOT,Date.parse('2026-11-20T10:00:00+07:00')),cong=kt.de.find(x=>x.tang==='cong-khai'&&!an.has(x.id))!;
   const mR=await PR({action:'mo',de:cong.id});const nR=await PR({action:'nop',de:cong.id,ve:mR.body.ve,traLoi:{},thoiGian:{[cong.cau[0].ma]:0}});
   assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot_real100')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
