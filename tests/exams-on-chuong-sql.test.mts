@@ -35,6 +35,8 @@ await q('insert into auth.users values($1)',[owner]);
 await q("insert into mtm_hw_private.classes(id,owner_id,label,grade) values($1,$4,'2K9 9+',12),($2,$4,'2K9 8+',12),($3,$4,'2K10 9+',11)",[c9,c8,c10,owner]);
 for(const [id,cls,name,alias,isTest] of [[an,c9,'Nguyễn Văn An (T2)','MTM-0000000000A1',false],[binh,c8,'Trần Bình','MTM-0000000000A2',false],[thu,c9,'HS thử','MTM-0000000000A3',true],[khac,c10,'Lê Khác','MTM-0000000000A4',false]] as const)
   await q("insert into mtm_hw_private.students(id,owner_id,class_id,full_name,school,school_class,public_alias,is_test) values($1,$2,$3,$4,'Synthetic','12A',$5,$6)",[id,owner,cls,name,alias,isTest]);
+// Hạn thật (08/11/2026) đã qua; dời hạn trong DB thử về sau giờ chạy để lượt nộp lúc chạy vẫn tính trước hạn.
+await q("update mtm_on_chuong.cai_dat set han=clock_timestamp()+interval '1 day'");
 await q("insert into mtm_hw_private.btvn_roster_scope(singleton,owner_id,sheet_id,protected_student_ids) values(true,$1,'synthetic-on-chuong',$2)",[owner,[an,binh]]);
 for(const [sid,s] of [[an,sAn],[thu,sThu]])await q("insert into mtm_hw_private.btvn_identity_sessions(student_id,digest,expires_at) values($1,mtm_hw_private.token_digest('btvn-identity',$2),clock_timestamp()+interval '1 day')",[sid,s]);
 
@@ -60,7 +62,7 @@ test('phiên sai/hết hạn: báo đăng nhập, không ghi', async () => {
 });
 test('bảng QL: chỉ 2K9 XPS, bỏ tài khoản thử, tính trước hạn, lượt sau hạn ghi riêng', async () => {
   await submit(2,'att-thu',sThu);
-  await q("insert into mtm_on_chuong.luot(student_id,exam_id,attempt_key,diem_milli,nop_luc) values($1,$2,'muon',8000,'2026-11-09 08:00+07')",[binh,exams[3].id]);
+  await q("insert into mtm_on_chuong.luot(student_id,exam_id,attempt_key,diem_milli,nop_luc) select $1,$2,'muon',8000,han+interval '1 hour' from mtm_on_chuong.cai_dat",[binh,exams[3].id]);
   const lines=(await csv()).trim().split('\n');
   assert.equal(lines.length,3,lines.join('\n'));
   assert.ok(!lines.join('').includes('HS thử')&&!lines.join('').includes('Lê Khác'));
