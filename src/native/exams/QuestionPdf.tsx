@@ -4,14 +4,23 @@ import {createPortal} from 'react-dom';
 import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy,type RenderTask} from 'pdfjs-dist';
 import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
 import {fetchQuestionPdf,type QuestionPdf as QuestionPdfFile} from './pdf-source';
+import {findQuestionPageIndex,type SourceQuestionLookup} from './room-presentation';
 GlobalWorkerOptions.workerSrc=workerUrl;
 // TH-02 (Đợt 4): trang đề vẽ theo đúng bề ngang vùng đọc (trước đây trừ 24 px nên trên điện thoại chỉ còn 293 px),
 // thêm mức phóng (cuộn hai chiều) và chế độ toàn màn hình. Không đổi tệp đề, số trang hay điều kiện "bản đề đã hiển thị".
 const ZOOMS=[1,1.5,2,3] as const;
 const MAX_RENDER_WIDTH=3200;
-export default function QuestionPdf({file,title,onReady,targetPage,allowFullscreen=true,compact=false,fitToWidth=false}:{file:QuestionPdfFile;title:string;onReady:(ready:boolean)=>void;targetPage?:number;allowFullscreen?:boolean;compact?:boolean;fitToWidth?:boolean}) {
+export default function QuestionPdf({file,title,onReady,targetPage,locate,onLocated,allowFullscreen=true,compact=false,fitToWidth=false}:{file:QuestionPdfFile;title:string;onReady:(ready:boolean)=>void;targetPage?:number;locate?:SourceQuestionLookup;onLocated?:(page:number|null)=>void;allowFullscreen?:boolean;compact?:boolean;fitToWidth?:boolean}) {
   const [doc,setDoc]=useState<PDFDocumentProxy|null>(null),[index,setIndex]=useState(()=>Math.max(0,file.questionPages.indexOf(targetPage??-1))),[width,setWidth]=useState(600),[error,setError]=useState(''),[busy,setBusy]=useState(true);
   useEffect(()=>{if(targetPage!==undefined){const next=file.questionPages.indexOf(targetPage);if(next>=0)setIndex(next);}},[targetPage,file]);
+  // Câu thiếu ánh xạ trang: đọc chữ các trang câu hỏi, chuyển tới trang có tiêu đề "Câu N" (đúng lần xuất hiện).
+  const locateNumber=locate?.number,locateOccurrence=locate?.occurrence,located=useRef(onLocated);located.current=onLocated;
+  useEffect(()=>{if(!doc||locateNumber===undefined)return;let active=true;
+    void(async()=>{try{const texts:string[]=[];if(locateNumber>0)for(const p of file.questionPages){const content=await (await doc.getPage(p)).getTextContent();if(!active)return;texts.push(content.items.map(item=>'str' in item?item.str+(item.hasEOL?' ':''):'').join(''));}
+      const found=locateNumber>0?findQuestionPageIndex(texts,{number:locateNumber,occurrence:locateOccurrence??0}):undefined;if(!active)return;
+      if(found!==undefined)setIndex(found);located.current?.(found!==undefined?file.questionPages[found]:null);}catch{if(active)located.current?.(null);}})();
+    return()=>{active=false;};
+  },[doc,file,locateNumber,locateOccurrence]);
   // Chỉ phòng tập trung dùng mức đọc lớn trên điện thoại; nhánh cũ giữ vừa ngang.
   const [zoom,setZoom]=useState(()=>!fitToWidth&&compact&&typeof window!=='undefined'&&window.matchMedia('(max-width:760px)').matches?1:0),[full,setFull]=useState(false);
   const host=useRef<HTMLElement>(null),sheet=useRef<HTMLDivElement>(null),fullButton=useRef<HTMLButtonElement>(null),ready=useRef(onReady);ready.current=onReady;
