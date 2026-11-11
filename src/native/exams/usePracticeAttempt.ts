@@ -125,9 +125,11 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
 
   const begin = async () => {
     if(sourceIssue||(erratum&&!acceptedErratum))return;
-    if(!pdfReady){setNotice('Chưa mở làm bài khi bản câu hỏi chưa hiển thị.');return;}
-    if (ram.current) return;
     const old = persisted.current;
+    // 11/11: lượt dở đã hết giờ chỉ cần tự nộp, không cần đọc đề; trước đây PDF chưa tải làm nút "Tiếp tục làm bài" chết.
+    const expiredOld=!!old&&old.submittedAt===null&&timeLeft(old,clockNow())===0;
+    if(!pdfReady&&!expiredOld){setNotice('Chưa mở làm bài khi bản câu hỏi chưa hiển thị.');return;}
+    if (ram.current) return;
     if(remotePending.current)return;
     if (!old && newAttemptsClosed) return; // DL-01: không mở lượt mới; bài dở và lượt đã nộp vẫn mở.
     if(onServerStart&&old?.submittedAt==null){remotePending.current=true;setServerBusy(true);try{await onServerStart(old);}catch(e){setNotice(e instanceof Error?e.message:'Chưa mở được lượt thi.');return;}finally{remotePending.current=false;setServerBusy(false);}}
@@ -159,8 +161,9 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
   const states = draft ? exam.questions.map(q => answerState(exam, q, draft.answers)) : [];
   const answered = states.filter(state => state === 'answered').length, invalidCount = states.filter(state => state === 'invalid').length;
   const seconds = draft ? Math.ceil(timeLeft(draft, now) / 1000) : 0;
-  const startDisabled=serverBusy||!pdfReady||!!sourceIssue||!!erratum&&!acceptedErratum||!!newAttemptsClosed&&!persisted.current;
-  const startLabel=sourceIssue?'Chờ đính chính điều kiện':persisted.current?'Tiếp tục làm bài':newAttemptsClosed?'Chờ phản biện · chưa mở lượt mới':'Bắt đầu làm bài';
+  const expiredPersisted=!!persisted.current&&persisted.current.submittedAt===null&&timeLeft(persisted.current,now)===0;
+  const startDisabled=serverBusy||(!pdfReady&&!expiredPersisted)||!!sourceIssue||!!erratum&&!acceptedErratum||!!newAttemptsClosed&&!persisted.current;
+  const startLabel=sourceIssue?'Chờ đính chính điều kiện':expiredPersisted?'Nộp lượt đã hết giờ':persisted.current?'Tiếp tục làm bài':newAttemptsClosed?'Chờ phản biện · chưa mở lượt mới':'Bắt đầu làm bài';
   const retake=async(confirmed=false)=>{
     if(onRetake){onRetake();return;}
     if(sourceIssue||newAttemptsClosed)return;
