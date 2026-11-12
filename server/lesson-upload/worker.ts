@@ -5,7 +5,7 @@ import {youtubeVideoId} from '../btvn/lesson-materials';
 import {normalizedShort} from '../../src/native/exams/assessment';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 
-export type UploadJob={paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;due_at_by_class:Record<string,string>;checkpoint:Record<string,any>};
+export type UploadJob={paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
 export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[]};
 export type Draft={exam:PracticeExam;assets:PublishAsset[]};
 export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string;pending?:boolean};
@@ -43,9 +43,29 @@ export function nextWeekDue(date:string,start:string){
  ensure(Number.isFinite(parsed.getTime())&&new Date(date+'T00:00:00Z').toISOString().slice(0,10)===date,'SCHEDULE_UNAVAILABLE');
  return new Date(parsed.getTime()+7*86400000-30*60000).toISOString();
 }
+/** Overrides are a private, server-validated part of the claimed version, never
+ * accepted directly from the publication payload. Legacy jobs keep exact defaults. */
+export function validateUploadDeadlines(job:UploadJob){
+ const due=job.due_at_by_class,overrides=job.due_at_overrides??{};
+ ensure(due&&typeof due==='object'&&!Array.isArray(due)&&typeof overrides==='object'&&!Array.isArray(overrides),'INVALID_HOMEWORK_DEADLINE');
+ ensure(Object.keys(due).every(id=>job.class_ids.includes(id))&&Object.keys(overrides).every(id=>job.class_ids.includes(id)),'INVALID_HOMEWORK_DEADLINE');
+ for(const id of job.class_ids){
+  const planned=nextWeekDue(job.class_dates[id],job.start_times[id]);
+  if(Object.prototype.hasOwnProperty.call(overrides,id)){
+   const end=job.end_times?.[id],value=overrides[id];
+   ensure(typeof value==='string'&&/^\d{4}-\d{2}-\d{2}T(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d(?:\.\d{1,6})?)?(?:[Zz]|[+-](?:0\d|1[0-4]):[0-5]\d)$/.test(value),'INVALID_HOMEWORK_DEADLINE');
+   // Date.parse normalizes impossible dates, so check the calendar separately.
+   nextWeekDue(value.slice(0,10),'00:00');
+   ensure(typeof end==='string'&&/^([01]\d|2[0-3]):[0-5]\d$/.test(end),'SCHEDULE_UNAVAILABLE');
+   const opens=Date.parse(job.class_dates[id]+'T'+end+':00+07:00'),stamp=Date.parse(value);
+   ensure(Number.isFinite(stamp)&&stamp>opens&&Date.parse(due[id])===stamp,'INVALID_HOMEWORK_DEADLINE');
+  }else ensure(Date.parse(due[id])===Date.parse(planned),'SCHEDULE_UNAVAILABLE');
+ }
+}
 function validateJob(job:UploadJob){
  ensure(job.id&&job.claim_token&&job.teacher_key&&job.class_ids.length&&new Set(job.class_ids).size===job.class_ids.length,'INVALID_JOB');
- for(const id of job.class_ids){ensure(job.class_names[id],'SCHEDULE_UNAVAILABLE');ensure(Date.parse(job.due_at_by_class[id])===Date.parse(nextWeekDue(job.class_dates[id],job.start_times[id])),'SCHEDULE_UNAVAILABLE');}
+ for(const id of job.class_ids)ensure(job.class_names[id],'SCHEDULE_UNAVAILABLE');
+ validateUploadDeadlines(job);
  if(job.homework_path){ensure(job.task_scope?.trim()&&job.task_scope.length<=300,'INVALID_HOMEWORK_SCOPE');ensure(job.answer_path||job.answer_text?.trim(),'TEACHER_ANSWERS_REQUIRED');}
  if(job.video_url){const u=new URL(job.video_url);ensure(u.protocol==='https:'&&!u.username&&!u.password&&(youtubeVideoId(job.video_url)||/(^|\.)zoom\.us$/.test(u.hostname)&&/^\/rec\//.test(u.pathname)),'INVALID_VIDEO');}
 }
@@ -130,7 +150,7 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   const code=error instanceof Error&&/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message)?error.message:'WORKER_FAILED';
   // Unknown commit outcome must remain resumable under the SAME identity; never error/re-publish a new job.
   const retryable=['WORKER_RPC_FAILED','PRIVATE_UPLOAD_FAILED','PUBLISH_NOT_CONFIRMED'].includes(code);
-  const detail:Record<string,string>={INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên; thầy kiểm tra và up lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
+  const detail:Record<string,string>={INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên; thầy kiểm tra và up lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ hoặc không khớp phiên bản đã gửi; quản lý kiểm tra.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
   try{await mark(step,retryable?'dang':'loi',code==='INDEPENDENT_ANSWER_MISMATCH'&&mismatchDetail?mismatchDetail:detail[code]??(retryable?'Kết nối tạm gián đoạn; giữ tiến độ để đối soát và tiếp tục cùng phiên bản.':'Chưa xử lý xong bước này; quản lý kiểm tra biên nhận riêng.'));}catch{/* Claim lost/superseded: never mutate its replacement. */}
   return {status:retryable?'retry' as const:'blocked' as const,uploadId:job.id,code};
  }
