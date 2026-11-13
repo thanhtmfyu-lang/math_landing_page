@@ -26,5 +26,5 @@ for(const mode of ['fail','missing'] as const){const {handler}=make(mode);const 
 const sql=readFileSync(join(root,'supabase/migrations-pending/20261028_2310_nho_dang_nhap_30_ngay.sql'),'utf8');
 assert.match(sql,/interval '30 days'/);assert.match(sql,/revoked_at IS NULL AND expires_at > clock_timestamp\(\)/);assert.match(sql,/GRANT EXECUTE ON FUNCTION public\.mtm_btvn_remember\(text\) TO service_role/);assert.match(sql,/FROM public, anon, authenticated/);
 const gateSource=readFileSync(join(root,'src/native/homework/HomeworkGate.tsx'),'utf8');
-assert.match(gateSource,/Nhớ đăng nhập 30 ngày/);assert.match(gateSource,/onLogin\(\{studentCode\},remember\)/);assert.match(gateSource,/onLogin\(input,remember\)/);
+assert.match(gateSource,/Nhớ đăng nhập 30 ngày/);assert.match(gateSource,/onLogin\(\{studentCode:code\},remember\)/);assert.match(gateSource,/onLogin\(input,remember\)/);
 console.log(JSON.stringify({suite:'nho_dang_nhap_30_ngay',passed:9,total:9}));

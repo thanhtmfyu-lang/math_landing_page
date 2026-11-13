@@ -72,7 +72,7 @@ generatePracticeBank();
       },
     },
     build: {
-      target: 'esnext',
+      target: ['es2020','safari15','ios15','chrome100','firefox100','edge100'],
       outDir: 'build',
       manifest: true,
     },

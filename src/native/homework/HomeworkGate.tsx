@@ -1,3 +1,4 @@
+import {normalizeStudentCode,validStudentCode,STUDENT_CODE_ERROR} from './student-code';
 import type {GateInput} from './btvn-contract';
 import {useEffect,useRef,useState} from 'react';
 import {Link} from '../../migration/navigation';
@@ -9,6 +10,7 @@ export const PIN_SETUP_NOTICE='Lần đầu vào bằng họ tên: em tạo mã 
 export const PIN_REQUIRED_NOTICE='Tài khoản đã có mã PIN. Em nhập mã PIN 6 số để vào bài.';
 const digits=(v:FormDataEntryValue|null)=>typeof v==='string'?v.replace(/\D/g,''):'';
 function invalidFieldMessage(field:HTMLInputElement|HTMLSelectElement){
+  if(field.getAttribute('aria-describedby')==='btvn-code-help')return STUDENT_CODE_ERROR;
   if(field.name.startsWith('btvn-'))return field.validity.customError?field.validationMessage:'Mã PIN phải gồm đúng 6 chữ số từ 0 đến 9.';
   if(field instanceof HTMLSelectElement)return 'Em chọn lớp đang học trước khi vào bài.';
   if(field.type==='tel')return 'Em nhập số điện thoại đã đăng ký với lớp.';
@@ -53,10 +55,10 @@ export default function HomeworkGate({studentCode,identity,busy,classNames=[],cl
     <details><summary>Mã học sinh lấy ở đâu?</summary><p>Mã do MTM cấp cho học sinh khi cần. Nếu chưa có hoặc quên mã, dùng cách Không có mã; cần hỗ trợ thì nhắn Zalo trợ lý lớp. Không gửi mã vào nhóm công khai.</p></details>
     <details><summary>Gặp lỗi khi mở bài từ Zalo?</summary><p>Mở menu của Zalo, chọn mở bằng trình duyệt nếu có, rồi dùng Chrome hoặc Safari. Nếu không thấy lựa chọn, tự mở trình duyệt và nhập minhthanhmath.vn/btvn. Không gửi mã hoặc thông tin đăng nhập cho người khác.</p></details>
   </section><div className="btvn-gates" aria-label="Vào bài của lớp">
-    <form className="btvn-gate mig-panel" aria-labelledby="btvn-code-title" onInvalid={event=>{setSubmittedWithCode(true);const field=event.target;if(field instanceof HTMLInputElement)setCodeError(previous=>previous||invalidFieldMessage(field));}} onInput={()=>setCodeError('')} onSubmit={event=>{event.preventDefault();if(!busy){setSubmittedWithCode(true);onLogin({studentCode},remember);}}}>
+    <form className="btvn-gate mig-panel" aria-labelledby="btvn-code-title" onInvalid={event=>{setSubmittedWithCode(true);const field=event.target;if(field instanceof HTMLInputElement)setCodeError(previous=>previous||invalidFieldMessage(field));}} onInput={()=>setCodeError('')} onSubmit={event=>{event.preventDefault();if(!busy){setSubmittedWithCode(true);const code=normalizeStudentCode(studentCode);if(!validStudentCode(code)){setCodeError(STUDENT_CODE_ERROR);return;}onLogin({studentCode:code},remember);}}}>
       <h2 id="btvn-code-title">Có mã</h2>
-      <label>Mã học sinh<input type="password" autoComplete="off" maxLength={160} required aria-describedby="btvn-code-help" value={studentCode} onChange={event=>onCode(event.target.value)}/></label>
-      <p id="btvn-code-help">Nhập mã học sinh do MTM cấp riêng cho em.</p>
+      <label>Mã học sinh<input type="text" autoCapitalize="none" autoCorrect="off" spellCheck={false} inputMode="text" autoComplete="off" maxLength={160} required aria-describedby="btvn-code-help" value={studentCode} onChange={event=>onCode(event.target.value)}/></label>
+      <p id="btvn-code-help">Nhập mã do MTM cấp riêng cho em: 32 ký tự 0–9 và a–f, có thể dán kèm HS-.</p>
       {codeNotice&&<p ref={codeFeedback} role="alert">{codeNotice}</p>}
       {rememberField}
       <button type="submit" className="ep-primary" disabled={busy}>{busy?'Đang kiểm tra…':'Vào bài'}</button>

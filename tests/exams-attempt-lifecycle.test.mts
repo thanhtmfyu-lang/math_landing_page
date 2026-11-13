@@ -93,5 +93,16 @@ test('URL thi thử và luyện tập: navigate, Back, Forward, reload giữ pat
     navigate(list);const r=new Runtime(useRoute);r.flush();navigate(attempt);r.flush();const expected={...r.value};history.back();r.flush();assert.equal(r.value.pathname,new URL(list,location.href).pathname);assert.equal(r.value.search,new URL(list,location.href).search);history.forward();r.flush();assert.deepEqual(r.value,expected);r.dispose();const reload=new Runtime(useRoute);assert.deepEqual(reload.flush(),expected);reload.dispose();
   }
 });
+test('PDF lỗi hoặc chưa hiện: bắt đầu, tiếp tục, trả lời và nộp vẫn hoạt động',()=>{
+  clock=T0;const store=new FakeStore(),r=mount(store);
+  r.flush().setPdfReady(false);r.flush();assert.equal(r.value.pdfReady,false);assert.equal(r.value.startDisabled,false);
+  r.value.begin();r.flush();assert.ok(r.value.draft);
+  r.value.changeAnswer(exam.questions[0].id,'B');r.flush();assert.equal(r.value.draft.answers[exam.questions[0].id],'B');
+  const first=r.value.draft;r.dispose();
+  const resume=mount(store);resume.flush();assert.equal(resume.value.pdfReady,false);assert.equal(resume.value.startDisabled,false);
+  assert.equal(resume.value.startLabel,'Tiếp tục làm bài');resume.value.begin();resume.flush();
+  assert.equal(resume.value.draft.attemptId,first.attemptId);assert.equal(resume.value.draft.deadline,first.deadline);
+  resume.value.finish(false,true);resume.flush();assert.equal(resume.value.submitted,true);resume.dispose();
+});
 Date.now=originalNow;
 finish({environment:'hook runtime tổng hợp, không phải trình duyệt'});

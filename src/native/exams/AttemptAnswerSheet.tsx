@@ -24,7 +24,7 @@ export default function AttemptAnswerSheet({props,state,compact=false}:{props:Pr
               if(index!==activeQuestion)return null;
               const answer=draft.answers[q.id],tfAnswers=Array.isArray(answer)?answer:[null,null,null,null];
               const shortFormat=questionShortFormat(exam,q);
-              const questionReady=pdfReady&&!state.failedQuestions?.has(q.id);
+              const questionReady=!state.failedQuestions?.has(q.id);
               const section=sections.find(s=>index>=s.from&&index<s.to)!,part=section.name,number=index-section.from+1;
               return <section className="ep-question ep-card" key={q.id} id={`${compact?'ep-answer':'ep-question'}-${index}`} tabIndex={-1} aria-labelledby={`ep-heading-${index}`}>
                 <h3 id={`ep-heading-${index}`}>{part} · Câu {number} <small>({formatPoints(displayQuestionPoints(exam,q.maxMillipoints))} điểm)</small></h3>
@@ -36,5 +36,5 @@ export default function AttemptAnswerSheet({props,state,compact=false}:{props:Pr
               </section>;
             })}
             {!compact&&<><div className="ep-question-step"><button type="button" disabled={activeQuestion===0} onClick={()=>{setActiveQuestion(i=>i-1);setQuestionFocus(true);}}>Câu trước</button><button type="button" disabled={activeQuestion===exam.questions.length-1} onClick={()=>{setActiveQuestion(i=>i+1);setQuestionFocus(true);}}>Câu tiếp</button></div>
-            <div className="ep-submit-row"><Link className="ep-link" href={catalogUrl}>{kind==='exam'?'Rời bài thi':'Rời bài luyện'}</Link><button type="button" className="ep-primary" disabled={!pdfReady} onClick={()=>finish(false)}>Nộp bài</button></div></>}</>;
+            <div className="ep-submit-row"><Link className="ep-link" href={catalogUrl}>{kind==='exam'?'Rời bài thi':'Rời bài luyện'}</Link><button type="button" className="ep-primary" disabled={!!state.serverBusy} onClick={()=>finish(false)}>Nộp bài</button></div></>}</>;
 }

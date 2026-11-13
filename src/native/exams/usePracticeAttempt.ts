@@ -95,7 +95,6 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
   const finish = useCallback(async (automatic: boolean, confirmed=false) => {
     const current = ram.current;
     if (!current || current.submittedAt !== null||remotePending.current) return;
-    if(!automatic&&!pdfReady){setNotice('Chưa thể nộp thủ công khi có phần câu hỏi chưa hiển thị. Bài làm vẫn được giữ; hãy tải lại trang để đọc đủ đề.');return;}
     const clock = clockNow();
     const unanswered = exam.questions.filter(q => q.kind!=='self' && answerState(exam, q, current.answers) !== 'answered').length;
     if (!automatic && timeLeft(current, clock) > 0 && unanswered > 0 && !confirmed) {setConfirmation('submit');return;}
@@ -108,7 +107,7 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
     }
     setConfirmation(null);setMobilePane('answers');
     persist(result.value); // Sets the ref synchronously before another click/tick.
-  }, [exam, persist, pdfReady,deadlineAt,clockOffsetMs,onServerSubmit]);
+  }, [exam, persist,deadlineAt,clockOffsetMs,onServerSubmit]);
 
   useEffect(() => {
     if (!draft || draft.submittedAt !== null) return;
@@ -127,8 +126,6 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
     if(sourceIssue||(erratum&&!acceptedErratum))return;
     const old = persisted.current;
     // 11/11: lượt dở đã hết giờ chỉ cần tự nộp, không cần đọc đề; trước đây PDF chưa tải làm nút "Tiếp tục làm bài" chết.
-    const expiredOld=!!old&&old.submittedAt===null&&timeLeft(old,clockNow())===0;
-    if(!pdfReady&&!expiredOld){setNotice('Chưa mở làm bài khi bản câu hỏi chưa hiển thị.');return;}
     if (ram.current) return;
     if(remotePending.current)return;
     if (!old && newAttemptsClosed) return; // DL-01: không mở lượt mới; bài dở và lượt đã nộp vẫn mở.
@@ -145,7 +142,7 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
     setNow(clockNow());setMobilePane('answers');
   };
   const changeAnswer = (id: string, answer: Response) => {
-    if(!pdfReady||failedQuestions.has(id)||remotePending.current)return;
+    if(failedQuestions.has(id)||remotePending.current)return;
     const current = ram.current;
     if (!current || current.submittedAt !== null) return;
     const clock = clockNow();
@@ -162,13 +159,12 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
   const answered = states.filter(state => state === 'answered').length, invalidCount = states.filter(state => state === 'invalid').length;
   const seconds = draft ? Math.ceil(timeLeft(draft, now) / 1000) : 0;
   const expiredPersisted=!!persisted.current&&persisted.current.submittedAt===null&&timeLeft(persisted.current,now)===0;
-  const startDisabled=serverBusy||(!pdfReady&&!expiredPersisted)||!!sourceIssue||!!erratum&&!acceptedErratum||!!newAttemptsClosed&&!persisted.current;
+  const startDisabled=serverBusy||!!sourceIssue||!!erratum&&!acceptedErratum||!!newAttemptsClosed&&!persisted.current;
   const startLabel=sourceIssue?'Chờ đính chính điều kiện':expiredPersisted?'Nộp lượt đã hết giờ':persisted.current?'Tiếp tục làm bài':newAttemptsClosed?'Chờ phản biện · chưa mở lượt mới':'Bắt đầu làm bài';
   const retake=async(confirmed=false)=>{
     if(onRetake){onRetake();return;}
     if(sourceIssue||newAttemptsClosed)return;
     const old=ram.current;if(!old||old.submittedAt===null||dirty.current||conflict.current)return;
-    if(!pdfReady)return;
     if(!confirmed){setConfirmation('retake');return;}
     if(onServerStart){if(remotePending.current)return;remotePending.current=true;setServerBusy(true);try{await onServerStart(old);}catch(e){setNotice(e instanceof Error?e.message:'Chưa mở được lượt thi mới.');return;}finally{remotePending.current=false;setServerBusy(false);}}
     setConfirmation(null);setActiveQuestion(0);setMobilePane('answers');

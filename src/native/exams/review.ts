@@ -28,10 +28,11 @@ export function reviewRows(exam:PracticeExam,draft:Draft) {
  * accessible text and copying; no expression evaluation or HTML parsing. */
 export function mathTokens(text:string):{raw:string;exponent?:string}[] {
   const result:{raw:string;exponent?:string}[]=[];
-  const regex=/(?<=[\p{L}\p{N})])\^([+-]?\d+)(?![\d.,/\p{L}])/gu;
+  const regex=/([\p{L}\p{N})])\^([+-]?\d+)(?![\d.,/\p{L}])/gu;
   let last=0;
   for(const match of text.matchAll(regex)){
-    result.push({raw:text.slice(last,match.index)});result.push({raw:match[0],exponent:match[1]});last=match.index+match[0].length;
+    const start=match.index!+match[1].length;
+    result.push({raw:text.slice(last,start)});result.push({raw:match[0].slice(match[1].length),exponent:match[2]});last=match.index!+match[0].length;
   }
   result.push({raw:text.slice(last)});return result;
 }
