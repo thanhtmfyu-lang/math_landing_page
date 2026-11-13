@@ -310,13 +310,25 @@ $$;
 -- Existing BTVN attendance reconciliation must not rewrite a class exam's
 -- immutable window, late flags or revisions. Leave legacy monthly behavior as-is.
 do $assessment_due110$
-declare src text;anchor text='and l.active loop';
+declare src text;original text;fixed text;anchor text;source_sha text;
+ guard_text text=' and l.kind<>''kiem-tra'' /*assessment110-no-homework-due*/';
 begin
  src=pg_get_functiondef('public.mtm_btvn_sync_due(jsonb,boolean)'::regprocedure);
- if position('assessment110-no-homework-due' in src)=0 then
-  if position(anchor in src)=0 then raise exception 'ASSESSMENT_SYNC_DUE_SOURCE_CHANGED';end if;
-  execute replace(src,anchor,'and l.active and l.kind<>''kiem-tra'' /*assessment110-no-homework-due*/ loop');
- end if;
+ -- Only these reviewed predecessors are supported. The production snapshot has
+ -- indexed68 attendee scope, QA100 exclusions and the existing -30min policy.
+ -- Normalize ONLY our exact additive guard, then hash the complete predecessor;
+ -- a marker alone must never allow an unknown function body to skip review.
+ original=replace(src,guard_text,'');
+ source_sha=encode(sha256(convert_to(original,'UTF8')),'hex');
+ if source_sha='5f15c464edf922b36ce2b7bfde1cf021a2906244fa06ba209ae94db6928ae789' then
+  anchor='and l.active and not l.is_test';
+ elsif source_sha='80b4c63058312029866c75bfd3ef98cea8cf9e4c18e935a7d57b12f86f2b1d76' then
+  anchor='and l.active loop'; -- Historical fixture predecessor, unchanged otherwise.
+ else raise exception 'ASSESSMENT_SYNC_DUE_SOURCE_CHANGED';end if;
+ if (length(original)-length(replace(original,anchor,'')))/length(anchor)<>1 then raise exception 'ASSESSMENT_SYNC_DUE_SOURCE_CHANGED';end if;
+ fixed=replace(original,anchor,replace(anchor,'and l.active','and l.active'||guard_text));
+ if src=original then execute fixed;
+ elsif src is distinct from fixed then raise exception 'ASSESSMENT_SYNC_DUE_SOURCE_CHANGED';end if;
 end$assessment_due110$;
 do $$begin if to_regprocedure('public.mtm_btvn_set_due_before_assessment110(uuid,text,timestamptz,text)') is null then
  alter function public.mtm_btvn_set_due(uuid,text,timestamptz,text) rename to mtm_btvn_set_due_before_assessment110;

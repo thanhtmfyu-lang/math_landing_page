@@ -89,6 +89,16 @@ Rank/hv_ca/sheetCSV/opening-material predicates đã chỉ homeworkkindbtvn.110 
 khóa newkiem-tra khỏi legacy sync_due loop và admin set_due: chúng không được
 đổi expected_due/actual_due/late/revision của bài kiểm tra. Oldmonthly giữ nguyên.
 
+sync_due chỉ nhận hai predecessor full-source SHA đã xét: production
+`5f15c464edf922b36ce2b7bfde1cf021a2906244fa06ba209ae94db6928ae789` và fixture
+lịch sử `80b4c63058312029866c75bfd3ef98cea8cf9e4c18e935a7d57b12f86f2b1d76`.
+Production có indexed68 attendee scope, QA100 exclusions và luật hạn −30 phút;
+110 chỉ thêm kind predicate, giữ nguyên toàn bộ byte còn lại. Reapply chỉ chấp
+nhận đúng guard đã thêm, không tin marker đơn lẻ hoặc nguồn đã đổi. Snapshot
+source-only nằm ở `tests/fixtures/assessment110-due-live-20261113.json`; không
+có hàng dữ liệu học sinh. Rehearsal lần đầu đã rollback vì anchor fixture khác
+production; không áp bản 110 cũ hoặc bỏ source guard để vượt lỗi này.
+
 ## Kiểm chứng và giới hạn
 
 PGlite là dữ liệu tổng hợp, không live/provider: create→claim→worker/repository→
@@ -96,6 +106,9 @@ validator→publisher45phút/title chính xác;106publication không preinsert w
 student room tạo work lazy0→1 và card xem được; sync_due có attendee matched thật
 trong fixture nhưng không đổi examwork; race replacement→oldstart→publish bị chặn.
 Student/history test riêng kiểm role/class/test/time/asset/key/score và old2mã.
+Test live-source variant riêng kiểm hash/source/ACL/config, unknown-source
+rejection, reapply và so hành vi BTVN+oldmonthly với predecessor trong local
+transaction rollback; examwork, QA và học sinh ngoài snapshot được giữ nguyên.
 
 Không gán kết quả các fixture thành nativeAI E2E hoặc đã phát hành. Cần release
 owner rehearsal rollback đúng source, catalog/Edge/bundle readback và canary mới
