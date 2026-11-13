@@ -201,6 +201,92 @@ class AutoWorkerTests(unittest.TestCase):
         self.assertNotIn('secret-do-not-copy', supervisor.heartbeat_path.read_text())
         self.assertFalse(list(self.state.glob('*.tmp')))
 
+    def test_windows_heartbeat_sharing_errors_retry_same_atomic_replacement_twice(self):
+        for winerror in (5, 32, 33):
+            with self.subTest(winerror=winerror):
+                self.state.mkdir(exist_ok=True)
+                supervisor = self.supervisor()
+                value = supervisor.publish('running')
+                before = supervisor.heartbeat_path.read_bytes()
+                value['status'] = 'waiting'
+                value['private_data'] = 'private-value-never-written'
+                error = PermissionError('private-path-never-printed')
+                error.winerror = winerror
+                original_replace = worker.os.replace
+                replacements, sleeps = [], []
+
+                def replace(source, destination):
+                    replacements.append((source, destination))
+                    self.assertEqual(destination.read_bytes(), before)
+                    self.assertEqual(json.loads(source.read_text())['status'], 'waiting')
+                    if len(replacements) <= 2:
+                        raise error
+                    original_replace(source, destination)
+
+                def sleep(delay):
+                    sleeps.append(delay)
+                    # No partially rewritten destination is visible while held.
+                    self.assertEqual(supervisor.heartbeat_path.read_bytes(), before)
+
+                with mock.patch.object(worker.os, 'name', 'nt'), \
+                        mock.patch.object(worker.os, 'replace', side_effect=replace), \
+                        mock.patch.object(worker.time, 'sleep', side_effect=sleep), \
+                        contextlib.redirect_stdout(io.StringIO()) as stdout, \
+                        contextlib.redirect_stderr(io.StringIO()) as stderr:
+                    worker.write_heartbeat(supervisor.heartbeat_path, value)
+                self.assertEqual(sleeps, [0.05, 0.1])
+                self.assertEqual(len(replacements), 3)
+                self.assertEqual(len(set(replacements)), 1)
+                self.assertEqual(self.read()['status'], 'waiting')
+                self.assertEqual(set(self.read()), set(worker.FIELDS))
+                self.assertNotIn('private-', supervisor.heartbeat_path.read_text())
+                self.assertFalse(list(self.state.glob('*.tmp')))
+                self.assertEqual((stdout.getvalue(), stderr.getvalue()), ('', ''))
+
+    def test_windows_permanent_heartbeat_lock_raises_after_two_retries(self):
+        self.state.mkdir()
+        supervisor = self.supervisor()
+        value = supervisor.publish('running')
+        before = supervisor.heartbeat_path.read_bytes()
+        value['status'] = 'waiting'
+        error = PermissionError('private-path-never-printed')
+        error.winerror = 32
+        with mock.patch.object(worker.os, 'name', 'nt'), \
+                mock.patch.object(worker.os, 'replace', side_effect=error) as replace, \
+                mock.patch.object(worker.time, 'sleep') as sleep, \
+                contextlib.redirect_stdout(io.StringIO()) as stdout, \
+                contextlib.redirect_stderr(io.StringIO()) as stderr:
+            with self.assertRaises(PermissionError) as raised:
+                worker.write_heartbeat(supervisor.heartbeat_path, value)
+        self.assertIs(raised.exception, error)
+        self.assertEqual(replace.call_count, 3)
+        self.assertEqual(sleep.call_args_list, [mock.call(0.05), mock.call(0.1)])
+        self.assertEqual(len(set(call.args for call in replace.call_args_list)), 1)
+        self.assertEqual(supervisor.heartbeat_path.read_bytes(), before)
+        self.assertFalse(list(self.state.glob('*.tmp')))
+        self.assertEqual((stdout.getvalue(), stderr.getvalue()), ('', ''))
+
+    def test_heartbeat_non_windows_or_other_error_never_retries(self):
+        self.state.mkdir()
+        supervisor = self.supervisor()
+        value = supervisor.publish('running')
+        before = supervisor.heartbeat_path.read_bytes()
+        for platform, winerror in [('posix', 32), ('nt', 2), ('nt', None)]:
+            with self.subTest(platform=platform, winerror=winerror):
+                error = PermissionError('private-path-never-printed')
+                if winerror is not None:
+                    error.winerror = winerror
+                with mock.patch.object(worker.os, 'name', platform), \
+                        mock.patch.object(worker.os, 'replace', side_effect=error) as replace, \
+                        mock.patch.object(worker.time, 'sleep') as sleep:
+                    with self.assertRaises(PermissionError) as raised:
+                        worker.write_heartbeat(supervisor.heartbeat_path, value)
+                self.assertIs(raised.exception, error)
+                replace.assert_called_once()
+                sleep.assert_not_called()
+                self.assertEqual(supervisor.heartbeat_path.read_bytes(), before)
+                self.assertFalse(list(self.state.glob('*.tmp')))
+
     def test_malformed_status_never_echoes_untrusted_payload(self):
         self.state.mkdir()
         path = self.state / 'vps.heartbeat.json'

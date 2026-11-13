@@ -131,7 +131,17 @@ def write_heartbeat(path: Path, value):
             json.dump(safe, stream, ensure_ascii=True, separators=(',', ':'))
             stream.flush()
             os.fsync(stream.fileno())
-        os.replace(temporary, path)
+        # Windows readers may briefly open this file without FILE_SHARE_DELETE.
+        # Retry only replacement of our completed temporary heartbeat; never
+        # change ACLs, rewrite the destination in place, or retry other I/O.
+        for attempt in range(3):
+            try:
+                os.replace(temporary, path)
+                break
+            except OSError as error:
+                if os.name != 'nt' or getattr(error, 'winerror', None) not in (5, 32, 33) or attempt == 2:
+                    raise
+                time.sleep((0.05, 0.1)[attempt])
     finally:
         if temporary.exists():
             temporary.unlink()
