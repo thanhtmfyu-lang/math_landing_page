@@ -21,6 +21,7 @@ def main():
  if a.auto and (not (a.once or a.review_once) or a.manual):raise ValueError('AUTO_REQUIRES_ENABLED_FINITE_WORKER')
  os.environ.setdefault('JAVIS_BRAIN_ROOT',str(Path(__file__).resolve().parents[3]))
  os.environ.setdefault('BTVN_PIPELINE_DIR',str(Path(os.environ['JAVIS_BRAIN_ROOT'])/'Javis/btvn-pipeline'))
+ os.environ['BTVN_NATIVE_AI_POLICY']=str(Path(os.environ['JAVIS_BRAIN_ROOT'])/'Javis/btvn/native-v3/native-ai-policy.json')
  # Existing native runtime owns credentials and shared state; no new secretfile.
  native_dir=os.environ.get('BTVN_NATIVE_MODULE_DIR',str(Path(os.environ['JAVIS_BRAIN_ROOT'])/'Javis/scripts/btvn-native-v1'))
  sys.path.insert(0,native_dir)
