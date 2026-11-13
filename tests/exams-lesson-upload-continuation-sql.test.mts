@@ -1,0 +1,85 @@
+// Migration111 through the warmed canonical gateway in synthetic PGlite. No live account/source/provider.
+// @ts-nocheck
+import {baselineDatabase} from '../scripts/is-test-db.mjs';
+import {readFileSync,writeFileSync,mkdirSync} from 'node:fs';
+import assert from 'node:assert/strict';
+import {createHash} from 'node:crypto';
+const dir='.qa-temp/lesson-upload-continuation-sql/';mkdirSync(dir,{recursive:true});const raw=readFileSync('supabase/migrations-pending/202611140111_lesson_upload_operator_continuation.sql','utf8');
+const target='14227822-ce9a-4f0f-8df3-489a60b11392',owner='d7ec8afe-76bc-4d86-90a6-fd689ea60895',classId='0d31a7f2-1da1-4b03-b248-22c260d1c713';
+const source='78cf60e22fa55962e11391814a0fb7c157dc9f1936ce2b3a8d8551e9af89ba45',manifest='a'.repeat(64),runtime='b'.repeat(64),fix='c'.repeat(40),authority='synthetic-fixture-owner-decision';
+const {db}=await baselineDatabase();let checks=0;
+const row=async()=>(await db.query('select to_jsonb(u) v from mtm_hw_private.lesson_uploads u where id=$1',[target])).rows[0].v;
+const grantRow=async()=>(await db.query('select to_jsonb(g) v from mtm_hw_private.lesson_continuation142 g')).rows[0]?.v;
+const svc=async p=>(await db.query('select public.mtm_lesson_upload_gateway($1) v',[JSON.stringify(p)])).rows[0].v;
+const acl=async name=>(await db.query("select jsonb_agg(jsonb_build_object('grantee',x.grantee,'privilege',x.privilege_type,'grantable',x.is_grantable) order by x.grantee,x.privilege_type) v from pg_proc p cross join lateral aclexplode(coalesce(p.proacl,acldefault('f',p.proowner)))x where p.oid=$1::regprocedure",[name])).rows[0].v;
+const oldRows=async()=>(await db.query('select jsonb_agg(to_jsonb(u) order by id) v from mtm_hw_private.lesson_uploads u where not is_test')).rows[0].v;
+const fail=async(change,fn,pattern)=>{await db.exec('begin');await assert.rejects(async()=>{if(change)await db.exec(change);return fn();},pattern);await db.exec('rollback');checks++;};
+try{
+ await db.exec(readFileSync('supabase/migrations-pending/202610270100_is_test.sql','utf8'));
+ await db.exec("create or replace function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claim.role',true),'')$$;alter role service_role bypassrls;select set_config('request.jwt.claim.role','service_role',false)");
+ for(const n of ['202611080106_btvn_han_tu_ghi.sql','202611020101_cong_up_btvn_gv.sql','202611020102_btvn_two_papers.sql','202611020103_lesson_upload_gateway.sql','202611120107_lesson_upload_deadline.sql','202611130108_lesson_upload_retry.sql','202611130109_lesson_staff_history.sql','202611130110_lesson_assessment.sql'])await db.exec(readFileSync('supabase/migrations-pending/'+n,'utf8'));
+ await db.query('insert into auth.users values($1)',[owner]);await db.query("insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key) values($1,'fixture-op','Synthetic operator','admin','thaythanh')",[owner]);
+ await db.exec("update mtm_hw_private.lesson_upload_automation set enabled=true,activated_at='2026-11-13T02:49:20.506663Z'");
+ const cp={operator_repairs:[{repair_id:'4e1e0b6d-0716-4d5a-9c3b-e1d3d0f6a8b2',retained:{exact:[null,1,'keep']}},{repair_id:'196cd98e-9de7-4db5-96e4-f6a19b58c98d',retained:'second audit exact'}]};
+ const insert=`insert into mtm_hw_private.lesson_uploads(id,class_ids,class_dates,start_times,end_times,class_names,due_at_by_class,lesson_date,teacher_key,title,task_scope,homework_path,answer_path,uploaded_by,version,group_key,is_test,created_at,claim_token,lease_until,attempt_count,checkpoint,retry_count,retry_status,last_error_code,failed_step,failed_paper,failure_claim_token,client_request_id,work_kind)
+ values($1,array[$2::uuid],jsonb_build_object($2::text,'2026-11-10'),jsonb_build_object($2::text,'17:30'),jsonb_build_object($2::text,'19:30'),jsonb_build_object($2::text,'Fixture class'),jsonb_build_object($2::text,'2026-11-17T12:30:00Z'),'2026-11-10','thaythanh','Fixture title','Fixture scope','fixture-homework.pdf','fixture-answer.pdf',$3,1,$4,$5,$6,'11111111-1111-4111-8111-111111111111',clock_timestamp()-interval '1 second',3,$7,3,'needs_input','NATIVE_DRIVER_FAILED',2,1,'11111111-1111-4111-8111-111111111111',$8,'homework')`;
+ await db.query(insert,[target,classId,owner,'fixture-target',true,'2026-11-13T16:54:23.948178Z',JSON.stringify(cp),'8db1f8e3-a8e1-4252-8938-6bad1a724303']);
+ for(let n=1;n<=5;n++)await db.query(insert,[`99999999-9999-4999-8999-${String(n).padStart(12,'0')}`,classId,owner,'fixture-old-'+n,false,'2026-11-12',JSON.stringify({historic:n}),`88888888-8888-4888-8888-${String(n).padStart(12,'0')}`]);
+ await db.query("insert into mtm_hw_private.lesson_upload_steps select $1,step,case step when 1 then 'xong' when 2 then 'loi' else 'cho' end,'Historic failure evidence','2026-11-13T20:15:25Z' from generate_series(1,6)step",[target]);
+ await db.exec("insert into storage.objects(bucket_id,name,metadata) values('mtm-lesson-private','fixture-homework.pdf','{}'),('mtm-lesson-private','fixture-answer.pdf','{}')");
+ const hashes=(await db.query("select encode(sha256(convert_to('Fixture scope','UTF8')),'hex')scope,encode(sha256(convert_to('Fixture title','UTF8')),'hex')title,encode(sha256(convert_to(jsonb_build_array('fixture-homework.pdf','fixture-answer.pdf')::text,'UTF8')),'hex')paths,(select encode(sha256(convert_to(jsonb_agg(jsonb_build_object('id',id,'version',version,'attempt_count',attempt_count,'finished_at',finished_at,'published',checkpoint ? 'publish_receipts') order by id)::text,'UTF8')),'hex') from mtm_hw_private.lesson_uploads where not is_test)old")).rows[0];
+ const adapted=raw.replaceAll('69998c845d132ca8737e0928699ccbc57dbe7dba3b31e76c408cf3b0af6258f9',hashes.scope).replaceAll('6e36f54c9ab24bd6af9252099f2a11dff16a52a469394a75ed0b650218a8f18b',hashes.title).replaceAll('299a63dc2903e7af6e53636902c38be8686a2c99386d5fe65edff91eafc3fa7b',hashes.paths).replaceAll('f121ccba4da5424452f78d93ce4cd976f81695b17d72aab33d648a1152745336',hashes.old);
+ const priorAcl=await acl('public.mtm_lesson_upload_api(jsonb)'),old=await oldRows(),before=await row();
+ const reasonOID=(await db.query("select 'mtm_hw_private.lesson_retry_reason108(text)'::regprocedure::oid v")).rows[0].v,reasonACL=await acl('mtm_hw_private.lesson_retry_reason108(text)');
+ const oldReasonCodes=['WORKER_RPC_FAILED','INDEPENDENT_ANSWER_MISMATCH','GATEWAY_AUTH_REQUIRED',null,'UNKNOWN','https://private.invalid/?token=SYNTHETIC_PRIVATE'];
+ const reason=async code=>(await db.query('select mtm_hw_private.lesson_retry_reason108($1) v',[code])).rows[0].v;
+ const oldReasons=await Promise.all(oldReasonCodes.map(reason));
+ assert.equal((await svc({action:'worker_claim',is_test:true,worker_protocol:110,worker_id:'warm-canonical-gateway-before-DDL'})).job,null);checks++;
+ await db.exec(adapted.replace(/commit;\s*$/i,'rollback;'));assert.equal((await db.query("select to_regclass('mtm_hw_private.lesson_continuation142') v")).rows[0].v,null);checks++;
+ await db.exec(adapted);assert.deepEqual(await acl('public.mtm_lesson_upload_api(jsonb)'),priorAcl);checks++;
+ assert.equal((await db.query("select 'mtm_hw_private.lesson_retry_reason108(text)'::regprocedure::oid v")).rows[0].v,reasonOID);assert.deepEqual(await acl('mtm_hw_private.lesson_retry_reason108(text)'),reasonACL);assert.deepEqual(await Promise.all(oldReasonCodes.map(reason)),oldReasons);checks++;
+ for(const [code,hint] of [['NATIVE_SOURCE_INVENTORY_REQUIRED','PDF có chữ'],['NATIVE_SOURCE_INVENTORY_AMBIGUOUS','PDF có chữ'],['NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED','PDF có chữ'],['NATIVE_SCOPE_UNRESOLVED','câu, phần và trang'],['NATIVE_SCOPE_AMBIGUOUS','câu, phần và trang'],['NATIVE_SCOPE_REF_MISSING','câu, phần và trang'],['NATIVE_EXTRACT_INVENTORY_MISMATCH','chưa khớp'],['NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED','Nội dung đã lưu']]){
+  assert.ok((await reason(code)).includes(hint));assert.equal((await db.query('select mtm_hw_private.lesson_retryable108($1) v',[code])).rows[0].v,false);checks++;
+ }
+ await db.exec('begin');await db.query('update mtm_hw_private.lesson_uploads set last_error_code=$2 where id=$1',[target,'NATIVE_SCOPE_UNRESOLVED']);assert.ok((await db.query('select mtm_hw_private.lesson_retry_info108(u) v from mtm_hw_private.lesson_uploads u where id=$1',[target])).rows[0].v.reason.includes('câu, phần và trang'));await db.exec('rollback');checks++;
+ const expires=new Date(Date.now()+45*60000).toISOString();
+ const issue=(m=manifest,r=runtime,f=fix,a=authority,e=expires)=>db.query('select mtm_hw_private.lesson_grant_continuation142($1,$2,$3,$4,$5) v',[m,r,f,a,e]);
+ const claim={action:'worker_claim',operator_continuation:true,is_test:true,auto:false,upload_id:target,worker_protocol:111,worker_id:'synthetic-worker',runtime_manifest_sha256:manifest,lease_seconds:600};
+ assert.equal((await svc({action:'worker_claim',is_test:true,worker_protocol:110,worker_id:'normal-test-worker'})).job,null);checks++;
+ await fail('',()=>issue(null),/CONTINUATION_PROOF_REQUIRED/);
+ await fail(`update mtm_hw_private.lesson_uploads set task_scope='changed' where id='${target}'`,()=>issue(),/CONTINUATION_SOURCE_CHANGED/);
+ await fail(`update mtm_hw_private.lesson_uploads set is_test=false where id='${target}'`,()=>issue(),/CONTINUATION_SOURCE_CHANGED/);
+ await fail('',()=>issue(manifest,runtime,fix,authority,new Date(Date.now()+91*60000).toISOString()),/CONTINUATION_PROOF_REQUIRED/);
+ await assert.rejects(()=>db.transaction(async tx=>{await tx.exec("set local role service_role;select set_config('request.jwt.claim.role','service_role',true)");return tx.query('select mtm_hw_private.lesson_grant_continuation142($1,$2,$3,$4,$5)',[manifest,runtime,fix,authority,expires]);}),/permission denied/);checks++;
+ assert.equal((await issue()).rows[0].v.processing_credits_used,0);assert.equal((await issue()).rows[0].v.already_issued,true);checks++;
+ const queued=await row();assert.equal(queued.attempt_count,3);assert.equal(queued.retry_count,3);assert.equal(queued.claim_token,before.claim_token);assert.deepEqual(queued.checkpoint,cp);checks++;
+ await fail('',()=>svc({...claim,auto:true}),/CONTINUATION_EXPLICIT_TEST_SCOPE_REQUIRED/);
+ await fail('',()=>svc({...claim,is_test:false}),/CONTINUATION_EXPLICIT_TEST_SCOPE_REQUIRED/);
+ await fail('',()=>svc({...claim,worker_protocol:110}),/CONTINUATION_EXPLICIT_TEST_SCOPE_REQUIRED/);
+ await fail('',()=>svc({...claim,runtime_manifest_sha256:'d'.repeat(64)}),/CONTINUATION_NOT_ELIGIBLE/);
+ await fail("update mtm_hw_private.lesson_continuation142 set created_at=clock_timestamp()-interval '10 minutes',expires_at=clock_timestamp()-interval '1 second'",()=>svc(claim),/CONTINUATION_NOT_ELIGIBLE/);
+ const firstClaim=(await svc(claim)).job;assert.equal(firstClaim.attempt_count,4);assert.equal(firstClaim.operator_review_resume,false);assert.notEqual(firstClaim.claim_token,before.claim_token);assert.equal((await grantRow()).processing_credits_used,1);checks++;
+ await fail('',()=>svc(claim),/CONTINUATION_NOT_ELIGIBLE/);
+ await fail("update mtm_hw_private.lesson_uploads set attempt_count=4 where not is_test",()=>Promise.resolve(),/CONTINUATION_CONSUMED_FENCE_REQUIRED|check constraint/);
+ await fail('',()=>svc({action:'worker_publish',upload_id:target,claim_token:firstClaim.claim_token,payload:{}}),/PRIOR_STEP_INCOMPLETE/);
+ for(const step of [2,3])await svc({action:'worker_checkpoint',upload_id:target,claim_token:firstClaim.claim_token,step,status:'xong',detail:'Synthetic cached stage',checkpoint:{}});
+ await svc({action:'worker_checkpoint',upload_id:target,claim_token:firstClaim.claim_token,step:4,status:'dang',detail:'Synthetic pending independent review',checkpoint:{}});
+ const wait={action:'worker_wait_review',upload_id:target,claim_token:firstClaim.claim_token,paper:1,request_hash:'e'.repeat(64),source_version:source};
+ assert.equal((await svc(wait)).allowed,false);assert.equal((await row()).attempt_count,3);assert.equal((await grantRow()).status,'waiting_review');checks++;
+ assert.equal((await svc(wait)).allowed,false);assert.equal((await row()).attempt_count,3);assert.equal((await grantRow()).processing_credits_used,1);checks++;
+ await db.query("update mtm_hw_private.lesson_uploads set lease_until=clock_timestamp()-interval '1 second' where id=$1",[target]);
+ await fail("update mtm_hw_private.lesson_review_requests set request_hash=repeat('f',64)",()=>svc(claim),/CONTINUATION_REVIEW_RESUME_CHANGED/);
+ const resume=(await svc(claim)).job;assert.equal(resume.attempt_count,4);assert.equal(resume.operator_review_resume,true);assert.notEqual(resume.claim_token,firstClaim.claim_token);assert.equal((await grantRow()).processing_credits_used,1);assert.equal((await grantRow()).review_resume_count,1);checks++;
+ await db.exec('begin');await svc({...wait,claim_token:resume.claim_token});await db.query("update mtm_hw_private.lesson_uploads set lease_until=clock_timestamp()-interval '1 second' where id=$1",[target]);
+ const resume2=(await svc(claim)).job;assert.equal((await grantRow()).review_resume_count,2);assert.equal((await grantRow()).processing_credits_used,1);await svc({...wait,claim_token:resume2.claim_token});await db.query("update mtm_hw_private.lesson_uploads set lease_until=clock_timestamp()-interval '1 second' where id=$1",[target]);
+ await assert.rejects(()=>svc(claim),/CONTINUATION_REVIEW_RESUME_LIMIT/);await db.exec('rollback');assert.equal((await grantRow()).review_resume_count,1);checks++;
+ await fail('',()=>svc({...wait,claim_token:firstClaim.claim_token}),/STALE_UPLOAD_OR_LEASE/);
+ await db.exec('begin');await db.query("update mtm_hw_private.lesson_upload_steps set status='xong' where upload_id=$1",[target]);await svc({action:'worker_finish',upload_id:target,claim_token:resume.claim_token});assert.equal((await grantRow()).status,'complete');await db.exec('rollback');checks++;
+ await svc({action:'worker_record_failure',upload_id:target,claim_token:resume.claim_token,step:4,paper:1,code:'NATIVE_DRIVER_FAILED'});
+ assert.equal((await grantRow()).status,'failed');assert.equal((await row()).attempt_count,4);assert.equal((await row()).retry_count,3);assert.deepEqual((await row()).checkpoint,cp);checks++;
+ const failedGrant=await grantRow(),failedUpload=await row();await svc({action:'worker_record_failure',upload_id:target,claim_token:resume.claim_token,step:4,paper:1,code:'NATIVE_DRIVER_FAILED'});assert.deepEqual(await grantRow(),failedGrant);assert.deepEqual(await row(),failedUpload);checks++;
+ await fail('',()=>svc(claim),/CONTINUATION_NOT_ELIGIBLE/);await fail('',()=>issue('f'.repeat(64)),/CONTINUATION_ALREADY_ISSUED/);
+ assert.equal((await issue()).rows[0].v.status,'failed');assert.deepEqual(await oldRows(),old);checks++;
+ const record={status:'PASS',checks,live:false,full_canonical_migration_chain:true,SQL_source_sha256:createHash('sha256').update(raw).digest('hex'),synthetic_identity_and_old5_hashes_adapted:true,native_AI_or_paid_budget_calls:0,automatic_real_limit_remains_3:true};
+ writeFileSync(dir+'QA.safe.json',JSON.stringify(record,null,2)+'\n');console.log(JSON.stringify(record));
+}finally{await db.close();}

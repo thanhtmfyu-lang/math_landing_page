@@ -212,8 +212,7 @@ class AutoWorkerTests(unittest.TestCase):
                 value['private_data'] = 'private-value-never-written'
                 error = PermissionError('private-path-never-printed')
                 error.winerror = winerror
-                original_replace = worker.os.replace
-                replacements, sleeps = [], []
+                replacements, sleeps, committed = [], [], []
 
                 def replace(source, destination):
                     replacements.append((source, destination))
@@ -221,7 +220,13 @@ class AutoWorkerTests(unittest.TestCase):
                     self.assertEqual(json.loads(source.read_text())['status'], 'waiting')
                     if len(replacements) <= 2:
                         raise error
-                    original_replace(source, destination)
+                    # This test models two sharing failures and a successful
+                    # commit. A real third replace after mocked/no-op sleeps
+                    # can hit an unrelated Windows reader and exhaust the
+                    # already-used retry budget. Capture the exact completed
+                    # bytes instead; real atomic replacement has its own test
+                    # and the controlled read-handle reproduction receipt.
+                    committed.append(source.read_bytes())
 
                 def sleep(delay):
                     sleeps.append(delay)
@@ -237,9 +242,13 @@ class AutoWorkerTests(unittest.TestCase):
                 self.assertEqual(sleeps, [0.05, 0.1])
                 self.assertEqual(len(replacements), 3)
                 self.assertEqual(len(set(replacements)), 1)
-                self.assertEqual(self.read()['status'], 'waiting')
-                self.assertEqual(set(self.read()), set(worker.FIELDS))
-                self.assertNotIn('private-', supervisor.heartbeat_path.read_text())
+                self.assertEqual(len(committed), 1)
+                self.assertEqual(json.loads(committed[0]), {k: value[k] for k in worker.FIELDS})
+                self.assertEqual(json.loads(committed[0])['status'], 'waiting')
+                self.assertEqual(set(json.loads(committed[0])), set(worker.FIELDS))
+                self.assertNotIn(b'private-', committed[0])
+                # The replace stub deliberately does not mutate the real file.
+                self.assertEqual(supervisor.heartbeat_path.read_bytes(), before)
                 self.assertFalse(list(self.state.glob('*.tmp')))
                 self.assertEqual((stdout.getvalue(), stderr.getvalue()), ('', ''))
 

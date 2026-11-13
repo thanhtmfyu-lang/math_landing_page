@@ -1,8 +1,34 @@
 import {createHash} from 'node:crypto';
 import type {WorkerRepository,UploadJob} from './worker';
 
+export const OPERATOR_CONTINUATION_UPLOAD_ID='14227822-ce9a-4f0f-8df3-489a60b11392';
+export const OPERATOR_CONTINUATION_RUNTIME_ENV='MTM_OPERATOR_CONTINUATION_RUNTIME_SHA256';
+export type WorkerRepositoryOptions={isTest?:boolean;auto?:boolean;operatorContinuation?:{uploadId:string;runtimeManifestSha256:string}};
+
+function operatorOptions(options:WorkerRepositoryOptions){
+ const value=options.operatorContinuation;if(value===undefined)return undefined;
+ if(options.isTest!==true||options.auto===true)throw Error('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED');
+ if(!value||typeof value!=='object'||Object.keys(value).sort().join(',')!=='runtimeManifestSha256,uploadId')throw Error('OPERATOR_CONTINUATION_OPTIONS_INVALID');
+ if(value.uploadId!==OPERATOR_CONTINUATION_UPLOAD_ID)throw Error('OPERATOR_CONTINUATION_TARGET_INVALID');
+ if(typeof value.runtimeManifestSha256!=='string'||!/^[a-f0-9]{64}$/.test(value.runtimeManifestSha256))throw Error('OPERATOR_CONTINUATION_RUNTIME_REQUIRED');
+ return {uploadId:OPERATOR_CONTINUATION_UPLOAD_ID,runtimeManifestSha256:value.runtimeManifestSha256};
+}
+
+/** Parse before creating a gateway/pipeline. Environment metadata alone never enables a continuation. */
+export function parseWorkerInvocation(args:readonly string[],environment:Record<string,string|undefined>={}){
+ if(!['--once','--review-once'].includes(args[0])||new Set(args).size!==args.length||args.slice(1).some(arg=>!['--is-test','--auto','--operator-continuation'].includes(arg)))throw Error('EXPLICIT_ONCE_REQUIRED');
+ const options:WorkerRepositoryOptions={isTest:args.includes('--is-test'),auto:args.includes('--auto')};
+ if(args.includes('--operator-continuation')){
+  if(args[0]!=='--once'||options.isTest!==true||options.auto===true)throw Error('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED');
+  options.operatorContinuation={uploadId:OPERATOR_CONTINUATION_UPLOAD_ID,runtimeManifestSha256:environment[OPERATOR_CONTINUATION_RUNTIME_ENV]??''};
+  operatorOptions(options);
+ }
+ return {mode:args[0] as '--once'|'--review-once',options};
+}
+
 /** Service-role client only. No client env access and no raw errors in receipts. */
-export function createWorkerRepository(db:any,options:{isTest?:boolean;auto?:boolean}={}):WorkerRepository {
+export function createWorkerRepository(db:any,options:WorkerRepositoryOptions={}):WorkerRepository {
+ const operator=operatorOptions(options);
  const call=async(p:Record<string,unknown>)=>{
   const {data,error}=await db.rpc('mtm_lesson_upload_api',{p});
   if(error)throw Error(error.code==='42501'?'GATEWAY_AUTH_REQUIRED':/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message??'')?error.message:error.code?'GATEWAY_REQUEST_REJECTED':'WORKER_RPC_FAILED');
@@ -11,7 +37,13 @@ export function createWorkerRepository(db:any,options:{isTest?:boolean;auto?:boo
  };
  const fenced=(job:UploadJob,action:string,extra:Record<string,unknown>={})=>call({action,upload_id:job.id,claim_token:job.claim_token,...extra});
  return {
-  async claim(workerId){const data=await call({action:'worker_claim',worker_protocol:110,worker_id:workerId,lease_seconds:900,is_test:options.isTest===true,...(options.auto?{auto:true}:{})});return data?.job??null;},
+  async claim(workerId){
+   if(operator&&(options.isTest!==true||options.auto===true))throw Error('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED');
+   const data=await call({action:'worker_claim',worker_protocol:operator?111:110,worker_id:workerId,lease_seconds:900,is_test:options.isTest===true,...(options.auto?{auto:true}:{}),...(operator?{operator_continuation:true,upload_id:operator.uploadId,runtime_manifest_sha256:operator.runtimeManifestSha256,auto:false}:{})});
+   const job=data?.job??null;
+   if(operator&&job&&(job.id!==operator.uploadId||job.version!==1||job.is_test!==true||job.operator_continuation!==true))throw Error('OPERATOR_CONTINUATION_RECEIPT_MISMATCH');
+   return job;
+  },
   async current(job){const data=await fenced(job,'worker_assert_current');if(data?.ok!==true)throw Error('CLAIM_LOST');},
   async step(job,step,status,detail,checkpoint,paper=1){await fenced(job,'worker_checkpoint',{step,status,detail,checkpoint,paper});},
   async waitReview(job,request){return call({action:'worker_wait_review',upload_id:job.id,claim_token:job.claim_token,paper:job.paper??1,request_hash:request.request_hash,source_version:request.sourceVersion});},

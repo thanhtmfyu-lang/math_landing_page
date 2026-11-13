@@ -9,7 +9,7 @@ launcher=importlib.util.module_from_spec(spec);spec.loader.exec_module(launcher)
 ARTIFACTS=ROOT/'.qa-temp/lesson-upload-child-opt-in-tests'
 
 class ChildOptInTests(unittest.TestCase):
- def invoke(self,args,*,enabled=True,busy=False,inherited=None,before_gate=False,publish_error=False):
+ def invoke(self,args,*,enabled=True,busy=False,inherited=None,before_gate=False,publish_error=False,runtime_sha=None):
   ARTIFACTS.mkdir(parents=True,exist_ok=True)
   with tempfile.TemporaryDirectory(dir=ARTIFACTS) as tmp:
    state=pathlib.Path(tmp);flag=state/'web-upload/enabled'
@@ -34,6 +34,7 @@ class ChildOptInTests(unittest.TestCase):
    fcntl.flock=lock
    environment={'JAVIS_BRAIN_ROOT':str(state),'BTVN_NATIVE_MODULE_DIR':str(state/'fake-native')}
    if inherited is not None:environment.update(BTVN_ALLOW_NETWORK=inherited,BTVN_AI_AUDIT=inherited)
+   if runtime_sha is not None:environment['MTM_OPERATOR_CONTINUATION_RUNTIME_SHA256']=runtime_sha
    before_flags={key:environment.get(key) for key in ('BTVN_ALLOW_NETWORK','BTVN_AI_AUDIT')}
    def popen(command,**kwargs):
     self.assertEqual(events[-1],'publish_settings');events.append('Popen')
@@ -83,5 +84,22 @@ class ChildOptInTests(unittest.TestCase):
     out=self.invoke(args);self.assertIsInstance(out['error'],ValueError);self.assertEqual(out['children'],[]);self.assertNotIn('publish_settings',out['events'])
   gate=self.invoke(['--once'],before_gate=True);self.assertEqual(str(gate['error']),'RELEASE_GATE_2230_VN');self.assertNotIn('lock_attempt',gate['events'])
   denied=self.invoke(['--once'],publish_error=True);self.assertIsInstance(denied['error'],PermissionError);self.assertEqual(denied['children'],[])
+ def test_operator_continuation_is_explicit_manual_test_only_after_existing_gates(self):
+  args=['--once','--is-test','--manual','--operator-continuation'];sha='a'*64
+  out=self.invoke(args,runtime_sha=sha);self.assertIsNone(out['error']);self.assertEqual(len(out['children']),1)
+  child=out['children'][0];self.assertIn('--operator-continuation',child['command']);self.assertIn('--is-test',child['command']);self.assertNotIn('--auto',child['command'])
+  self.assertEqual(child['kwargs']['env']['MTM_OPERATOR_CONTINUATION_RUNTIME_SHA256'],sha);self.assertEqual(out['flag_bytes'],b'UNCHANGED_SYNTHETIC_ENABLED')
+  disabled=self.invoke(args,runtime_sha=sha,enabled=False);self.assertEqual(str(disabled['error']),'WEB_UPLOAD_DISABLED');self.assertEqual(disabled['children'],[])
+  busy=self.invoke(args,runtime_sha=sha,busy=True);self.assertIsNone(busy['error']);self.assertEqual(json.loads(busy['output']),{'status':'busy'});self.assertEqual(busy['children'],[])
+  denied=self.invoke(args,runtime_sha=sha,publish_error=True);self.assertIsInstance(denied['error'],PermissionError);self.assertEqual(denied['children'],[])
+ def test_operator_flag_or_metadata_cannot_broaden_other_modes(self):
+  bad=[['--once','--is-test','--operator-continuation'],['--once','--manual','--operator-continuation'],['--once','--auto','--is-test','--operator-continuation'],['--review-once','--manual','--is-test','--operator-continuation'],['--status','--operator-continuation'],['--enable','--operator-continuation'],['--disable','--operator-continuation']]
+  for args in bad:
+   with self.subTest(args=args):
+    out=self.invoke(args,runtime_sha='a'*64);self.assertIsInstance(out['error'],ValueError);self.assertEqual(out['children'],[]);self.assertNotIn('lock_attempt',out['events'])
+  for value in (None,'','A'*64,'a'*63,'x'*64):
+   with self.subTest(runtime_sha=value):
+    out=self.invoke(['--once','--is-test','--manual','--operator-continuation'],runtime_sha=value);self.assertEqual(str(out['error']),'OPERATOR_CONTINUATION_RUNTIME_REQUIRED');self.assertEqual(out['children'],[])
+  normal=self.invoke(['--once','--auto','--is-test'],runtime_sha='a'*64);self.assertIsNone(normal['error']);self.assertNotIn('--operator-continuation',normal['children'][0]['command'])
 
 if __name__=='__main__':unittest.main(verbosity=2)

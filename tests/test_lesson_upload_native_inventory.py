@@ -18,8 +18,9 @@ class NativeInventoryTests(unittest.TestCase):
   import fitz # Same PDF text engine as the native renderer; no provider/OCR.
   with fitz.open(FIXTURE) as document:text='\f'.join(page.get_text() for page in document)
   self.assertIn('QA SYNTHETIC',text)
-  inventory=driver.source_inventory(text)
+  inventory=driver.source_inventory_pdf(FIXTURE.read_bytes())
   self.assertEqual([r['sourceRef'] for r in inventory],['Câu 1','Câu 2','Câu 3'])
+  self.assertEqual(inventory,driver.source_inventory(text));self.assertTrue(all(type(r['pageNo']) is int and r['pageNo']>=1 for r in inventory))
   self.assertEqual(driver.scoped_inventory(inventory,'Cau 1 den Cau 3'),inventory)
   self.assertEqual(driver.scoped_inventory(inventory,'Làm toàn bộ 3 câu trong phiếu.'),inventory)
   self.assertEqual(driver.scoped_inventory(inventory,'toàn bộ đề'),inventory)
@@ -31,8 +32,71 @@ class NativeInventoryTests(unittest.TestCase):
   self.assertEqual([r['sourceRef'] for r in driver.scoped_inventory(inventory,'Phần II: câu 1 đến câu 2')],['II.1','II.2'])
   with self.assertRaisesRegex(ValueError,'NATIVE_SCOPE_AMBIGUOUS'):driver.scoped_inventory(inventory,'Câu 1')
   self.assertEqual(len(driver.scoped_inventory(inventory,'toàn bộ đề')),4)
-  for text in ('Câu 1. A\nCâu 1. B','PHẦN A. Chưa định danh\nCâu 1. A','Câu 1.1. A\nCâu 2. B','Bài 1. Tiêu đề\nCâu 1. A','Câu1. A\nCâu 2. B','Câu 1. A\nCâu số 2. B','Câu 1. A\n2. B'):
+  for text in ('Câu 1. A\nCâu 1. B','PHẦN A. Chưa định danh\nCâu 1. A','PHẦN VÍ DỤ\nCâu1. A','Câu 1.1. A\nCâu 2. B','Bài 1. Tiêu đề\nCâu 1. A','Câu 1. A\nCâu số 2. B','Câu 1. A\n2. B'):
    with self.subTest(text=text),self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_INVENTORY_AMBIGUOUS'):driver.source_inventory(text)
+
+ def test_clear_no_space_locators_and_decimal_ambiguity(self):
+  self.assertEqual([r['sourceRef'] for r in driver.source_inventory('Câu1. A\nCâu2: B')],['Câu 1','Câu 2'])
+  self.assertEqual([r['sourceRef'] for r in driver.source_inventory('Bài2: A\nBài3. B')],['Bài 2','Bài 3'])
+  for text in ['Câu1.1. A','Bài2.2: A']:
+   with self.subTest(text=text),self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_INVENTORY_AMBIGUOUS'):driver.source_inventory(text)
+
+ def test_exact_ui_page_scope_skip6_and_section_continues_across_pages(self):
+  pages=['PHẦN I. Trắc nghiệm\nCâu1. A','Câu2. B','\n'.join('Câu'+str(n)+'. Nội dung' for n in range(5,16))]
+  inventory=driver.source_inventory(pages);scope='Câu 5–15 trang 3, bỏ câu 6';before=scope.encode();selected=driver.scoped_inventory(inventory,scope)
+  self.assertEqual([r['number'] for r in selected],[5,*range(7,16)]);self.assertEqual({r['pageNo'] for r in selected},{3});self.assertEqual({r['section'] for r in selected},{'I'});self.assertEqual(scope.encode(),before)
+  self.assertEqual([r['number'] for r in driver.scoped_inventory(inventory,'trang 2–3: Phần I: câu 2, 5, 8')],[2,5,8])
+  self.assertEqual([r['number'] for r in driver.scoped_inventory(inventory,'Phần I: câu5—15 trang3,bỏ6')],[5,*range(7,16)])
+
+ def test_missing_explicitly_excluded_range_question_is_not_required(self):
+  inventory=driver.source_inventory(['Câu1. A','Câu2. B','\n'.join('Câu '+str(n)+'. A' for n in [5,*range(7,16)])])
+  selected=driver.scoped_inventory(inventory,'Câu5–15 trang3, bỏ câu6');self.assertEqual([r['number'] for r in selected],[5,*range(7,16)])
+  for scope in ['Câu5–15 trang3, bỏ4','Câu5–15 trang3','toàn bộ đề trang3, bỏ6','Câu5–999999999999999999999 trang3, bỏ6']:
+   with self.subTest(scope=scope),self.assertRaisesRegex(ValueError,'NATIVE_SCOPE_REF_MISSING'):driver.scoped_inventory(inventory,scope)
+
+ def test_page_disambiguation_preserves_unique_refs_but_never_counts_repeats_as_whole(self):
+  inventory=driver.source_inventory(['Câu1. A\nCâu2. B','Câu1. Có thể lặp/tiếp','Câu3. C'])
+  self.assertEqual([r['sourceRef'] for r in inventory],['p1:Câu 1','Câu 2','p2:Câu 1','Câu 3'])
+  self.assertEqual([r['sourceRef'] for r in driver.scoped_inventory(inventory,'Câu1 trang2')],['p2:Câu 1'])
+  self.assertEqual([r['sourceRef'] for r in driver.scoped_inventory(inventory,'toàn bộ đề trang1')],['p1:Câu 1','Câu 2'])
+  for scope in ['toàn bộ đề','câu1','câu1-3','câu1-3 trang1-3, bỏ1']:
+   with self.subTest(scope=scope),self.assertRaisesRegex(ValueError,'NATIVE_SCOPE_AMBIGUOUS'):driver.scoped_inventory(inventory,scope)
+  for scope in ['câu3 trang4','câu3 trang2-4','câu1 trang0','câu1 trang2-1','câu1 trang1 trang2']:
+   with self.subTest(scope=scope),self.assertRaises(ValueError):driver.scoped_inventory(inventory,scope)
+  with self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_INVENTORY_AMBIGUOUS'):driver.source_inventory('Câu1. A\nCâu1: B')
+
+ def test_mixed_or_unresolved_pages_hold_whole_but_can_be_explicitly_excluded(self):
+  inventory=driver.source_inventory(['[scan / footer only]','Trang 2','Câu5. A\nCâu7. B'])
+  self.assertEqual(inventory.unresolved_pages,(1,2));self.assertEqual(inventory.page_count,3)
+  for scope in ['toàn bộ đề','Câu5,7','toàn bộ đề trang2-3']:
+   with self.subTest(scope=scope),self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED'):driver.scoped_inventory(inventory,scope)
+  self.assertEqual([r['number'] for r in driver.scoped_inventory(inventory,'Câu5-7 trang3, bỏ6')],[5,7])
+  continued=driver.source_inventory(['Câu1. A','Câu1. (tiếp)\nCâu2. B'])
+  for scope in ['toàn bộ đề','Câu2 trang2']:
+   with self.subTest(scope=scope),self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED'):driver.scoped_inventory(continued,scope)
+  self.assertEqual([r['sourceRef'] for r in driver.scoped_inventory(continued,'Câu1 trang1')],['Câu 1'])
+  import fitz
+  with fitz.open() as document:
+   document.new_page().insert_text((72,72),'Cau1. Synthetic');document.new_page().insert_text((72,72),'Footer only');raw=document.tobytes()
+  inventory_pdf=driver.source_inventory_pdf(raw)
+  with self.assertRaisesRegex(ValueError,'NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED'):driver.scoped_inventory(inventory_pdf,'toàn bộ đề')
+  self.assertEqual([r['sourceRef'] for r in driver.scoped_inventory(inventory_pdf,'Câu1 trang1')],['Câu 1'])
+
+ def test_actual_pdf_inventory_overrides_flattened_renderer_text_and_keeps_scope_source_hash(self):
+  inventory=driver.source_inventory_pdf(FIXTURE.read_bytes());scope='Câu 1–3 trang 1, bỏ câu 2';source='b'*64
+  ai=types.SimpleNamespace(check_access=Mock(),ask_stage=Mock(return_value=result(['Câu 1','Câu 3'])))
+  driver.extract_source(ai,types.SimpleNamespace(EXTRACT_PROMPT='P'),{'title':'QA','task_scope':scope},source,'[flattened renderer not used for inventory]','PRIVATE_GV',[],[],'M',inventory=inventory)
+  context=ai.ask_stage.call_args.kwargs['native_context'];self.assertEqual(context['target_refs'],['Câu 1','Câu 3']);self.assertEqual(context['source_version'],source);self.assertEqual(context['task_scope_sha256'],hashlib.sha256(scope.encode()).hexdigest())
+
+ def test_public_stderr_uses_exact_codes_and_never_raw_provider_auth_text(self):
+  for code in driver.PUBLIC_NATIVE_ERRORS:self.assertEqual(driver.public_error(ValueError(code)),code)
+  GateError=type('GateError',(Exception,),{})
+  self.assertEqual(driver.public_error(GateError('Extract câu nằm ngoài inventory')),'NATIVE_EXTRACT_INVENTORY_MISMATCH')
+  for text in ['PRIVATE_PROVIDER_TOKEN','NATIVE_SCOPE_REF_MISSING: PRIVATE','prefix NATIVE_SCOPE_AMBIGUOUS','Extract câu nằm ngoài inventory PRIVATE']:
+   self.assertEqual(driver.public_error(ValueError(text)),'ValueError')
+  class BadString(Exception):
+   def __str__(self):raise RuntimeError('PRIVATE_PROVIDER_CHAIN')
+  self.assertEqual(driver.public_error(BadString()),'BadString')
 
  def test_explicit_scopes_exclude_without_silently_dropping_missing_or_prose(self):
   inventory=driver.source_inventory('\n'.join('Bài '+str(n)+'. Nội dung' for n in range(5,10)))
@@ -97,7 +161,7 @@ class NativeInventoryTests(unittest.TestCase):
    job={'id':'11111111-1111-4111-8111-111111111111','paper':1,'task_scope':'toàn bộ đề'}
    folder=driver.work_path(runtime,job);folder.mkdir(parents=True)
    hs=b'%PDF-SYNTHETIC-HS';gv=b'%PDF-SYNTHETIC-GV';identity=driver.digest(hs+gv)
-   record={'sourceVersion':identity,'draft':{'synthetic':True}}
+   record={'sourceVersion':identity,'inventory_contract':'MTM-WEB-TEXT-INVENTORY-20261114-v1','draft':{'synthetic':True}}
    (folder/'draft.json').write_text(json.dumps(record))
    with patch.object(driver,'modules',return_value=(runtime,None,None,Mock())):
     with self.assertRaisesRegex(ValueError,'NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED'):driver.main({'stage':'draft','job':job,'sourceVersion':identity})
