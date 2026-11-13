@@ -3,9 +3,11 @@ import {createBtvnPublishHandler,expectedSlots,type AnswerSlot,type PublishAsset
 import {validatePracticeExam,type PracticeExam} from '../../src/native/exams/data';
 import {youtubeVideoId} from '../btvn/lesson-materials';
 import {normalizedShort} from '../../src/native/exams/assessment';
+import {assessmentPublishKind,normalizeWorkKind} from '../../src/native/lesson-upload/assessment-intake';
+import {validAssessmentDuration} from '../btvn/assessment-policy';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 
-export type UploadJob={paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
+export type UploadJob={work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
 export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[]};
 export type Draft={exam:PracticeExam;assets:PublishAsset[]};
 export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string;pending?:boolean};
@@ -48,6 +50,17 @@ export function nextWeekDue(date:string,start:string){
 /** Overrides are a private, server-validated part of the claimed version, never
  * accepted directly from the publication payload. Legacy jobs keep exact defaults. */
 export function validateUploadDeadlines(job:UploadJob){
+ if(normalizeWorkKind(job.work_kind)==='exam'){
+  const c=job.exam_config;
+  ensure(job.class_ids.length===1&&c&&validAssessmentDuration(c.duration_minutes),'INVALID_ASSESSMENT_CONFIG');
+  ensure(typeof c.opens_at==='string'&&typeof c.closes_at==='string'&&/([Zz]|[+-]\d{2}:\d{2})$/.test(c.opens_at)&&/([Zz]|[+-]\d{2}:\d{2})$/.test(c.closes_at),'INVALID_ASSESSMENT_CONFIG');
+  const opens=Date.parse(c.opens_at),closes=Date.parse(c.closes_at);
+  ensure(Number.isFinite(opens)&&Number.isFinite(closes)&&closes-opens>=c.duration_minutes*60000,'INVALID_ASSESSMENT_CONFIG');
+  ensure(typeof job.assessment_id==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(job.assessment_id)&&['monthly','custom'].includes(job.exam_type??''),'INVALID_ASSESSMENT_METADATA');
+  ensure(job.homework_path&&!job.homework2_path&&!job.answer2_path&&!job.answer2_text,'INVALID_ASSESSMENT_SOURCE');
+  ensure(job.title.trim().length>0&&job.title.length<=200,'INVALID_ASSESSMENT_TITLE');
+  return;
+ }
  const due=job.due_at_by_class,overrides=job.due_at_overrides??{};
  ensure(due&&typeof due==='object'&&!Array.isArray(due)&&typeof overrides==='object'&&!Array.isArray(overrides),'INVALID_HOMEWORK_DEADLINE');
  ensure(Object.keys(due).every(id=>job.class_ids.includes(id))&&Object.keys(overrides).every(id=>job.class_ids.includes(id)),'INVALID_HOMEWORK_DEADLINE');
@@ -77,24 +90,31 @@ function verifyTeacher(draft:Draft,source:Extraction){
  for(const s of slots){const teachers=source.teacherSlots.filter(t=>t.question_id===s.question_id&&t.slot===s.slot);ensure(teachers.length===1&&JSON.stringify(teachers[0].expected)===JSON.stringify(s.expected),'TEACHER_ANSWER_MISMATCH');}
  return slots;
 }
+function verifyPublicSource(job:UploadJob,draft:Draft){
+ const encoded=JSON.stringify(draft.exam);
+ ensure(!encoded.includes('mtm-lesson-private')&&![job.homework_path,job.answer_path,job.homework2_path,job.answer2_path].some(path=>path&&encoded.includes(path)),'PRIVATE_SOURCE_IN_PUBLISH');
+}
 /** Explicit projection prevents accidentally forwarding expected/actual/solution fields to reviewer. */
 export function reviewQuestions(exam:PracticeExam){return exam.questions.map(q=>({id:q.id,kind:q.kind,...(q.prompt?{prompt:q.prompt}:{}),...(q.text?{text:q.text}:{}),...('choices' in q?{choices:q.choices}:{}),...(q.statements?{statements:q.statements}:{}),...('mode' in q?{mode:q.mode}:{}),...(q.convertedFrom?{convertedFrom:q.convertedFrom}:{}),...(q.shortFormat?{shortFormat:q.shortFormat}:{}),sourceRef:q.sourceRef,...(q.sourcePdfPage?{sourcePdfPage:q.sourcePdfPage}:{}),...(q.sourceContent?.questions?{sourceContent:{questions:q.sourceContent.questions.map(({path,sha256,...rest}:any)=>({path,sha256,...(typeof rest.alt==='string'?{alt:rest.alt}:{})}))}}:{})}));}
 /** One claim per tick, no scheduling/startup side effect. Unknown error text never reaches progress. */
 export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,state:PrivateState,workerId:string){
  const job=await repo.claim(workerId);if(!job)return {status:'idle' as const};
- if(job.homework2_path)return runUploadPair(repo,pipeline,state,workerId,job);
  let step=2,mismatchDetail='';const cp={...job.checkpoint};
  const save=async(stage:string,value:unknown)=>{cp[stage]=await state.save(job.id,stage,value);};
  const mark=async(n:number,status:'dang'|'xong'|'loi'|'canh_bao',detail='')=>{await repo.current(job);await repo.step(job,n,status,detail,cp);};
  try{
-  validateJob(job);ensure(['codex','chatgpt-oauth','openai'].includes(pipeline.extractor.provider)&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
+  // Validate the original job before projecting individual papers. A test may
+  // never silently acquire the homework two-paper semantics.
+  validateJob(job);
+  if(job.homework2_path)return await runUploadPair(repo,pipeline,state,workerId,job);
+  ensure(['codex','chatgpt-oauth','openai'].includes(pipeline.extractor.provider)&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
   await mark(2,'dang');
   const source:Extraction=cp.source?await state.load(cp.source):await pipeline.read(job);
   ensure(/^[a-f0-9]{64}$/.test(source.sourceVersion)&&Array.isArray(source.questions),'INVALID_EXTRACTION');
   if(job.homework_path){ensure(source.questions.length&&source.teacherSlots.length,'TEACHER_ANSWERS_REQUIRED');if(job.answer_path)ensure(Array.isArray(source.privateAnswerHashes)&&source.privateAnswerHashes.length>0&&source.privateAnswerHashes.every(h=>/^[a-f0-9]{64}$/.test(h)),'PRIVATE_ANSWER_HASH_REQUIRED');}
   await save('source',source);await mark(2,'xong',job.homework_path?'':'Không áp dụng: buổi này không có đề BTVN.');step=3;await mark(3,'dang');
   const draft:Draft|null=job.homework_path?(cp.draft?await state.load(cp.draft):await pipeline.build(job,source)):null;
-  if(draft){ensure(validatePracticeExam(draft.exam).valid,'DRAFT_INVALID');verifyTeacher(draft,source);ensure(digest(source.questions)===digest(reviewQuestions(draft.exam)),'QUESTION_SOURCE_MISMATCH');}
+  if(draft){ensure(validatePracticeExam(draft.exam).valid,'DRAFT_INVALID');verifyPublicSource(job,draft);if(normalizeWorkKind(job.work_kind)==='exam')ensure(draft.exam.title===job.title&&draft.exam.durationMinutes===job.exam_config?.duration_minutes,'ASSESSMENT_SOURCE_MISMATCH');verifyTeacher(draft,source);ensure(digest(source.questions)===digest(reviewQuestions(draft.exam)),'QUESTION_SOURCE_MISMATCH');}
   await save('draft',draft);await mark(3,'xong',draft?'':'Không áp dụng: buổi này chỉ có học liệu/video.');step=4;await mark(4,'dang');
   let proof:any=null,teacherPending=false;
   if(draft){
@@ -163,7 +183,7 @@ function material(job:UploadJob,links:{handoutUrl:string|null;materialUrl:string
  return {lessonCode:job.lesson_code,classNames:job.class_ids.map(id=>job.class_names[id]),classDates:Object.fromEntries(job.class_ids.map(id=>[job.class_names[id],job.class_dates[id]])),date:job.lesson_date,title:job.title,titleSource:'auto',homeworkScope:job.homework_path?job.task_scope:undefined,homeworkScopeSource:job.homework_path?'auto':undefined,videoId:job.video_url?youtubeVideoId(job.video_url):null,videoUrl:job.video_url&&!youtubeVideoId(job.video_url)?job.video_url:null,homeworkNote:job.task_scope,handoutUrl:links.handoutUrl,materialUrl:links.materialUrl};
 }
 function publishRequest(job:UploadJob,source:Extraction,draft:Draft,proof:unknown,links:{handoutUrl:string|null;materialUrl:string|null},secret:string){
- return new Request('https://lesson-worker.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({action:'publish',kind:'btvn',lesson_key:job.lesson_code,source_version:source.sourceVersion,material:material(job,links),exam:draft.exam,assets:draft.assets,verification:proof})});
+ return new Request('https://lesson-worker.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({action:'publish',kind:assessmentPublishKind(normalizeWorkKind(job.work_kind)),...(job.work_kind==='exam'?{assessmentId:job.assessment_id,examType:job.exam_type,opensAt:job.exam_config?.opens_at,closesAt:job.exam_config?.closes_at}:{}),lesson_key:job.lesson_code,source_version:source.sourceVersion,material:material(job,links),exam:draft.exam,assets:draft.assets,verification:proof})});
 }
 /** Both papers are independently validated, uploaded and checkpointed before one atomic publication.
  * There is still one lesson, work row, deadline and ranking entry for the session. */

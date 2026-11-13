@@ -8,6 +8,7 @@ import {homeworkPriorityDeadline,homeworkPriorityReason,isHomeworkLocked,nextHom
 import {displayClassName,lessonCaption,lessonHomeworkTitle,displayHomeworkLessons,distinctHomeworkTitle,displayHomeworkDeadline,homeworkDisplayNote} from './presentation';
 import {LessonVideo} from './LessonCards';
 import CenterBoard from './CenterBoard';
+import ClassTestsSection from './ClassTestsSection';
 import ThiThangSection from './ThiThangSection';
 import './r104-homework.css';
 import './leaderboard-refresh.css';
@@ -57,7 +58,7 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
   const [filter,setFilter]=useState<'all'|'opened'>('all'),[limit,setLimit]=useState(PAGE),[picked,setPicked]=useState<string|null>(null),[video,setVideo]=useState<string|null>(null);
   const preview=useRef<HTMLDivElement>(null),rankGeneration=useRef(0),rankQuery=useRef(''),rankSnapshot=useRef('');
   const [rankUpdate,setRankUpdate]=useState(0);
-  const clock=homeworkServerNow(state,now),lessons=displayHomeworkLessons(state.lessons??[]),priority=nextHomework(lessons,clock);
+  const clock=homeworkServerNow(state,now),lessons=displayHomeworkLessons(state.lessons??[]).filter(l=>l.kind!=='kiem-tra'),priority=nextHomework(lessons,clock);
   const cohort=/\b(2K(?:9|1[0-4]))\b/i.exec(state.className)?.[1].toUpperCase();
   const rankIdentity=cohort+'|'+kind+'|'+state.fullName+'|'+state.className,latestRankIdentity=useRef(rankIdentity);latestRankIdentity.current=rankIdentity;
   useEffect(()=>{const timer=setInterval(()=>setNow(Date.now()),1000);return()=>clearInterval(timer);},[]);
@@ -106,6 +107,7 @@ export default function R104Dashboard({state,busy,onSelect,profileControl}:{stat
     <header className="r104-hw-heading"><p>Học tập <span aria-hidden="true">/</span> Bài tập về nhà</p><h1>Góc học tập của em<span>.</span></h1><p>Việc hôm nay, kết quả và những bước tiếp theo.</p></header>
     <div className="r104-hw-workplane">
       <section className="r104-hw-today" aria-labelledby="r104-today-title">
+        <ClassTestsSection lessons={state.lessons??[]} now={clock} busy={busy} onSelect={onSelect}/>
         <ThiThangSection lessons={lessons} now={clock} busy={busy} onSelect={onSelect}/>
         <header><span className="r104-hw-overline"><i/>Việc hôm nay</span><small>{priority?'Buổi '+dayMonth(priority.date):'Lịch học của em'}</small></header>
         <div className="r104-hw-today-grid"><div className="r104-hw-today-copy"><p>{displayClassName(state)}</p><h2 id="r104-today-title">{priority?distinctHomeworkTitle(priority,lessons):lessons.length?'Em đã xem hết việc cần làm':'Chờ buổi học đầu tiên'}<span>.</span></h2>

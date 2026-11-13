@@ -12,6 +12,7 @@ import {lessonOpensAt} from './opening-policy';
 import {concealMonthlySolutions} from './monthly-policy';
 import {homeworkLessonCard} from './lesson-card';
 import {requiresManualHomeworkGrade} from '../../src/native/homework/grading-policy';
+import {isTimedAssessment,validAssessmentDuration} from './assessment-policy';
 
 export class HomeworkError extends Error {constructor(public status:number,message:string){super(message);}}
 export const GATE_ERROR='Không thể vào bài. Hãy kiểm tra thông tin hoặc thử lại sau.';
@@ -30,12 +31,13 @@ export class HomeworkService {
   private limits=new Map<string,Limit>();
   private maxAttemptsFor(token:string){return this.monthly(token)?1:5;}
   private effectiveDue(token:string){const student=this.lessonWork(token).student;return student.effectiveDueAt??student.nextActualClassAt;}
-  private monthly(token:string){const m=this.materials.find(l=>l.lessonCode===this.selected(token));return m?.kind==='kiem-tra-thang'?m:undefined;}
+  private monthly(token:string){const m=this.materials.find(l=>l.lessonCode===this.selected(token));return isTimedAssessment(m)?m:undefined;}
   constructor(readonly repo:HomeworkRepository,readonly exam:PracticeExam,readonly dueAt:number,
     readonly classKey='lop-test-12',readonly lessonCode='buoi-mau-01',private clock=Date.now,readonly materials:LessonMaterial[]=[],readonly lessonExams:Record<string,PracticeExam>={}){
     const valid=validatePracticeExam(exam);if(!valid.valid)throw new Error(valid.errors.join('; '));
-    if(exam.durationMinutes!==120)throw new Error('BTVN cần 120 phút/lượt');
-    for(const item of Object.values(lessonExams))if(!validatePracticeExam(item).valid||item.durationMinutes!==120)throw new Error('Gói đề buổi học chưa hợp lệ');
+    const durationValid=(code:string,item:PracticeExam)=>materials.find(m=>m.lessonCode===code)?.kind==='kiem-tra'?validAssessmentDuration(item.durationMinutes):item.durationMinutes===120;
+    if(!durationValid(lessonCode,exam))throw new Error('Thời lượng bài chưa hợp lệ');
+    for(const [code,item] of Object.entries(lessonExams))if(!validatePracticeExam(item).valid||!durationValid(code,item))throw new Error('Gói đề buổi học chưa hợp lệ');
     // Giữ riêng bản đề/khóa đã nhận. Sửa dữ liệu biên tập ngoài service không
     // được thay nội dung của lượt đang mở hoặc tính lại biên nhận đã lưu.
     this.exam=lockedExam(exam);
@@ -107,7 +109,7 @@ export class HomeworkService {
     if(now<opensAt)return {serverNow:now,exam:null,opensAt,canStart:false,solutionsAvailable:false,fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:this.effectiveDue(token)??null,maxAttempts:this.maxAttemptsFor(token),attemptsUsed:0,draft:null,receipts:[],bestScore:null,demo:true,lessons};
     const graded=!!draft&&draft.submittedAt!==null&&work.receipts.some(r=>r.attemptId===draft.attemptId);
     const solutionsAvailable=graded&&(!monthly||now>=(monthly.closesAt??Infinity));
-    return {serverNow:now,exam:solutionsAvailable?this.examFor(token):concealMonthlySolutions(this.examFor(token)),opensAt,canStart:!monthly||now<(monthly.closesAt??Infinity),solutionsAvailable,...(monthly?{kind:'kiem-tra-thang' as const,closesAt:monthly.closesAt}:{}),fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:this.effectiveDue(token)??null,maxAttempts:this.maxAttemptsFor(token),
+    return {serverNow:now,exam:solutionsAvailable?this.examFor(token):concealMonthlySolutions(this.examFor(token)),opensAt,canStart:!monthly||now<(monthly.closesAt??Infinity),solutionsAvailable,...(monthly?{kind:monthly.kind,closesAt:monthly.closesAt,...(monthly.kind==='kiem-tra'?{assessmentId:monthly.assessmentId,examType:monthly.examType,durationMinutes:this.examFor(token).durationMinutes}: {})}:{}),fullName:work.student.fullName,className:work.student.className,lessonCode:this.selected(token),dueAt:this.effectiveDue(token)??null,maxAttempts:this.maxAttemptsFor(token),
       attemptsUsed:work.drafts.length,draft,receipts:hidden?work.receipts.map(receiptWithoutScore):work.receipts.map(receipt=>requiresManualHomeworkGrade(this.examFor(token),this.materials.find(l=>l.lessonCode===this.selected(token)))?{...receipt,gradingPending:true}:receipt),bestScore:hidden?null:scores.length?Math.max(...scores):null,demo:true,lessons};
   }
   /** Chỉ phía vận hành gọi sau khi xác minh ca thực học, không mở API học sinh. */

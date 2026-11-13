@@ -3,7 +3,7 @@ import {MTM_SCORING_VERSION,roundMtmTotal,type MtmScore,type MtmType} from '../e
 import {validOfficialHomeworkScore} from './grading-policy';
 
 type SummaryState=Pick<HomeworkState,'draft'|'receipts'|'kind'|'solutionsAvailable'>;
-export const monthlyResultsHidden=(state:Pick<HomeworkState,'kind'|'solutionsAvailable'>)=>state.kind==='kiem-tra-thang'&&state.solutionsAvailable===false;
+export const monthlyResultsHidden=(state:Pick<HomeworkState,'kind'|'solutionsAvailable'>)=>(state.kind==='kiem-tra-thang'&&state.solutionsAvailable===false)||(state.kind==='kiem-tra'&&state.solutionsAvailable!==true);
 const MAX_TIME=253402300799999;
 const validTime=(value:unknown):value is number=>typeof value==='number'&&Number.isSafeInteger(value)&&value>=0&&value<=MAX_TIME;
 export const isMtmHomeworkReceipt=(receipt:HomeworkReceipt)=>receipt.rubricVersion===MTM_SCORING_VERSION||receipt.mtm?.versions?.rubricVersion===MTM_SCORING_VERSION;

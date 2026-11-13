@@ -1,0 +1,26 @@
+import assert from 'node:assert/strict';
+import {createRequire} from 'node:module';
+import {join} from 'node:path';
+import type {StaffHistoryPage} from '../src/native/lesson-upload/staff-history';
+
+const root=process.env.MTM_ROOT!,require=createRequire(join(root,'package.json'));
+const React=require('react'),{renderToStaticMarkup}=require('react-dom/server'),{buildSync}=require('esbuild');
+const built=buildSync({entryPoints:[join(root,'src/native/lesson-upload/StaffHistory.tsx')],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',loader:{'.css':'empty'},logLevel:'silent'}).outputFiles[0].text;
+const mod={exports:{} as any};new Function('require','module','exports',built)(require,mod,mod.exports);
+const row={record_id:'synthetic-kind-row',student_id:'synthetic-student',student_name:'Học sinh tổng hợp QA',class_id:'synthetic-class',class_name:'Lớp tổng hợp QA',lesson_date:'2026-11-13',attendance_status:null,homework:[{assignment_id:'synthetic-exam',work_kind:'exam' as const,exam_type:'custom' as const,title:'Kiểm tra tích phân QA',lesson_date:'2026-11-13',score:null,status:'not_released',submitted_at:'2026-11-13T10:30:00Z'}]};
+const page:StaffHistoryPage={ok:true,work_kind:'exam',classes:[],rows:[row],total:1,page:1,page_size:20,score_basis:'assessment_date'};
+const render=(initialData:StaffHistoryPage,initialWorkKind:'homework'|'exam'='exam')=>renderToStaticMarkup(React.createElement(mod.exports.default,{owner:'synthetic-owner',loadPage:async()=>initialData,initialData,initialWorkKind}));
+let html=render(page);
+assert.match(html,/Loại bài/);assert.match(html,/<option value="exam" selected="">Đề kiểm tra/);
+assert.match(html,/Các bài kiểm tra trong ngày/);assert.match(html,/Kiểm tra tích phân QA/);
+assert.match(html,/Chưa công bố kết quả/);assert.match(html,/Điểm bài kiểm tra chỉ hiển thị sau giờ đóng bài/);
+assert.match(html,/data-label="Đề kiểm tra"/);assert.match(html,/Ngày kiểm tra:/);
+assert.doesNotMatch(html,/Các bài giao ở buổi trước/);
+html=render({...page,rows:[{...row,homework:[{...row.homework[0],score:9.75}]}]});
+assert.doesNotMatch(html,/9,75|9\.75|Kiểm tra tích phân QA/,'an unreleased score is rejected before rendering');
+html=render({...page,work_kind:'homework',rows:[{...row,homework:[{assignment_id:'synthetic-hw',title:'Phiếu BTVN tổng hợp QA',score:0,status:'submitted'}]}],score_basis:'previous_assignment_day'},'homework');
+assert.match(html,/Phiếu BTVN tổng hợp QA/);assert.match(html,/>0<\/strong>/);assert.match(html,/Các bài giao ở buổi trước/);
+assert.doesNotMatch(html,/Điểm bài kiểm tra chỉ hiển thị/);
+html=render({...page,work_kind:undefined,rows:[{...row,homework:[{assignment_id:'legacy-hw',title:'BTVN không phải bài thi',score:0}]}]});
+assert.doesNotMatch(html,/BTVN không phải bài thi/,'legacy server ignoring exam filter cannot masquerade as exams');
+console.log('StaffHistory kind SSR: filter, correct exam/date/status labels, unreleased-score suppression, legacy homework zero and old-server mismatch passed; static render only.');

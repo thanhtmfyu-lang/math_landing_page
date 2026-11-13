@@ -1,3 +1,4 @@
+import {isTimedAssessment} from './assessment-policy';
 import type {LessonMaterial} from '../../src/native/homework/btvn-contract';
 
 /** Lớp xuất phát sớm cùng khoá (8+, 9+, nhóm "2K10 Thứ 3, 6") học chung bài, mỗi buổi chọn ca nào cũng được (anh Thành chốt 18/10). */
@@ -13,7 +14,7 @@ function ownOpensAt(material:LessonMaterial,className:string):number {
 /** Bản cũ chưa có lịch được khóa đến 21:30 ngày học, theo giờ Việt Nam.
  * Bài giao cho nhiều lớp XPS cùng khoá mở cho tất cả từ giờ mở sớm nhất trong các lớp đó. */
 export function lessonOpensAt(material:LessonMaterial,className:string):number {
-  if(material.kind==='kiem-tra-thang')return material.opensAt??Infinity;
+  if(isTimedAssessment(material))return material.opensAt??Infinity;
   let opens=ownOpensAt(material,className);
   const cohort=XPS.exec(className)?.[1];
   if(cohort){

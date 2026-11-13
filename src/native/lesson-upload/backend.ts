@@ -9,7 +9,7 @@ export async function staffHistory(owner:string,query:StaffHistoryQuery):Promise
  const {client,assertOwner}=await staffRequest(owner);
  const r=await client.rpc('mtm_lesson_upload_api',{p:{action:'staff_history',...cleanHistoryQuery(query)}});await assertOwner();
  if(r.error){if(r.error.code==='42501')throw new StaffAccessError('Tài khoản chưa có quyền xem lịch sử của lớp này.');throw Error('Chưa tải được điểm và điểm danh. Kiểm tra khoảng ngày hoặc thử lại.');}
- return validateHistoryPage(r.data as StaffHistoryPage);
+ return validateHistoryPage(r.data as StaffHistoryPage,query.work_kind);
 }
 export async function retryLesson(owner:string,uploadId:string){
  const {client,assertOwner}=await staffRequest(owner);
@@ -40,6 +40,21 @@ export async function submitLesson(owner:string,payload:Record<string,unknown>){
  if(r.error){
   if(!r.error.code)throw new LessonSubmitError('Kết nối bị gián đoạn khi lưu bài. Gửi lại cùng yêu cầu để kiểm tra.','unknown');
   const messages:Record<string,string>={
+   INVALID_ASSESSMENT_CONFIG:'Giờ mở, giờ đóng hoặc thời lượng kiểm tra chưa hợp lệ. Kiểm tra thời gian đã chọn.',
+   INVALID_EXAM_CONFIG:'Ngày, giờ mở hoặc giờ đóng kiểm tra chưa hợp lệ.',
+   INVALID_EXAM_WINDOW:'Giờ đóng phải sau giờ mở bài kiểm tra.',
+   INVALID_EXAM_DURATION:'Thời lượng phải từ 1 đến 240 phút và vừa trong khoảng mở bài.',
+   EXAM_REQUIRES_ONE_CLASS:'Mỗi đề kiểm tra giao cho một lớp đã chọn.',
+   EXAM_SOURCES_REQUIRED:'Gửi đề kiểm tra cùng tệp đáp án hoặc đáp án đã nhập.',
+   EXAM_SINGLE_PAPER_REQUIRED:'Tạo đề kiểm tra khác nếu cần thêm một đề riêng.',
+   ASSESSMENT_ALREADY_STARTED:'Đã có học sinh bắt đầu đề này. Tạo đề kiểm tra khác để giữ nguyên bài đang làm và kết quả cũ.',
+   ASSESSMENT_OWNER_SCOPE_MISMATCH:'Đề này không thuộc tài khoản, lớp hoặc buổi được phép chỉnh sửa.',
+   INVALID_ASSESSMENT_METADATA:'Chưa xác định được loại hoặc mã đề kiểm tra. Tải lại lịch sử trước khi gửi.',
+   INVALID_ASSESSMENT_TITLE:'Điền tên đề kiểm tra, tối đa 200 ký tự.',
+   INVALID_ASSESSMENT_SOURCE:'Gửi một đề kiểm tra cùng đáp án cho một lớp.',
+   INVALID_WORK_KIND:'Loại bài chưa hợp lệ. Chọn BTVN hoặc Đề kiểm tra.',
+   ASSESSMENT_SCOPE_MISMATCH:'Đề kiểm tra không thuộc lớp hoặc buổi được phân quyền.',
+   ASSESSMENT_UPLOAD_REQUIRED:'Gửi đủ đề và đáp án của phiên bản kiểm tra này.',
    FULL_HOMEWORK_REUPLOAD_REQUIRED:'Bản BTVN trước đang xử lý. Gửi lại đủ đề và đáp án cùng học liệu bổ sung.',
    HOMEWORK_REQUIRED_WITH_ANSWERS:'Gửi đáp án cùng đề BTVN để AI đối chiếu đúng phiên bản.',
    INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ. Chọn thời điểm sau giờ kết thúc buổi học.',

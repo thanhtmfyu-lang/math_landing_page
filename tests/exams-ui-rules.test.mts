@@ -170,7 +170,11 @@ test('QT-01: /thi-thu không còn nút "Quản trị đề thi"; App vẫn mở 
   assert.ok(!exams.includes('/quan-tri/de-thi'), 'NativeExams còn link quản trị');
   assert.ok(!exams.includes('Quản trị đề thi'));
   const app = readFileSync(join(root, 'src/App.tsx'), 'utf8');
-  assert.ok(app.includes("path==='/quan-tri/de-thi'?<AdminExams/>"), 'App không còn route quản trị');
+  const start=app.indexOf("path==='/quan-tri/de-thi'?");
+  assert.ok(start>=0,'App không còn route quản trị');
+  const entry=app.slice(start,app.indexOf(":path==='/so-tay'",start));
+  assert.match(entry,/get\('nang-cao'\)===['"]1['"]\?<AdminExams\/>/, 'Giữ trình soạn nâng cao ở lựa chọn rõ ràng');
+  assert.match(entry,/:<LessonUploadPortal\/>\)/, 'Cổng tải tệp gọn là mặc định cho nhân sự');
 });
 
 // ---------- DL-06: nhãn bài làm quen HSA/TSA ----------

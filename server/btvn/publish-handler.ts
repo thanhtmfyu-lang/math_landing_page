@@ -10,6 +10,7 @@ import {scorebookRpc,scorebookResult} from './publish-scorebook';
 import {handleAnswerCorrection} from './answer-correction';
 import {handleTwoPaperPublication} from './publish-two-papers';
 import {handleLessonUploadGateway} from '../lesson-upload/gateway';
+import {validAssessmentDuration} from './assessment-policy';
 export type PublishAsset={path:string;sha256:string;content_type:string;data_base64:string};
 export interface PublishPort {
  rpc(action:string,payload:Record<string,unknown>):Promise<any>;
@@ -73,8 +74,9 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
   }
   if(previous.status==='da_dang')return respond(200,{status:'already_published'});
   ensure(/^[a-f0-9]{64}$/.test(body.source_version??''),'INVALID_VERSION');
-  const kind=body.kind??'btvn';ensure(['btvn','kiem-tra-thang'].includes(kind),'INVALID_KIND');
-  if(kind==='kiem-tra-thang')ensure(typeof body.opensAt==='string'&&typeof body.closesAt==='string'&&/([zZ]|[+-]\d{2}:\d{2})$/.test(body.opensAt)&&/([zZ]|[+-]\d{2}:\d{2})$/.test(body.closesAt)&&Number.isFinite(Date.parse(body.opensAt))&&Date.parse(body.opensAt)>=Date.parse('2026-10-15T00:00:00+07:00')&&Date.parse(body.closesAt)>Date.parse(body.opensAt),'INVALID_MONTHLY_WINDOW');
+  const kind=body.kind??'btvn';ensure(['btvn','kiem-tra-thang','kiem-tra'].includes(kind),'INVALID_KIND');
+  if(kind!=='btvn')ensure(typeof body.opensAt==='string'&&typeof body.closesAt==='string'&&/([zZ]|[+-]\d{2}:\d{2})$/.test(body.opensAt)&&/([zZ]|[+-]\d{2}:\d{2})$/.test(body.closesAt)&&Number.isFinite(Date.parse(body.opensAt))&&Date.parse(body.opensAt)>=Date.parse('2026-10-15T00:00:00+07:00')&&Date.parse(body.closesAt)>Date.parse(body.opensAt),'INVALID_ASSESSMENT_WINDOW');
+  if(kind==='kiem-tra')ensure(typeof body.assessmentId==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(body.assessmentId)&&['monthly','custom'].includes(body.examType),'INVALID_ASSESSMENT_METADATA');
   const m=body.material;
   ensure(m?.homeworkScope===undefined||typeof m.homeworkScope==='string'&&m.homeworkScope.length>0&&m.homeworkScope.length<=300,'INVALID_HOMEWORK_SCOPE');
   ensure(m?.homeworkScopeSource===undefined||['sheet','auto','whole_file'].includes(m.homeworkScopeSource),'INVALID_HOMEWORK_SCOPE_SOURCE');
@@ -92,7 +94,8 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
    const reason=typeof body.reason==='string'&&body.reason.length<=1000&&!/(https?:|@|bearer|sk-|secret|token|password|otp)/i.test(body.reason)?body.reason.replace(/[\x00-\x1f]/g,' '):'Không đạt bộ kiểm; xem receipt riêng của worker.';
    return respond(200,await port.rpc('error',{lesson_key:body.lesson_key,source_version:body.source_version,material,error_code:body.error_code,reason}));
   }
-  const exam=body.exam as PracticeExam;ensure(validatePracticeExam(exam).valid&&exam.durationMinutes===120,'VALIDATOR_FAILED');
+  const exam=body.exam as PracticeExam;ensure(validatePracticeExam(exam).valid&&(kind==='kiem-tra'?validAssessmentDuration(exam.durationMinutes)&&exam.durationMinutes*60000<=Date.parse(body.closesAt)-Date.parse(body.opensAt):exam.durationMinutes===120),'VALIDATOR_FAILED');
+  if(kind==='kiem-tra')ensure(m.classNames.length===1&&exam.title===m.title,'ASSESSMENT_SOURCE_MISMATCH');
   if(exam.rubricVersion===MTM_SCORING_VERSION)ensure(mtmPracticeGradingReadiness(exam).valid,'MTM_GRADING_NOT_READY');
   const proof=body.verification;
   const teacherPending=!!options.teacherPending&&proof?.status==='teacher-pending'&&proof.independent===false&&proof.teacher_source===true&&proof.request_hash===options.teacherPending.requestHash&&body.source_version===options.teacherPending.sourceVersion;
@@ -127,7 +130,7 @@ export function createBtvnPublishHandler(port:PublishPort,secret:string,options:
   // Upload không ghi đè; port đối chiếu hash nếu tệp đã có từ lượt dở.
   for(const item of decoded)await port.upload(item.storage_path,item.bytes,item.asset.content_type,item.asset.sha256);
   const metadata=decoded.map(({asset,bytes,storage_path})=>({path:asset.path,sha256:asset.sha256,content_type:asset.content_type,bytes:bytes.length,storage_path}));
-  return respond(200,await port.rpc('publish',{kind,opensAt:body.opensAt,closesAt:body.closesAt,lesson_key:body.lesson_key,source_version:body.source_version,material,exam,assets:metadata,verification:proof}));
+  return respond(200,await port.rpc('publish',{kind,opensAt:body.opensAt,closesAt:body.closesAt,...(kind==='kiem-tra'?{assessmentId:body.assessmentId,examType:body.examType}:{}),lesson_key:body.lesson_key,source_version:body.source_version,material,exam,assets:metadata,verification:proof}));
  }catch(e){
   // Người gọi đã qua secret; chỉ trả mã kiểm dạng HOA_GACH (không thông điệp DB, không dữ liệu HS) để biết kiểm nào trượt.
   const code=e instanceof Error&&/^[A-Z][A-Z0-9_]{2,59}$/.test(e.message)?e.message:'UNCLASSIFIED';

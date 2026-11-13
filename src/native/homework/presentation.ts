@@ -2,7 +2,7 @@ import type {HomeworkState,HomeworkLesson,LessonMaterial} from './btvn-contract'
 export const isDemoVideo=(id:string)=>id==='abcdefghijk';
 export const displayClassName=(state:HomeworkState)=>state.demo&&/^LOP-TEST-/i.test(state.className)?'Lớp học thử':state.className;
 // Giữ nguyên các bài trong đợt thi tháng, kể cả thẻ BTVN đi kèm.
-export const protectedMonthlyLesson=(lesson:LessonMaterial)=>lesson.kind==='kiem-tra-thang'||/^thi-thang-/.test(lesson.lessonCode);
+export const protectedMonthlyLesson=(lesson:LessonMaterial)=>lesson.kind==='kiem-tra'||lesson.kind==='kiem-tra-thang'||/^thi-thang-/.test(lesson.lessonCode);
 // JSON from legacy lessons can contain null despite the TypeScript string type.
 const titleText=(raw:unknown='')=>(typeof raw==='string'?raw:'').normalize('NFC').replace(/_/g,' ');
 export function cleanHomeworkTitle(raw:unknown=''){
@@ -21,11 +21,13 @@ export function homeworkDisplayNote(lesson?:LessonMaterial,examTitle?:string){
 const descriptiveTitle=(title:string)=>!!title&&!/^(?:đề|bài tập về nhà|btvn|buổi học|hslt|pdf)$/i.test(title);
 export function homeworkTitle(state:HomeworkState){
   const lesson=state.lessons?.find(l=>l.lessonCode===state.lessonCode);
+  if(state.kind==='kiem-tra')return state.exam?.title??lesson?.title??'Đề kiểm tra';
   if(state.kind==='kiem-tra-thang'||(lesson&&protectedMonthlyLesson(lesson)))return state.exam?.title??'Bài tập về nhà';
   const title=cleanHomeworkTitle(state.exam?.title);
   return descriptiveTitle(title)?title:lesson?lessonHomeworkTitle(lesson):title||'Bài tập về nhà';
 }
 export function lessonHomeworkTitle(lesson:LessonMaterial){
+  if(lesson.kind==='kiem-tra')return lesson.title?.trim()||lesson.homeworkTitle?.trim()||'Đề kiểm tra';
   if(protectedMonthlyLesson(lesson))return lesson.homeworkTitle?.trim()||lesson.homeworkNote?.trim()||'Bài tập về nhà';
   const title=cleanHomeworkTitle(lesson.homeworkTitle),materialTitle=cleanHomeworkTitle(lesson.title);
   return descriptiveTitle(title)?title:descriptiveTitle(materialTitle)?materialTitle:cleanHomeworkTitle(lesson.homeworkNote)||'Bài tập về nhà';
@@ -39,8 +41,8 @@ export const deadlineTime=(at:number)=>new Date(at).toLocaleString('vi-VN',{time
 /** Hạn thật của bài đang chọn có thể chỉ nằm ở state, không có trên thẻ.
  * Không nâng expectedDueAt/lịch dự phòng thành hạn thật, không đổi chấm muộn. */
 export function displayHomeworkDeadline(lesson?:HomeworkLesson,selectedDueAt?:number|null){
-  const actual=lesson?.kind==='kiem-tra-thang'?lesson.closesAt:validTime(selectedDueAt)?selectedDueAt:lesson?.dueAt;
-  if(validTime(actual))return (lesson?.kind==='kiem-tra-thang'?'Đóng: ':'Hạn: trước ')+deadlineTime(actual)+' (theo lịch lớp, giờ Việt Nam)';
+  const actual=(lesson?.kind==='kiem-tra-thang'||lesson?.kind==='kiem-tra')?lesson.closesAt:validTime(selectedDueAt)?selectedDueAt:lesson?.dueAt;
+  if(validTime(actual))return ((lesson?.kind==='kiem-tra-thang'||lesson?.kind==='kiem-tra')?'Đóng: ':'Hạn: trước ')+deadlineTime(actual)+' (theo lịch lớp, giờ Việt Nam)';
   if(validTime(lesson?.expectedDueAt))return 'Hạn dự kiến: trước '+deadlineTime(lesson.expectedDueAt)+' (theo lịch lớp, giờ Việt Nam)';
   return MISSING_HOMEWORK_DEADLINE;
 }

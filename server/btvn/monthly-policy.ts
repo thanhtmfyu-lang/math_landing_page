@@ -11,7 +11,7 @@ export function concealMonthlySolutions(exam:PracticeExam):PracticeExam {
  copy.sourceUrl='https://minhthanhmath.vn';
  if(copy.mtmDocuments)delete (copy.mtmDocuments as Partial<NonNullable<PracticeExam['mtmDocuments']>>).solutions;
  for(const q of copy.questions){
-  delete q.solution;delete q.correctionNote;
+  delete q.solution;delete q.solutionBlocks;delete q.correctionNote;
   // Không tin shortFormat có sẵn trong nguồn; chỉ xuất bốn yêu cầu nhập từ rule.
   delete q.shortFormat;
   if(copy.rubricVersion===MTM_SCORING_VERSION&&q.kind==='short'){

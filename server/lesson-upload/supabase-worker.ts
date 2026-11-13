@@ -11,7 +11,7 @@ export function createWorkerRepository(db:any,options:{isTest?:boolean;auto?:boo
  };
  const fenced=(job:UploadJob,action:string,extra:Record<string,unknown>={})=>call({action,upload_id:job.id,claim_token:job.claim_token,...extra});
  return {
-  async claim(workerId){const data=await call({action:'worker_claim',worker_id:workerId,lease_seconds:900,is_test:options.isTest===true,...(options.auto?{auto:true}:{})});return data?.job??null;},
+  async claim(workerId){const data=await call({action:'worker_claim',worker_protocol:110,worker_id:workerId,lease_seconds:900,is_test:options.isTest===true,...(options.auto?{auto:true}:{})});return data?.job??null;},
   async current(job){const data=await fenced(job,'worker_assert_current');if(data?.ok!==true)throw Error('CLAIM_LOST');},
   async step(job,step,status,detail,checkpoint,paper=1){await fenced(job,'worker_checkpoint',{step,status,detail,checkpoint,paper});},
   async waitReview(job,request){return call({action:'worker_wait_review',upload_id:job.id,claim_token:job.claim_token,paper:job.paper??1,request_hash:request.request_hash,source_version:request.sourceVersion});},

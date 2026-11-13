@@ -1,3 +1,4 @@
+import {isTimedAssessment} from './assessment-policy';
 import {classSlots,scheduleClass,type ScheduleRow} from '../schedule/lich-lop';
 import type {HomeworkLesson} from '../../src/native/homework/btvn-contract';
 import {displayHomeworkLessons,distinctHomeworkTitle} from '../../src/native/homework/presentation';
@@ -21,7 +22,7 @@ export function buildClassOverview(state:{className:string;lessons:HomeworkLesso
  };
  const slots=classSlots(schedule.rows,state.className),week=slots.map(s=>times(s.weekday,s.start,s.end));
  const next=slots.map(s=>{const current=times(s.weekday,s.start,s.end);return current.startsAt>=now?current:times(s.weekday,s.start,s.end,7);}).sort((a,b)=>a.startsAt-b.startsAt)[0]??null;
- const homework=unlocked.filter(l=>l.kind!=='kiem-tra-thang');
+ const homework=unlocked.filter(l=>!isTimedAssessment(l));
  const latest=[...unlocked].filter(l=>l.date<=today&&!!(l.videoId||l.videoUrl||l.handoutUrl||l.materialUrl)).sort((a,b)=>b.date.localeCompare(a.date)||a.lessonCode.localeCompare(b.lessonCode))[0];
  return {className:state.className,source:schedule.source,...(schedule.snapshotDate?{snapshotDate:schedule.snapshotDate}:{}),legacySchedule:schedule.rows.some(r=>scheduleClass(r.lop)===label&&r.legacyOnly===true),week,next,
   open:homework.filter(l=>l.available).map(card),

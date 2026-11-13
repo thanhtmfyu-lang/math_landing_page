@@ -48,9 +48,9 @@ function HomeworkTextQuestion({q,label}:{q:TextQuestion;label:string}){
     {q.kind==='mc'&&<ol className="cp-choices" type="A">{q.choices.map((choice,i)=><li key={i}><RoomChoice questionId={q.id} choice={['A','B','C','D'][i]}>{choice!==['A','B','C','D'][i]&&<MathText text={choice}/>}</RoomChoice></li>)}</ol>}
     {q.kind==='tf'&&!!q.statements?.length&&<ol className="cp-statements" type="a">{q.statements.map((statement,i)=><li key={i}><MathText text={statement}/></li>)}</ol>}</>;
 }
-export function HomeworkReader({exam}:{exam:PracticeExam}){
+export function HomeworkReader({exam,label='Đề BTVN'}:{exam:PracticeExam;label?:string}){
   const active=useContext(RoomQuestionContext);
-  return <section aria-label="Đề BTVN">{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent?<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>:<HomeworkTextQuestion q={q} label={questionLabel(exam,index).full}/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
+  return <section aria-label={label}>{exam.questions.map((q,index)=>active!==null&&active!==index?null:<article key={q.id} data-question-id={q.id} className="btvn-question"><h2>{active===null?questionLabel(exam,index).full:`Câu ${index+1}`}</h2>{active!==null&&<p className="fr-original-label">Trong phiếu gốc: {questionLabel(exam,index).full}</p>}{q.sourceContent?<MtmSourceContent segments={q.sourceContent.questions} assetBase="/practice-media/source-crops" label={questionLabel(exam,index).full} kind="question"/>:<HomeworkTextQuestion q={q} label={questionLabel(exam,index).full}/>}<small>MTM sưu tầm và biên soạn</small></article>)}</section>;
 }
 function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEssay}:{state:HomeworkState & {exam:PracticeExam};gateway:HomeworkGateway;onState:(state:HomeworkState)=>void;onPendingChange:(pending:boolean)=>void;saverRef:{current:ReturnType<typeof createHomeworkSaver>|null};onOpenEssay?:()=>void}){
   const checkSelection=useState<string[]>([]);
@@ -74,13 +74,13 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEs
   },[state.draft?.attemptId,saver]);
   const saveStatus=save.failed?'Chưa lưu máy chủ':save.pending?'Chờ máy chủ lưu':'Đã lưu máy chủ';
   return <><p className="r106-assessment r106-save-feedback" role="status">{save.message||notice}</p>{save.failed&&!save.closed&&<button disabled={save.saving} onClick={saver.retry}>Gửi lại bài đang giữ</button>}
-    <PracticeAttempt isHomework exam={state.exam} catalogUrl={location.pathname} contextLabel="BTVN" audienceLabel={displayClassName(state)} storeOverride={store}
-      homeworkSelfCheck={<HomeworkSelfCheckTool selection={checkSelection}/>} onOpenEssay={onOpenEssay}
+    <PracticeAttempt isHomework exam={state.exam} catalogUrl={location.pathname} contextLabel={state.kind==='kiem-tra'?'Đề kiểm tra':state.kind==='kiem-tra-thang'?'Kiểm tra tháng':'BTVN'} audienceLabel={displayClassName(state)} storeOverride={store}
+      homeworkSelfCheck={state.kind==='kiem-tra'||state.kind==='kiem-tra-thang'?undefined:<HomeworkSelfCheckTool selection={checkSelection}/>} onOpenEssay={onOpenEssay}
       saveStatus={save.failed?save.message:saveStatus} savePending={save.pending} onRetrySave={save.failed&&!save.closed?saver.retry:undefined} onAcceptClosed={save.closed?saver.acceptClosed:undefined}
       deadlineAt={state.closesAt} clockOffsetMs={state.serverNow!==undefined&&state.clientReceivedAt!==undefined?state.serverNow-state.clientReceivedAt:0}
-      storageNotice="Bài làm gửi đến máy chủ MTM theo tài khoản em. Chỉ thông báo nhận bài từ máy chủ mới xác nhận đã nộp BTVN."
+      storageNotice="Bài làm gửi đến máy chủ MTM theo tài khoản em. Chỉ biên nhận máy chủ mới xác nhận đã nộp bài."
       onRetake={()=>{setNotice('Dùng nút Làm lượt tiếp ở phần kết quả BTVN.');document.getElementById('btvn-summary')?.scrollIntoView({behavior:'smooth'});}}
-      questionReader={<HomeworkReader exam={state.exam}/>}/>
+      questionReader={<HomeworkReader exam={state.exam} label={state.kind==='kiem-tra'||state.kind==='kiem-tra-thang'?'Đề kiểm tra':'Đề BTVN'}/>}/>
   </>;
 }
 const READ_ACTIONS=new Set(['state','select','login','logout']),READ_TIMEOUT_MS=40000;
@@ -110,7 +110,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   const currentEssayKey=state?.lessonCode+':'+state?.draft?.attemptId;
   if(essayScope.current.key!==currentEssayKey)essayScope.current={key:currentEssayKey,available:false};
   if(state?.essayUploadAvailable||state?.exam?.questions.some(q=>q.kind==='self'))essayScope.current.available=true;
-  const canUploadEssay=!!state?.draft&&state.kind==='kiem-tra-thang'&&!!state.closesAt&&essayScope.current.available;
+  const canUploadEssay=!!state?.draft&&(state.kind==='kiem-tra-thang'||state.kind==='kiem-tra'&&state.essayUploadAvailable===true)&&!!state.closesAt&&essayScope.current.available;
   const leaveConfirmation=useUnsavedGuard(()=>remotePending.current||essayPending.current,REMOTE_LEAVE_MESSAGE+' Ảnh tự luận chưa có biên nhận cũng sẽ mất nếu rời trang.');
   const [busy,setBusy]=useState(false),[notice,setNotice]=useState(''),[checking,setChecking]=useState(true),[exitClosed,setExitClosed]=useState(false);
   const [essayOpen,setEssayOpen]=useState(false);
