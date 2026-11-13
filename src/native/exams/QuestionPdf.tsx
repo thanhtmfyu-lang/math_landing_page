@@ -1,8 +1,9 @@
 /// <reference path="./react-dom-portal.d.ts" />
 import {useEffect,useLayoutEffect,useRef,useState} from 'react';
 import {createPortal} from 'react-dom';
-import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy,type RenderTask} from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy,type RenderTask} from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
+import QuestionPdfFallback from './QuestionPdfFallback';
 import {fetchQuestionPdf,type QuestionPdf as QuestionPdfFile} from './pdf-source';
 import {findQuestionPageIndex,type SourceQuestionLookup} from './room-presentation';
 GlobalWorkerOptions.workerSrc=workerUrl;
@@ -11,6 +12,7 @@ GlobalWorkerOptions.workerSrc=workerUrl;
 const ZOOMS=[1,1.5,2,3] as const;
 const MAX_RENDER_WIDTH=3200;
 export default function QuestionPdf({file,title,onReady,targetPage,locate,onLocated,allowFullscreen=true,compact=false,fitToWidth=false}:{file:QuestionPdfFile;title:string;onReady:(ready:boolean)=>void;targetPage?:number;locate?:SourceQuestionLookup;onLocated?:(page:number|null)=>void;allowFullscreen?:boolean;compact?:boolean;fitToWidth?:boolean}) {
+  const [original,setOriginal]=useState<{file:QuestionPdfFile;url:string}|null>(null);
   const [doc,setDoc]=useState<PDFDocumentProxy|null>(null),[index,setIndex]=useState(()=>Math.max(0,file.questionPages.indexOf(targetPage??-1))),[width,setWidth]=useState(600),[error,setError]=useState(''),[busy,setBusy]=useState(true);
   useEffect(()=>{if(targetPage!==undefined){const next=file.questionPages.indexOf(targetPage);if(next>=0)setIndex(next);}},[targetPage,file]);
   // Câu thiếu ánh xạ trang: đọc chữ các trang câu hỏi, chuyển tới trang có tiêu đề "Câu N" (đúng lần xuất hiện).
@@ -41,10 +43,11 @@ export default function QuestionPdf({file,title,onReady,targetPage,locate,onLoca
       s.scrollLeft=left+x-wantX;s.scrollTop=top+y-wantY;x-=s.scrollLeft-left;y-=s.scrollTop-top;}};
   // Khung đọc được gắn lại (vào body khi toàn màn hình) nên theo dõi lại bề ngang mỗi lần đổi chế độ.
   useEffect(()=>{const target=sheet.current;if(!target)return;const observer=new ResizeObserver(entries=>setWidth(Math.max(240,Math.floor(entries[0].contentRect.width))));observer.observe(target);return()=>observer.disconnect();},[full]);
-  useEffect(()=>{let active=true;const controller=new AbortController(),timeout=setTimeout(()=>controller.abort(),20000);let task:ReturnType<typeof getDocument>|undefined;
+  useEffect(()=>{let active=true;const controller=new AbortController();let task:ReturnType<typeof getDocument>|undefined,blobUrl='';
+    const timeout=setTimeout(()=>{if(!active)return;active=false;controller.abort();setError('Tải PDF quá lâu. Em vẫn có thể làm và nộp bài.');setBusy(false);ready.current(false);void task?.destroy().catch(()=>{});},20000);setOriginal(null);
     ready.current(false);shown.current=null;setDoc(null);setIndex(Math.max(0,file.questionPages.indexOf(targetPage??-1)));setError('');setBusy(true);
-    void(async()=>{try{const bytes=await fetchQuestionPdf(file,controller.signal);if(!active)return;task=getDocument({data:bytes,enableXfa:false,stopAtErrors:true,useSystemFonts:true,maxImageSize:16000000});const loaded=await task.promise;if(loaded.numPages!==file.totalPages)throw Error('Số trang bản đề không khớp.');if(active){setDoc(loaded);clearTimeout(timeout);}}catch(e){if(active){setError(e instanceof Error?e.message:'Chưa xem được bản đề.');setBusy(false);ready.current(false);}}})();
-    return()=>{active=false;controller.abort();clearTimeout(timeout);void task?.destroy().catch(()=>{});};
+    void(async()=>{try{const bytes=await fetchQuestionPdf(file,controller.signal);if(!active)return;blobUrl=URL.createObjectURL(new Blob([bytes.slice()],{type:'application/pdf'}));setOriginal({file,url:blobUrl});task=getDocument({data:bytes,enableXfa:false,stopAtErrors:true,useSystemFonts:true,maxImageSize:16000000});const loaded=await task.promise;if(loaded.numPages!==file.totalPages)throw Error('Số trang bản đề không khớp.');if(active){setDoc(loaded);clearTimeout(timeout);}}catch(e){if(active){clearTimeout(timeout);setError(e instanceof Error?e.message:'Chưa xem được bản đề.');setBusy(false);ready.current(false);}}})();
+    return()=>{active=false;controller.abort();clearTimeout(timeout);if(blobUrl)URL.revokeObjectURL(blobUrl);void task?.destroy().catch(()=>{});};
   },[file]);
   useEffect(()=>{if(!doc||!sheet.current)return;let active=true;let render:RenderTask|undefined;setBusy(true);setError('');
     // Review Codex đợt 4: đổi trang thì gỡ trang cũ và báo "chưa hiện" cho tới khi trang mới vẽ xong (như trước đợt);
@@ -95,7 +98,8 @@ export default function QuestionPdf({file,title,onReady,targetPage,locate,onLoca
     <div className="ep-toolbar"><button type="button" disabled={!doc||index===0} onClick={()=>setIndex(i=>i-1)} aria-label={full?'Trang trước':undefined}>{full?'‹ Trước':'Trang trước'}</button><span>{full?'Trang':'Trang câu hỏi'} {index+1}/{file.questionPages.length}</span><button type="button" disabled={!doc||index===file.questionPages.length-1} onClick={()=>setIndex(i=>i+1)} aria-label={full?'Trang sau':undefined}>{full?'Sau ›':'Trang sau'}</button></div>
     <div className="ep-toolbar ep-pdf-zoom" role="group" aria-label="Cỡ trang đề"><button type="button" aria-label="Thu nhỏ trang đề" disabled={!doc||zoom===0} onClick={()=>{captureScroll();setZoom(z=>Math.max(0,z-1));}}>−</button><span aria-live="polite">{zoomLabel}</span><button type="button" aria-label="Phóng to trang đề" disabled={!doc||zoom===ZOOMS.length-1} onClick={()=>{captureScroll();setZoom(z=>Math.min(ZOOMS.length-1,z+1));}}>+</button>{allowFullscreen&&<button ref={fullButton} type="button" className="ep-pdf-full-toggle" aria-pressed={full} disabled={!doc&&!full} onClick={toggleFull} aria-label={full?'Thoát toàn màn hình':undefined}>{full?'Đóng ✕':'Toàn màn hình'}</button>}</div>
     </>}
-    {busy&&<p role="status">Đang hiển thị bản đề…</p>}{error&&<p role="alert">{error} Chưa mở làm bài khi bản câu hỏi chưa hiển thị. Liên kết nguồn có thể chứa đáp án hoặc mã đề khác.</p>}
+    {busy&&<p role="status">Đang hiển thị bản đề…</p>}{error&&<p role="alert">{error} Em vẫn có thể mở phiếu trả lời và nộp bài.</p>}
+    <QuestionPdfFallback file={file} url={original?.file===file?original.url:undefined}/>
     <div className={`ep-question-pdf${zoom>0?' is-zoomed':''}`} ref={sheet} tabIndex={zoom>0||full?0:undefined} aria-label={zoom>0||full?'Trang đề, cuộn để xem phần khác':undefined}/></section>;
   // Toàn màn hình gắn vào body (lớp trên cùng), không bị đầu trang dính hay vùng cuộn của khung bài làm che/cắt.
   // Chỗ cũ giữ một khối cùng chiều cao để trang nền không nhảy; bài làm và đồng hồ vẫn chạy bình thường.

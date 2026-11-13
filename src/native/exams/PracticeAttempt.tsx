@@ -1,3 +1,4 @@
+import QuestionPdfFallback from './QuestionPdfFallback';
 import {displayTitle as titleText} from '../../components/display-text';
 import {lazy,Suspense,useState} from 'react';
 import {phongThiV2} from '../flags';
@@ -44,10 +45,10 @@ export default function PracticeAttempt({onOpenEssay,onServerStart,onServerSubmi
     {focused?<FocusRoom key={draft.attemptId} props={props} state={state} onExit={()=>setExitedAttempt(draft.attemptId)}/>:<>
     {phongThiV2&&draft&&!submitted&&<button type="button" className="ep-primary" onClick={()=>setExitedAttempt(null)}>Vào lại phòng tập trung</button>}
     {phongThiV2&&!draft&&<section className="ep-card ep-room-intake"><strong className="r106-intake-title">{isHomework?'Phòng làm BTVN MTM':kind==='exam'?'Phòng thi thử MTM':'Phòng tự luyện MTM'}</strong><RoomNotice isHomework={isHomework}/><details><summary>Nguồn và cách chấm</summary><p>MTM sưu tầm và biên soạn</p><p>Thang 10 điểm. Điểm mỗi câu hiện ở phiếu; câu trống hoặc sai định dạng được 0 điểm.</p>{exam.questions.find(q=>q.kind==='tf')?.kind==='tf'&&<p>Đúng/sai: {exam.questions.filter(q=>q.kind==='tf').slice(0,1).map(q=>q.kind==='tf'?q.pointsByCorrectCount.map((v,i)=>i+' ý đúng: '+(v/1000).toLocaleString('vi-VN')+' điểm').join(' · '):'')}</p>}<p>Hết giờ tự nộp. Toàn màn hình giúp tập trung, không xác thực kỳ thi hay chống gian lận.</p></details></section>}
-    <AttemptHeader {...props}/>{onOpenEssay&&<button type="button" className="btvn-btn" onClick={onOpenEssay}>Nộp ảnh cả bài tự luận</button>}
+    <AttemptHeader {...props}/>{exam.sourcePdf&&!pdfReady&&<QuestionPdfFallback file={exam.sourcePdf}/>}{onOpenEssay&&<button type="button" className="btvn-btn" onClick={onOpenEssay}>Nộp ảnh cả bài tự luận</button>}
     {/* LT-15 (Đợt 4): trên điện thoại phiếu trả lời (có nút Bắt đầu) bị ẩn sau thẻ "Đọc câu hỏi"; nút này đưa việc bắt đầu lên màn đầu.
         Cùng điều kiện và cùng hàm begin() với nút trong phiếu; chỉ hiện ở màn hẹp (exams.css). */}
-    {!draft&&<div className="ep-mobile-start"><button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button><p>{persisted.current?`Hạn nộp bài đang làm: ${formatAttemptDeadline(persisted.current.deadline)}.`:`Đồng hồ ${exam.durationMinutes} phút chỉ chạy khi bấm nút. Có thể đọc đề trước ở mục bên dưới.`}{erratum&&!acceptedErratum?' Hãy đọc và đánh dấu điều kiện đính chính ở ngay dưới trước khi bắt đầu.':''}</p>{!pdfReady&&!sourceIssue&&<p role="status" className="ep-start-blocked">Bản câu hỏi chưa hiện nên chưa mở được bài. Em kéo xuống xem đề, đợi đề hiện rồi bấm lại; nếu báo lỗi thì tải lại trang.</p>}</div>}
+    {!draft&&<div className="ep-mobile-start"><button type="button" className="ep-primary ep-wide" disabled={startDisabled} onClick={begin}>{startLabel}</button><p>{persisted.current?`Hạn nộp bài đang làm: ${formatAttemptDeadline(persisted.current.deadline)}.`:`Đồng hồ ${exam.durationMinutes} phút chỉ chạy khi bấm nút. Có thể đọc đề trước ở mục bên dưới.`}{erratum&&!acceptedErratum?' Hãy đọc và đánh dấu điều kiện đính chính ở ngay dưới trước khi bắt đầu.':''}</p>{!pdfReady&&!sourceIssue&&<p role="status" className="ep-start-blocked">Bản đề chưa hiển thị. Em vẫn có thể mở phiếu trả lời, làm và nộp bài; dùng nút Mở đề PDF ở tab mới để đọc đề bằng trình duyệt.</p>}</div>}
     {exam.preAttemptNotice&&<div className="ep-notice"><strong>Điều kiện đính chính của bản MTM</strong><p>{exam.preAttemptNotice}</p><p>Bản nguồn và lịch sử cũ được giữ riêng.</p></div>}
     {newAttemptsClosed&&<div className="ep-notice" role="status"><strong>Tạm chưa mở lượt mới</strong><p>{newAttemptsClosed}</p></div>}
     {notice&&<p className="ep-notice" role="alert">{notice}</p>}
@@ -65,7 +66,7 @@ export default function PracticeAttempt({onOpenEssay,onServerStart,onServerSubmi
         {submitted&&!questionReader&&exam.sourcePdf&&<h2 className="ep-pdf-after">Đề bài đã làm</h2>}
         {submitted&&questionReader?<details className="ep-read-again"><summary>Đọc lại toàn bộ đề bài</summary>{questionReader}</details>:questionReader}
         {exam.sourcePdf&&<Suspense fallback={<p role="status">Đang mở bản câu hỏi…</p>}><QuestionPdf file={exam.sourcePdf} title={titleText(exam.title)} onReady={setPdfReady}/></Suspense>}
-        {exam.sourcePdf&&!pdfReady&&exam.sourceUrl&&<p><a href={exam.sourceUrl} target="_blank" rel="noopener noreferrer" referrerPolicy="no-referrer">Xem nguồn để đối chiếu</a> · Nguồn gốc có thể chứa đáp án hoặc mã đề khác; chưa mở làm bài khi không xem được bản câu hỏi.</p>}
+
       </div>
       <div className="ep-answer-pane" aria-label={submitted?'Kết quả bài làm':'Phiếu trả lời'}>
         {isHomework&&draft&&!submitted&&homeworkSelfCheck}

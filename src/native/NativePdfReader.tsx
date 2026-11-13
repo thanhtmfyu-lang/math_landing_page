@@ -1,6 +1,6 @@
 import {useEffect,useRef,useState,type KeyboardEvent} from 'react';
-import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy,type RenderTask} from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy,type RenderTask} from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 import {ChevronLeft,ChevronRight,Download,RefreshCw,FileText} from 'lucide-react';
 import {navigate} from '../migration/navigation';
 import {fetchReaderBytes,readerView,readerPath,readerMessage,ZOOM_LEVELS,type ReaderFile} from './reader-policy';

@@ -1,4 +1,5 @@
 import {createClient} from '@supabase/supabase-js';
+import {STUDENT_CODE_ERROR} from '../../src/native/homework/student-code';
 import {createHomeworkHandler} from '../../supabase/functions/mtm-homework-access/handler';
 import {HomeworkError,GATE_ERROR} from './service';
 import {SupabaseHomeworkRepository} from './supabase-repository';
@@ -18,11 +19,17 @@ export function createSupabaseRepository(env:{SUPABASE_URL:string;SUPABASE_SERVI
   // để trả 503 + thử lại; RPC ghi (commit, đăng nhập) không cắt giữa chừng để tránh ghi rồi báo lỗi.
   return new SupabaseHomeworkRepository({rpc:async(name,args)=>READ_RPCS.has(name)?await db.rpc(name==='mtm_btvn_read'?'mtm_btvn_two_paper_read':productionRpc(name),args).abortSignal(AbortSignal.timeout(READ_RPC_MS)):await db.rpc(name==='mtm_btvn_read'?'mtm_btvn_two_paper_read':productionRpc(name),args)},async body=>{
     const response=await handler(new Request(env.SUPABASE_URL+'/functions/v1/mtm-homework-access',{method:'POST',headers:{Origin:origin,apikey:env.MTM_HOMEWORK_PUBLISHABLE_KEY,'Content-Type':'application/json'},body:JSON.stringify(body)}));
-    if(!response.ok)throw new HomeworkError(response.status,response.status===429?'Em đã thử nhiều lần. Chờ 15 phút rồi thử lại.':response.status===401?GATE_ERROR:BUSY);return response.json();
+    if(!response.ok)throw new HomeworkError(response.status,gatewayErrorMessage(response.status,body.operation));return response.json();
   },Date.now,batchSigner(path=>withTimeout(db.storage.from('mtm-btvn').createSignedUrls(path,SIGNED_ASSET_SECONDS),READ_RPC_MS)));
 }
 // 20/10: CSDL quá tải không được báo thành sai thông tin hay thử nhiều lần.
 export const BUSY='Hệ thống đang bận, chưa kiểm được thông tin. Em chờ 1–2 phút rồi bấm Vào bài lại.';
+export function gatewayErrorMessage(status:number,operation:unknown):string{
+  if(status===429)return 'Em đã thử nhiều lần. Chờ 15 phút rồi thử lại.';
+  if(status>=500||status===408)return BUSY;
+  if(status===400&&operation==='resolve')return STUDENT_CODE_ERROR;
+  return GATE_ERROR;
+}
 export const READ_RPC_MS=25000,READ_RPCS=new Set(['mtm_btvn_read','mtm_btvn_assets','mtm_btvn_classes']);
 /** Ký URL ảnh cũng có hạn chờ: quá hạn coi như ảnh chưa sẵn sàng, HS được báo thử lại. */
 export function withTimeout<T>(work:PromiseLike<T>,ms:number):Promise<T>{

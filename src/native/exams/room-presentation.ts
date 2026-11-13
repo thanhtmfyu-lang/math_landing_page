@@ -27,8 +27,8 @@ export function normalizePdfText(text:string):string {
 export function findQuestionPageIndex(pageTexts:string[],lookup:SourceQuestionLookup):number|undefined {
   let seen=0;
   for(let i=0;i<pageTexts.length;i++){
-    const text=normalizePdfText(pageTexts[i]),pattern=/(?<!\p{L})C ?[aA] ?[uU] ?(\d+)(?!\d)/gu;
-    for(const match of text.matchAll(pattern))if(Number(match[1])===lookup.number){if(seen===lookup.occurrence)return i;seen++;}
+    const text=normalizePdfText(pageTexts[i]),pattern=/(^|[^\p{L}])C ?[aA] ?[uU] ?(\d+)(?!\d)/gu;
+    for(const match of text.matchAll(pattern))if(Number(match[2])===lookup.number){if(seen===lookup.occurrence)return i;seen++;}
   }
   return undefined;
 }

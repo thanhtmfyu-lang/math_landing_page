@@ -12,7 +12,7 @@ function operation(body:Record<string,unknown>):{name:string;args:Record<string,
   if(['pin','newPin'].some(k=>body[k]!==undefined&&!(typeof body[k]==='string'&&/^[0-9]{6}$/.test(String(body[k])))))return null;
   return {name:'mtm_btvn_forgot_pin',args:{p_full_name:body.fullName,p_phone:body.phone,p_class_name:body.className,p_pin:body.pin??null,p_new_pin:body.newPin??null}};
  }
- if(op==='resolve'){if(typeof body.code!=='string'||body.code.length>80||!/^[a-f0-9]{32}$/i.test(body.code.replace(/[\s-]/g,'')))return null;return{name:'mtm_hw_resolve_code',args:{p_code:body.code}};}
+ if(op==='resolve'){if(typeof body.code!=='string'||body.code.length>160)return null;const code=body.code.replace(/[\s\u200B-\u200D\uFEFF\-‐‑‒–—−]/gu,'').replace(/^hs/i,'').toLowerCase();if(!/^[a-f0-9]{32}$/.test(code))return null;return{name:'mtm_hw_resolve_code',args:{p_code:code}};}
  if(op==='confirm')return token(body.challenge)?{name:'mtm_hw_confirm',args:{p_challenge:body.challenge,p_confirm:true}}:null;
  if(!token(body.session))return null;
  if(['me','logout','assignments','history'].includes(String(op)))return {name:'mtm_hw_'+op,args:base};

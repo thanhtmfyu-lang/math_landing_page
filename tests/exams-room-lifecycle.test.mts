@@ -85,7 +85,7 @@ test('Trả lời tại câu A-D dùng bộ ghi hiện có, phản ánh đáp á
   state.draft.answers[q.id]='B';r.flush();quick=find(r.value,(n:any)=>n.props?.className==='fr-quick');
   const selected=buttons(quick).find(b=>b.props['aria-label']==='Chọn B');assert.equal(selected.props['aria-pressed'],true);
   selected.props.onClick();assert.deepEqual(answers.pop(),[q.id,null]);
-  state.pdfReady=false;r.flush();assert.equal(find(r.value,(n:any)=>n.type==='fieldset'&&n.props.disabled)?.props.disabled,true);r.dispose();
+  state.pdfReady=false;r.flush();assert.ok(!find(r.value,(n:any)=>n.type==='fieldset'&&n.props.disabled));r.dispose();
 });
 test('Trả lời tại câu Đ/S giữ đủ bốn ý, sửa/xóa một ý không mất ý khác',()=>{
   const {r,state,answers}=mount(new FakeStore());state.activeQuestion=exam.questions.findIndex(q=>q.kind==='tf');
@@ -158,7 +158,7 @@ test('Phương án DOM trong đề dùng bộ ghi/bỏ chọn hiện có',()=>{
   const provider=()=>find(r.value,(n:any)=>n.props?.value?.questionId===q.id).props.value;
   provider().choose('B');assert.deepEqual(answers.pop(),[q.id,'B']);
   state.draft.answers[q.id]='B';r.flush();assert.equal(provider().answer,'B');provider().choose('B');assert.deepEqual(answers.pop(),[q.id,null]);
-  state.pdfReady=false;r.flush();assert.equal(provider().disabled,true);r.dispose();
+  state.pdfReady=false;r.flush();assert.equal(provider().disabled,false);r.dispose();
 });
 test('Nộp bài luôn vàng theo mẫu B, vẫn giữ trạng thái sẵn sàng và dấu sao theo câu',()=>{
   const {r,state}=mount(new FakeStore());

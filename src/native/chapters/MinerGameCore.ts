@@ -19,7 +19,7 @@ export function minerChapter(track?:string,chapter?:string){
   if(chapter!=='1')return null;
   const topic=STUDY_GAME_TOPICS.find(t=>String(t.grade)===track);
   if(!topic)return null;
-  const questions:MinerQuestion[]=studyGameQuestions(topic.grade,topic.id).map(q=>({...q,steps:q.explanation.split(/(?<=\.)\s+/u)}));
+  const questions:MinerQuestion[]=studyGameQuestions(topic.grade,topic.id).map(q=>({...q,steps:q.explanation.split(/\.\s+/u).map((s,i,a)=>i<a.length-1?s+'.':s)}));
   return {...topic,questions};
 }
 export type MinerResult={question:number;chosen:MinerLane;correct:boolean};

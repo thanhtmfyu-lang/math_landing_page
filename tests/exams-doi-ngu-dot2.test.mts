@@ -64,7 +64,7 @@ await test('Thẻ chỉ xuất lịch khi đã mở, có bài và hạn thật t
   assert.match(card({opensAt:Date.now()-1,locked:true}),/Nhắc lịch hạn nộp/);
 });
 const {default:Gate}=load('src/native/homework/HomeworkGate.tsx');
-const props={studentCode:'SYNTHETIC-CODE',identity:{fullName:'Tên thử',phone:'0000000000',className:'Lớp thử'},busy:false,classNames:['Lớp thử']};
+const props={studentCode:'0123456789abcdef0123456789abcdef',identity:{fullName:'Tên thử',phone:'0000000000',className:'Lớp thử'},busy:false,classNames:['Lớp thử']};
 await test('Hai form BTVN gửi riêng, giữ payload và chặn khi bận/lớp không hợp lệ',()=>{
   const calls:any[]=[],make=(patch:any={})=>mount('src/native/homework/HomeworkGate.tsx',{...props,onCode(){},onIdentity(){},onLogin:(input:any)=>calls.push(input),...patch}).tree;
   const forms=all(make(),n=>n.type==='form');assert.equal(forms.length,2);

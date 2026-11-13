@@ -1,8 +1,8 @@
 import React,{useEffect,useRef,useState} from 'react';
 import type {PdfAsset} from './model';
 import {sha256} from './backend';
-import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy} from 'pdfjs-dist';
-import workerUrl from 'pdfjs-dist/build/pdf.worker.min.mjs?url';
+import {getDocument,GlobalWorkerOptions,AnnotationMode,type PDFDocumentProxy} from 'pdfjs-dist/legacy/build/pdf.mjs';
+import workerUrl from 'pdfjs-dist/legacy/build/pdf.worker.min.mjs?url';
 GlobalWorkerOptions.workerSrc=workerUrl;
 export default function PdfInput({label,onFile,onStart,onEnd,onText}:{label:string;onFile:(file:File,info:Omit<PdfAsset,'path'>)=>Promise<void>;onStart?:()=>boolean;onEnd?:()=>void;onText?:(text:string)=>void}){
  const [doc,setDoc]=useState<PDFDocumentProxy|null>(null),[page,setPage]=useState(1),[message,setMessage]=useState(''),[busy,setBusy]=useState(false);const host=useRef<HTMLDivElement>(null),sequence=useRef(0),taskRef=useRef<ReturnType<typeof getDocument>|null>(null);
