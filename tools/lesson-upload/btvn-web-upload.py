@@ -38,7 +38,8 @@ def main():
  with (root/'worker.lock').open('a+') as lock:
   try:fcntl.flock(lock.fileno(),fcntl.LOCK_EX|fcntl.LOCK_NB)
   except BlockingIOError:print('{"status":"busy"}');return
-  url,secret=runtime.publish_settings();env={**os.environ,'BTVN_NATIVE_MODULE_DIR':native_dir,'BTVN_PUBLISH_URL':url,'BTVN_PUBLISH_SECRET':secret,'MTM_LESSON_LOCK_FD':str(lock.fileno()),'MTM_LESSON_NATIVE_DRIVER':str(Path(__file__).with_name('native-driver.py')),'MTM_LESSON_UPLOAD_STATE_DIR':str(folder/'checkpoints')}
+  # Canonical live-worker opt-ins apply only to the authorized, locked child.
+  url,secret=runtime.publish_settings();env={**os.environ,'BTVN_ALLOW_NETWORK':'1','BTVN_AI_AUDIT':'1','BTVN_NATIVE_MODULE_DIR':native_dir,'BTVN_PUBLISH_URL':url,'BTVN_PUBLISH_SECRET':secret,'MTM_LESSON_LOCK_FD':str(lock.fileno()),'MTM_LESSON_NATIVE_DRIVER':str(Path(__file__).with_name('native-driver.py')),'MTM_LESSON_UPLOAD_STATE_DIR':str(folder/'checkpoints')}
   child=subprocess.Popen([env.get('BTVN_NODE','node'),str(Path(__file__).with_name('runner.mjs')),'--review-once' if a.review_once else '--once',*(['--is-test'] if a.is_test else []),*(['--auto'] if a.auto else [])],env=env,pass_fds=(lock.fileno(),),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
   previous_term=signal.signal(signal.SIGTERM,interrupt)
   try:stdout,stderr=child.communicate(timeout=850)

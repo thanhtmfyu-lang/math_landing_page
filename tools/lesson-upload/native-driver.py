@@ -68,6 +68,7 @@ def main(value):
   from native_budget_reconcile import register_reconciler
   register_reconciler(bridge.policy_path(),reconciler);reconciler.refresh(context={'lesson_key':native_key,'source_version':identity})
   ai=bridge.NativeAI(p.Transport(),config['extractor']);ai.source_context={'lesson_key':native_key,'source_version':identity,'web_upload_id':job['id'],'task_scope_sha256':scope_hash}
+  ai.audit_context=dict(ai.source_context)
   from PIL import Image
   page_manifest=[]
   for tag,pages in [('hs',hs_pages),('gv',gv_pages)]:
