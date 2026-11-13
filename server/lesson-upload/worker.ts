@@ -26,6 +26,8 @@ export interface WorkerRepository {
  current(job:UploadJob):Promise<void>;
  step(job:UploadJob,step:number,status:'dang'|'xong'|'loi'|'canh_bao',detail:string,checkpoint:Record<string,unknown>,paper?:1|2):Promise<void>;
  waitReview?(job:UploadJob,request:PendingReview):Promise<{allowed:boolean}>;
+ /** Persist only a safe code under the same claim; SQL owns retry eligibility. */
+ recordFailure?(job:UploadJob,step:number,code:string):Promise<void>;
  publishBundle?(job:UploadJob,primary:unknown,second:unknown):Promise<void>;
  finish(job:UploadJob):Promise<void>;
  /** Existing publisher validates first; RPC does atomic lease/version/receipt commit. */
@@ -137,8 +139,9 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   await repo.current(job);
   if(draft){
    const secret='lesson-upload-service-validation-'.repeat(2),handler=createBtvnPublishHandler(repo.publisher(job),secret,teacherPending?{teacherPending:{requestHash:proof.request_hash,sourceVersion:source.sourceVersion}}:{});
-   const response=await handler(publishRequest(job,source,draft,proof,materials,secret));
-   ensure(response.ok&&['da_dang','already_published'].includes((await response.json()).status),'PUBLISH_NOT_CONFIRMED');
+   const response=await handler(publishRequest(job,source,draft,proof,materials,secret)),receipt=await response.json();
+   if(!response.ok)throw Error(typeof receipt?.error_code==='string'&&/^[A-Z][A-Z0-9_]{2,70}$/.test(receipt.error_code)?receipt.error_code:'PUBLISH_NOT_CONFIRMED');
+   ensure(['da_dang','already_published'].includes(receipt.status),'PUBLISH_NOT_CONFIRMED');
   }else{
    // Materials-only jobs use the same fenced commit RPC, without fabricating an exam.
    const full=material(job,materials),patch=Object.fromEntries(Object.entries(full).filter(([k,v])=>['videoId','videoUrl','handoutUrl','materialUrl','title'].includes(k)&&v!==null&&v!==undefined));
@@ -149,9 +152,10 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
  }catch(error){
   const code=error instanceof Error&&/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message)?error.message:'WORKER_FAILED';
   // Unknown commit outcome must remain resumable under the SAME identity; never error/re-publish a new job.
-  const retryable=['WORKER_RPC_FAILED','PRIVATE_UPLOAD_FAILED','PUBLISH_NOT_CONFIRMED'].includes(code);
+  const retryable=['WORKER_RPC_FAILED','PRIVATE_UPLOAD_FAILED','PUBLISH_NOT_CONFIRMED','NATIVE_DRIVER_TIMEOUT','GATEWAY_BUSY'].includes(code);
   const detail:Record<string,string>={INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên; thầy kiểm tra và up lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ hoặc không khớp phiên bản đã gửi; quản lý kiểm tra.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
   try{await mark(step,retryable?'dang':'loi',code==='INDEPENDENT_ANSWER_MISMATCH'&&mismatchDetail?mismatchDetail:detail[code]??(retryable?'Kết nối tạm gián đoạn; giữ tiến độ để đối soát và tiếp tục cùng phiên bản.':'Chưa xử lý xong bước này; quản lý kiểm tra biên nhận riêng.'));}catch{/* Claim lost/superseded: never mutate its replacement. */}
+  try{await repo.recordFailure?.(job,step,code);}catch{/* An unknown recording outcome never creates a new version or resets attempts. */}
   return {status:retryable?'retry' as const:'blocked' as const,uploadId:job.id,code};
  }
 }
@@ -177,7 +181,9 @@ async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:Priva
     // Completion can only follow the real atomic commit, never the local capture.
     if(n===6&&status==='xong')return;
     await repo.step(job,n,status,detail,{['paper'+paper]:checkpoint},paper);
-   },waitReview:repo.waitReview?(_j,request)=>repo.waitReview!(projected,request):undefined,async finish(){},publisher(){return {upload:port.upload.bind(port),async rpc(action,payload){if(action==='lookup')return {status:null};ensure(action==='publish','INVALID_BUNDLE_ACTION');payloads[paper-1]=payload;return {status:'da_dang'};}};}
+   },waitReview:repo.waitReview?(_j,request)=>repo.waitReview!(projected,request):undefined,
+   recordFailure:repo.recordFailure?(_j,n,code)=>repo.recordFailure!(projected,n,code):undefined,
+   async finish(){},publisher(){return {upload:port.upload.bind(port),async rpc(action,payload){if(action==='lookup')return {status:null};ensure(action==='publish','INVALID_BUNDLE_ACTION');payloads[paper-1]=payload;return {status:'da_dang'};}};}
   };
   const privatePaperState:PrivateState={save:(id,stage,value)=>state.save(id+'-de-'+paper,stage,value),load:ref=>state.load(ref)};
   const result=await runUploadOnce(inner,pipeline,privatePaperState,workerId);

@@ -1758,7 +1758,7 @@ async function handleTwoPaperPublication(port, body, validate) {
 }
 
 // server/lesson-upload/gateway.ts
-var actions = /* @__PURE__ */ new Set(["worker_claim", "worker_assert_current", "worker_checkpoint", "worker_finish", "worker_publish", "worker_materials", "worker_wait_review", "worker_pending_review", "worker_review_result"]);
+var actions = /* @__PURE__ */ new Set(["worker_claim", "worker_assert_current", "worker_checkpoint", "worker_finish", "worker_publish", "worker_materials", "worker_wait_review", "worker_pending_review", "worker_review_result", "worker_record_failure", "worker_automation_config", "worker_heartbeat"]);
 function need(value, code) {
   if (!value) throw Error(code);
 }

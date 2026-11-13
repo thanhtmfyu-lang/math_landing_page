@@ -1,8 +1,23 @@
 import {createClient} from '@supabase/supabase-js';
 import {requireBackend,safeConfig,loginEmail} from '../admin/backend';
 import type {UploadDashboard} from './model';
+import {cleanHistoryQuery,validateHistoryPage,validateHistoryQuery,type StaffHistoryPage,type StaffHistoryQuery} from './staff-history';
 import {LessonSubmitError} from './submission-receipt';
 export {LessonSubmitError} from './submission-receipt';
+export async function staffHistory(owner:string,query:StaffHistoryQuery):Promise<StaffHistoryPage>{
+ const issue=validateHistoryQuery(query);if(issue)throw Error(issue);
+ const {client,assertOwner}=await staffRequest(owner);
+ const r=await client.rpc('mtm_lesson_upload_api',{p:{action:'staff_history',...cleanHistoryQuery(query)}});await assertOwner();
+ if(r.error){if(r.error.code==='42501')throw new StaffAccessError('Tài khoản chưa có quyền xem lịch sử của lớp này.');throw Error('Chưa tải được điểm và điểm danh. Kiểm tra khoảng ngày hoặc thử lại.');}
+ return validateHistoryPage(r.data as StaffHistoryPage);
+}
+export async function retryLesson(owner:string,uploadId:string){
+ const {client,assertOwner}=await staffRequest(owner);
+ const r=await client.rpc('mtm_lesson_upload_api',{p:{action:'request_retry',upload_id:uploadId}});await assertOwner();
+ if(r.error)throw Error(r.error.code==='42501'?'Tài khoản chưa có quyền xử lý bài của lớp này.':'Chưa cập nhật được yêu cầu xử lý lại. Bài đang lưu vẫn được giữ nguyên.');
+ if(r.data?.ok!==true||r.data.upload_id!==uploadId)throw Error('Chưa nhận được biên nhận xử lý lại. Bấm Cập nhật để kiểm tra.');
+ return r.data as {ok:true;accepted:boolean;status:string;upload_id:string;reason?:string;next_retry_at?:string|null};
+}
 export class StaffAccessError extends Error{}
 /** A captured access token keeps a delayed request from using another staff member's session. */
 async function staffRequest(expectedOwner:string){

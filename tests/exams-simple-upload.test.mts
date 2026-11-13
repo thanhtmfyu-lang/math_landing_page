@@ -3,26 +3,29 @@ import {defaultDueLocal,dueLocalToIso,uploadState,uploadTitle} from '../src/nati
 import {LessonSubmitError,pendingAfterFailure} from '../src/native/lesson-upload/submission-receipt';
 import type {LessonSession,LessonUpload,UploadStep} from '../src/native/lesson-upload/model';
 
-const session:LessonSession={class_id:'qa-class-a',class_name:'Lớp QA A',lesson_date:'2026-11-12',teacher_key:'qa-teacher',start_time:'17:00',end_time:'19:00'};
+const session:LessonSession={class_id:'qa-class-a',class_name:'Lớp QA A',lesson_date:'2026-11-12',teacher_key:'qa-teacher',start_time:'17:00',end_time:'19:00',default_due_at_by_class:{'qa-class-a':'2026-11-19T10:00:00.000Z'}};
+const withDue=(value:string)=>({...session,default_due_at_by_class:{'qa-class-a':value}});
 const originalTimezone=process.env.TZ;
 try{
-  // Device timezone must not move a Vietnam classroom's deadline.
+  // Only the authoritative server map defines the date/policy; device timezone cannot move it.
   for(const timezone of ['UTC','America/Los_Angeles','Asia/Tokyo']){
     process.env.TZ=timezone;
-    assert.equal(defaultDueLocal(session),'2026-11-19T16:30',timezone);
-    assert.equal(dueLocalToIso('2026-11-19T16:30'),'2026-11-19T09:30:00.000Z',timezone);
+    assert.equal(defaultDueLocal(session),'2026-11-19T17:00',timezone);
+    assert.equal(dueLocalToIso('2026-11-19T17:00'),'2026-11-19T10:00:00.000Z',timezone);
   }
 }finally{if(originalTimezone===undefined)delete process.env.TZ;else process.env.TZ=originalTimezone;}
-
-assert.equal(defaultDueLocal({...session,start_time:'00:15'}),'2026-11-18T23:45','30 minutes before a midnight session crosses to the preceding date');
-assert.equal(defaultDueLocal({...session,lesson_date:'2026-12-28',start_time:'07:30'}),'2027-01-04T07:00','week passes year boundary');
-assert.equal(defaultDueLocal({...session,lesson_date:'2028-02-23',start_time:'17:00:00'}),'2028-03-01T16:30','leap-year week and SQL time with seconds');
-assert.equal(defaultDueLocal({...session,lesson_date:'2027-02-23'}),'2027-03-02T16:30','non-leap-year week');
-assert.equal(dueLocalToIso('2028-02-29T00:00'),'2028-02-28T17:00:00.000Z','valid leap day');
-for(const invalid of ['2026-02-29','2026-02-31','2026-13-01','2026-00-01','not-a-date']){
-  assert.equal(defaultDueLocal({...session,lesson_date:invalid}),'',`reject invalid source calendar ${invalid}`);
+assert.equal(defaultDueLocal(withDue('2026-11-15T12:00:00Z')),'2026-11-15T19:00','next-session policy may be sooner than a week; do not infer +7 days');
+assert.equal(defaultDueLocal(withDue('2026-11-18T16:45:00Z')),'2026-11-18T23:45','server deadline may be before local midnight');
+assert.equal(defaultDueLocal(withDue('2027-01-03T17:15:00Z')),'2027-01-04T00:15','server timestamp crosses Vietnam date and year');
+assert.equal(defaultDueLocal(withDue('2028-02-28T17:00:00Z')),'2028-02-29T00:00','valid leap-day deadline');
+assert.equal(defaultDueLocal(withDue('2026-11-19T17:00:00+07:00')),'2026-11-19T17:00','explicit server timezone is honored');
+assert.equal(defaultDueLocal({...session,default_due_at_by_class:undefined}),'','missing authoritative map fails closed');
+assert.equal(defaultDueLocal({...session,default_due_at_by_class:{'another-class':'2026-11-19T10:00:00Z'}}),'','foreign class deadline is not reused');
+assert.equal(defaultDueLocal({...session,deadline_policy_error:'SCHEDULE_UNAVAILABLE'}),'','server policy failure cannot fall back to guessed calendar');
+for(const invalid of ['not-a-date','2026-13-01T10:00:00Z','2026-02-29T10:00:00Z','2026-02-31T10:00:00Z','2026-11-19T25:00:00Z','2026-11-19T10:00:00','2026-11-19','']){
+  assert.equal(defaultDueLocal(withDue(invalid)),'',`reject invalid server timestamp ${invalid}`);
 }
-for(const invalid of ['24:00','25:30','17:60','7:00','17:00:60',''])assert.equal(defaultDueLocal({...session,start_time:invalid}),'',`reject invalid source time ${invalid}`);
+assert.equal(dueLocalToIso('2028-02-29T00:00'),'2028-02-28T17:00:00.000Z','valid leap day');
 for(const invalid of ['2026-02-29T17:00','2026-04-31T17:00','2026-11-19T24:00','2026-11-19T16:60','2026-11-19T16:30Z','2026-11-19T16:30:00','2026-11-19','']){
   assert.throws(()=>dueLocalToIso(invalid),Error,`reject invalid submitted deadline ${invalid}`);
 }

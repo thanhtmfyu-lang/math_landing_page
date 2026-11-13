@@ -1,9 +1,9 @@
 import {createBtvnPublishHandler,expectedSlots} from '../btvn/publish-handler';
 import {reviewQuestions,type Pipeline,type PrivateState} from './worker';
 /** Finite post-publication review. Never changes an exam, key, due or work row. */
-export async function reviewUploadOnce(db:any,pipeline:Pipeline,state:PrivateState,isTest=false){
- const call=async(p:any)=>{const r=await db.rpc('mtm_lesson_upload_api',{p});if(r.error)throw Error('WORKER_RPC_FAILED');return r.data;};
- const job=(await call({action:'worker_pending_review',is_test:isTest})).job;if(!job)return {status:'idle'};
+export async function reviewUploadOnce(db:any,pipeline:Pipeline,state:PrivateState,isTest=false,auto=false){
+ const call=async(p:any)=>{const r=await db.rpc('mtm_lesson_upload_api',{p});if(r.error)throw Error(/^[A-Z][A-Z0-9_]{2,70}$/.test(r.error.message??'')?r.error.message:'WORKER_RPC_FAILED');return r.data;};
+ const job=(await call({action:'worker_pending_review',is_test:isTest,...(auto?{auto:true}:{})})).job;if(!job)return {status:'idle'};
  for(const pending of job.pending_reviews){
   const cp=job.homework2_path?job.checkpoint['paper'+pending.paper]:job.checkpoint;
   if(!cp?.draft||!cp?.source)throw Error('PRIVATE_REVIEW_CHECKPOINT_REQUIRED');

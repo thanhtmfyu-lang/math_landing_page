@@ -5,7 +5,7 @@ import {createLessonUploadPipeline} from '../../server/lesson-upload/native-adap
 import {runUploadOnce} from '../../server/lesson-upload/worker';
 import {reviewUploadOnce} from '../../server/lesson-upload/review-backfill';
 const args=process.argv.slice(2);
-if(!['--once','--review-once'].includes(args[0])||args.length>2||args.length===2&&args[1]!=='--is-test')throw Error('EXPLICIT_ONCE_REQUIRED');
+if(!['--once','--review-once'].includes(args[0])||new Set(args).size!==args.length||args.slice(1).some(arg=>!['--is-test','--auto'].includes(arg)))throw Error('EXPLICIT_ONCE_REQUIRED');
 const db=createLessonGatewayClient(process.env.BTVN_PUBLISH_URL!,process.env.BTVN_PUBLISH_SECRET!),pipeline=await createLessonUploadPipeline({db}),state=createPrivateFileState(process.env.MTM_LESSON_UPLOAD_STATE_DIR!);
-const result=args[0]==='--review-once'?await reviewUploadOnce(db,pipeline,state,args.includes('--is-test')):await runUploadOnce(createWorkerRepository(db,{isTest:args.includes('--is-test')}),pipeline,state,'vps-web-upload');
+const result=args[0]==='--review-once'?await reviewUploadOnce(db,pipeline,state,args.includes('--is-test'),args.includes('--auto')):await runUploadOnce(createWorkerRepository(db,{isTest:args.includes('--is-test'),auto:args.includes('--auto')}),pipeline,state,'vps-web-upload');
 console.log(JSON.stringify({status:result.status,...('code' in result?{code:result.code}:{})}));

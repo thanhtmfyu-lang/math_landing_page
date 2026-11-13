@@ -1,5 +1,5 @@
 import type {PublishPort} from '../btvn/publish-handler';
-const actions=new Set(['worker_claim','worker_assert_current','worker_checkpoint','worker_finish','worker_publish','worker_materials','worker_wait_review','worker_pending_review','worker_review_result']);
+const actions=new Set(['worker_claim','worker_assert_current','worker_checkpoint','worker_finish','worker_publish','worker_materials','worker_wait_review','worker_pending_review','worker_review_result','worker_record_failure','worker_automation_config','worker_heartbeat']);
 function need(value:unknown,code:string):asserts value{if(!value)throw Error(code);}
 const uuid=(v:unknown)=>typeof v==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v);
 /** Called only AFTER the existing Edge publisher has authenticated its secret. */

@@ -2,10 +2,13 @@ import {completedPercent, type LessonSession, type LessonUpload} from './model';
 
 /** Wall-clock fields are always Vietnam time, independent of the teacher's device timezone. */
 export function defaultDueLocal(session: LessonSession) {
-  if (!/^\d{4}-\d{2}-\d{2}$/.test(session.lesson_date) || !/^([01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(session.start_time)) return '';
-  const start = Date.parse(`${session.lesson_date}T${session.start_time.slice(0,5)}:00+07:00`);
-  if (!Number.isFinite(start) || new Date(`${session.lesson_date}T00:00:00Z`).toISOString().slice(0,10)!==session.lesson_date) return '';
-  return new Date(start + 7*86400000 - 30*60000 + 7*3600000).toISOString().slice(0,16);
+  if(session.deadline_policy_error)return '';
+  const value=session.default_due_at_by_class?.[session.class_id];
+  if(typeof value!=='string'||!/^\d{4}-\d{2}-\d{2}T[\d:.]+(?:[Zz]|[+-]\d{2}:\d{2})$/.test(value))return '';
+  const calendar=new Date(value.slice(0,10)+'T00:00:00Z');
+  if(!Number.isFinite(calendar.getTime())||calendar.toISOString().slice(0,10)!==value.slice(0,10))return '';
+  const due=Date.parse(value);
+  return Number.isFinite(due)?new Date(due+7*3600000).toISOString().slice(0,16):'';
 }
 
 export function dueLocalToIso(value: string) {

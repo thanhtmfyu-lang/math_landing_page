@@ -8,12 +8,12 @@ export async function createLessonUploadPipeline({db}:{db:any}):Promise<Pipeline
  const invoke=(input:unknown)=>new Promise<any>((resolve,reject)=>{
   const inherited=Number(process.env.MTM_LESSON_LOCK_FD);if(!Number.isInteger(inherited)||inherited<3)return reject(Error('SHARED_WORKER_LOCK_REQUIRED'));
   const environment:Record<string,string|undefined>={...process.env,MTM_LESSON_LOCK_FD:'3'};delete environment.BTVN_PUBLISH_SECRET;delete environment.BTVN_PUBLISH_URL;delete environment.SUPABASE_SERVICE_ROLE_KEY;
-  const child=spawn(process.env.BTVN_PYTHON??'python3',[driver],{stdio:['pipe','pipe','pipe',inherited],env:environment});let output='';
-  const timer=setTimeout(()=>child.kill('SIGKILL'),780000);
+  const child=spawn(process.env.BTVN_PYTHON??'python3',[driver],{stdio:['pipe','pipe','pipe',inherited],env:environment});let output='',timedOut=false;
+  const timer=setTimeout(()=>{timedOut=true;child.kill('SIGKILL');},780000);
   child.stdout.on('data',v=>{output+=v;if(output.length>60*1024*1024)child.kill();});child.stderr.resume();child.on('error',()=>reject(Error('NATIVE_DRIVER_FAILED')));
-  child.on('close',code=>{clearTimeout(timer);try{if(code)throw Error();resolve(JSON.parse(output));}catch{reject(Error('NATIVE_DRIVER_FAILED'));}});child.stdin.end(JSON.stringify(input));
+  child.on('close',code=>{clearTimeout(timer);try{if(code)throw Error();resolve(JSON.parse(output));}catch{reject(Error(timedOut?'NATIVE_DRIVER_TIMEOUT':'NATIVE_DRIVER_FAILED'));}});child.stdin.end(JSON.stringify(input));
  });
- const source=async(job:UploadJob,kind:string)=>{const {data,error}=await db.rpc('mtm_lesson_upload_source',{upload_id:job.id,claim_token:job.claim_token,kind});if(error||!data?.data_base64)throw Error('PRIVATE_SOURCE_UNAVAILABLE');return data.data_base64;};
+ const source=async(job:UploadJob,kind:string)=>{const {data,error}=await db.rpc('mtm_lesson_upload_source',{upload_id:job.id,claim_token:job.claim_token,kind});if(error)throw Error(/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message??'')?error.message:'PRIVATE_SOURCE_UNAVAILABLE');if(!data?.data_base64)throw Error('PRIVATE_SOURCE_UNAVAILABLE');return data.data_base64;};
  const drafts=new Map<string,Draft>(),key=(j:UploadJob)=>j.id+':'+(j.paper??1);
  const extractor:Pipeline['extractor']={provider:'chatgpt-oauth',model:'loaded-from-native-receipt'};
  return {extractor,
