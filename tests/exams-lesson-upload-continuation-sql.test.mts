@@ -34,9 +34,18 @@ try{
  const oldReasonCodes=['WORKER_RPC_FAILED','INDEPENDENT_ANSWER_MISMATCH','GATEWAY_AUTH_REQUIRED',null,'UNKNOWN','https://private.invalid/?token=SYNTHETIC_PRIVATE'];
  const reason=async code=>(await db.query('select mtm_hw_private.lesson_retry_reason108($1) v',[code])).rows[0].v;
  const oldReasons=await Promise.all(oldReasonCodes.map(reason));
+ // Supabase grants function EXECUTE through owner default ACLs. This affects
+ // CREATE FUNCTION even when PUBLIC itself is later revoked; reproduce it.
+ await db.exec("alter default privileges grant execute on functions to anon,authenticated,service_role;create function public.continuation_default_acl_probe() returns boolean language sql as $$select true$$");
+ assert.equal((await db.query("select has_function_privilege('anon','public.continuation_default_acl_probe()','EXECUTE') v")).rows[0].v,true);await db.exec('drop function public.continuation_default_acl_probe()');checks++;
  assert.equal((await svc({action:'worker_claim',is_test:true,worker_protocol:110,worker_id:'warm-canonical-gateway-before-DDL'})).job,null);checks++;
+ // Reproduce the old defect inside a rollback: revoking PUBLIC alone leaves
+ // anon's inherited direct EXECUTE present on the newly created API function.
+ const inheritedBug=adapted.replace('revoke all on function public.mtm_lesson_upload_api(jsonb) from public,anon,authenticated,service_role,mtm_btvn_publisher;','revoke all on function public.mtm_lesson_upload_api(jsonb) from public;').replace(/^begin;\s*$/m,'').replace(/commit;\s*$/i,'');
+ await db.exec('begin');await db.exec(inheritedBug);assert.equal((await db.query("select has_function_privilege('anon','public.mtm_lesson_upload_api(jsonb)','EXECUTE') v")).rows[0].v,true);await db.exec('rollback');assert.deepEqual(await acl('public.mtm_lesson_upload_api(jsonb)'),priorAcl);checks++;
  await db.exec(adapted.replace(/commit;\s*$/i,'rollback;'));assert.equal((await db.query("select to_regclass('mtm_hw_private.lesson_continuation142') v")).rows[0].v,null);checks++;
  await db.exec(adapted);assert.deepEqual(await acl('public.mtm_lesson_upload_api(jsonb)'),priorAcl);checks++;
+ assert.equal((await db.query("select has_function_privilege('anon','public.mtm_lesson_upload_api(jsonb)','EXECUTE') v")).rows[0].v,false);checks++;
  assert.equal((await db.query("select 'mtm_hw_private.lesson_retry_reason108(text)'::regprocedure::oid v")).rows[0].v,reasonOID);assert.deepEqual(await acl('mtm_hw_private.lesson_retry_reason108(text)'),reasonACL);assert.deepEqual(await Promise.all(oldReasonCodes.map(reason)),oldReasons);checks++;
  for(const [code,hint] of [['NATIVE_SOURCE_INVENTORY_REQUIRED','PDF có chữ'],['NATIVE_SOURCE_INVENTORY_AMBIGUOUS','PDF có chữ'],['NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED','PDF có chữ'],['NATIVE_SCOPE_UNRESOLVED','câu, phần và trang'],['NATIVE_SCOPE_AMBIGUOUS','câu, phần và trang'],['NATIVE_SCOPE_REF_MISSING','câu, phần và trang'],['NATIVE_EXTRACT_INVENTORY_MISMATCH','chưa khớp'],['NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED','Nội dung đã lưu']]){
   assert.ok((await reason(code)).includes(hint));assert.equal((await db.query('select mtm_hw_private.lesson_retryable108($1) v',[code])).rows[0].v,false);checks++;

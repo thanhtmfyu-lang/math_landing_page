@@ -175,7 +175,7 @@ begin
 end$$;
 
 -- Copy the exact prior direct ACL, not a larger hardcoded GRANT list.
-revoke all on function public.mtm_lesson_upload_api(jsonb) from public;
+revoke all on function public.mtm_lesson_upload_api(jsonb) from public,anon,authenticated,service_role,mtm_btvn_publisher;
 do $acl$
 declare r record;grantee text;
 begin
