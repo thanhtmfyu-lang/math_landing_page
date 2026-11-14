@@ -113,7 +113,7 @@ class TeacherNativeContext(unittest.TestCase):
   proof=candidate.bind_teacher_context(ai,self.config,row,self.source,self.scope,self.policy)
   self.assertTrue(proof['teacher_scope_bound']);self.assertTrue(ai.auto_scope_policy);self.assertEqual(ai.errata_policy['source_version'],self.source)
   ai.assignment_class_context={'schema':candidate.CLASS_CONTEXT_CONTRACT,'sourceVersion':self.source,'grade_source':'managed_class_catalog','assignment_grade':11,'lesson_date':'2026-11-10','classes':[]}
-  instruction=ai._augment('extract','BASE');self.assertEqual(calls,['extract']);self.assertTrue(instruction.startswith('BASE SYNTHETIC_CANONICAL_PARENT'));self.assertTrue(instruction.endswith(candidate.class_metadata_instruction(ai.assignment_class_context)))
+  instruction=ai._augment('extract','BASE');self.assertEqual(calls,['extract']);self.assertTrue(instruction.startswith('BASE SYNTHETIC_CANONICAL_PARENT'));self.assertTrue(instruction.endswith(candidate.class_metadata_instruction(ai.assignment_class_context)+candidate.teacher_branding_instruction()))
   self.assertIn('không lấy từ Google Sheet',instruction);self.assertIn('Không nâng certain',instruction)
   self.assertEqual(ai._augment('final','BASE'),'BASE SYNTHETIC_CANONICAL_PARENT')
   wrong=copy.deepcopy(row);wrong['scope_evidence']['task_scope_sha256']='0'*64

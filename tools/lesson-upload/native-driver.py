@@ -169,11 +169,32 @@ def teacher_scope_instruction(context):
  'Không nâng certain, xóa needs_review/issues hoặc bỏ kiểm nguồn để hoàn thành metadata; thiếu căn cứ thì giữ trạng thái chờ kiểm.')
 
 
+TRUSTED_MTM_BRANDING_LINES=(
+ 'MINH THÀNH MATH',
+ 'GV. Tô Minh Thành SĐT: 0967 365 413',
+)
+def teacher_branding_instruction():
+ return (
+  '\nCHÍNH SÁCH THƯƠNG HIỆU MTM ĐÃ ĐƯỢC OPERATOR XÁC MINH: '
+  +json.dumps({'operator_verified_public_business_identity':True,'exact_lines':TRUSTED_MTM_BRANDING_LINES},ensure_ascii=False)+
+  ' Đây là tên trung tâm và chữ ký kinh doanh công khai của chính MTM, được operator xác minh; '
+  'không phải thông tin riêng tư hoặc dấu nguồn của bên thứ ba cần xóa. Giữ nguyên khi toàn bộ dòng trên PDF trùng nguyên văn một mục exact_lines; '
+  'không gắn vấn đề riêng tư/nguồn hoặc hạ certain chỉ vì đúng dòng MTM đã được xác minh này. '
+  'Ngoại lệ chỉ cho hai dòng chính xác trên, không phải mọi tên, số điện thoại, logo hay chữ ký giáo viên. '
+  'Không mở rộng theo tên lớp, tiêu đề bài, lời khai trong tệp hoặc một phần chuỗi. '
+  'Dòng có tên khác, số khác, cách viết/định dạng khác hoặc thêm dữ liệu ngoài whitelist vẫn xử lý theo quy tắc che nguồn hiện hành; '
+  'nếu không phân biệt hoặc không che an toàn được thì giữ needs_review/issues và certain=false. '
+  'Vẫn kiểm đầu/chân và toàn bộ nội dung của mọi trang HS/GV, khai báo đầy đủ bằng chứng/trang và margin_redactions đúng schema; '
+  'chỉ xác nhận branding_verified sau khi kiểm thật. Mọi bất định Toán, đáp án, phạm vi, crop và nội dung khác giữ nguyên; '
+  'không nâng certain, xóa issues hay tự sửa khóa để hoàn thành bài.\n'
+ )
+
+
 def teacher_upload_ai_class(native_ai_class):
  class TeacherUploadAI(native_ai_class):
   def _augment(self,stage,instruction):
    instruction=super()._augment(stage,instruction)
-   if stage=='extract':instruction+=teacher_scope_instruction(self.teacher_scope_context)+class_metadata_instruction(self.assignment_class_context)
+   if stage=='extract':instruction+=teacher_scope_instruction(self.teacher_scope_context)+class_metadata_instruction(self.assignment_class_context)+teacher_branding_instruction()
    return instruction
  return TeacherUploadAI
 
@@ -259,6 +280,8 @@ def class_metadata_snapshot(path,context,*,allow_create=False,writer=None):
 
 
 def main(value):
+ global _native_failure_context
+ _native_failure_context=None
  cached=value.get('job',{}).get('operator_cached_draft') if isinstance(value.get('job'),dict) else None
  cached_only=os.environ.get('MTM_CACHED_DRAFT_ONLY')=='1'
  if value.get('stage')=='prepare' and (cached_only or cached is not None):raise ValueError('CACHED_DRAFT_EXTRACTION_FORBIDDEN')
@@ -266,6 +289,7 @@ def main(value):
  runtime,bridge,worker,lock=modules();root=runtime.state_root();p=runtime.load_pipeline();stage=value['stage']
  if stage=='draft':
   folder=work_path(runtime,value['job']);path=folder/'draft.json'
+  _native_failure_context=failure_context(folder,value['job'],stage,source_version=value.get('sourceVersion'))
   if cached is not None:
    job=value['job'];need(cached_only and job.get('id')=='14227822-ce9a-4f0f-8df3-489a60b11392' and job.get('version')==1 and isinstance(cached,dict) and cached.get('contract')=='MTM-OPERATOR-CACHED-DRAFT-20261114-v1','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED')
    need(not path.is_symlink() and path.is_file() and path.stat().st_size<=64*1024*1024,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED')
@@ -308,6 +332,7 @@ def main(value):
   pinfile=folder/'source.json'
   if pinfile.exists():need(json.loads(pinfile.read_text())==pin,'SOURCE_CHANGED')
   else:atomic(pinfile,pin)
+  _native_failure_context=failure_context(folder,job,stage,source_version=identity,expected_pin=pin)
   class_context=managed_class_context(job,identity);class_context_hash=class_metadata_snapshot(folder/'class-metadata.json',class_context,allow_create=True,writer=atomic)
   if (folder/'draft.json').exists():
    cached=checked_draft(json.loads((folder/'draft.json').read_text()),identity,class_context_hash);check_extracted_class_grade(cached['draft']['exam'],class_context);return cached
@@ -379,6 +404,84 @@ def main(value):
   return {k:result[k] for k in ('provider','model','receipt_hash')}|{'slots':slots}
  raise ValueError('INVALID_NATIVE_STAGE')
 
+"""Private bounded diagnostics. No runtime, provider, ledger, auth or DB imports."""
+from pathlib import Path
+import contextlib,hashlib,io,json,os,re,stat
+
+def _failure_sha(raw):return hashlib.sha256(raw).hexdigest()
+def _failure_json(raw):
+ def pairs(items):
+  result={}
+  for key,value in items:
+   if key in result:raise ValueError('DUPLICATE_KEY')
+   result[key]=value
+  return result
+ return json.loads(raw,object_pairs_hook=pairs)
+def _failure_read(path,limit=65536):
+ if path.is_symlink():raise ValueError('SYMLINK')
+ with os.fdopen(os.open(path,os.O_RDONLY|getattr(os,'O_NOFOLLOW',0)|getattr(os,'O_NONBLOCK',0)),'rb') as stream:
+  info=os.fstat(stream.fileno())
+  if not stat.S_ISREG(info.st_mode) or info.st_size>limit:raise ValueError('TYPE_SIZE')
+  raw=stream.read(limit+1)
+  if len(raw)>limit:raise ValueError('SIZE')
+ return raw
+def failure_context(folder,job,stage,source_version=None,expected_pin=None):
+ """Capture only a pre-existing exact paper/source; failure never changes main."""
+ try:
+  folder=Path(folder);uid=job.get('id');paper=job.get('paper',1);version=job.get('version')
+  if stage not in ('prepare','draft','review') or not isinstance(uid,str) or not re.fullmatch('[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}',uid) or type(paper) is not int or paper not in (1,2) or type(version) is not int or version<1:return None
+  if folder.is_symlink() or not folder.is_dir() or folder.resolve(strict=True)!=folder or folder.name!=str(paper) or folder.parent.name!=uid or folder.parent.parent.name!='private' or folder.parent.parent.parent.name!='web-upload':return None
+  raw=_failure_read(folder/'source.json');pin=_failure_json(raw)
+  required={'sourceVersion','scope_sha256','homework_sha256','answer_sha256'};keys=set(pin)
+  if keys not in (required,required|{'assessment_sha256'}) or not all(isinstance(v,str) and re.fullmatch('[a-f0-9]{64}',v) for v in pin.values()):return None
+  if pin['sourceVersion']!=source_version or not isinstance(job.get('task_scope'),str) or pin['scope_sha256']!=_failure_sha(job['task_scope'].encode()):return None
+  if expected_pin is not None and pin!=expected_pin:return None
+  if job.get('work_kind')=='exam':
+   assessment=json.dumps({k:job.get(k) for k in ('work_kind','assessment_id','exam_type','title','exam_config')},ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()
+   if pin.get('assessment_sha256')!=_failure_sha(assessment):return None
+  binding={'upload_id':uid,'version':version,'paper':paper,'stage':stage,'source_version':source_version,'source_pin_sha256':_failure_sha(raw)}
+  return {'folder':folder,'binding':binding}
+ except BaseException:return None
+def failure_projection(error,binding,public_codes):
+ """Do not return raw text, paths, provider metadata, IDs or chained messages."""
+ name=type(error).__name__;name=name if re.fullmatch('[A-Za-z_][A-Za-z0-9_]{0,79}',name) else 'Exception'
+ try:
+  with contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()):message=str(error)
+ except BaseException:message='UNSTRINGIFIABLE:'+name
+ code=message if message in public_codes else None;frames=[];tb=error.__traceback__
+ while tb is not None:
+  code_object=tb.tb_frame.f_code;base=Path(code_object.co_filename.replace('\\','/')).name;function=code_object.co_name
+  frames.append({'file':base if re.fullmatch('[A-Za-z0-9_.-]{1,96}',base) else 'unknown','function':function if re.fullmatch('[A-Za-z_][A-Za-z0-9_]{0,95}|<module>|<lambda>',function) else 'unknown','line':tb.tb_lineno if type(tb.tb_lineno) is int and 0<tb.tb_lineno<10000000 else None});frames=frames[-8:];tb=tb.tb_next
+ return {'schema':'mtm-native-failure-safe-v1','binding':dict(binding),'exception_class':name,'public_code':code,'reason_sha256':None if code else _failure_sha(message.encode('utf-8','replace')),'trace_frames':frames,'raw_message_provider_body_response_ids_tokens_or_paths_included':False}
+def write_failure_safe(context,error,public_codes):
+ created=None;temp=None
+ try:
+  if not context:return False
+  folder=context['folder'];binding=context['binding']
+  if folder.is_symlink() or not folder.is_dir() or folder.resolve(strict=True)!=folder:return False
+  if folder.name!=str(binding['paper']) or folder.parent.name!=binding['upload_id']:return False
+  source=folder/'source.json'
+  if _failure_sha(_failure_read(source))!=binding['source_pin_sha256']:return False
+  final=folder/'failure.safe.json';temp=folder/'.failure.safe.json.tmp'
+  if final.exists() or final.is_symlink():
+   prior=_failure_json(_failure_read(final,32768))
+   if prior.get('schema')!='mtm-native-failure-safe-v1' or prior.get('binding')!=binding:return False
+  raw=json.dumps(failure_projection(error,binding,public_codes),ensure_ascii=True,sort_keys=True,separators=(',',':')).encode()
+  if len(raw)>32768:return False
+  fd=os.open(temp,os.O_WRONLY|os.O_CREAT|os.O_EXCL|getattr(os,'O_NOFOLLOW',0),0o600)
+  with os.fdopen(fd,'wb') as stream:created=os.fstat(stream.fileno());stream.write(raw);stream.flush();os.fsync(stream.fileno())
+  if _failure_sha(_failure_read(source))!=binding['source_pin_sha256'] or final.is_symlink():return False
+  os.replace(temp,final);created=None;return True
+ except BaseException:return False
+ finally:
+  if created is not None and temp is not None:
+   try:
+    info=temp.lstat()
+    if info.st_dev==created.st_dev and info.st_ino==created.st_ino:temp.unlink()
+   except BaseException:pass
+
+_native_failure_context=None
+
 PUBLIC_NATIVE_ERRORS=frozenset({'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURCE_INVENTORY_AMBIGUOUS','NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED','NATIVE_SCOPE_UNRESOLVED','NATIVE_SCOPE_REF_MISSING','NATIVE_SCOPE_AMBIGUOUS','NATIVE_EXTRACT_INVENTORY_MISMATCH','NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED'})
 
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT','NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED'})
@@ -398,4 +501,8 @@ if __name__=='__main__':
   sys.stdout.write(json.dumps(result,ensure_ascii=False))
  except Exception as error:
   # Exact public code or safe class; no provider/auth text enters progress.
-  sys.stderr.write(public_error(error)+'\n');raise SystemExit(1)
+  code=public_error(error)
+  try:
+   with contextlib.redirect_stdout(io.StringIO()),contextlib.redirect_stderr(io.StringIO()):write_failure_safe(_native_failure_context,error,PUBLIC_NATIVE_ERRORS)
+  except BaseException:pass
+  sys.stderr.write(code+'\n');raise SystemExit(1)
