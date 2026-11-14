@@ -1824,6 +1824,11 @@ function bytesBase64(bytes) {
   return btoa(value);
 }
 
+// server/btvn/assessment-policy.ts
+function validAssessmentDuration(value) {
+  return Number.isInteger(value) && Number(value) >= 1 && Number(value) <= 240;
+}
+
 // server/btvn/publish-handler.ts
 var hash = async (bytes) => Array.from(new Uint8Array(await crypto.subtle.digest("SHA-256", Uint8Array.from(bytes).buffer))).map((x) => x.toString(16).padStart(2, "0")).join("");
 var canonical2 = (value) => JSON.stringify(value);
@@ -1902,8 +1907,9 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       if (previous.status === "da_dang") return respond(200, { status: "already_published" });
       ensure3(/^[a-f0-9]{64}$/.test(body.source_version ?? ""), "INVALID_VERSION");
       const kind = body.kind ?? "btvn";
-      ensure3(["btvn", "kiem-tra-thang"].includes(kind), "INVALID_KIND");
-      if (kind === "kiem-tra-thang") ensure3(typeof body.opensAt === "string" && typeof body.closesAt === "string" && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.opensAt) && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.closesAt) && Number.isFinite(Date.parse(body.opensAt)) && Date.parse(body.opensAt) >= Date.parse("2026-10-15T00:00:00+07:00") && Date.parse(body.closesAt) > Date.parse(body.opensAt), "INVALID_MONTHLY_WINDOW");
+      ensure3(["btvn", "kiem-tra-thang", "kiem-tra"].includes(kind), "INVALID_KIND");
+      if (kind !== "btvn") ensure3(typeof body.opensAt === "string" && typeof body.closesAt === "string" && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.opensAt) && /([zZ]|[+-]\d{2}:\d{2})$/.test(body.closesAt) && Number.isFinite(Date.parse(body.opensAt)) && Date.parse(body.opensAt) >= Date.parse("2026-10-15T00:00:00+07:00") && Date.parse(body.closesAt) > Date.parse(body.opensAt), "INVALID_ASSESSMENT_WINDOW");
+      if (kind === "kiem-tra") ensure3(typeof body.assessmentId === "string" && /^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/i.test(body.assessmentId) && ["monthly", "custom"].includes(body.examType), "INVALID_ASSESSMENT_METADATA");
       const m = body.material;
       ensure3(m?.homeworkScope === void 0 || typeof m.homeworkScope === "string" && m.homeworkScope.length > 0 && m.homeworkScope.length <= 300, "INVALID_HOMEWORK_SCOPE");
       ensure3(m?.homeworkScopeSource === void 0 || ["sheet", "auto", "whole_file"].includes(m.homeworkScopeSource), "INVALID_HOMEWORK_SCOPE_SOURCE");
@@ -1928,7 +1934,8 @@ function createBtvnPublishHandler(port, secret, options = {}) {
         return respond(200, await port.rpc("error", { lesson_key: body.lesson_key, source_version: body.source_version, material, error_code: body.error_code, reason }));
       }
       const exam = body.exam;
-      ensure3(validatePracticeExam(exam).valid && exam.durationMinutes === 120, "VALIDATOR_FAILED");
+      ensure3(validatePracticeExam(exam).valid && (kind === "kiem-tra" ? validAssessmentDuration(exam.durationMinutes) && exam.durationMinutes * 6e4 <= Date.parse(body.closesAt) - Date.parse(body.opensAt) : exam.durationMinutes === 120), "VALIDATOR_FAILED");
+      if (kind === "kiem-tra") ensure3(m.classNames.length === 1 && exam.title === m.title, "ASSESSMENT_SOURCE_MISMATCH");
       if (exam.rubricVersion === MTM_SCORING_VERSION) ensure3(mtmPracticeGradingReadiness(exam).valid, "MTM_GRADING_NOT_READY");
       const proof = body.verification;
       const teacherPending = !!options.teacherPending && proof?.status === "teacher-pending" && proof.independent === false && proof.teacher_source === true && proof.request_hash === options.teacherPending.requestHash && body.source_version === options.teacherPending.sourceVersion;
@@ -1966,7 +1973,7 @@ function createBtvnPublishHandler(port, secret, options = {}) {
       for (const ref of references(exam)) ensure3(assets.some((a2) => a2.path === ref.path && a2.sha256 === ref.sha256), "ASSET_REFERENCE_MISSING");
       for (const item of decoded) await port.upload(item.storage_path, item.bytes, item.asset.content_type, item.asset.sha256);
       const metadata = decoded.map(({ asset, bytes, storage_path }) => ({ path: asset.path, sha256: asset.sha256, content_type: asset.content_type, bytes: bytes.length, storage_path }));
-      return respond(200, await port.rpc("publish", { kind, opensAt: body.opensAt, closesAt: body.closesAt, lesson_key: body.lesson_key, source_version: body.source_version, material, exam, assets: metadata, verification: proof }));
+      return respond(200, await port.rpc("publish", { kind, opensAt: body.opensAt, closesAt: body.closesAt, ...kind === "kiem-tra" ? { assessmentId: body.assessmentId, examType: body.examType } : {}, lesson_key: body.lesson_key, source_version: body.source_version, material, exam, assets: metadata, verification: proof }));
     } catch (e) {
       const code = e instanceof Error && /^[A-Z][A-Z0-9_]{2,59}$/.test(e.message) ? e.message : "UNCLASSIFIED";
       console.warn("[btvn-publish] rejected", code);
