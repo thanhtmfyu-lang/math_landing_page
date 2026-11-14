@@ -194,7 +194,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     }catch{ /* Giữ bài hiện tại khi mất mạng; lần kiểm sau thử lại. */ }},()=>homeworkServerNow(renewalState.current??state));
     const check=(failed=false)=>{if(failed)imageNeedsRenewal.current=true;void renew(state.assetsExpiresAt,imageNeedsRenewal.current);};
     renewAssets.current=check;
-    const timer=setInterval(()=>{const now=homeworkServerNow(renewalState.current??state);check((!state.exam&&!!state.opensAt&&now>=state.opensAt)||(state.kind==='kiem-tra-thang'&&!state.solutionsAvailable&&!!state.closesAt&&now>=state.closesAt));},60000);
+    const timer=setInterval(()=>{const now=homeworkServerNow(renewalState.current??state);check((!state.exam&&!!state.opensAt&&now>=state.opensAt)||((state.kind==='kiem-tra-thang'||state.kind==='kiem-tra')&&!state.solutionsAvailable&&!!state.closesAt&&now>=state.closesAt));},60000);
     const retry=()=>renewAssets.current(true);window.addEventListener('mtm:retry-assets',retry);
     const visible=()=>{if(document.visibilityState==='visible')check();};document.addEventListener('visibilitychange',visible);
     return()=>{alive=false;renewAssets.current=()=>{};clearInterval(timer);window.removeEventListener('mtm:retry-assets',retry);document.removeEventListener('visibilitychange',visible);};
