@@ -159,9 +159,12 @@ class NativeInventoryTests(unittest.TestCase):
   with tempfile.TemporaryDirectory(dir=temp_root) as temp:
    runtime=types.SimpleNamespace(state_root=lambda:pathlib.Path(temp),load_pipeline=lambda:None)
    job={'id':'11111111-1111-4111-8111-111111111111','paper':1,'task_scope':'toàn bộ đề'}
+   cid='22222222-2222-4222-8222-222222222222'
+   job.update(class_ids=[cid],class_grades={cid:11},class_names={cid:'Synthetic grade11'},class_dates={cid:'2026-11-10'},lesson_date='2026-11-10',grade_source='managed_class_catalog',class_grade_complete=True,class_grade_issue=None)
    folder=driver.work_path(runtime,job);folder.mkdir(parents=True)
    hs=b'%PDF-SYNTHETIC-HS';gv=b'%PDF-SYNTHETIC-GV';identity=driver.digest(hs+gv)
-   record={'sourceVersion':identity,'inventory_contract':'MTM-WEB-TEXT-INVENTORY-20261114-v1','draft':{'synthetic':True}}
+   context=driver.managed_class_context(job,identity);context_hash=driver.class_metadata_snapshot(folder/'class-metadata.json',context,allow_create=True,writer=driver.atomic)
+   record={'sourceVersion':identity,'inventory_contract':'MTM-WEB-TEXT-INVENTORY-20261114-v1','draft':{'exam':{'grade':11},'synthetic':True}}
    (folder/'draft.json').write_text(json.dumps(record))
    with patch.object(driver,'modules',return_value=(runtime,None,None,Mock())):
     with self.assertRaisesRegex(ValueError,'NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED'):driver.main({'stage':'draft','job':job,'sourceVersion':identity})
@@ -169,7 +172,7 @@ class NativeInventoryTests(unittest.TestCase):
     value={'stage':'prepare','job':job,'homework_base64':base64.b64encode(hs).decode(),'answer_base64':base64.b64encode(gv).decode()}
     with self.assertRaisesRegex(ValueError,'NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED'):driver.main(value)
     self.assertFalse((folder/'homework.original').exists())
-    record['inventory_contract']=driver.INVENTORY_CONTRACT;(folder/'draft.json').write_text(json.dumps(record))
+    record.update(inventory_contract=driver.INVENTORY_CONTRACT,class_context_contract=driver.CLASS_CONTEXT_CONTRACT,class_metadata_sha256=context_hash);(folder/'draft.json').write_text(json.dumps(record))
     self.assertEqual(driver.main({'stage':'draft','job':job,'sourceVersion':identity}),record)
     self.assertEqual(driver.main(value),record)
     with self.assertRaisesRegex(ValueError,'SOURCE_CHANGED'):driver.main({'stage':'draft','job':job,'sourceVersion':'a'*64})

@@ -15,10 +15,14 @@ def stop_child_group(child):
 def interrupt(_signal,_frame):raise KeyboardInterrupt()
 
 def main():
- ap=argparse.ArgumentParser();ap.add_argument('--once',action='store_true');ap.add_argument('--review-once',action='store_true');ap.add_argument('--manual',action='store_true');ap.add_argument('--is-test',action='store_true');ap.add_argument('--auto',action='store_true');ap.add_argument('--operator-continuation',action='store_true');ap.add_argument('--status',action='store_true');ap.add_argument('--enable',action='store_true');ap.add_argument('--disable',action='store_true');a=ap.parse_args()
+ if sum(arg=='--operator-credit' or arg.startswith('--operator-credit=') for arg in sys.argv[1:])>1:raise ValueError('OPERATOR_CREDIT_DUPLICATE')
+ ap=argparse.ArgumentParser();ap.add_argument('--once',action='store_true');ap.add_argument('--review-once',action='store_true');ap.add_argument('--manual',action='store_true');ap.add_argument('--is-test',action='store_true');ap.add_argument('--auto',action='store_true');ap.add_argument('--operator-continuation',action='store_true');ap.add_argument('--operator-credit');ap.add_argument('--status',action='store_true');ap.add_argument('--enable',action='store_true');ap.add_argument('--disable',action='store_true');a=ap.parse_args()
  if sum(map(bool,[a.once,a.review_once,a.status,a.enable,a.disable]))!=1:raise ValueError('EXPLICIT_ACTION_REQUIRED')
  if a.manual and not (a.once or a.review_once):raise ValueError('MANUAL_REQUIRES_FINITE_ONCE')
  if a.auto and (not (a.once or a.review_once) or a.manual):raise ValueError('AUTO_REQUIRES_ENABLED_FINITE_WORKER')
+ if a.operator_credit is not None:
+  if not (a.once and a.is_test and a.manual and a.operator_continuation) or a.auto:raise ValueError('OPERATOR_CREDIT_EXPLICIT_TEST_REQUIRED')
+  if not re.fullmatch('[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}',a.operator_credit) or a.operator_credit=='00000000-0000-0000-0000-000000000000':raise ValueError('OPERATOR_CREDIT_UUID_REQUIRED')
  if a.operator_continuation:
   if not (a.once and a.is_test and a.manual) or a.auto:raise ValueError('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED')
   if not re.fullmatch('[a-f0-9]{64}',os.environ.get('MTM_OPERATOR_CONTINUATION_RUNTIME_SHA256','')):raise ValueError('OPERATOR_CONTINUATION_RUNTIME_REQUIRED')
@@ -43,7 +47,7 @@ def main():
   except BlockingIOError:print('{"status":"busy"}');return
   # Canonical live-worker opt-ins apply only to the authorized, locked child.
   url,secret=runtime.publish_settings();env={**os.environ,'BTVN_ALLOW_NETWORK':'1','BTVN_AI_AUDIT':'1','BTVN_NATIVE_MODULE_DIR':native_dir,'BTVN_PUBLISH_URL':url,'BTVN_PUBLISH_SECRET':secret,'MTM_LESSON_LOCK_FD':str(lock.fileno()),'MTM_LESSON_NATIVE_DRIVER':str(Path(__file__).with_name('native-driver.py')),'MTM_LESSON_UPLOAD_STATE_DIR':str(folder/'checkpoints')}
-  child=subprocess.Popen([env.get('BTVN_NODE','node'),str(Path(__file__).with_name('runner.mjs')),'--review-once' if a.review_once else '--once',*(['--is-test'] if a.is_test else []),*(['--auto'] if a.auto else []),*(['--operator-continuation'] if a.operator_continuation else [])],env=env,pass_fds=(lock.fileno(),),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
+  child=subprocess.Popen([env.get('BTVN_NODE','node'),str(Path(__file__).with_name('runner.mjs')),'--review-once' if a.review_once else '--once',*(['--is-test'] if a.is_test else []),*(['--auto'] if a.auto else []),*(['--operator-continuation'] if a.operator_continuation else []),*(['--manual','--operator-credit',a.operator_credit] if a.operator_credit is not None else [])],env=env,pass_fds=(lock.fileno(),),stdout=subprocess.PIPE,stderr=subprocess.PIPE,text=True,start_new_session=True)
   previous_term=signal.signal(signal.SIGTERM,interrupt)
   try:stdout,stderr=child.communicate(timeout=850)
   except subprocess.TimeoutExpired:

@@ -6,10 +6,11 @@ import {normalizedShort} from '../../src/native/exams/assessment';
 import {assessmentPublishKind,normalizeWorkKind} from '../../src/native/lesson-upload/assessment-intake';
 import {validAssessmentDuration} from '../btvn/assessment-policy';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
+import type {ClassContextJob,ClassContextReceipt} from './class-context';
 
-export type UploadJob={work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
-export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[]};
-export type Draft={exam:PracticeExam;assets:PublishAsset[]};
+export type UploadJob=ClassContextJob&{work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
+export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[];contextReceipt?:ClassContextReceipt};
+export type Draft={exam:PracticeExam;assets:PublishAsset[];contextReceipt?:ClassContextReceipt};
 export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string;pending?:boolean};
 export type PendingReview={status:'pending';request_hash:string;sourceVersion:string};
 export type IndependentReview={provider:'grok'|'agy';model:string;receipt_hash:string;slots:{question_id:string;slot:string;actual:unknown;conversion_verified?:boolean}[]};
@@ -18,6 +19,8 @@ export interface Pipeline {
  /** Input has private GV answers. Return statement-only questions separately. */
  read(job:UploadJob):Promise<Extraction>;
  build(job:UploadJob,source:Extraction):Promise<Draft>;
+ /** Native adapter binds both fresh and checkpointed values to server class facts. */
+ validateContext?(job:UploadJob,source:Extraction,draft?:Draft|null):void|Promise<void>;
  /** Separate provider/session, statement-only input: never the draft/teacher key. */
  review(input:{questions:unknown[];task_scope:string;sourceVersion:string}):Promise<IndependentReview|PendingReview>;
  /** Idempotent private handout copying/signing. Never return a raw answer URL. */
@@ -109,11 +112,14 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   if(job.homework2_path)return await runUploadPair(repo,pipeline,state,workerId,job);
   ensure(['codex','chatgpt-oauth','openai'].includes(pipeline.extractor.provider)&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
   await mark(2,'dang');
+  if(pipeline.validateContext&&cp.draft&&!cp.source)throw Error('NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED');
   const source:Extraction=cp.source?await state.load(cp.source):await pipeline.read(job);
+  await pipeline.validateContext?.(job,source);
   ensure(/^[a-f0-9]{64}$/.test(source.sourceVersion)&&Array.isArray(source.questions),'INVALID_EXTRACTION');
   if(job.homework_path){ensure(source.questions.length&&source.teacherSlots.length,'TEACHER_ANSWERS_REQUIRED');if(job.answer_path)ensure(Array.isArray(source.privateAnswerHashes)&&source.privateAnswerHashes.length>0&&source.privateAnswerHashes.every(h=>/^[a-f0-9]{64}$/.test(h)),'PRIVATE_ANSWER_HASH_REQUIRED');}
   await save('source',source);await mark(2,'xong',job.homework_path?'':'Không áp dụng: buổi này không có đề BTVN.');step=3;await mark(3,'dang');
   const draft:Draft|null=job.homework_path?(cp.draft?await state.load(cp.draft):await pipeline.build(job,source)):null;
+  if(draft)await pipeline.validateContext?.(job,source,draft);
   if(draft){ensure(validatePracticeExam(draft.exam).valid,'DRAFT_INVALID');verifyPublicSource(job,draft);if(normalizeWorkKind(job.work_kind)==='exam')ensure(draft.exam.title===job.title&&draft.exam.durationMinutes===job.exam_config?.duration_minutes,'ASSESSMENT_SOURCE_MISMATCH');verifyTeacher(draft,source);ensure(digest(source.questions)===digest(reviewQuestions(draft.exam)),'QUESTION_SOURCE_MISMATCH');}
   await save('draft',draft);await mark(3,'xong',draft?'':'Không áp dụng: buổi này chỉ có học liệu/video.');step=4;await mark(4,'dang');
   let proof:any=null,teacherPending=false;
@@ -185,13 +191,32 @@ function material(job:UploadJob,links:{handoutUrl:string|null;materialUrl:string
 function publishRequest(job:UploadJob,source:Extraction,draft:Draft,proof:unknown,links:{handoutUrl:string|null;materialUrl:string|null},secret:string){
  return new Request('https://lesson-worker.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({action:'publish',kind:assessmentPublishKind(normalizeWorkKind(job.work_kind)),...(job.work_kind==='exam'?{assessmentId:job.assessment_id,examType:job.exam_type,opensAt:job.exam_config?.opens_at,closesAt:job.exam_config?.closes_at}:{}),lesson_key:job.lesson_code,source_version:source.sourceVersion,material:material(job,links),exam:draft.exam,assets:draft.assets,verification:proof})});
 }
+export function projectUploadPaper(job:UploadJob,paper:1|2):UploadJob{
+ return {...job,paper,homework2_path:null,homework_path:paper===1?job.homework_path:job.homework2_path!,answer_path:paper===1?job.answer_path:job.answer2_path??null,answer_text:paper===1?job.answer_text:job.answer2_text??null,task_scope:paper===1?job.task_scope:job.task_scope2||job.task_scope,checkpoint:job.checkpoint['paper'+paper]??{}};
+}
 /** Both papers are independently validated, uploaded and checkpointed before one atomic publication.
  * There is still one lesson, work row, deadline and ranking entry for the session. */
 async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:PrivateState,workerId:string,job:UploadJob){
  ensure(repo.publishBundle,'BUNDLE_REPOSITORY_REQUIRED');
+ // Validate all existing paper checkpoints before any paper starts a provider
+ // call. A legacy second paper must not spend a review on the first paper.
+ if(pipeline.validateContext)for(const paper of [1,2] as const){
+  const projected=projectUploadPaper(job,paper),cp=projected.checkpoint;
+  try{
+   if(cp.draft&&!cp.source)throw Error('NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED');
+   if(cp.source){const source=await state.load(cp.source);await pipeline.validateContext(projected,source);if(cp.draft)await pipeline.validateContext(projected,source,await state.load(cp.draft));}
+  }catch(error){
+   const code=error instanceof Error&&/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message)?error.message:'WORKER_FAILED';
+   // Preserve the same checkpoint and claim; attribute a precheck failure to
+   // the actual paper instead of the parent job's default first paper.
+   try{await repo.current(job);await repo.step(job,2,'loi','Chưa xử lý xong bước này; quản lý kiểm tra biên nhận riêng.',{['paper'+paper]:cp},paper);}catch{/* Lost claim must not mutate its replacement. */}
+   try{await repo.recordFailure?.(projected,2,code);}catch{/* No reset or replay after an unknown recording outcome. */}
+   return {status:'blocked' as const,uploadId:job.id,code};
+  }
+ }
  const payloads:unknown[]=[],waiting:unknown[]=[];
  for(const paper of [1,2] as const){
-  const projected:UploadJob={...job,paper,homework2_path:null,homework_path:paper===1?job.homework_path:job.homework2_path!,answer_path:paper===1?job.answer_path:job.answer2_path??null,answer_text:paper===1?job.answer_text:job.answer2_text??null,task_scope:paper===1?job.task_scope:job.task_scope2||job.task_scope,checkpoint:job.checkpoint['paper'+paper]??{}};
+  const projected=projectUploadPaper(job,paper);
   let claimed=false;
   const port=repo.publisher(job);
   const inner:WorkerRepository={

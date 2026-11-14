@@ -3,7 +3,7 @@ from __future__ import annotations
 import base64,contextlib,hashlib,importlib.util,io,json,os,re,sys,textwrap,unicodedata,urllib.parse
 from pathlib import Path
 
-INVENTORY_CONTRACT='MTM-WEB-TEXT-INVENTORY-20261114-v2-pages'
+INVENTORY_CONTRACT='MTM-WEB-TEXT-INVENTORY-20261114-v3-teacher-class-context'
 
 def encoded(value):return json.dumps(value,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode()
 def digest(value):return hashlib.sha256(value).hexdigest()
@@ -24,9 +24,10 @@ def work_path(runtime,job):
  return runtime.state_root()/'web-upload'/'private'/job['id']/str(job.get('paper',1))
 def question_request(questions,scope,source):return {'questions':questions,'task_scope':scope,'sourceVersion':source}
 
-def checked_draft(record,source):
+def checked_draft(record,source,class_metadata_sha256):
  need(isinstance(record,dict) and record.get('sourceVersion')==source,'SOURCE_CHANGED')
  need(record.get('inventory_contract')==INVENTORY_CONTRACT,'NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED')
+ need(record.get('class_context_contract')==CLASS_CONTEXT_CONTRACT and record.get('class_metadata_sha256')==class_metadata_sha256,'NATIVE_CLASS_METADATA_CHANGED')
  return record
 def folded(text):
  return ''.join(c for c in unicodedata.normalize('NFD',text.casefold().replace('đ','d')) if unicodedata.category(c)!='Mn')
@@ -146,10 +147,124 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
  extracted=ai.ask_stage('extract',instruction,manifest+'\n'+hs_text+'\nĐÁP ÁN GV:\n'+gv_text,hs_pages+gv_pages,native_context=context)
  return check_extracted_inventory(extracted,targets)
 
+def bind_teacher_context(ai,config,row,source_version,task_scope,policy_for):
+ if not isinstance(task_scope,str) or not task_scope.strip():raise ValueError('NATIVE_SCOPE_UNRESOLVED')
+ digest=hashlib.sha256(task_scope.encode()).hexdigest();evidence=row.get('scope_evidence',{})
+ if evidence.get('kind')!='teacher-upload' or evidence.get('task_scope_sha256')!=digest:raise ValueError('TEACHER_SCOPE_BINDING_REQUIRED')
+ if not isinstance(source_version,str) or not re.fullmatch('[a-f0-9]{64}',source_version) or evidence.get('source_version') not in (None,source_version):raise ValueError('SOURCE_BINDING_REQUIRED')
+ row['explicit_homework_scope']=task_scope
+ row['scope_evidence']={**evidence,'kind':'teacher-upload','source_version':source_version,'explicit_teacher_scope_provided':True}
+ ai.auto_scope_policy=bool(config.get('automation_policy',{}).get('auto_scope'))
+ ai.errata_policy=policy_for({'lesson_key':row['lesson_key'].split('-v-')[0]},source_version)
+ ai.teacher_scope_context={'kind':'teacher-upload','text':task_scope,'task_scope_sha256':digest,'source_version':source_version}
+ return {'auto_scope_policy':ai.auto_scope_policy,'errata_policy_active':bool(ai.errata_policy),'teacher_scope_bound':True}
+
+
+def teacher_scope_instruction(context):
+ if not isinstance(context,dict) or context.get('kind')!='teacher-upload':raise ValueError('TEACHER_SCOPE_BINDING_REQUIRED')
+ return (' NGUỒN PHẠM VI CỦA LẦN GỌI NÀY: giáo viên nhập trực tiếp trong cổng upload, không lấy từ Google Sheet. '
+ 'Mọi nhắc tới cột Sheet trong hướng dẫn chung chỉ là quy tắc luồng khác; không được ghi rằng phạm vi này đến từ Sheet hoặc được đối soát Sheet. '
+ 'Giữ nguyên phạm vi giáo viên và target_refs đã kiểm độc lập. scopeSelection phải có text cụ thể, sections không rỗng; mỗi section có label không rỗng, pages thật từ PDF HS và sourceRefs đúng target_refs. '
+ 'Label là nhãn hiển thị để nhóm các câu, không phải xác nhận có mục PHẦN in trên nguồn. Nếu có tên phần in thật thì giữ đúng; nếu phiếu không chia phần thì dùng nguyên phạm vi giáo viên hoặc nhãn Các câu được giao. Không bịa mục PHẦN, chương, câu mới hay cấu trúc 12+4+6. '
+ 'Không nâng certain, xóa needs_review/issues hoặc bỏ kiểm nguồn để hoàn thành metadata; thiếu căn cứ thì giữ trạng thái chờ kiểm.')
+
+
+def teacher_upload_ai_class(native_ai_class):
+ class TeacherUploadAI(native_ai_class):
+  def _augment(self,stage,instruction):
+   instruction=super()._augment(stage,instruction)
+   if stage=='extract':instruction+=teacher_scope_instruction(self.teacher_scope_context)+class_metadata_instruction(self.assignment_class_context)
+   return instruction
+ return TeacherUploadAI
+
+
+def prepare_teacher_assembly(row,config,extracted,hs,gv,page_count,*,policy_for,display_text,repair_crops,restore_verified_transcription,restore_source_notation,validate_selection):
+ """Relocate the ORIGINAL scope gate, preserve raw math, prove preprocessing parity."""
+ import copy
+ source_version=hashlib.sha256(hs+gv).hexdigest();r=copy.deepcopy(row);c=copy.deepcopy(config);raw=copy.deepcopy(extracted)
+ evidence=r.get('scope_evidence',{});scope=r.get('explicit_homework_scope')
+ if evidence.get('kind')!='teacher-upload' or not isinstance(scope,str) or not scope.strip() or evidence.get('task_scope_sha256')!=hashlib.sha256(scope.encode()).hexdigest():raise ValueError('TEACHER_SCOPE_BINDING_REQUIRED')
+ policy=policy_for({'lesson_key':r['lesson_key'].split('-v-')[0]},source_version)
+ if not policy or not c.get('automation_policy',{}).get('auto_scope'):return r,c,raw
+ def signature(value):
+  return (value.get('inventory'),[q.get('sourceRef') for q in value.get('questions',[])+value.get('manualQuestions',[])])
+ def preprocess(value):
+  value=display_text(copy.deepcopy(value));value=restore_verified_transcription(repair_crops(value,hs,gv),hs,gv);value.pop('authoredFigures',None);restore_source_notation(value,source_version);return value
+ prepared=preprocess(raw)
+ if signature(prepared)!=signature(raw):raise ValueError('TEACHER_SCOPE_REFERENCE_CHANGED')
+ before=copy.deepcopy(prepared.get('errata',[]));validated=validate_selection(copy.deepcopy(prepared),copy.deepcopy(r),page_count)
+ records=validated.get('errata')
+ if not isinstance(records,list) or len(records)!=len(before)+1 or records[:-1]!=before or not isinstance(records[-1],dict) or records[-1].get('type')!='scope-selection':raise ValueError('TEACHER_SCOPE_VALIDATION_AUDIT_REQUIRED')
+ record=records[-1];record['original']='Phạm vi giáo viên nhập trực tiếp tại cổng upload';record['reason']='Theo phạm vi giáo viên đã nhập và các locator/trang đã đối chiếu với tệp nguồn; không lấy từ Google Sheet'
+ # Merge only scope metadata into RAW. The native strict function performs its
+ # canonical math/crop/transcription preprocessing exactly once as before.
+ raw['scopeSelection']=copy.deepcopy(validated['scopeSelection']);raw['errata']=copy.deepcopy(raw.get('errata',[]))+[copy.deepcopy(record)]
+ if preprocess(raw)!=validated:raise ValueError('TEACHER_SCOPE_PREPROCESS_PARITY_REQUIRED')
+ r['homework_note']=validated['scopeSelection']['text'];r['scope_evidence']={**evidence,'selection':copy.deepcopy(validated['scopeSelection'])}
+ c['automation_policy']={**c.get('automation_policy',{}),'auto_scope':False}
+ return r,c,raw
+
+
+CLASS_CONTEXT_CONTRACT='MTM-WEB-CLASS-CONTEXT-20261114-v1'
+
+def managed_class_context(job,source_version):
+ ids=job.get('class_ids');grades=job.get('class_grades');names=job.get('class_names');dates=job.get('class_dates');lesson=job.get('lesson_date')
+ valid=isinstance(ids,list) and ids and all(isinstance(x,str) for x in ids) and len(ids)==len(set(ids))
+ valid=valid and job.get('grade_source')=='managed_class_catalog' and job.get('class_grade_complete') is True and job.get('class_grade_issue') is None
+ valid=valid and all(isinstance(x,dict) and set(x)==set(ids) for x in (grades,names,dates))
+ if not valid:raise ValueError('NATIVE_CLASS_METADATA_REQUIRED')
+ if not re.fullmatch('[a-f0-9]{64}',str(source_version)) or not isinstance(lesson,str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}',lesson):raise ValueError('NATIVE_CLASS_METADATA_REQUIRED')
+ for cid in ids:
+  if type(grades[cid]) is not int or grades[cid] not in (10,11,12) or not isinstance(names[cid],str) or not names[cid].strip() or not isinstance(dates[cid],str) or not re.fullmatch(r'\d{4}-\d{2}-\d{2}',dates[cid]):raise ValueError('NATIVE_CLASS_METADATA_REQUIRED')
+ if len(set(grades.values()))!=1:raise ValueError('NATIVE_CLASS_GRADE_AMBIGUOUS')
+ return {'schema':CLASS_CONTEXT_CONTRACT,'sourceVersion':source_version,'grade_source':'managed_class_catalog','assignment_grade':grades[ids[0]],'lesson_date':lesson,'classes':[{'class_id':cid,'label':names[cid],'grade':grades[cid],'date':dates[cid]} for cid in sorted(ids)]}
+
+def class_metadata_instruction(context):
+ import json
+ return (' DỮ LIỆU PHÂN LOẠI LỚP TỪ DANH MỤC QUẢN LÝ ĐÃ ĐƯỢC MÁY CHỦ GÁN CHO BÀI NÀY, không phải lời xác nhận cá nhân của giáo viên: '+json.dumps(context,ensure_ascii=False,sort_keys=True)+
+ ' Nếu PDF HS/GV không in rõ khối lớp, dùng assignment_grade của managed_class_catalog cho trường grade. Không suy khối từ tên lớp/2K, Oxyz hoặc chủ đề; thiếu nhãn khối trên PDF hay chủ đề giao thoa không tự nó làm bài toán chưa chắc chắn khi danh mục đã xác định lớp. '
+ 'Nếu tài liệu in RÕ khối lớp khác danh mục thì dừng needs_review/certain=false; không ép khối hoặc sửa nội dung. Mọi bất định Toán, khóa, phạm vi, crop hoặc nguồn khác vẫn giữ nguyên để kiểm; không nâng certain chỉ để khớp metadata.')
+
+def explicit_heading_grades(texts):
+ values=set()
+ for text in texts:
+  if not isinstance(text,str):continue
+  lines=[]
+  for line in text.splitlines()[:40]:
+   if re.match(r'^\s*(?:câu|cau|bài|bai)\s*\d+',line,re.I):break
+   lines.append(line)
+  head='\n'.join(lines)[:4000]
+  for match in re.finditer(r'(?i)\b(?:lớp|lop|khối|khoi|toán|toan)\s*(10|11|12)((?:\s*[-–,/]\s*(?:10|11|12))*)(?:[A-Za-z]\d*)?\b',head):
+   values.update(int(x) for x in re.findall(r'10|11|12',match.group(1)+match.group(2)))
+ return values
+
+def check_source_grade(context,texts):
+ explicit=explicit_heading_grades(texts)
+ if any(value!=context['assignment_grade'] for value in explicit):raise ValueError('NATIVE_CLASS_GRADE_CONFLICT')
+ return {'explicit_heading_grade_detected':bool(explicit),'catalog_assignment_grade':context['assignment_grade']}
+
+def check_extracted_class_grade(extracted,context):
+ if type(extracted.get('grade')) is not int or extracted['grade']!=context['assignment_grade']:raise ValueError('NATIVE_CLASS_GRADE_MISMATCH')
+ return extracted
+
+def class_metadata_snapshot(path,context,*,allow_create=False,writer=None):
+ import json
+ raw=json.dumps(context,ensure_ascii=False,sort_keys=True,separators=(',',':')).encode();digest=hashlib.sha256(raw).hexdigest()
+ if path.is_symlink():raise ValueError('NATIVE_CLASS_METADATA_CHANGED')
+ if path.exists():
+  if not path.is_file() or path.stat().st_size>65536 or json.loads(path.read_text(encoding='utf-8'))!=context:raise ValueError('NATIVE_CLASS_METADATA_CHANGED')
+ elif allow_create and writer is not None:writer(path,context)
+ else:raise ValueError('NATIVE_CLASS_METADATA_REQUIRED')
+ return digest
+
+
 def main(value):
  runtime,bridge,worker,lock=modules();root=runtime.state_root();p=runtime.load_pipeline();stage=value['stage']
  if stage=='draft':
-  return checked_draft(json.loads((work_path(runtime,value['job'])/'draft.json').read_text()),value['sourceVersion'])
+  folder=work_path(runtime,value['job']);record=json.loads((folder/'draft.json').read_text())
+  need(isinstance(record,dict) and record.get('sourceVersion')==value['sourceVersion'],'SOURCE_CHANGED')
+  context=managed_class_context(value['job'],value['sourceVersion']);context_hash=class_metadata_snapshot(folder/'class-metadata.json',context)
+  record=checked_draft(record,value['sourceVersion'],context_hash);check_extracted_class_grade(record['draft']['exam'],context);return record
  if stage=='prepare':
   job=value['job'];folder=work_path(runtime,job);folder.mkdir(parents=True,exist_ok=True,mode=0o700)
   hs=base64.b64decode(value['homework_base64'],validate=True);need(0<len(hs)<=20*1024*1024,'INVALID_SOURCE')
@@ -181,11 +296,13 @@ def main(value):
   pinfile=folder/'source.json'
   if pinfile.exists():need(json.loads(pinfile.read_text())==pin,'SOURCE_CHANGED')
   else:atomic(pinfile,pin)
-  if (folder/'draft.json').exists():return checked_draft(json.loads((folder/'draft.json').read_text()),identity)
+  class_context=managed_class_context(job,identity);class_context_hash=class_metadata_snapshot(folder/'class-metadata.json',class_context,allow_create=True,writer=atomic)
+  if (folder/'draft.json').exists():
+   cached=checked_draft(json.loads((folder/'draft.json').read_text()),identity,class_context_hash);check_extracted_class_grade(cached['draft']['exam'],class_context);return cached
   (folder/'homework.original').write_bytes(hs);(folder/'answer.original').write_bytes(gv)
   visual_hs,visual_gv=pdf(hs,'hs'),pdf(gv,'gv');inventory=source_inventory_pdf(visual_hs)
   holder=type('VisualHolder',(),{'visual_sources':[]})();hs_text,hs_pages=worker.VersionWorker.extract_visual_pdf(holder,visual_hs,folder,'hs');gv_text,gv_pages=worker.VersionWorker.extract_visual_pdf(holder,visual_gv,folder,'gv')
-  scoped_inventory(inventory,job['task_scope'])
+  scoped_inventory(inventory,job['task_scope']);check_source_grade(class_context,[hs_text,gv_text])
   config=json.loads(runtime.config_path().read_text(encoding='utf-8-sig'));periods=[x['period'] for x in config['periods'] if x['start']<=job['lesson_date']<=x['end']];need(len(periods)==1,'SCHEDULE_UNAVAILABLE');config['period']=periods[0]
   code=job['lesson_code'];paper=job.get('paper',1);native_key=code+'-de-'+str(paper)
   row={'lesson_key':native_key,'lesson_date':job['lesson_date'],'class_dates':{job['class_names'][key]:date for key,date in job['class_dates'].items()},'class_name':', '.join(job['class_names'].values()),'title':job['title'],'homework':'web-upload://'+job['id']+'/'+str(paper)+'/hs','answers':'web-upload://'+job['id']+'/'+str(paper)+'/gv','homework_note':job['task_scope'],'scope_evidence':{'kind':'teacher-upload','upload_id':job['id'],'task_scope_sha256':scope_hash},'homework_labels':[job['task_scope']]}
@@ -193,8 +310,10 @@ def main(value):
   reconciler=m.WebReconciler(bridge.policy_path(),row,hs,gv,scope_hash,job['id'],paper,root,lock)
   from native_budget_reconcile import register_reconciler
   register_reconciler(bridge.policy_path(),reconciler);reconciler.refresh(context={'lesson_key':native_key,'source_version':identity})
-  ai=bridge.NativeAI(p.Transport(),config['extractor']);ai.source_context={'lesson_key':native_key,'source_version':identity,'web_upload_id':job['id'],'task_scope_sha256':scope_hash}
+  ai=teacher_upload_ai_class(bridge.NativeAI)(p.Transport(),config['extractor']);ai.source_context={'lesson_key':native_key,'source_version':identity,'web_upload_id':job['id'],'task_scope_sha256':scope_hash}
   ai.audit_context=dict(ai.source_context)
+  from btvn_native.errata import policy_for
+  bind_teacher_context(ai,config,row,identity,job['task_scope'],policy_for);ai.assignment_class_context=class_context
   from PIL import Image
   page_manifest=[]
   for tag,pages in [('hs',hs_pages),('gv',gv_pages)]:
@@ -202,8 +321,14 @@ def main(value):
     with Image.open(path) as image:page_manifest.append({'document':tag,'page':number,'width':image.width,'height':image.height})
   manifest='PAGE_MANIFEST: '+json.dumps(page_manifest)+'\nẢnh đầu '+str(len(hs_pages))+' trang HS; ảnh sau '+str(len(gv_pages))+' trang GV. Crop đếm riêng từng PDF từ1.'
   extracted=extract_source(ai,p,job,identity,hs_text,gv_text,hs_pages,gv_pages,manifest,inventory=inventory)
+  check_extracted_class_grade(extracted,class_context)
   receipt=ai.last_receipt;need(bridge.valid_receipt(receipt),'NATIVE_RECEIPT_REQUIRED');atomic(folder/'extract-receipt.json',receipt)
-  exam,assets=worker.strict_assemble(row,config,extracted,visual_hs,visual_gv,hs_pages,gv_pages)
+  from btvn_native.errata import display_text,restore_source_notation
+  from btvn_native.source_repairs import repair_crops,restore_verified_transcription
+  from btvn_native.homework_scope import validate_selection
+  assembly_row,assembly_config,assembly_extracted=prepare_teacher_assembly(row,config,extracted,visual_hs,visual_gv,len(hs_pages),policy_for=policy_for,display_text=display_text,repair_crops=repair_crops,restore_verified_transcription=restore_verified_transcription,restore_source_notation=restore_source_notation,validate_selection=validate_selection)
+  exam,assets=worker.strict_assemble(assembly_row,assembly_config,assembly_extracted,visual_hs,visual_gv,hs_pages,gv_pages)
+  check_extracted_class_grade(exam,class_context)
   # Every published byte is private under this upload and source identity.
   packed=json.dumps({'exam':exam,'assets':assets},ensure_ascii=False)
   for asset in assets:
@@ -219,7 +344,7 @@ def main(value):
   draft['exam']['sourceUrl']='https://minhthanhmath.vn'
   draft['exam']['answerVerificationNote']='Khóa giáo viên; kết quả kiểm độc lập theo biên nhận riêng.'
   from btvn_native.mtm_grading import seal
-  draft['exam']=seal(draft['exam']);record={'inventory_contract':INVENTORY_CONTRACT,'sourceVersion':identity,'draft':draft,'extractor':{'provider':receipt['provider'],'model':receipt['actual_model']}};atomic(folder/'draft.json',record)
+  draft['exam']=seal(draft['exam']);record={'inventory_contract':INVENTORY_CONTRACT,'class_context_contract':CLASS_CONTEXT_CONTRACT,'class_metadata_sha256':class_context_hash,'sourceVersion':identity,'draft':draft,'extractor':{'provider':receipt['provider'],'model':receipt['actual_model']}};atomic(folder/'draft.json',record)
   return record
  if stage=='review':
   request=question_request(value['questions'],value['task_scope'],value['sourceVersion']);key=digest(encoded(request));queue=runtime.brain_root()/'cau-noi/lesson-upload-review';requestfile=queue/'requests'/(key+'.json')
@@ -243,6 +368,8 @@ def main(value):
  raise ValueError('INVALID_NATIVE_STAGE')
 
 PUBLIC_NATIVE_ERRORS=frozenset({'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURCE_INVENTORY_AMBIGUOUS','NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED','NATIVE_SCOPE_UNRESOLVED','NATIVE_SCOPE_REF_MISSING','NATIVE_SCOPE_AMBIGUOUS','NATIVE_EXTRACT_INVENTORY_MISMATCH','NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED'})
+
+PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT','NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED'})
 
 def public_error(error):
  try:value=str(error)
