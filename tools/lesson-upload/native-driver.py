@@ -259,12 +259,24 @@ def class_metadata_snapshot(path,context,*,allow_create=False,writer=None):
 
 
 def main(value):
+ cached=value.get('job',{}).get('operator_cached_draft') if isinstance(value.get('job'),dict) else None
+ cached_only=os.environ.get('MTM_CACHED_DRAFT_ONLY')=='1'
+ if value.get('stage')=='prepare' and (cached_only or cached is not None):raise ValueError('CACHED_DRAFT_EXTRACTION_FORBIDDEN')
+ if cached_only and value.get('stage')=='draft' and cached is None:raise ValueError('OPERATOR_CACHED_DRAFT_BINDING_REQUIRED')
  runtime,bridge,worker,lock=modules();root=runtime.state_root();p=runtime.load_pipeline();stage=value['stage']
  if stage=='draft':
-  folder=work_path(runtime,value['job']);record=json.loads((folder/'draft.json').read_text())
+  folder=work_path(runtime,value['job']);path=folder/'draft.json'
+  if cached is not None:
+   job=value['job'];need(cached_only and job.get('id')=='14227822-ce9a-4f0f-8df3-489a60b11392' and job.get('version')==1 and isinstance(cached,dict) and cached.get('contract')=='MTM-OPERATOR-CACHED-DRAFT-20261114-v1','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED')
+   need(not path.is_symlink() and path.is_file() and path.stat().st_size<=64*1024*1024,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED')
+  raw=path.read_bytes()
+  if cached is not None:need(digest(raw)==cached.get('raw_native_draft_sha256') and cached.get('source_version')==value['sourceVersion'],'OPERATOR_CACHED_DRAFT_BINDING_CHANGED')
+  record=json.loads(raw)
   need(isinstance(record,dict) and record.get('sourceVersion')==value['sourceVersion'],'SOURCE_CHANGED')
   context=managed_class_context(value['job'],value['sourceVersion']);context_hash=class_metadata_snapshot(folder/'class-metadata.json',context)
-  record=checked_draft(record,value['sourceVersion'],context_hash);check_extracted_class_grade(record['draft']['exam'],context);return record
+  if cached is not None:need(context_hash==cached.get('class_metadata_sha256'),'OPERATOR_CACHED_DRAFT_BINDING_CHANGED')
+  record=checked_draft(record,value['sourceVersion'],context_hash);check_extracted_class_grade(record['draft']['exam'],context)
+  return {**record,'native_cache_record_sha256':digest(raw)} if cached is not None else record
  if stage=='prepare':
   job=value['job'];folder=work_path(runtime,job);folder.mkdir(parents=True,exist_ok=True,mode=0o700)
   hs=base64.b64decode(value['homework_base64'],validate=True);need(0<len(hs)<=20*1024*1024,'INVALID_SOURCE')
@@ -370,6 +382,7 @@ def main(value):
 PUBLIC_NATIVE_ERRORS=frozenset({'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURCE_INVENTORY_AMBIGUOUS','NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED','NATIVE_SCOPE_UNRESOLVED','NATIVE_SCOPE_REF_MISSING','NATIVE_SCOPE_AMBIGUOUS','NATIVE_EXTRACT_INVENTORY_MISMATCH','NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED'})
 
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT','NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED'})
+PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'CACHED_DRAFT_EXTRACTION_FORBIDDEN','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED','OPERATOR_CACHED_DRAFT_BINDING_CHANGED'})
 
 def public_error(error):
  try:value=str(error)

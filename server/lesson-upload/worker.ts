@@ -1,4 +1,3 @@
-import {createHash} from 'node:crypto';
 import {createBtvnPublishHandler,expectedSlots,type AnswerSlot,type PublishAsset,type PublishPort} from '../btvn/publish-handler';
 import {validatePracticeExam,type PracticeExam} from '../../src/native/exams/data';
 import {youtubeVideoId} from '../btvn/lesson-materials';
@@ -7,10 +6,13 @@ import {assessmentPublishKind,normalizeWorkKind} from '../../src/native/lesson-u
 import {validAssessmentDuration} from '../btvn/assessment-policy';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 import type {ClassContextJob,ClassContextReceipt} from './class-context';
+import type {OperatorCachedDraftBinding} from './native-draft';
+import {privateStateDigest as digest} from './native-draft';
+import {nativeCanonicalDigest,NATIVE_PDF_NORMALIZATION_CONTRACT} from './native-pdf-normalization';
 
-export type UploadJob=ClassContextJob&{work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
+export type UploadJob=ClassContextJob&{is_test?:boolean;operator_cached_draft?:OperatorCachedDraftBinding;work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
 export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[];contextReceipt?:ClassContextReceipt};
-export type Draft={exam:PracticeExam;assets:PublishAsset[];contextReceipt?:ClassContextReceipt};
+export type Draft={exam:PracticeExam;assets:PublishAsset[];contextReceipt?:ClassContextReceipt;nativeNormalization?:unknown};
 export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string;pending?:boolean};
 export type PendingReview={status:'pending';request_hash:string;sourceVersion:string};
 export type IndependentReview={provider:'grok'|'agy';model:string;receipt_hash:string;slots:{question_id:string;slot:string;actual:unknown;conversion_verified?:boolean}[]};
@@ -42,7 +44,6 @@ export interface PrivateState {
  save(uploadId:string,stage:string,value:unknown):Promise<string>;
  load(ref:string):Promise<any>;
 }
-const digest=(value:unknown)=>createHash('sha256').update(JSON.stringify(value)).digest('hex');
 function ensure(yes:unknown,code:string):asserts yes {if(!yes)throw Error(code);}
 export function nextWeekDue(date:string,start:string){
  ensure(/^\d{4}-\d{2}-\d{2}$/.test(date)&&/^([01]\d|2[0-3]):[0-5]\d$/.test(start),'SCHEDULE_UNAVAILABLE');
@@ -99,6 +100,22 @@ function verifyPublicSource(job:UploadJob,draft:Draft){
 }
 /** Explicit projection prevents accidentally forwarding expected/actual/solution fields to reviewer. */
 export function reviewQuestions(exam:PracticeExam){return exam.questions.map(q=>({id:q.id,kind:q.kind,...(q.prompt?{prompt:q.prompt}:{}),...(q.text?{text:q.text}:{}),...('choices' in q?{choices:q.choices}:{}),...(q.statements?{statements:q.statements}:{}),...('mode' in q?{mode:q.mode}:{}),...(q.convertedFrom?{convertedFrom:q.convertedFrom}:{}),...(q.shortFormat?{shortFormat:q.shortFormat}:{}),sourceRef:q.sourceRef,...(q.sourcePdfPage?{sourcePdfPage:q.sourcePdfPage}:{}),...(q.sourceContent?.questions?{sourceContent:{questions:q.sourceContent.questions.map(({path,sha256,...rest}:any)=>({path,sha256,...(typeof rest.alt==='string'?{alt:rest.alt}:{})}))}}:{})}));}
+function cachedRepair(job:UploadJob,cp:Record<string,any>){
+ const binding=job.operator_cached_draft;if(binding===undefined)return null;
+ ensure(binding&&binding.contract==='MTM-OPERATOR-CACHED-DRAFT-20261114-v1'&&job.id==='14227822-ce9a-4f0f-8df3-489a60b11392'&&job.version===1&&job.is_test===true&&job.homework_path&&!job.homework2_path,'OPERATOR_CACHED_DRAFT_BINDING_REQUIRED');
+ ensure(binding.normalizer_contract===NATIVE_PDF_NORMALIZATION_CONTRACT&&['source_state_sha256','raw_native_draft_sha256','class_metadata_sha256','normalizer_sha256','normalization_receipt_sha256','normalized_record_sha256','normalized_private_draft_sha256','source_version'].every(key=>/^[a-f0-9]{64}$/.test((binding as any)[key])),'OPERATOR_CACHED_DRAFT_BINDING_REQUIRED');
+ ensure(binding.source_ref===`${job.id}-source-${binding.source_state_sha256}.json`&&binding.normalized_draft_ref===`${job.id}-draft-${binding.normalized_private_draft_sha256}.json`&&cp.source===binding.source_ref,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');
+ ensure(cp.draft===undefined||cp.draft===binding.normalized_draft_ref,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');return binding;
+}
+function verifyCachedSource(binding:OperatorCachedDraftBinding|null,source:Extraction){
+ if(!binding)return;
+ ensure(digest(source)===binding.source_state_sha256&&source.sourceVersion===binding.source_version&&source.contextReceipt?.metadataSha256===binding.class_metadata_sha256,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');
+}
+function verifyCachedDraft(binding:OperatorCachedDraftBinding|null,draft:Draft|null){
+ if(!binding)return;const receipt=draft?.nativeNormalization as any;
+ ensure(draft&&receipt&&receipt.contract===NATIVE_PDF_NORMALIZATION_CONTRACT&&receipt.changed===true&&receipt.source_version===binding.source_version&&receipt.output_record_sha256===binding.normalized_record_sha256&&receipt.output_version===draft.exam.versionHash,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');
+ ensure(digest(draft)===binding.normalized_private_draft_sha256&&nativeCanonicalDigest(receipt)===binding.normalization_receipt_sha256,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');
+}
 /** One claim per tick, no scheduling/startup side effect. Unknown error text never reaches progress. */
 export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,state:PrivateState,workerId:string){
  const job=await repo.claim(workerId);if(!job)return {status:'idle' as const};
@@ -109,19 +126,24 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   // Validate the original job before projecting individual papers. A test may
   // never silently acquire the homework two-paper semantics.
   validateJob(job);
+  const cached=cachedRepair(job,cp);
   if(job.homework2_path)return await runUploadPair(repo,pipeline,state,workerId,job);
   ensure(['codex','chatgpt-oauth','openai'].includes(pipeline.extractor.provider)&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
   await mark(2,'dang');
   if(pipeline.validateContext&&cp.draft&&!cp.source)throw Error('NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED');
   const source:Extraction=cp.source?await state.load(cp.source):await pipeline.read(job);
+  verifyCachedSource(cached,source);
   await pipeline.validateContext?.(job,source);
   ensure(/^[a-f0-9]{64}$/.test(source.sourceVersion)&&Array.isArray(source.questions),'INVALID_EXTRACTION');
   if(job.homework_path){ensure(source.questions.length&&source.teacherSlots.length,'TEACHER_ANSWERS_REQUIRED');if(job.answer_path)ensure(Array.isArray(source.privateAnswerHashes)&&source.privateAnswerHashes.length>0&&source.privateAnswerHashes.every(h=>/^[a-f0-9]{64}$/.test(h)),'PRIVATE_ANSWER_HASH_REQUIRED');}
   await save('source',source);await mark(2,'xong',job.homework_path?'':'Không áp dụng: buổi này không có đề BTVN.');step=3;await mark(3,'dang');
   const draft:Draft|null=job.homework_path?(cp.draft?await state.load(cp.draft):await pipeline.build(job,source)):null;
+  verifyCachedDraft(cached,draft);
   if(draft)await pipeline.validateContext?.(job,source,draft);
   if(draft){ensure(validatePracticeExam(draft.exam).valid,'DRAFT_INVALID');verifyPublicSource(job,draft);if(normalizeWorkKind(job.work_kind)==='exam')ensure(draft.exam.title===job.title&&draft.exam.durationMinutes===job.exam_config?.duration_minutes,'ASSESSMENT_SOURCE_MISMATCH');verifyTeacher(draft,source);ensure(digest(source.questions)===digest(reviewQuestions(draft.exam)),'QUESTION_SOURCE_MISMATCH');}
-  await save('draft',draft);await mark(3,'xong',draft?'':'Không áp dụng: buổi này chỉ có học liệu/video.');step=4;await mark(4,'dang');
+  await save('draft',draft);
+  if(cached){ensure(cp.draft===cached.normalized_draft_ref,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');cp.operator_cached_draft={...cached};}
+  await mark(3,'xong',draft?'':'Không áp dụng: buổi này chỉ có học liệu/video.');step=4;await mark(4,'dang');
   let proof:any=null,teacherPending=false;
   if(draft){
    const result:IndependentReview|PendingReview=cp.review?await state.load(cp.review):await pipeline.review({questions:reviewQuestions(draft.exam),task_scope:job.task_scope,sourceVersion:source.sourceVersion});
@@ -240,4 +262,4 @@ async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:Priva
  for(const paper of [1,2] as const)await repo.step(job,6,'xong','',{},paper);
  await repo.finish(job);return {status:'complete' as const,uploadId:job.id};
 }
-export const privateStateDigest=digest;
+export {privateStateDigest} from './native-draft';

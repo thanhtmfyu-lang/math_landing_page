@@ -2,13 +2,15 @@ import {spawn} from 'node:child_process';
 import {createHash} from 'node:crypto';
 import {expectedSlots} from '../btvn/publish-handler';
 import {reviewQuestions,type Pipeline,type UploadJob,type Draft} from './worker';
-import {contextReceiptFromNative,validateClassContext} from './class-context';
+import {validateClassContext} from './class-context';
+import {prepareNativeDraft} from './native-draft';
 const PUBLIC_NATIVE_INPUT_ERRORS=new Set([
  'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURCE_INVENTORY_AMBIGUOUS','NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED',
  'NATIVE_SCOPE_UNRESOLVED','NATIVE_SCOPE_REF_MISSING','NATIVE_SCOPE_AMBIGUOUS',
  'NATIVE_EXTRACT_INVENTORY_MISMATCH','NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED',
  'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT',
  'NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED',
+ 'CACHED_DRAFT_EXTRACTION_FORBIDDEN','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED','OPERATOR_CACHED_DRAFT_BINDING_CHANGED',
 ]);
 /** Existing native pipeline, isolated private state and shared native budget. */
 export async function createLessonUploadPipeline({db}:{db:any}):Promise<Pipeline>{
@@ -27,15 +29,12 @@ export async function createLessonUploadPipeline({db}:{db:any}):Promise<Pipeline
  });
  const source=async(job:UploadJob,kind:string)=>{const {data,error}=await db.rpc('mtm_lesson_upload_source',{upload_id:job.id,claim_token:job.claim_token,kind});if(error)throw Error(/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message??'')?error.message:'PRIVATE_SOURCE_UNAVAILABLE');if(!data?.data_base64)throw Error('PRIVATE_SOURCE_UNAVAILABLE');return data.data_base64;};
  const drafts=new Map<string,Draft>(),key=(j:UploadJob)=>j.id+':'+(j.paper??1);
- const nativeDraft=(job:UploadJob,value:any):Draft=>{
-  const contextReceipt=contextReceiptFromNative(job,value),draft={exam:value.draft?.exam,assets:value.draft?.assets,contextReceipt};
-  validateClassContext(job,{sourceVersion:value.sourceVersion,contextReceipt},draft);
-  return draft;
- };
+ const nativeDraft=(job:UploadJob,value:any):Draft=>prepareNativeDraft(job,value);
  const extractor:Pipeline['extractor']={provider:'chatgpt-oauth',model:'loaded-from-native-receipt'};
  return {extractor,
   validateContext:validateClassContext,
   async read(job){
+   if(job.operator_cached_draft)throw Error('CACHED_DRAFT_EXTRACTION_FORBIDDEN');
    if(!job.homework_path)return {sourceVersion:'0'.repeat(64),questions:[],teacherSlots:[]};
    const hs=await source(job,job.paper===2?'homework2':'homework');
    const gv=job.answer_path?await source(job,job.paper===2?'answer2':'answer'):null;

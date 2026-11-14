@@ -3,24 +3,28 @@ import type {WorkerRepository,UploadJob} from './worker';
 
 export const OPERATOR_CONTINUATION_UPLOAD_ID='14227822-ce9a-4f0f-8df3-489a60b11392';
 export const OPERATOR_CONTINUATION_RUNTIME_ENV='MTM_OPERATOR_CONTINUATION_RUNTIME_SHA256';
-export type WorkerRepositoryOptions={isTest?:boolean;auto?:boolean;operatorManual?:true;operatorContinuation?:{uploadId:string;runtimeManifestSha256:string;operatorCreditId?:string}};
+export type WorkerRepositoryOptions={isTest?:boolean;auto?:boolean;operatorManual?:true;operatorContinuation?:{uploadId:string;runtimeManifestSha256:string;operatorCreditId?:string;cachedDraftOnly?:true}};
 const creditUUID=/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/;
 function creditId(value:unknown){if(typeof value!=='string'||!creditUUID.test(value)||value==='00000000-0000-0000-0000-000000000000')throw Error('OPERATOR_CREDIT_UUID_REQUIRED');return value;}
 function operatorOptions(options:WorkerRepositoryOptions){
  const value=options.operatorContinuation;if(value===undefined){if(options.operatorManual!==undefined)throw Error('OPERATOR_CREDIT_OPTIONS_INVALID');return undefined;}
  if(options.isTest!==true||options.auto===true)throw Error('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED');
  const hasCredit=!!value&&typeof value==='object'&&Object.hasOwn(value,'operatorCreditId');
- if(!value||typeof value!=='object'||Object.keys(value).sort().join(',')!==(hasCredit?'operatorCreditId,runtimeManifestSha256,uploadId':'runtimeManifestSha256,uploadId'))throw Error('OPERATOR_CONTINUATION_OPTIONS_INVALID');
+ const cached=!!value&&typeof value==='object'&&Object.hasOwn(value,'cachedDraftOnly');
+ if(cached&&(!hasCredit||value.cachedDraftOnly!==true))throw Error('CACHED_DRAFT_CREDIT_REQUIRED');
+ if(!value||typeof value!=='object'||Object.keys(value).sort().join(',')!==(cached?'cachedDraftOnly,operatorCreditId,runtimeManifestSha256,uploadId':hasCredit?'operatorCreditId,runtimeManifestSha256,uploadId':'runtimeManifestSha256,uploadId'))throw Error('OPERATOR_CONTINUATION_OPTIONS_INVALID');
  if(value.uploadId!==OPERATOR_CONTINUATION_UPLOAD_ID)throw Error('OPERATOR_CONTINUATION_TARGET_INVALID');
  if(typeof value.runtimeManifestSha256!=='string'||!/^[a-f0-9]{64}$/.test(value.runtimeManifestSha256))throw Error('OPERATOR_CONTINUATION_RUNTIME_REQUIRED');
  if(hasCredit&&options.operatorManual!==true)throw Error('OPERATOR_CREDIT_EXPLICIT_MANUAL_REQUIRED');
  if(!hasCredit&&options.operatorManual!==undefined)throw Error('OPERATOR_CREDIT_OPTIONS_INVALID');
- return {uploadId:OPERATOR_CONTINUATION_UPLOAD_ID,runtimeManifestSha256:value.runtimeManifestSha256,...(hasCredit?{operatorCreditId:creditId(value.operatorCreditId)}:{})};
+ return {uploadId:OPERATOR_CONTINUATION_UPLOAD_ID,runtimeManifestSha256:value.runtimeManifestSha256,...(hasCredit?{operatorCreditId:creditId(value.operatorCreditId)}:{}),...(cached?{cachedDraftOnly:true as const}:{})};
 }
 
 /** Parse before a gateway/pipeline; no credit is taken from environment. */
 export function parseWorkerInvocation(args:readonly string[],environment:Record<string,string|undefined>={}){
  let values=[...args],credit:string|undefined;
+ const cached=values.includes('--cached-draft-only');
+ if(cached){if(values[0]==='--cached-draft-only'||values.filter(v=>v==='--cached-draft-only').length!==1)throw Error('CACHED_DRAFT_EXPLICIT_ONCE_REQUIRED');values=values.filter(v=>v!=='--cached-draft-only');}
  const index=values.indexOf('--operator-credit');
  if(index>=0){
   if(index===0||index===values.length-1||values.lastIndexOf('--operator-credit')!==index)throw Error('OPERATOR_CREDIT_UUID_REQUIRED');
@@ -30,10 +34,11 @@ export function parseWorkerInvocation(args:readonly string[],environment:Record<
  }
  if(!['--once','--review-once'].includes(values[0])||new Set(values).size!==values.length||values.slice(1).some(arg=>!['--is-test','--auto','--operator-continuation'].includes(arg)))throw Error('EXPLICIT_ONCE_REQUIRED');
  const options:WorkerRepositoryOptions={isTest:values.includes('--is-test'),auto:values.includes('--auto')};
+ if(cached&&credit===undefined)throw Error('CACHED_DRAFT_CREDIT_REQUIRED');
  if(credit!==undefined&&(values[0]!=='--once'||options.isTest!==true||options.auto===true||!values.includes('--operator-continuation')))throw Error('OPERATOR_CREDIT_EXPLICIT_TEST_REQUIRED');
  if(values.includes('--operator-continuation')){
   if(values[0]!=='--once'||options.isTest!==true||options.auto===true)throw Error('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED');
-  options.operatorContinuation={uploadId:OPERATOR_CONTINUATION_UPLOAD_ID,runtimeManifestSha256:environment[OPERATOR_CONTINUATION_RUNTIME_ENV]??'',...(credit!==undefined?{operatorCreditId:credit}:{})};
+  options.operatorContinuation={uploadId:OPERATOR_CONTINUATION_UPLOAD_ID,runtimeManifestSha256:environment[OPERATOR_CONTINUATION_RUNTIME_ENV]??'',...(credit!==undefined?{operatorCreditId:credit}:{}),...(cached?{cachedDraftOnly:true}:{})};
   if(credit!==undefined)options.operatorManual=true;
   operatorOptions(options);
  }
@@ -54,10 +59,11 @@ export function createWorkerRepository(db:any,options:WorkerRepositoryOptions={}
   async claim(workerId){
    if(operator&&(options.isTest!==true||options.auto===true))throw Error('OPERATOR_CONTINUATION_EXPLICIT_TEST_REQUIRED');
    if(operator?.operatorCreditId&&options.operatorManual!==true)throw Error('OPERATOR_CREDIT_EXPLICIT_MANUAL_REQUIRED');
-   const data=await call({action:'worker_claim',worker_protocol:operator?.operatorCreditId?112:operator?111:110,worker_id:workerId,lease_seconds:900,is_test:options.isTest===true,...(options.auto?{auto:true}:{}),...(operator?{operator_continuation:true,upload_id:operator.uploadId,runtime_manifest_sha256:operator.runtimeManifestSha256,auto:false}:{}),...(operator?.operatorCreditId?{operator_credit_id:operator.operatorCreditId}:{})});
+   const data=await call({action:'worker_claim',worker_protocol:operator?.cachedDraftOnly?113:operator?.operatorCreditId?112:operator?111:110,worker_id:workerId,lease_seconds:900,is_test:options.isTest===true,...(options.auto?{auto:true}:{}),...(operator?{operator_continuation:true,upload_id:operator.uploadId,runtime_manifest_sha256:operator.runtimeManifestSha256,auto:false}:{}),...(operator?.operatorCreditId?{operator_credit_id:operator.operatorCreditId}:{}),...(operator?.cachedDraftOnly?{operator_cached_draft_only:true}:{})});
    const job=data?.job??null;
    if(operator&&job&&(job.id!==operator.uploadId||job.version!==1||job.is_test!==true||job.operator_continuation!==true))throw Error('OPERATOR_CONTINUATION_RECEIPT_MISMATCH');
    if(operator?.operatorCreditId&&job&&job.operator_credit_id!==operator.operatorCreditId)throw Error('OPERATOR_CREDIT_RECEIPT_MISMATCH');
+   if(operator?.cachedDraftOnly&&job&&job.operator_cached_draft?.contract!=='MTM-OPERATOR-CACHED-DRAFT-20261114-v1')throw Error('CACHED_DRAFT_RECEIPT_MISMATCH');
    return job;
   },
   async current(job){const data=await fenced(job,'worker_assert_current');if(data?.ok!==true)throw Error('CLAIM_LOST');},
