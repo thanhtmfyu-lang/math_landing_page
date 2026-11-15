@@ -1,6 +1,8 @@
 /// <reference path="./react-dom-portal.d.ts" />
 import {useCallback,useEffect,useId,useRef,useState,type CSSProperties,type SyntheticEvent} from 'react';
 import {createPortal} from 'react-dom';
+import {openDialogCompat} from './dialog-compat';
+import './dialog-compat.css';
 import './zoomable-image.css';
 
 // TH-02 (Đợt 4): ảnh câu hỏi thu nhỏ còn khoảng 277 px trên điện thoại (ảnh gốc rộng 1562 px), chữ chỉ còn 4-7 px.
@@ -38,11 +40,9 @@ function ZoomDialog({src,alt,width,height,label,watermark,onClose}:{src:string;a
   const swipe=useRef<{x:number;y:number;active:boolean;dy:number}|null>(null);
   useEffect(()=>{
     const node=dialog.current;if(!node)return;
-    const root=document.documentElement,previous=root.style.overflow;
-    if(!node.open){try{node.showModal();}catch{node.setAttribute('open','');}}
-    root.style.overflow='hidden';closeButton.current?.focus({preventScroll:true});
+    const close=openDialogCompat(node,{onCancel:onClose,initialFocus:closeButton.current});
     setLevel(initialLevel(area.current?.clientWidth??0,width));
-    return()=>{root.style.overflow=previous;if(node.open)node.close();};
+    return close;
   },[]);
   // Giữ điểm giữa vùng đang xem khi đổi mức phóng, để không bị nhảy về góc trên trái.
   const zoomTo=(next:number)=>{

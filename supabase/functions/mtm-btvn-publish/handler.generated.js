@@ -1565,11 +1565,13 @@ function validateDraft(value, exam, options = {}) {
   if (!isRecord(value)) return fail("shape", "B\u1EA3n l\u01B0u kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
   const fields2 = ["version", "examId", "examVersionHash", "rubricVersion", "attemptId", "startedAt", "deadline", "updatedAt", "answers", "submittedAt", "revision"];
   if (exam.rubricVersion === MTM_SCORING_VERSION) fields2.push("answerKeyVersion");
+  if (Object.hasOwn(value, "clientRevision")) fields2.push("clientRevision");
   if (Object.keys(value).length !== fields2.length || !fields2.every((key) => Object.hasOwn(value, key))) return fail("shape", "B\u1EA3n l\u01B0u c\xF3 c\u1EA5u tr\xFAc kh\xE1c. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
   if (value.version !== 1 || value.examId !== exam.id || value.examVersionHash !== exam.versionHash || value.rubricVersion !== exam.rubricVersion) return fail("version", "B\u1EA3n l\u01B0u thu\u1ED9c \u0111\u1EC1 ho\u1EB7c phi\xEAn b\u1EA3n kh\xE1c. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
   if (exam.rubricVersion === MTM_SCORING_VERSION && value.answerKeyVersion !== exam.answerKeyVersion) return fail("version", "B\u1EA3n l\u01B0u thu\u1ED9c phi\xEAn b\u1EA3n \u0111\xE1p \xE1n kh\xE1c. D\u1EEF li\u1EC7u c\u0169 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
   if (!boundedText(value.attemptId, 160) || value.attemptId.trim() !== value.attemptId) return fail("attempt", "M\xE3 l\u01B0\u1EE3t l\xE0m trong b\u1EA3n l\u01B0u kh\xF4ng h\u1EE3p l\u1EC7.");
   if (!validTime(value.startedAt) || !validTime(value.deadline) || !validTime(value.updatedAt) || !validRevision(value.revision)) return fail("time", "Th\u1EDDi gian ho\u1EB7c s\u1ED1 l\u1EA7n l\u01B0u kh\xF4ng h\u1EE3p l\u1EC7.");
+  if (Object.hasOwn(value, "clientRevision") && (!validRevision(value.clientRevision) || value.clientRevision > value.revision)) return fail("time", "S\u1ED1 l\u1EA7n s\u1EEDa b\xE0i kh\xF4ng h\u1EE3p l\u1EC7. B\u1EA3n m\xE1y ch\u1EE7 \u0111\u01B0\u1EE3c gi\u1EEF nguy\xEAn.");
   if (value.deadline <= value.startedAt || value.deadline - value.startedAt !== exam.durationMinutes * 6e4 || value.updatedAt < value.startedAt) return fail("time", "Th\u1EDDi h\u1EA1n trong b\u1EA3n l\u01B0u kh\xF4ng kh\u1EDBp th\u1EDDi l\u01B0\u1EE3ng \u0111\u1EC1.");
   if (value.submittedAt !== null && (!validTime(value.submittedAt) || value.submittedAt < value.startedAt || value.submittedAt > value.updatedAt)) return fail("time", "Th\u1EDDi \u0111i\u1EC3m n\u1ED9p b\xE0i kh\xF4ng h\u1EE3p l\u1EC7.");
   if (!isRecord(value.answers)) return fail("answers", "\u0110\xE1p \xE1n trong b\u1EA3n l\u01B0u kh\xF4ng \u0111\xFAng \u0111\u1ECBnh d\u1EA1ng.");

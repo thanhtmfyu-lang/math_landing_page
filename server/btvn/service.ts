@@ -1,9 +1,9 @@
 import {createHash,randomBytes,timingSafeEqual} from 'node:crypto';
 import {normalizeName,normalizePhone} from './roster';
-import {createDraft,submitDraft,validateDraft,type Answers} from '../../src/native/exams/store';
+import {createDraft,submitDraft,validateDraft,type Answers,type Draft} from '../../src/native/exams/store';
 import {resultFor} from '../../src/native/exams/result';
 import {validatePracticeExam,type PracticeExam} from '../../src/native/exams/data';
-import type {HomeworkState,HomeworkReceipt,LessonMaterial} from '../../src/native/homework/btvn-contract';
+import type {HomeworkState,HomeworkReceipt,LessonMaterial,HomeworkWriteConflict} from '../../src/native/homework/btvn-contract';
 import type {HomeworkRepository,StudentWork} from './repository';
 import {receiptScores} from './repository';
 import {MTM_SCORING_VERSION} from '../../src/native/exams/mtm-scoring';
@@ -13,8 +13,15 @@ import {concealMonthlySolutions} from './monthly-policy';
 import {homeworkLessonCard} from './lesson-card';
 import {requiresManualHomeworkGrade} from '../../src/native/homework/grading-policy';
 import {isTimedAssessment,validAssessmentDuration} from './assessment-policy';
+import {validWriteRevisions,validBaseRevision} from './write-revision';
 
-export class HomeworkError extends Error {constructor(public status:number,message:string){super(message);}}
+export class HomeworkError extends Error {
+  readonly writeConflict?:HomeworkWriteConflict;
+  constructor(public status:number,message:string,conflict?:HomeworkWriteConflict){
+    super(message);
+    if(status===409&&conflict&&typeof conflict.attemptId==='string'&&/^[A-Za-z0-9_-]{1,160}$/.test(conflict.attemptId)&&validBaseRevision(conflict.revision))this.writeConflict={attemptId:conflict.attemptId,revision:conflict.revision};
+  }
+}
 export const GATE_ERROR='Không thể vào bài. Hãy kiểm tra thông tin hoặc thử lại sau.';
 const freezeExam=<T,>(value:T):T=>{if(value&&typeof value==='object'){Object.values(value).forEach(freezeExam);Object.freeze(value);}return value;};
 const lockedExam=(exam:PracticeExam)=>exam.rubricVersion===MTM_SCORING_VERSION?freezeExam(structuredClone(exam)):exam;
@@ -30,6 +37,20 @@ export class HomeworkService {
   private sessions=new Map<string,Session>();
   private limits=new Map<string,Limit>();
   private maxAttemptsFor(token:string){return this.monthly(token)?1:5;}
+  private clientWrite(draft:Draft,answers:Answers,clientRevision:number|undefined,baseRevision:number|undefined,submitting:boolean){
+    if(!validWriteRevisions(clientRevision,baseRevision))throw new HomeworkError(400,'Số lần sửa bài không hợp lệ. Bài đang giữ chưa bị thay đổi.');
+    const conflict=()=>new HomeworkError(409,'Bài trên máy chủ đã có bản sửa khác. Phần đang nhập vẫn được giữ; em kiểm tra rồi bấm Gửi lại bản đang giữ nếu muốn dùng bản này.',{attemptId:draft.attemptId,revision:draft.revision});
+    if(clientRevision===undefined){
+      if(draft.clientRevision!==undefined)throw new HomeworkError(409,'Trang đang mở là phiên bản cũ. Em tải bản lưu bài đang giữ về máy trước khi tải lại trang, rồi tiếp tục đúng lượt máy chủ đang giữ.',{attemptId:draft.attemptId,revision:draft.revision});
+      return false;
+    }
+    const same=answers&&typeof answers==='object'&&!Array.isArray(answers)&&Object.keys(answers).length===Object.keys(draft.answers).length&&Object.keys(draft.answers).every(key=>Object.hasOwn(answers,key)&&JSON.stringify(answers[key])===JSON.stringify(draft.answers[key]));
+    // Replayed unchanged saves can acknowledge the canonical snapshot. A local
+    // edit counter alone cannot order independent tabs or a reload lineage.
+    if(!submitting&&same&&draft.clientRevision!==undefined)return true;
+    if(baseRevision!==draft.revision)throw conflict();
+    return false;
+  }
   private effectiveDue(token:string){const student=this.lessonWork(token).student;return student.effectiveDueAt??student.nextActualClassAt;}
   private monthly(token:string){const m=this.materials.find(l=>l.lessonCode===this.selected(token));return isTimedAssessment(m)?m:undefined;}
   constructor(readonly repo:HomeworkRepository,readonly exam:PracticeExam,readonly dueAt:number,
@@ -136,23 +157,27 @@ export class HomeworkService {
     const made=createDraft(this.examFor(token),randomBytes(16).toString('hex'),now);if(!made.ok)throw new Error(made.message);
     work.drafts.push(made.value);this.putLesson(token,work);return this.state(token);
   }
-  save(token:string,id:string,answers:Answers){
+  save(token:string,id:string,answers:Answers,clientRevision?:number,baseRevision?:number){
     this.assertOpen(token);
     const work=this.lessonWork(token),draft=work.drafts.at(-1),now=this.clock();
     if(!draft||draft.attemptId!==id)throw new HomeworkError(409,'Lượt làm không hợp lệ.');
     if(draft.submittedAt!==null)return this.state(token);
     if(now>=Math.min(draft.deadline,this.monthly(token)?.closesAt??Infinity))return this.submit(token,id,draft.answers);
-    const checked=validateDraft({...draft,answers,updatedAt:Math.max(now,draft.updatedAt),revision:draft.revision+1},this.examFor(token));
+    if(this.clientWrite(draft,answers,clientRevision,baseRevision,false))return this.state(token);
+    const checked=validateDraft({...draft,answers,updatedAt:Math.max(now,draft.updatedAt),revision:Math.max(draft.revision+1,clientRevision??0),...(clientRevision===undefined?{}:{clientRevision})},this.examFor(token));
     if(!checked.ok)throw new HomeworkError(400,'Bài làm không đúng định dạng.');
     work.drafts[work.drafts.length-1]=checked.value;this.putLesson(token,work);return this.state(token);
   }
-  submit(token:string,id:string,answers:Answers){
+  submit(token:string,id:string,answers:Answers,clientRevision?:number,baseRevision?:number){
     this.assertOpen(token);
     const work=this.lessonWork(token),draft=work.drafts.at(-1),now=this.clock(),exam=this.examFor(token);
     if(!draft||draft.attemptId!==id)throw new HomeworkError(409,'Lượt làm không hợp lệ.');
     if(draft.submittedAt!==null)return this.state(token);
     const timedOut=now>=Math.min(draft.deadline,this.monthly(token)?.closesAt??Infinity);
-    const checked=validateDraft({...draft,answers:timedOut?draft.answers:answers,updatedAt:Math.max(now,draft.updatedAt),revision:draft.revision+1},exam);
+    // Server expiry always grades its saved answers, even if an old tab has no
+    // edit counter. A live client write must pass the logical edit fence.
+    if(!timedOut)this.clientWrite(draft,answers,clientRevision,baseRevision,true);
+    const checked=validateDraft({...draft,answers:timedOut?draft.answers:answers,updatedAt:Math.max(now,draft.updatedAt),revision:Math.max(draft.revision+1,!timedOut?clientRevision??0:0),...(!timedOut&&clientRevision!==undefined?{clientRevision}:{})},exam);
     if(!checked.ok)throw new HomeworkError(400,'Bài làm không đúng định dạng.');
     const submitted=submitDraft(exam,checked.value,now);if(!submitted.ok)throw new Error(submitted.message);
     const result=resultFor(exam,submitted.value);if(!result?.score.ok)throw new Error('Không chấm được');

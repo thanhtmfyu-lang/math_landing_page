@@ -19,6 +19,8 @@ export type Draft = Readonly<{
   answers: Answers;
   submittedAt: number | null;
   revision: number;
+  /** Last server-accepted logical client edit, only for managed homework. */
+  clientRevision?: number;
 }>;
 export type Store = Pick<Storage, 'getItem' | 'setItem'>;
 export type Failure = {ok: false; code: string; message: string};
@@ -40,11 +42,13 @@ export function validateDraft(value: unknown, exam: PracticeExam, options:DraftV
   if (!isRecord(value)) return fail('shape', 'Bản lưu không đúng định dạng. Dữ liệu cũ được giữ nguyên.');
   const fields = ['version', 'examId', 'examVersionHash', 'rubricVersion', 'attemptId', 'startedAt', 'deadline', 'updatedAt', 'answers', 'submittedAt', 'revision'];
   if(exam.rubricVersion===MTM_SCORING_VERSION)fields.push('answerKeyVersion');
+  if(Object.hasOwn(value,'clientRevision'))fields.push('clientRevision');
   if (Object.keys(value).length !== fields.length || !fields.every(key => Object.hasOwn(value, key))) return fail('shape', 'Bản lưu có cấu trúc khác. Dữ liệu cũ được giữ nguyên.');
   if (value.version !== 1 || value.examId !== exam.id || value.examVersionHash !== exam.versionHash || value.rubricVersion !== exam.rubricVersion) return fail('version', 'Bản lưu thuộc đề hoặc phiên bản khác. Dữ liệu cũ được giữ nguyên.');
   if(exam.rubricVersion===MTM_SCORING_VERSION&&value.answerKeyVersion!==exam.answerKeyVersion)return fail('version','Bản lưu thuộc phiên bản đáp án khác. Dữ liệu cũ được giữ nguyên.');
   if (!boundedText(value.attemptId, 160) || value.attemptId.trim() !== value.attemptId) return fail('attempt', 'Mã lượt làm trong bản lưu không hợp lệ.');
   if (!validTime(value.startedAt) || !validTime(value.deadline) || !validTime(value.updatedAt) || !validRevision(value.revision)) return fail('time', 'Thời gian hoặc số lần lưu không hợp lệ.');
+  if(Object.hasOwn(value,'clientRevision')&&(!validRevision(value.clientRevision)||(value.clientRevision as number)>(value.revision as number)))return fail('time','Số lần sửa bài không hợp lệ. Bản máy chủ được giữ nguyên.');
   if (value.deadline <= value.startedAt || value.deadline - value.startedAt !== exam.durationMinutes * 60000 || value.updatedAt < value.startedAt) return fail('time', 'Thời hạn trong bản lưu không khớp thời lượng đề.');
   if (value.submittedAt !== null && (!validTime(value.submittedAt) || value.submittedAt < value.startedAt || value.submittedAt > value.updatedAt)) return fail('time', 'Thời điểm nộp bài không hợp lệ.');
   if (!isRecord(value.answers)) return fail('answers', 'Đáp án trong bản lưu không đúng định dạng.');
@@ -81,7 +85,7 @@ const sameAnswers = (a: Answers, b: Answers) => {
   return keys.length === Object.keys(b).length && keys.every(key => Object.hasOwn(b, key) && JSON.stringify(a[key]) === JSON.stringify(b[key]));
 };
 export function sameDraft(a: Draft, b: Draft): boolean {
-  return a.version === b.version && a.examId === b.examId && a.examVersionHash === b.examVersionHash && a.rubricVersion === b.rubricVersion && a.answerKeyVersion===b.answerKeyVersion && a.attemptId === b.attemptId && a.startedAt === b.startedAt && a.deadline === b.deadline && a.updatedAt === b.updatedAt && a.submittedAt === b.submittedAt && a.revision === b.revision && sameAnswers(a.answers, b.answers);
+  return a.version === b.version && a.examId === b.examId && a.examVersionHash === b.examVersionHash && a.rubricVersion === b.rubricVersion && a.answerKeyVersion===b.answerKeyVersion && a.attemptId === b.attemptId && a.startedAt === b.startedAt && a.deadline === b.deadline && a.updatedAt === b.updatedAt && a.submittedAt === b.submittedAt && a.revision === b.revision && a.clientRevision===b.clientRevision && sameAnswers(a.answers, b.answers);
 }
 
 /** Optimistic save against the exact last successfully read/saved snapshot.

@@ -140,4 +140,14 @@ await test('Rời trang thông thường vẫn cố gửi nháp như hợp đồ
  const saver=createHomeworkSaver({delay:60000,send:async draft=>{sent++;return {...state(),draft};},onSaved:()=>saved++,onStatus:()=>{}});
  saver.update(made.value);saver.dispose();await saver.settled();assert.equal(sent,1);assert.equal(saved,0);assert.equal(saver.pending(),false);
 });
+await test('Phiên auth chưa chắc đóng nội dung riêng; response cũ không thay hồ sơ đăng nhập mới',async()=>{
+ const r=await mount(state());try{
+  const late=await r.renew();
+  win.dispatchEvent(new Event('mtm:homework-session-uncertain'));await r.settle();
+  assert.ok(r.gate());assert.doesNotMatch(text(r.runtime.value),/Người học GIẢ A/);assert.match(text(r.runtime.value),/phiên hiện tại cần xác nhận lại/);
+  r.gate().props.onLogin({studentCode:'MA-GIA-B'});await r.settle();r.requests.at(-1)!.reply(200,state('Người học GIẢ B'));await r.settle();
+  late.reply(200,state('Người học GIẢ A'));await r.settle();assert.match(text(r.runtime.value),/Người học GIẢ B/);assert.doesNotMatch(text(r.runtime.value),/Người học GIẢ A/);
+  win.dispatchEvent(new Event('mtm:homework-session-uncertain'));await r.settle();assert.ok(r.gate());assert.doesNotMatch(text(r.runtime.value),/Người học GIẢ B/,'Headers auth cũ đổi cookie phải đóng cả nội dung phiên mới');
+ }finally{r.dispose();}
+});
 console.log(count+' ca lifecycle quyền BTVN đạt; hook/transport giả ngoại tuyến, chưa phải trình duyệt.');

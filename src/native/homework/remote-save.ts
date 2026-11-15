@@ -10,6 +10,7 @@ export const REMOTE_LEAVE_MESSAGE='Có đáp án chưa được máy chủ MTM x
 export function createHomeworkSaver(options:{
   send:(draft:Draft)=>Promise<HomeworkState>;
   onSaved:(state:HomeworkState)=>void;
+  onAcknowledged?:(state:HomeworkState)=>void;
   onStatus:(status:RemoteSaveStatus)=>void;
   delay?:number;
 }){
@@ -43,7 +44,10 @@ export function createHomeworkSaver(options:{
           if(next.draft.submittedAt!==null)closedState=next;
           throw new Error(next.draft.submittedAt!==null?'Hết giờ. Máy chủ chấm bản đã lưu. Câu sửa sau đó không tính; bản đang giữ chưa được nhận.':'Máy chủ chưa nhận đúng bản đáp án đang gửi. Giữ trang mở và gửi lại.');
         }
+        if(!Number.isSafeInteger(next.draft.revision)||next.draft.revision<0)throw new Error('Máy chủ chưa xác nhận phiên bản bài đang lưu. Giữ trang mở và thử lại.');
         ack=Math.max(ack,item.seq);
+        // Update the canonical base even when a newer RAM edit is queued.
+        if(attached)options.onAcknowledged?.(next);
         if(next.draft.submittedAt!==null&&item.seq===seq){terminal=true;clearTimer();}
         if(item.seq===seq){
           publish(false,false,terminal?'Máy chủ MTM đã nhận bài.':'Đã lưu bài trên máy chủ MTM.');

@@ -8,7 +8,7 @@
 .btvn-retry-tf fieldset.is-mismatch{border-color:#b91c1c;background:#fffafa}
 .btvn-retry-tf fieldset.is-mismatch legend{color:#991b1b}
 .btvn-retry-pill.has-draft{border-style:dashed;border-color:#b38619}
-.btvn-retry-confirm{margin:auto;box-sizing:border-box;width:min(520px,calc(100% - 32px));max-height:calc(100dvh - 32px);overflow:auto;padding:20px;box-shadow:0 16px 48px #12244b33;font:inherit;line-height:1.5}
+.btvn-retry-confirm{margin:auto;box-sizing:border-box;width:min(520px,calc(100% - 32px));max-height:calc(100vh - 32px);max-height:calc(100dvh - 32px);overflow:auto;padding:20px;box-shadow:0 16px 48px #12244b33;font:inherit;line-height:1.5}
 .btvn-retry-confirm::backdrop{background:#12244b80}
 .btvn-retry-confirm h4{margin:0 0 10px;color:#182d50;font-size:1.15em}
 .btvn-retry-hints:focus{outline:3px solid #b38619;outline-offset:3px;border-radius:8px}

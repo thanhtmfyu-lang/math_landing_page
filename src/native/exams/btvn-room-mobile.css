@@ -2,7 +2,7 @@
 .ep-root.fr-room.r104-room.r106-room[data-homework] {
   --btvn-room-gutter: max(24px, calc((100% - 1480px) / 2));
   top: var(--btvn-viewport-top, 0px);
-  height: var(--btvn-viewport-height, 100dvh);
+  height: var(--btvn-viewport-height, 100vh);
   min-width: 0;
   overflow-wrap: anywhere;
 }
@@ -300,7 +300,7 @@
   }
   .ep-root.fr-room.r104-room.r106-room[data-homework] .fr-sheet.is-open .fr-section-label { font-size: 16px; }
   .ep-root.fr-room.r104-room.r106-room[data-homework] .fr-sheet.is-open {
-    max-height: min(80dvh, calc(var(--btvn-viewport-height, 100dvh) - 12px));
+    max-height: min(80vh, calc(var(--btvn-viewport-height, 100vh) - 12px));
     overflow-y: auto;
     overscroll-behavior: contain;
     padding-bottom: max(20px, env(safe-area-inset-bottom));
@@ -313,12 +313,12 @@
   .ep-root.fr-room.r104-room.r106-room[data-homework] .fr-pdf-document { flex: none; overflow: visible; }
   .ep-root.fr-room.r104-room.r106-room[data-homework] .ep-question-pdf {
     overflow: auto;
-    max-height: 55dvh;
+    max-height: 55vh;
     overscroll-behavior: contain;
   }
   .ep-root.fr-room.r104-room.r106-room[data-homework] .fr-pdf-workspace .fr-quick { padding-top: 16px; }
-  .ep-root.fr-room.r104-room.r106-room[data-homework]:has(:is(input, textarea):focus) .fr-sheet:not(.is-open) { display: none; }
-  .ep-root.fr-room.r104-room.r106-room[data-homework]:has(:is(input, textarea):focus) .fr-answer-dock small { display: none; }
+  .ep-root.fr-room.r104-room.r106-room[data-homework][data-input-focused] .fr-sheet:not(.is-open) { display: none; }
+  .ep-root.fr-room.r104-room.r106-room[data-homework][data-input-focused] .fr-answer-dock small { display: none; }
   .ep-root.fr-room.r104-room.r106-room[data-homework] .fr-grid .fr-marked { font-size: 16px !important; }
 
   /* Hai hộp thoại gắn vào body, ngoài container phòng làm bài. */

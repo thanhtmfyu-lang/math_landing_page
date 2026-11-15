@@ -59,7 +59,7 @@ export class SupabaseHomeworkRepository {
     if(!Number.isFinite(startsAt)||startsAt<=0||!sourceIdentity)throw new Error('Thiếu ca thực học đã xác minh');
     return this.rpc('mtm_btvn_set_due',{p_student_id:studentId,p_lesson:lessonCode,p_starts_at:new Date(startsAt).toISOString(),p_source_identity:sourceIdentity});
   }
-  async call(session:string,action:'state'|'select'|'start'|'save'|'submit',lessonCode?:string,attemptId?:string,answers?:Answers):Promise<HomeworkState>{
+  async call(session:string,action:'state'|'select'|'start'|'save'|'submit',lessonCode?:string,attemptId?:string,answers?:Answers,clientRevision?:number,baseRevision?:number):Promise<HomeworkState>{
     // Read the canonical choice before asking SQL for a different variant.
     // The SQL guard uses serialization failure; PostgREST can retry that error
     // until the read timeout hides its message. The canonical read is authorized
@@ -96,7 +96,7 @@ export class SupabaseHomeworkRepository {
       const memory=new MemoryHomeworkRepository([]);memory.put(work);
       const service=new HomeworkService(memory,snapshot.exam,0,'private',snapshot.material.lessonCode,this.clock,[snapshot.material]);
       const token=service.login({studentCode:code},'internal');
-      const next=action==='start'?service.start(token):action==='save'?service.save(token,attemptId??'',answers??{}):action==='submit'?service.submit(token,attemptId??'',answers??{}):service.state(token);
+      const next=action==='start'?service.start(token):action==='save'?service.save(token,attemptId??'',answers??{},clientRevision,baseRevision):action==='submit'?service.submit(token,attemptId??'',answers??{},clientRevision,baseRevision):service.state(token);
       next.demo=false;next.serverNow=this.clock();next.paperChoice=snapshot.paperChoice;
       if(monthly){next.kind=snapshot.material.kind;next.assessmentId=snapshot.material.assessmentId;next.examType=snapshot.material.examType;next.durationMinutes=snapshot.exam.durationMinutes;next.opensAt=snapshot.material.opensAt;next.closesAt=snapshot.material.closesAt;next.canStart=now<snapshot.material.closesAt!;next.essayUploadAvailable=snapshot.exam.questions.some(q=>q.kind==='self');}
       // Điểm chấm tay do RPC owner cung cấp, chỉ ghép vào response. Không sửa

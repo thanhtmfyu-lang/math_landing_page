@@ -29,6 +29,8 @@ import {RoomQuestionContext} from '../exams/RoomQuestionContext';
 import {questionLabel} from '../exams/attempt-ui';
 import {useUnsavedGuard} from '../exams/navigation-guard';
 import {createHomeworkSaver,REMOTE_SAVE_INITIAL,REMOTE_LEAVE_MESSAGE} from './remote-save';
+import {withHomeworkDeadline,assertHomeworkRequestActive,assertHomeworkResponseHeaders,HOMEWORK_SESSION_UNCERTAIN} from './request-deadline';
+import {HomeworkWriteConflict} from './write-conflict';
 import {notifyLeaderboardSubmitted} from './leaderboard-refresh';
 import {acknowledgedHomeworkSubmission} from './result-summary';
 import '../exams/exams.css';
@@ -56,11 +58,20 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEs
   const checkSelection=useState<string[]>([]);
   const [save,setSave]=useState(REMOTE_SAVE_INITIAL),[notice,setNotice]=useState('');
   const last=useRef<Draft|null>(state.draft);
+  const serverRevision=useRef(state.draft?.revision??0),conflictingRevision=useRef<{revision:number;message:string}|null>(null);
   const saver=useMemo(()=>createHomeworkSaver({
-    send:draft=>gateway.call(draft.submittedAt===null?'save':'submit',{lessonCode:state.lessonCode,attemptId:draft.attemptId,answers:draft.answers}),
+    send:draft=>{
+      if(conflictingRevision.current)return Promise.reject(new Error(conflictingRevision.current.message));
+      return gateway.call(draft.submittedAt===null?'save':'submit',{lessonCode:state.lessonCode,attemptId:draft.attemptId,answers:draft.answers,clientRevision:draft.revision,baseRevision:serverRevision.current}).catch(error=>{
+        if(error instanceof HomeworkWriteConflict&&error.attemptId===draft.attemptId)conflictingRevision.current={revision:error.revision,message:error.message};
+        throw error;
+      });
+    },
+    onAcknowledged:next=>{if(next.draft?.attemptId===state.draft?.attemptId)serverRevision.current=next.draft.revision;},
     onSaved:next=>{onState(next);if(acknowledgedHomeworkSubmission(next))notifyLeaderboardSubmitted();},
     onStatus:status=>{onPendingChange(status.pending);setSave(status);},
   }),[state.draft?.attemptId,gateway]);
+  const retryHeld=()=>{if(conflictingRevision.current){serverRevision.current=conflictingRevision.current.revision;conflictingRevision.current=null;}saver.retry();};
   useEffect(()=>{saverRef.current=saver;return()=>{saver.dispose();if(saverRef.current===saver)saverRef.current=null;onPendingChange(false);};},[saver]);
   const store=useMemo<Store>(()=>{
     const values=new Map<string,string>();if(state.draft)values.set(draftKey(state.exam.id),JSON.stringify(state.draft));
@@ -73,18 +84,16 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEs
     }};
   },[state.draft?.attemptId,saver]);
   const saveStatus=save.failed?'Chưa lưu máy chủ':save.pending?'Chờ máy chủ lưu':'Đã lưu máy chủ';
-  return <><p className="r106-assessment r106-save-feedback" role="status">{save.message||notice}</p>{save.failed&&!save.closed&&<button disabled={save.saving} onClick={saver.retry}>Gửi lại bài đang giữ</button>}
+  return <><p className="r106-assessment r106-save-feedback" role="status">{save.message||notice}</p>{save.failed&&!save.closed&&<button disabled={save.saving} onClick={retryHeld}>Gửi lại bài đang giữ</button>}
     <PracticeAttempt isHomework exam={state.exam} catalogUrl={location.pathname} contextLabel={state.kind==='kiem-tra'?'Đề kiểm tra':state.kind==='kiem-tra-thang'?'Kiểm tra tháng':'BTVN'} audienceLabel={displayClassName(state)} storeOverride={store}
       homeworkSelfCheck={state.kind==='kiem-tra'||state.kind==='kiem-tra-thang'?undefined:<HomeworkSelfCheckTool selection={checkSelection}/>} onOpenEssay={onOpenEssay}
-      saveStatus={save.failed?save.message:saveStatus} savePending={save.pending} onRetrySave={save.failed&&!save.closed?saver.retry:undefined} onAcceptClosed={save.closed?saver.acceptClosed:undefined}
+      saveStatus={save.failed?save.message:saveStatus} savePending={save.pending} onRetrySave={save.failed&&!save.closed?retryHeld:undefined} onAcceptClosed={save.closed?saver.acceptClosed:undefined}
       deadlineAt={state.closesAt} clockOffsetMs={state.serverNow!==undefined&&state.clientReceivedAt!==undefined?state.serverNow-state.clientReceivedAt:0}
       storageNotice="Bài làm gửi đến máy chủ MTM theo tài khoản em. Chỉ biên nhận máy chủ mới xác nhận đã nộp bài."
       onRetake={()=>{setNotice('Dùng nút Làm lượt tiếp ở phần kết quả BTVN.');document.getElementById('btvn-summary')?.scrollIntoView({behavior:'smooth'});}}
       questionReader={<HomeworkReader exam={state.exam} label={state.kind==='kiem-tra'||state.kind==='kiem-tra-thang'?'Đề kiểm tra':'Đề BTVN'}/>}/>
   </>;
 }
-const READ_ACTIONS=new Set(['state','select','login','logout']),READ_TIMEOUT_MS=40000;
-const SLOW_SERVER='Máy chủ đang chậm nên chưa tải được bài. Em đăng nhập lại hoặc tải lại trang sau ít phút.';
 export default function HomeworkSession({pathname,profileControl}:{pathname:string;profileControl?:(state:HomeworkState)=>ReactNode}){
   const parts=/^\/btvn\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(pathname);
   const [state,setState]=useState<HomeworkState|null>(null),[gate,setGate]=useState({fullName:'',phone:'',className:''});
@@ -95,8 +104,13 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   const loadClasses=async()=>{
     const generation=++classesGeneration.current;setClassesLoading(true);setClassesError(false);
     try{
-      const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},body:JSON.stringify({action:'classes'})});
-      const data=await response.json();
+      const {response,data}=await withHomeworkDeadline('classes',async signal=>{
+        const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({action:'classes'})});
+        assertHomeworkRequestActive(signal,'classes');
+        const data=await response.json();
+        assertHomeworkRequestActive(signal,'classes');
+        return {response,data};
+      });
       if(!response.ok||!Array.isArray(data.classNames)||data.classNames.length>200||data.classNames.some((name:unknown)=>typeof name!=='string'||!name.trim()||name.length>100))throw Error('Danh sách lớp chưa sẵn sàng');
       if(generation===classesGeneration.current){setClassNames([...new Set<string>(data.classNames)]);setGate(previous=>({...previous,className:data.classNames.includes(previous.className)?previous.className:''}));}
     }catch{if(generation===classesGeneration.current){setClassNames([]);setClassesError(true);}}
@@ -138,13 +152,14 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
   const renewalState=useRef(state);renewalState.current=state;
   const selectedLesson=useRef<string|undefined>(parts?.[2]);
   useEffect(()=>{if(state)selectedLesson.current=state.lessonCode||undefined;},[state?.lessonCode]);
-  const gateway=useMemo<HomeworkGateway>(()=>({async call(action,body={}){
+  const gateway=useMemo<HomeworkGateway>(()=>({async call(action,body={}){return withHomeworkDeadline(action,async signal=>{
     const generation=sessionGeneration.current;
     const current=()=>mounted.current&&sessionGeneration.current===generation;
-    // Chỉ lệnh đọc có hạn chờ: máy chủ chậm thì báo và cho thử lại, không đứng mãi. Lệnh ghi bài giữ nguyên để không cắt giữa lúc lưu.
-    const abort=READ_ACTIONS.has(action)?new AbortController():null,timer=abort?setTimeout(()=>abort.abort(),READ_TIMEOUT_MS):undefined;
-    const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal:abort?.signal,
-      body:JSON.stringify({action,classKey:parts?.[1],lessonCode:action==='login'?parts?.[2]:selectedLesson.current,...body})}).catch(()=>{throw new Error(abort?.signal.aborted?SLOW_SERVER:'Chưa kết nối được máy chủ. Em thử lại sau.');}).finally(()=>clearTimeout(timer));
+    // A timeout is an unknown write outcome, not proof the server rejected it.
+    // Retry keeps the same attempt and carries its monotonic client revision.
+    const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal,
+      body:JSON.stringify({action,classKey:parts?.[1],lessonCode:action==='login'?parts?.[2]:selectedLesson.current,...body})}).catch(()=>{assertHomeworkRequestActive(signal,action);throw new Error('Chưa kết nối được máy chủ. Bài đang giữ chưa bị xóa; em thử gửi lại.');});
+    assertHomeworkResponseHeaders(signal,action);
     if(!current())throw new Error(ACCESS_ENDED);
     // 401/403 là từ chối quyền thật, không phải lỗi mạng để tiếp tục giữ nội dung riêng.
     // Kiểm trước JSON vì cổng từ chối có thể trả HTML hoặc thân rỗng.
@@ -156,12 +171,26 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
       throw new Error(ACCESS_ENDED);
     }
     const data=await response.json().catch(()=>{throw new Error('Máy chủ chưa trả lời hợp lệ. Em thử lại sau.');});
+    assertHomeworkRequestActive(signal,action);
     if(!current())throw new Error(ACCESS_ENDED);
-    if(!response.ok)throw new Error(action==='login'?entryFailure(response.status,data.message):data.message??'Chưa kết nối được máy chủ.');
+    if(!response.ok){
+      const conflict=data.writeConflict;
+      if(response.status===409&&(action==='save'||action==='submit')&&conflict?.attemptId===body.attemptId&&Number.isSafeInteger(conflict.revision)&&conflict.revision>=0)throw new HomeworkWriteConflict(data.message??'Bài máy chủ đã thay đổi. Bấm Gửi lại bài đang giữ để xác nhận dùng bản trên màn hình.',conflict.attemptId,conflict.revision);
+      throw new Error(action==='login'?entryFailure(response.status,data.message):data.message??'Chưa kết nối được máy chủ.');
+    }
     // Các response cũ không được khôi phục nội dung sau đăng nhập hoặc đăng xuất.
     if(action==='login'||action==='logout'){sessionGeneration.current++;studentSessionChanged();}
     return {...data,clientReceivedAt:Date.now()} as HomeworkState;
-  }}),[pathname]);
+  });}}),[pathname]);
+  useEffect(()=>{
+    const uncertain=()=>{
+      sessionGeneration.current++;studentSessionChanged();saverRef.current?.dispose({flushPending:false});saverRef.current=null;
+      remotePending.current=false;selectedLesson.current=parts?.[2];imageNeedsRenewal.current=false;renewAssets.current=()=>{};
+      if(mounted.current){setState(null);setRoom(false);setExitClosed(false);setBusy(false);setChecking(false);setNotice('Phản hồi đăng nhập đến chậm nên phiên hiện tại cần xác nhận lại. Em đăng nhập đúng hồ sơ để xem bài máy chủ đang giữ.');}
+    };
+    window.addEventListener(HOMEWORK_SESSION_UNCERTAIN,uncertain);
+    return()=>window.removeEventListener(HOMEWORK_SESSION_UNCERTAIN,uncertain);
+  },[pathname]);
   useEffect(()=>{mounted.current=true;void gateway.call('state').then(next=>{if(mounted.current){setState(next);setRoom(!!next.draft&&next.draft.submittedAt===null);}}).catch(error=>{if(mounted.current&&error instanceof Error&&error.message!==ACCESS_ENDED)setNotice(error.message);}).finally(()=>{if(mounted.current)setChecking(false);});return()=>{mounted.current=false;sessionGeneration.current++;};},[gateway]);
   const refreshingReceipt=useRef(false);
   const refreshReceipt=async()=>{

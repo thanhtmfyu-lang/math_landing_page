@@ -4,6 +4,7 @@ import type {MtmScore} from '../exams/mtm-scoring';
 import type {ClassOverview} from '../../../server/btvn/class-overview';
 
 export type GateInput = {studentCode:string}|{fullName:string; phone:string; className:string; pin?:string; newPin?:string};
+export type HomeworkWriteConflict={attemptId:string;revision:number};
 export type HomeworkReceipt = {attemptId:string; attemptNumber:number; submittedAt:number; elapsedSeconds:number; score:number|null; gradingPending?:boolean;officialScore?:number;rubricVersion?:string;mtm?:MtmScore; late:boolean|null; timedOut:boolean};
 export type LessonMaterial = {assessmentId?:string;examType?:'monthly'|'custom';durationMinutes?:number;maxAttempts?:number;solutionsAvailable?:boolean;kind?:'btvn'|'kiem-tra-thang'|'kiem-tra';opensAt?:number;closesAt?:number;classOpensAt?:Record<string,string>;lessonCode:string;classNames:string[];classDates?:Record<string,string>;date:string;title:string;titleSource?:'sheet'|'auto';videoId:string|null;videoUrl?:string|null;homeworkUrls?:string[];homeworkNote?:string;homeworkScope?:string;homeworkScopeSource?:'sheet'|'auto'|'whole_file';homeworkTitle?:string;materialUrl:string|null;handoutUrl:string|null;homeworkUrl:string|null};
 export type HomeworkLesson = LessonMaterial & {startedAt?:number|null;pendingGrading?:boolean;locked?:boolean;expectedDueAt?:number|null;videoEmbeddable?:boolean|null;dueAt:number|null;bestScore:number|null;late:boolean|null;submittedAt:number|null;available:boolean};
@@ -12,5 +13,5 @@ export type HomeworkPaperChoice={base:string;paper:1|2;locked:boolean;count:2};
 export type HomeworkAction = 'login'|'state'|'start'|'save'|'submit'|'logout'|'select';
 /** Giao diện duy nhất giữa trình duyệt và máy chủ; không chứa danh sách học sinh. */
 export interface HomeworkGateway {
-  call(action:HomeworkAction, body?:{lessonCode?:string;gate?:GateInput;remember?:boolean;attemptId?:string;answers?:Answers}):Promise<HomeworkState>;
+  call(action:HomeworkAction, body?:{lessonCode?:string;gate?:GateInput;remember?:boolean;attemptId?:string;answers?:Answers;clientRevision?:number;baseRevision?:number}):Promise<HomeworkState>;
 }

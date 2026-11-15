@@ -36,7 +36,7 @@ export default function FocusRoom({props,state,onExit}:{props:PracticeAttemptPro
   useEffect(()=>{
     if(!props.isHomework||typeof window==='undefined')return;
     const viewport=window.visualViewport,node=host.current;
-    if(!viewport||!node)return;
+    if(!node)return;
     let frame=0,settle:ReturnType<typeof setTimeout>|undefined;
     const keepInputVisible=()=>{
       const input=document.activeElement,workspace=node.querySelector<HTMLElement>('.fr-workspace');
@@ -48,16 +48,18 @@ export default function FocusRoom({props,state,onExit}:{props:PracticeAttemptPro
     const update=()=>{
       cancelAnimationFrame(frame);clearTimeout(settle);
       frame=requestAnimationFrame(()=>{
-        if(viewport.scale!==1)return;
-        node.style.setProperty('--btvn-viewport-height',`${viewport.height}px`);
-        node.style.setProperty('--btvn-viewport-top',`${viewport.offsetTop}px`);
+        const input=document.activeElement;
+        node.toggleAttribute('data-input-focused',input instanceof HTMLElement&&node.contains(input)&&input.matches('input,textarea'));
+        if(viewport&&viewport.scale!==1)return;
+        node.style.setProperty('--btvn-viewport-height',`${viewport?.height??window.innerHeight}px`);
+        node.style.setProperty('--btvn-viewport-top',`${viewport?.offsetTop??0}px`);
         keepInputVisible();
         // Trình duyệt còn điều chỉnh neo cuộn sau sự kiện bàn phím.
         settle=setTimeout(keepInputVisible,120);
       });
     };
-    update();viewport.addEventListener('resize',update);viewport.addEventListener('scroll',update);node.addEventListener('focusin',update);
-    return()=>{cancelAnimationFrame(frame);clearTimeout(settle);viewport.removeEventListener('resize',update);viewport.removeEventListener('scroll',update);node.removeEventListener('focusin',update);node.style.removeProperty('--btvn-viewport-height');node.style.removeProperty('--btvn-viewport-top');};
+    update();if(viewport){viewport.addEventListener('resize',update);viewport.addEventListener('scroll',update);}window.addEventListener('resize',update);node.addEventListener('focusin',update);node.addEventListener('focusout',update);
+    return()=>{cancelAnimationFrame(frame);clearTimeout(settle);if(viewport){viewport.removeEventListener('resize',update);viewport.removeEventListener('scroll',update);}window.removeEventListener('resize',update);node.removeEventListener('focusin',update);node.removeEventListener('focusout',update);node.removeAttribute('data-input-focused');node.style.removeProperty('--btvn-viewport-height');node.style.removeProperty('--btvn-viewport-top');};
   },[props.isHomework]);
   useEffect(()=>{if(tools){toolsPanel.current?.focus();return()=>menuButton.current?.focus();}},[tools]);
   useLayoutEffect(()=>{setActiveQuestion(aux.active);},[]);

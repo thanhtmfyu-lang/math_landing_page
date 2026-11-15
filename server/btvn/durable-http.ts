@@ -2,6 +2,7 @@ import {SupabaseHomeworkRepository} from './supabase-repository';
 import {HomeworkError,GATE_ERROR} from './service';
 import {homeworkCookie,REMEMBER_SECONDS} from './http';
 import type {GateInput} from '../../src/native/homework/btvn-contract';
+import {validWriteRevisions} from './write-revision';
 /** Factory để Claude gắn transport đã kiểm. api/btvn.ts giữ đóng đến nghiệm thu.
  * Cookie chỉ server đọc; origin bắt buộc và proxy phải được platform kiểm. */
 export function createDurableHomeworkHandler(repo:SupabaseHomeworkRepository){return async(input:{method:string;body:unknown;cookie?:string;origin?:string;host:string;secure?:boolean})=>{
@@ -18,8 +19,9 @@ export function createDurableHomeworkHandler(repo:SupabaseHomeworkRepository){re
     }
     if(!['login','logout','state','select','start','save','submit'].includes(String(action)))throw new HomeworkError(400,GATE_ERROR);
     if(body.lessonCode!==undefined&&(typeof body.lessonCode!=='string'||! /^[a-z0-9-]{1,160}$/.test(body.lessonCode)))throw new HomeworkError(400,GATE_ERROR);
-    const allowed=['action','classKey','lessonCode',...(action==='login'?['gate','remember']:action==='save'||action==='submit'?['attemptId','answers']:[])];
+    const allowed=['action','classKey','lessonCode',...(action==='login'?['gate','remember']:action==='save'||action==='submit'?['attemptId','answers','clientRevision','baseRevision']:[])];
     if(Object.keys(body).some(k=>!allowed.includes(k)))throw new HomeworkError(400,GATE_ERROR);
+    if(!validWriteRevisions(body.clientRevision,body.baseRevision))throw new HomeworkError(400,'Số lần sửa bài không hợp lệ. Bài đang giữ chưa bị thay đổi.');
     let session=(input.cookie??'').split(';').map(x=>x.trim()).find(x=>x.startsWith('mtm_btvn_demo='))?.slice(14)??'';
     const details:{classMismatch?:boolean}={};
     if(action==='login'){
@@ -31,7 +33,8 @@ export function createDurableHomeworkHandler(repo:SupabaseHomeworkRepository){re
     }
     if(!/^[0-9a-f]{64}$/.test(session))throw new HomeworkError(401,GATE_ERROR);
     if(action==='logout'){await repo.logout(session);headers['Set-Cookie']=homeworkCookie('',input.secure);return {status:200,headers,body:{loggedOut:true}};}
-    const state=await repo.call(session,action==='login'?'state':action as 'state'|'select'|'start'|'save'|'submit',body.lessonCode as string|undefined,body.attemptId as string|undefined,body.answers as any);
+    const callAction=action==='login'?'state':action as 'state'|'select'|'start'|'save'|'submit';
+    const state=body.clientRevision===undefined?await repo.call(session,callAction,body.lessonCode as string|undefined,body.attemptId as string|undefined,body.answers as any):await repo.call(session,callAction,body.lessonCode as string|undefined,body.attemptId as string|undefined,body.answers as any,body.clientRevision as number,body.baseRevision as number);
     return {status:200,headers,body:action==='login'?{...state,...details}:state};
-  }catch(error){return {status:error instanceof HomeworkError?error.status:503,headers,body:{message:error instanceof HomeworkError?error.message:'Chưa lưu được. Giữ trang mở và thử lại.'}};}
+  }catch(error){return {status:error instanceof HomeworkError?error.status:503,headers,body:{message:error instanceof HomeworkError?error.message:'Chưa lưu được. Giữ trang mở và thử lại.',...(error instanceof HomeworkError&&error.status===409&&error.writeConflict?{writeConflict:error.writeConflict}:{})}};}
 };}

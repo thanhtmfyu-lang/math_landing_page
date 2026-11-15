@@ -6,6 +6,8 @@
   box-sizing: border-box;
   width: min(1040px, calc(100% - 32px));
   max-width: calc(100% - 32px);
+  height: min(920px, calc(100vh - 32px));
+  max-height: calc(100vh - 32px);
   height: min(920px, calc(100dvh - 32px));
   max-height: calc(100dvh - 32px);
   margin: auto;
@@ -30,7 +32,7 @@
 .ep-root.fr-room .fr-source-body canvas { display: block; max-width: 100%; height: auto; }
 .ep-root.fr-room .fr-source-body .is-zoomed canvas { max-width: none; }
 @media (max-width: 760px) {
-  .ep-root.fr-room .fr-source-dialog { width: calc(100% - 16px); max-width: calc(100% - 16px); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); }
+  .ep-root.fr-room .fr-source-dialog { width: calc(100% - 16px); max-width: calc(100% - 16px); height: calc(100vh - 16px); max-height: calc(100vh - 16px); height: calc(100dvh - 16px); max-height: calc(100dvh - 16px); }
   .fr-source-bar { padding: 12px; }
   .fr-source-body { padding: 12px; }
 }

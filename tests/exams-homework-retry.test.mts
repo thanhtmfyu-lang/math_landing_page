@@ -14,7 +14,7 @@ assert.match(retryCss,/\.btvn-retry-feedback:focus\s*\{[^}]*outline:3px solid #b
 assert.match(retryCss,/\.btvn-retry-feedback\s*\{[^}]*scroll-margin-top:100px;[^}]*scroll-margin-bottom:24px/,'Phản hồi chừa khoảng cuộn để không dính mép trang');
 const {buildSync}=require('esbuild'),React=require('react'),{renderToStaticMarkup}=require('react-dom/server');
 let values:any[]=[],cursor=0;
-const hooks={useId:()=>':retry-test:',useRef:(initial:any)=>{const i=cursor++;if(!(i in values))values[i]={current:initial};return values[i];},useState:(initial:any)=>{const i=cursor++,slots=values;if(!(i in slots))slots[i]=typeof initial==='function'?initial():initial;return [slots[i],(next:any)=>{slots[i]=typeof next==='function'?next(slots[i]):next;}];}};
+const hooks={useEffect(){},useId:()=>':retry-test:',useRef:(initial:any)=>{const i=cursor++;if(!(i in values))values[i]={current:initial};return values[i];},useState:(initial:any)=>{const i=cursor++,slots=values;if(!(i in slots))slots[i]=typeof initial==='function'?initial():initial;return [slots[i],(next:any)=>{slots[i]=typeof next==='function'?next(slots[i]):next;}];}};
 const code=buildSync({entryPoints:[join(root,'src/native/homework/HomeworkRetry.tsx')],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',loader:{'.css':'empty'},logLevel:'silent'}).outputFiles[0].text;
 const mod={exports:{} as any};
 new Function('require','module','exports',code)((id:string)=>id==='react'?{...React,...hooks}:id.endsWith('.css')?{}:require(id),mod,mod.exports);
@@ -317,15 +317,13 @@ try{
   assert.equal(confirmDialog.props['aria-modal'],'true');
   assert.equal(confirmDialog.props['aria-labelledby'],':retry-test:-source-title');
   assert.equal(confirmDialog.props['aria-describedby'],':retry-test:-solution-warning','Cảnh báo là mô tả của dialog, được đọc cùng lúc nhận focus');
-  let cancelFocusCount=0,modalOpenCount=0,modalCloseCount=0;
-  const modalNode={open:false,showModal(){this.open=true;modalOpenCount++;},close(){this.open=false;modalCloseCount++;}};
-  button(confirmTree,'Tiếp tục tự làm').ref.current={focus(){cancelFocusCount++;}};
-  confirmDialog.ref(modalNode);
-  assert.equal(modalOpenCount,1,'Mở bằng showModal để trình duyệt giữ focus trong dialog và vô hiệu nền');
-  assert.equal(cancelFocusCount,1,'Focus ban đầu ở hành động tiếp tục tự làm');
-  confirmDialog.ref(modalNode);
-  assert.equal(modalOpenCount,1,'Không mở modal lần nữa khi ref cùng dialog đang mở');
-  assert.equal(cancelFocusCount,1,'Không giật lại focus khi dialog đang mở');
+  // Native/fallback opening, initial focus and keyboard containment are exercised
+  // in exams-dialog-compat.test.mts. This hook-light view checks answer gating
+  // and cancellation without pretending a ref invocation is a browser commit.
+  let modalCloseCount=0;
+  const modalNode={open:true,close(){this.open=false;modalCloseCount++;},removeAttribute(){}};
+  assert.ok(confirmDialog.ref&&typeof confirmDialog.ref==='object');
+  confirmDialog.ref.current=modalNode;
   let escapePrevented=false;
   confirmDialog.props.onCancel({preventDefault(){escapePrevented=true;}});confirmTree=drawConfirm();
   assert.equal(escapePrevented,true,'Escape đi qua đường hủy được kiểm soát');
