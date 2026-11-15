@@ -1,7 +1,7 @@
 import assert from 'node:assert/strict';
 import {createHash} from 'node:crypto';
 import {spawnSync} from 'node:child_process';
-import {closeSync,mkdtempSync,openSync,readFileSync,writeFileSync} from 'node:fs';
+import {closeSync,mkdirSync,mkdtempSync,openSync,readFileSync,writeFileSync} from 'node:fs';
 import {join} from 'node:path';
 import {pipelineFixture} from './btvn-pipeline-fixture';
 import {expectedSlots} from '../server/btvn/publish-handler';
@@ -104,6 +104,8 @@ await test('optional hook preserves generic fake pipeline compatibility',async()
  const h=harness({hook:false});h.cache(1,{legacySource:true,legacyDraft:true});assert.equal((await runUploadOnce(h.repo,h.pipeline,h.state,'synthetic')).status,'complete');
 });
 await test('native adapter always provides hook and decorates cached/fallback drafts from real local child',async()=>{
+ // A clean checkout has no ignored QA directories from earlier local runs.
+ mkdirSync(area,{recursive:true});
  const h=harness(),tmp=mkdtempSync(join(area,'native-child-')),fd=openSync(join(tmp,'synthetic.lock'),'w+'),envKeys=['BTVN_PYTHON','MTM_LESSON_NATIVE_DRIVER','MTM_LESSON_LOCK_FD'] as const,prior=Object.fromEntries(envKeys.map(k=>[k,process.env[k]]));
  let dbCalls=0;const db={sourceOrigin:'https://synthetic.invalid',async rpc(){dbCalls++;return {data:{data_base64:Buffer.from('SYNTHETIC_ONLY').toString('base64')},error:null};}};
  const record:any={class_context_contract:CLASS_CONTEXT_CONTRACT,class_metadata_sha256:classContextHash(h.job,sourceVersion),sourceVersion,extractor:{provider:'chatgpt-oauth',model:'synthetic'},draft:{exam:h.fixture.exam,assets:h.fixture.assets}};
