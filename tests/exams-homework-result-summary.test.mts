@@ -146,6 +146,56 @@ try{
     runtime.unmount();
   });
 
+  await test('Đề đã đóng hoặc chưa mở giải thích nút khóa, không mời mở lượt chưa hợp lệ',()=>{
+    const originalNow=Date.now,clientNow=startedAt+7*60*60*1000;
+    Date.now=()=>clientNow;
+    try{
+      for(const kind of ['kiem-tra','kiem-tra-thang'] as const){
+        const runtime=new Runtime(),Overview=compile('src/native/homework/HomeworkOverview.tsx',runtime);
+        const base:HomeworkState={...state,kind,maxAttempts:1,attemptsUsed:0,bestScore:null,draft:null,receipts:[],canStart:false,solutionsAvailable:false,opensAt:startedAt,closesAt:startedAt+120000,serverNow:startedAt+120001,clientReceivedAt:clientNow};
+        const draw=(input:HomeworkState)=>runtime.draw(Overview,{state:input,busy:false,onStart(){throw Error('Không mở lượt bị khóa');}});
+        let tree=draw(base),button=find(tree,node=>node.type==='button'&&text(node)==='Đề đã đóng');
+        assert.ok(button);assert.equal(button.props.disabled,true);
+        const reason=find(tree,node=>node.props?.id===button.props['aria-describedby']);
+        assert.equal(reason.props.role,'status');assert.match(text(reason),/Đề đã đóng/);assert.match(text(reason),/chưa nộp bài/);
+        assert.match(text(tree),/Chưa có bài nộp/);
+        assert.doesNotMatch(text(tree),/Chờ công bố|Lượt tiếp theo:|SẴN SÀNG RỒI CHỨ|Đến lượt em thử sức/);
+        // A fast phone clock must not turn a future exam into a closed exam.
+        tree=draw({...base,serverNow:startedAt-1});
+        button=find(tree,node=>node.type==='button'&&text(node)==='Chưa đến giờ làm bài');
+        assert.ok(button);assert.equal(button.props.disabled,true);
+        assert.match(text(find(tree,node=>node.props?.id===button.props['aria-describedby'])),/Mở làm bài lúc/);
+        assert.doesNotMatch(text(tree),/Đề đã đóng|Lượt tiếp theo:|Đến lượt em thử sức/);
+        tree=draw({...base,serverNow:undefined,clientReceivedAt:undefined});
+        button=find(tree,node=>node.type==='button'&&text(node)==='Chưa thể bắt đầu');
+        assert.ok(button);assert.equal(button.props.disabled,true);
+        assert.doesNotMatch(text(tree),/Đề đã đóng|Lượt tiếp theo:|Đến lượt em thử sức/);
+        tree=draw({...base,serverNow:startedAt+1,canStart:true});
+        assert.equal(find(tree,node=>node.type==='button'&&text(node)==='Bắt đầu làm bài').props.disabled,false);
+        assert.match(text(tree),/Lượt tiếp theo: lượt 1/);
+        runtime.unmount();
+      }
+    }finally{Date.now=originalNow;}
+  });
+
+  await test('Thông báo khóa đề giữ nguyên điểm đang giấu, kết quả đã công bố và BTVN thường',()=>{
+    for(const kind of ['kiem-tra','kiem-tra-thang'] as const){
+      const runtime=new Runtime(),Overview=compile('src/native/homework/HomeworkOverview.tsx',runtime);
+      const base={...state,kind,maxAttempts:1,canStart:false,opensAt:startedAt-60000,closesAt:submittedAt+60000,serverNow:submittedAt,clientReceivedAt:Date.now()};
+      let tree=runtime.draw(Overview,{state:{...base,solutionsAvailable:false},busy:false,onStart(){}});
+      assert.match(text(tree),/Em đã nộp bài kiểm tra/);assert.match(text(tree),/Chờ công bố/);
+      assert.doesNotMatch(text(tree),/8,25|Chưa có bài nộp|Đề đã đóng/);
+      assert.equal(find(tree,node=>node.type==='button'&&text(node)==='Xem lời giải'),null);
+      tree=runtime.draw(Overview,{state:{...base,serverNow:base.closesAt+1,solutionsAvailable:true},busy:false,onStart(){}});
+      assert.match(text(tree),/8,25\/10Điểm lượt này/);
+      assert.ok(find(tree,node=>node.type==='button'&&text(node)==='Xem lời giải'));
+      tree=runtime.draw(Overview,{state:{...state,kind:'btvn',canStart:true},busy:false,onStart(){}});
+      assert.equal(find(tree,node=>node.type==='button'&&text(node)==='Làm lượt tiếp').props.disabled,false);
+      assert.match(text(tree),/Lượt tiếp theo: lượt 2/);
+      runtime.unmount();
+    }
+  });
+
   await test('Overview giữ điểm và lượt tiếp khi thời gian âm hoặc answers hỏng, lịch sử không in NaN',()=>{
     const runtime=new Runtime(),Overview=compile('src/native/homework/HomeworkOverview.tsx',runtime);
     let starts=0;
