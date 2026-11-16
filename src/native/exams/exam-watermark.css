@@ -23,8 +23,26 @@
   background-repeat: no-repeat;
 }
 
-/* In the mobile room, branding follows the answers in normal flow. The paper's
-   compact padding cannot reserve space for a footer that wraps to many lines. */
+/* Room panes can be narrow inside a desktop viewport too. Reserve the footer's
+   actual wrapped height rather than overlaying the question navigation. */
+@media screen {
+  .ep-root.fr-room .fr-paper::after {
+    position: static;
+    inset: auto;
+    z-index: auto;
+    display: block;
+    flex: none;
+    margin-top: 18px;
+    padding: 42px 0 0;
+    line-height: 1.6;
+    overflow-wrap: anywhere;
+    background-image: url('/mtm-watermark.png');
+    background-position: center top;
+    background-size: min(64%, 240px) auto;
+  }
+}
+
+/* Keep the existing compact mobile type size. */
 @media (max-width: 760px) {
   .ep-root.fr-room .fr-paper::after {
     position: static;
