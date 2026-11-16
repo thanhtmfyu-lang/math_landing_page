@@ -52,7 +52,10 @@ export class SupabaseHomeworkRepository {
   }
   async logout(session:string){await this.rpc('mtm_btvn_logout',{p_session:session});}
   async remember(session:string){return (await this.rpc<boolean>('mtm_btvn_remember',{p_session:session}))===true;}
-  async classNames(){return publicClassNames(await this.rpc<unknown>('mtm_btvn_classes',{}));}
+  async classNames(qaClassId?:string){
+    if(qaClassId!==undefined&&!/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(qaClassId))throw new HomeworkError(400,GATE_ERROR);
+    return publicClassNames(await this.rpc<unknown>(qaClassId?'mtm_btvn_qa_class116':'mtm_btvn_classes',qaClassId?{p_class_id:qaClassId}:{}));
+  }
   async issueMissingCode(studentId:string,days=90){return this.rpc<{ok:boolean;code?:string;preserved?:boolean}>('mtm_btvn_issue_missing_code',{p_student_id:studentId,p_days:days});}
   async scoresFile(lessonCode:string){const rows=await this.rpc<StudentWork[]>('mtm_btvn_admin_scores',{p_lesson:lessonCode});return scoresCsv(rows,lessonCode);}
   async reconcileDue(lessonCode:string,studentId:string,startsAt:number,sourceIdentity:string){

@@ -14,8 +14,8 @@ export function createDurableHomeworkHandler(repo:SupabaseHomeworkRepository){re
     if(!body||typeof body!=='object'||Array.isArray(body)||JSON.stringify(body).length>524288)throw new HomeworkError(400,GATE_ERROR);
     const action=body.action;
     if(action==='classes'){
-      if(Object.keys(body).length!==1)throw new HomeworkError(400,GATE_ERROR);
-      return {status:200,headers,body:{classNames:await repo.classNames()}};
+      if(Object.keys(body).some(key=>!['action','qaClassId'].includes(key))||body.qaClassId!==undefined&&(typeof body.qaClassId!=='string'||! /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/.test(body.qaClassId)))throw new HomeworkError(400,GATE_ERROR);
+      return {status:200,headers,body:{classNames:await repo.classNames(body.qaClassId as string|undefined)}};
     }
     if(!['login','logout','state','select','start','save','submit'].includes(String(action)))throw new HomeworkError(400,GATE_ERROR);
     if(body.lessonCode!==undefined&&(typeof body.lessonCode!=='string'||! /^[a-z0-9-]{1,160}$/.test(body.lessonCode)))throw new HomeworkError(400,GATE_ERROR);

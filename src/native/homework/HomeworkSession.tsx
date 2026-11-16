@@ -98,7 +98,16 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEs
 }
 export default function HomeworkSession({pathname,profileControl}:{pathname:string;profileControl?:(state:HomeworkState)=>ReactNode}){
   const parts=/^\/btvn\/([a-z0-9-]+)\/([a-z0-9-]+)$/.exec(pathname);
-  const [state,setState]=useState<HomeworkState|null>(null),[gate,setGate]=useState({fullName:'',phone:'',className:''});
+  const qaClassId=/^qa-([0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12})$/.exec(parts?.[1]??'')?.[1];
+  const linkedLesson=(next:HomeworkState)=>!!parts?.[2]&&next.lessonCode===parts[2];
+  // Only synthetic QA names/phones may be hinted by a QA entry link. This is
+  // form input, never a login: the ordinary server PIN flow still applies.
+  const qaGateHint=()=>{
+    if(!qaClassId)return {fullName:'',phone:'',className:''};
+    const params=new URLSearchParams(location.search),fullName=params.get('qaName')??'',phone=params.get('qaPhone')??'';
+    return /^QA [A-Za-z0-9 -]{1,80}$/.test(fullName)&&/^0000000[0-9]{3}$/.test(phone)?{fullName,phone,className:''}:{fullName:'',phone:'',className:''};
+  };
+  const [state,setState]=useState<HomeworkState|null>(null),[gate,setGate]=useState(qaGateHint);
   const [studentCode,setStudentCode]=useState('');
   const [pinMode,setPinMode]=useState<'enter'|'setup'>('enter');
   const [classNames,setClassNames]=useState<string[]>([]),[classesLoading,setClassesLoading]=useState(true),[classesError,setClassesError]=useState(false);
@@ -107,14 +116,14 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     const generation=++classesGeneration.current;setClassesLoading(true);setClassesError(false);
     try{
       const {response,data}=await withHomeworkDeadline('classes',async signal=>{
-        const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({action:'classes'})});
+        const response=await fetch('/api/btvn',{method:'POST',credentials:'same-origin',cache:'no-store',headers:{'Content-Type':'application/json'},signal,body:JSON.stringify({action:'classes',...(qaClassId?{qaClassId}:{})})});
         assertHomeworkRequestActive(signal,'classes');
         const data=await response.json();
         assertHomeworkRequestActive(signal,'classes');
         return {response,data};
       });
       if(!response.ok||!Array.isArray(data.classNames)||data.classNames.length>200||data.classNames.some((name:unknown)=>typeof name!=='string'||!name.trim()||name.length>100))throw Error('Danh sách lớp chưa sẵn sàng');
-      if(generation===classesGeneration.current){setClassNames([...new Set<string>(data.classNames)]);setGate(previous=>({...previous,className:data.classNames.includes(previous.className)?previous.className:''}));}
+      if(generation===classesGeneration.current){setClassNames([...new Set<string>(data.classNames)]);setGate(previous=>({...previous,className:data.classNames.includes(previous.className)?previous.className:qaClassId&&data.classNames.length===1?data.classNames[0]:''}));}
     }catch{if(generation===classesGeneration.current){setClassNames([]);setClassesError(true);}}
     finally{if(generation===classesGeneration.current)setClassesLoading(false);}
   };
@@ -193,7 +202,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     window.addEventListener(HOMEWORK_SESSION_UNCERTAIN,uncertain);
     return()=>window.removeEventListener(HOMEWORK_SESSION_UNCERTAIN,uncertain);
   },[pathname]);
-  useEffect(()=>{mounted.current=true;void gateway.call('state').then(next=>{if(mounted.current){setState(next);setRoom(!!next.draft&&next.draft.submittedAt===null);}}).catch(error=>{if(mounted.current&&error instanceof Error&&error.message!==ACCESS_ENDED)setNotice(error.message);}).finally(()=>{if(mounted.current)setChecking(false);});return()=>{mounted.current=false;sessionGeneration.current++;};},[gateway]);
+  useEffect(()=>{mounted.current=true;void gateway.call('state').then(next=>{if(mounted.current){setState(next);setRoom(linkedLesson(next)||!!next.draft&&next.draft.submittedAt===null);}}).catch(error=>{if(mounted.current&&error instanceof Error&&error.message!==ACCESS_ENDED)setNotice(error.message);}).finally(()=>{if(mounted.current)setChecking(false);});return()=>{mounted.current=false;sessionGeneration.current++;};},[gateway]);
   const refreshingReceipt=useRef(false);
   const refreshReceipt=async()=>{
     if(busy||refreshingReceipt.current||!state?.draft||state.draft.submittedAt===null||remotePending.current)return;
@@ -235,7 +244,7 @@ export default function HomeworkSession({pathname,profileControl}:{pathname:stri
     setBusy(true);setNotice('');try{
       const next=await gateway.call(action,action==='login'?{gate:input,...(remember!==undefined?{remember}:{})}:{});
       if(!mounted.current||sessionGeneration.current!==generation+(action==='login'?1:0))return;
-      completed=true;setState(next);setRoom(action==='start'||!!next.draft);setGate({fullName:'',phone:'',className:''});setStudentCode('');setPinMode('enter');
+      completed=true;setState(next);setRoom(action==='start'||linkedLesson(next)||!!next.draft);setGate({fullName:'',phone:'',className:''});setStudentCode('');setPinMode('enter');
     }catch(error){if(current()){const message=error instanceof Error?error.message:'Chưa kết nối được máy chủ. Em thử lại sau.';if(message==='PIN_SETUP')setPinMode('setup');else if(message==='PIN_REQUIRED')setPinMode('enter');setNotice(message==='PIN_SETUP'?PIN_SETUP_NOTICE:message==='PIN_REQUIRED'?PIN_REQUIRED_NOTICE:message);}}finally{if(mounted.current&&(current()||completed))setBusy(false);}
   };
   const selectLesson=async(code:string)=>{
