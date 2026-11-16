@@ -16,7 +16,8 @@ function fixture(mode:'none'|'active'|'submitted',checker:(id:string)=>Promise<b
  const api=createBtvnApi(()=>env,async()=>()=>repo,{checkVideoEmbed:checker,clock});
  return async(action:string)=>{
   let status=0,body:any;const headers:Record<string,string>={};
-  await api({method:'POST',body:{action,...(action==='login'?{gate:{studentCode:'FAKE-CODE'}}:{})},headers:{host:env.VERCEL_URL,origin:'https://'+env.VERCEL_URL,'x-vercel-forwarded-for':'203.0.113.17',cookie:'mtm_btvn_demo='+'a'.repeat(64)}},{setHeader(key,value){headers[key]=value;},status(code){status=code;return {json(value){body=value;}};}});
+  const requestBody={action,...(action==='login'?{gate:{studentCode:'FAKE-CODE'}}:{}),...(['save','submit'].includes(action)?{attemptId:made.value.attemptId,answers:made.value.answers}:{})};
+  await api({method:'POST',body:requestBody,headers:{host:env.VERCEL_URL,origin:'https://'+env.VERCEL_URL,'x-vercel-forwarded-for':'203.0.113.17',cookie:'mtm_btvn_demo='+'a'.repeat(64)}},{setHeader(key,value){headers[key]=value;},status(code){status=code;return {json(value){body=value;}};}});
   return {status,body,headers};
  };
 }

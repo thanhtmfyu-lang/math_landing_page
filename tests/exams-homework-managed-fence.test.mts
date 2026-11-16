@@ -42,6 +42,21 @@ function mount(){
 }
 let count=0;async function test(name:string,run:()=>Promise<void>){await run();console.log('ĐẠT '+(++count)+' '+name);}
 
+await test('Lượt máy chủ mở bật auto-resume nhưng chưa chọn gì không báo đã lưu đáp án',async()=>{
+  const r=mount();try{
+    assert.equal(r.practice().props.autoResumeServerDraft,true);
+    assert.match(r.practice().props.saveStatus,/Chưa có đáp án/);
+    assert.doesNotMatch(r.practice().props.saveStatus,/Đã lưu máy chủ/);
+    assert.equal(r.requests.length,0,'Mount không tạo save hoặc start rỗng');
+    assert.deepEqual(JSON.parse(r.practice().props.storeOverride.getItem(draftKey(f.exam.id))),initial.draft);
+    const answer=r.write(11,'B');r.saverRef.current.retry();await r.settle();
+    r.ack(0,answer,11);await r.settle();
+    r.runtime.props.state=r.saved[0];r.runtime.flush();
+    assert.match(r.practice().props.saveStatus,new RegExp('Đã lưu máy chủ · 1/'+f.exam.questions.length+' câu có đáp án'));
+    assert.equal(r.requests.length,1);assert.equal(r.saverRef.current.pending(),false);
+  }finally{r.dispose();}
+});
+
 await test('ACK của batch cũ cập nhật base máy chủ trước khi gửi RAM mới, không thay RAM bằng batch cũ',async()=>{
   const r=mount();try{
     const a=r.write(11,'A');r.saverRef.current.retry();await r.settle();assert.equal(r.requests[0].body.baseRevision,10);

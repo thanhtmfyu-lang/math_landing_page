@@ -82,6 +82,19 @@ await test('HTTP chỉ cho counter nguyên ở save/submit, legacy không thêm 
   assert.equal((await send({action:'save',attemptId:'fake',answers:a,baseRevision:0})).status,400);
   assert.equal((await send({action:'start',clientRevision:1})).status,400);
 });
+await test('HTTP thiếu/null/array/string answers bị 400 trước repository, không thành bài trắng',async()=>{
+  let calls=0;
+  const retained={answers:structuredClone(a),draftCount:1,receiptCount:0},before=structuredClone(retained);
+  const repo={call:async()=>{calls++;retained.answers={};retained.receiptCount++;return {ok:true};}} as unknown as SupabaseHomeworkRepository;
+  const handler=createDurableHomeworkHandler(repo),cookie='mtm_btvn_demo='+'c'.repeat(64);
+  const malformed=[{}, {answers:undefined}, {answers:null}, {answers:[]}, {answers:['A']}, {answers:'A'}];
+  for(const action of ['save','submit'] as const)for(const patch of malformed){
+    const response=await handler({method:'POST',body:{action,attemptId:'fake',clientRevision:11,baseRevision:10,...patch},cookie,origin:'https://fixture.invalid',host:'fixture.invalid',secure:true});
+    assert.equal(response.status,400,action+' '+JSON.stringify(patch));
+    assert.equal(calls,0,'Malformed payload must not reach repository.call');
+    assert.deepEqual(retained,before,'Rejected input must not clear answers or create a receipt');
+  }
+});
 
 function raceFixture(oldRevision:number|undefined,empty=false,initialRevision?:number){
   const f=fixture();let canonical:DurableSnapshot={revision:0,work:f.memory.all()[0],exam,material,lessons:[material]};
@@ -104,6 +117,26 @@ function raceFixture(oldRevision:number|undefined,empty=false,initialRevision?:n
   const repository=new SupabaseHomeworkRepository(db,async()=>{throw Error('No auth or external requests in test');},()=>baseNow);
   return {f,repository,reached,release(){assert.ok(heldArgs);held(commit(heldArgs));},read:()=>structuredClone(canonical)};
 }
+await test('Repository trực tiếp không đổi missing/null answers thành {}, giữ toàn bộ work',async()=>{
+  for(const action of ['save','submit'] as const)for(const answers of [undefined,null,[],['A'],'A']){
+    const r=raceFixture(9999,false,10),before=r.read();
+    await assert.rejects(r.repository.call('fake-session',action,material.lessonCode,r.f.id,answers as any,11,10),
+      (error:unknown)=>error instanceof HomeworkError&&error.status===400);
+    assert.deepEqual(r.read(),before,'No commit, answer loss or receipt on malformed '+action);
+  }
+});
+await test('Explicit {} và đáp án null từng câu vẫn lưu/nộp được qua HTTP với đúng base',async()=>{
+  for(const answers of [{},{[mc.id]:null}] as Answers[]){
+    const r=raceFixture(9999,false,10),handler=createDurableHomeworkHandler(r.repository);
+    const send=(action:'save'|'submit',clientRevision:number,baseRevision:number)=>handler({method:'POST',body:{action,lessonCode:material.lessonCode,attemptId:r.f.id,answers,clientRevision,baseRevision},cookie:'mtm_btvn_demo='+'c'.repeat(64),origin:'https://fixture.invalid',host:'fixture.invalid',secure:true});
+    const saved=await send('save',11,10);assert.equal(saved.status,200);
+    assert.deepEqual(r.read().work.drafts[0].answers,answers);assert.equal(r.read().work.receipts.length,0);
+    const submitted=await send('submit',12,r.read().work.drafts[0].revision);assert.equal(submitted.status,200);
+    const canonical=r.read();assert.deepEqual(canonical.work.drafts[0].answers,answers);
+    assert.equal(canonical.work.drafts.length,1);assert.equal(canonical.work.receipts.length,1);assert.equal(canonical.work.receipts[0].score,0);
+    assert.equal(canonical.work.drafts[0].attemptId,r.f.id);assert.equal(canonical.work.drafts[0].deadline,r.f.started.draft!.deadline);
+  }
+});
 await test('CAS collision: late save A bị từ chối sau B, không rollback answers',async()=>{
   const r=raceFixture(10);
   const old=r.repository.call('fake-session','save',material.lessonCode,r.f.id,a,10,0);await r.reached;

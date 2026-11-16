@@ -22,6 +22,7 @@ export function createDurableHomeworkHandler(repo:SupabaseHomeworkRepository){re
     const allowed=['action','classKey','lessonCode',...(action==='login'?['gate','remember']:action==='save'||action==='submit'?['attemptId','answers','clientRevision','baseRevision']:[])];
     if(Object.keys(body).some(k=>!allowed.includes(k)))throw new HomeworkError(400,GATE_ERROR);
     if(!validWriteRevisions(body.clientRevision,body.baseRevision))throw new HomeworkError(400,'Số lần sửa bài không hợp lệ. Bài đang giữ chưa bị thay đổi.');
+    if((action==='save'||action==='submit')&&(!body.answers||typeof body.answers!=='object'||Array.isArray(body.answers)))throw new HomeworkError(400,'Chưa nhận được bản đáp án hợp lệ. Giữ trang mở và gửi lại bài đang giữ.');
     let session=(input.cookie??'').split(';').map(x=>x.trim()).find(x=>x.startsWith('mtm_btvn_demo='))?.slice(14)??'';
     const details:{classMismatch?:boolean}={};
     if(action==='login'){

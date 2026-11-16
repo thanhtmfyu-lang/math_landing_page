@@ -10,7 +10,7 @@ import {erratumFor} from './practice-errata';
 import type {PracticeAttemptProps} from './attempt-types';
 
 /** Một instance cho mỗi lượt đang mở; RAM, đồng hồ và kiểm xung đột giữ cùng vòng đời. */
-export function usePracticeAttempt({exam,previousExam,storeOverride,questionReader,newAttemptsClosed,onRetake,isHomework=false,deadlineAt,clockOffsetMs=0,onServerStart,onServerSubmit,serverScore}: PracticeAttemptProps) {
+export function usePracticeAttempt({exam,previousExam,storeOverride,questionReader,newAttemptsClosed,onRetake,isHomework=false,autoResumeServerDraft=false,deadlineAt,clockOffsetMs=0,onServerStart,onServerSubmit,serverScore}: PracticeAttemptProps) {
   const validation={allowQuestionOnly:isHomework};
   const clockNow=()=>Date.now()+clockOffsetMs;
   const timeLeft=(value:Draft,at:number)=>remainingMs({deadline:Math.min(value.deadline,deadlineAt??Infinity)},at);
@@ -34,7 +34,10 @@ export function usePracticeAttempt({exam,previousExam,storeOverride,questionRead
   const [legacy]=useState(()=>previousExam?readDraft(getStore(),previousExam):null);
   const [initial] = useState(() => readDraft(getStore(), exam,validation));
   const persisted = useRef<Draft | null>(initial.ok ? initial.value : null);
-  const ram = useRef<Draft | null>(initial.ok && initial.value && initial.value.submittedAt !== null ? initial.value : null);
+  // Managed homework has already been started by the server. Reuse that
+  // validated draft without a second start/resume click or a mount-time write.
+  const resumeServerDraft=isHomework&&autoResumeServerDraft&&!!storeOverride&&!sourceIssue&&(!erratum||acceptedErratum);
+  const ram = useRef<Draft | null>(initial.ok && initial.value && (initial.value.submittedAt !== null||resumeServerDraft) ? initial.value : null);
   const dirty = useRef(false), conflict = useRef(false);
   const remotePending=useRef(false);
   const [serverBusy,setServerBusy]=useState(false);

@@ -26,7 +26,7 @@ import MtmSourceContent from '../exams/MtmSourceContent';
 import RoomChoice from '../exams/RoomChoice';
 import MathText from '../math/MathText';
 import {RoomQuestionContext} from '../exams/RoomQuestionContext';
-import {questionLabel} from '../exams/attempt-ui';
+import {questionLabel,answerState} from '../exams/attempt-ui';
 import {useUnsavedGuard} from '../exams/navigation-guard';
 import {createHomeworkSaver,REMOTE_SAVE_INITIAL,REMOTE_LEAVE_MESSAGE} from './remote-save';
 import {withHomeworkDeadline,assertHomeworkRequestActive,assertHomeworkResponseHeaders,HOMEWORK_SESSION_UNCERTAIN} from './request-deadline';
@@ -83,9 +83,11 @@ function ManagedAttempt({state,gateway,onState,onPendingChange,saverRef,onOpenEs
       }else values.set(key,value);
     }};
   },[state.draft?.attemptId,saver]);
-  const saveStatus=save.failed?'Chưa lưu máy chủ':save.pending?'Chờ máy chủ lưu':'Đã lưu máy chủ';
-  return <><p className="r106-assessment r106-save-feedback" role="status">{save.message||notice}</p>{save.failed&&!save.closed&&<button disabled={save.saving} onClick={retryHeld}>Gửi lại bài đang giữ</button>}
-    <PracticeAttempt isHomework exam={state.exam} catalogUrl={location.pathname} contextLabel={state.kind==='kiem-tra'?'Đề kiểm tra':state.kind==='kiem-tra-thang'?'Kiểm tra tháng':'BTVN'} audienceLabel={displayClassName(state)} storeOverride={store}
+  const savedAnswers=state.exam.questions.filter(q=>answerState(state.exam,q,state.draft?.answers??{})!=='blank').length;
+  const saveStatus=save.failed?'Chưa lưu máy chủ':save.pending?'Chờ máy chủ lưu':savedAnswers>0?`Đã lưu máy chủ · ${savedAnswers}/${state.exam.questions.length} câu có đáp án`:'Đã nhận lượt làm bài · Chưa có đáp án';
+  const saveFeedback=!save.failed&&!save.pending&&savedAnswers===0?saveStatus:save.message||notice;
+  return <><p className="r106-assessment r106-save-feedback" role="status">{saveFeedback}</p>{save.failed&&!save.closed&&<button disabled={save.saving} onClick={retryHeld}>Gửi lại bài đang giữ</button>}
+    <PracticeAttempt isHomework autoResumeServerDraft exam={state.exam} catalogUrl={location.pathname} contextLabel={state.kind==='kiem-tra'?'Đề kiểm tra':state.kind==='kiem-tra-thang'?'Kiểm tra tháng':'BTVN'} audienceLabel={displayClassName(state)} storeOverride={store}
       homeworkSelfCheck={state.kind==='kiem-tra'||state.kind==='kiem-tra-thang'?undefined:<HomeworkSelfCheckTool selection={checkSelection}/>} onOpenEssay={onOpenEssay}
       saveStatus={save.failed?save.message:saveStatus} savePending={save.pending} onRetrySave={save.failed&&!save.closed?retryHeld:undefined} onAcceptClosed={save.closed?saver.acceptClosed:undefined}
       deadlineAt={state.closesAt} clockOffsetMs={state.serverNow!==undefined&&state.clientReceivedAt!==undefined?state.serverNow-state.clientReceivedAt:0}

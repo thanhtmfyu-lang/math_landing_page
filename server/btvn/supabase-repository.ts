@@ -96,7 +96,8 @@ export class SupabaseHomeworkRepository {
       const memory=new MemoryHomeworkRepository([]);memory.put(work);
       const service=new HomeworkService(memory,snapshot.exam,0,'private',snapshot.material.lessonCode,this.clock,[snapshot.material]);
       const token=service.login({studentCode:code},'internal');
-      const next=action==='start'?service.start(token):action==='save'?service.save(token,attemptId??'',answers??{},clientRevision,baseRevision):action==='submit'?service.submit(token,attemptId??'',answers??{},clientRevision,baseRevision):service.state(token);
+      if((action==='save'||action==='submit')&&(!answers||typeof answers!=='object'||Array.isArray(answers)))throw new HomeworkError(400,'Chưa nhận được bản đáp án hợp lệ. Giữ trang mở và gửi lại bài đang giữ.');
+      const next=action==='start'?service.start(token):action==='save'?service.save(token,attemptId??'',answers!,clientRevision,baseRevision):action==='submit'?service.submit(token,attemptId??'',answers!,clientRevision,baseRevision):service.state(token);
       next.demo=false;next.serverNow=this.clock();next.paperChoice=snapshot.paperChoice;
       if(monthly){next.kind=snapshot.material.kind;next.assessmentId=snapshot.material.assessmentId;next.examType=snapshot.material.examType;next.durationMinutes=snapshot.exam.durationMinutes;next.opensAt=snapshot.material.opensAt;next.closesAt=snapshot.material.closesAt;next.canStart=now<snapshot.material.closesAt!;next.essayUploadAvailable=snapshot.exam.questions.some(q=>q.kind==='self');}
       // Điểm chấm tay do RPC owner cung cấp, chỉ ghép vào response. Không sửa
