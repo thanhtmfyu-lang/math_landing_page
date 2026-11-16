@@ -32,8 +32,8 @@ await luot('khach',null,null,'hsa-thu-2026-11','2026-11-15 23:30+07');
 await luot('khach',null,null,null,'2026-11-15 13:00+07');
 await luot('tk:'+tThu,tThu,null,'hsa-thu-2026-11','2026-11-15 14:00+07');   // tài khoản thử: bỏ
 await luot('hs:'+hsThu,null,hsThu,'hsa-thu-2026-11','2026-11-15 14:00+07');  // HS thử: bỏ
-await q("insert into mtm_lead.leads(kind,student_name,phone,grade,study_mode,lead_source,created_at) values('dang-ky','A','0912345678','12','online','Mã nguồn: HSA1-FB · Nguồn: facebook','2026-11-15 09:00+07'),('dang-ky','B','0912345679','12','online','Nguồn: google','2026-11-15 09:10+07'),('dang-ky','C','0912345670','11','online','Mã nguồn: HSA1-FB','2026-11-15 20:00+07')");
-await q("insert into mtm_lead.leads(kind,student_name,phone,grade,study_mode,lead_source,created_at) values('kiem-tra-dau-vao','D','0912345671','10','online','Kiểm tra đầu vào web','2026-11-15 15:00+07')");
+await q("insert into mtm_lead.leads(kind,student_name,phone,grade,study_mode,lead_source,created_at) values('dang-ky','A','0912345678','12','online','Mã nguồn: HSA1-FB · Nguồn: facebook','2026-11-15 09:00+07'),('dang-ky','B','0900000002','12','online','Nguồn: google','2026-11-15 09:10+07'),('dang-ky','C','0900000003','11','online','Mã nguồn: HSA1-FB','2026-11-15 20:00+07')");
+await q("insert into mtm_lead.leads(kind,student_name,phone,grade,study_mode,lead_source,created_at) values('kiem-tra-dau-vao','D','0900000004','10','online','Kiểm tra đầu vào web','2026-11-15 15:00+07')");
 
 const d=await call('2026-11-15','2026-11-16');
 const n15=d.theoNgay.find((x:any)=>x.ngay==='2026-11-15'),n16=d.theoNgay.find((x:any)=>x.ngay==='2026-11-16');
@@ -46,7 +46,7 @@ test('bài nộp theo đợt, bỏ HS và tài khoản thử, tự do ghi tu-do'
 test('số cổng W9',()=>{
  assert.equal(d.cong.taiKhoanNgoai,2);assert.deepEqual(d.cong.baiTheoDot,{'hsa-thu-2026-11':3,'thpt-thu-2026-11':1});
  assert.equal(d.cong.soDotDat,0);assert.equal(d.cong.nguoiThiDot,2);assert.equal(d.cong.quayLai2Dot,1);assert.equal(d.cong.dichTaiKhoanNgoai,2000);});
-test('không lộ tên, SĐT',()=>{const s=JSON.stringify(d);for(const x of ['Nguyễn','Người ngoài','0911','0988','0912','Phụ huynh'])assert.ok(!s.includes(x),x);});
+test('không lộ tên, SĐT',()=>{const s=JSON.stringify(d);for(const x of ['Nguyễn','Người ngoài','0911','0988','0912','0900','Phụ huynh'])assert.ok(!s.includes(x),x);});
 test('anon và authenticated không gọi được; khoảng ngày sai bị từ chối',async()=>{
  for(const role of ['anon','authenticated'])await assert.rejects(call('2026-11-15','2026-11-16',role));
  await assert.rejects(call('2026-11-16','2026-11-15'));});
