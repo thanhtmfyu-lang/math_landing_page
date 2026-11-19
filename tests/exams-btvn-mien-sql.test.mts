@@ -65,6 +65,26 @@ test('anon/authenticated không gọi được, không đọc được bảng',a
 test('migration dữ liệu 2K11 thiếu bài thì dừng (P0001), không ghi gì',async()=>{
  await assert.rejects(db.exec(readFileSync('supabase/migrations-pending/202611190118_mien_2k11_tra_loi_ngan.sql','utf8')),(e:any)=>e.code==='P0001'&&/MIEN_2K11_THIEU_BAI/.test(e.message));});
 test('migration không chứa tên/SĐT/mã HS',()=>{
- for(const f of ['202611190117_btvn_mien.sql','202611190118_mien_2k11_tra_loi_ngan.sql']){
+ for(const f of ['202611190117_btvn_mien.sql','202611190118_mien_2k11_tra_loi_ngan.sql','202611190119_mien_the_bai.sql']){
   const s=readFileSync('supabase/migrations-pending/'+f,'utf8');assert.doesNotMatch(s,/(?<![0-9a-f])0\d{9}(?![0-9a-f])/);assert.doesNotMatch(s,/[0-9a-f]{8}-[0-9a-f]{4}-/);}});
+
+// Thẻ bài (HS + Góc phụ huynh): stub nguồn cũ + phân giải HS, kiểm riêng wrapper 119.
+await db.exec(readFileSync('supabase/migrations-pending/202611190119_mien_the_bai.sql','utf8'));
+await db.exec(readFileSync('supabase/migrations-pending/202611190119_mien_the_bai.sql','utf8'));
+await db.exec(`create or replace function mtm_hw_private.btvn_student(p_session text) returns uuid language sql security definer set search_path='' as $f$select p_session::uuid$f$;
+create or replace function public.mtm_btvn_read_before_mien119(p_session text,p_lesson text default null) returns jsonb language sql security definer set search_path='' as $f$
+select '{"lessons":[{"lessonCode":"moi","available":true,"submittedAt":null,"bestScore":null},{"lessonCode":"cu","available":true,"submittedAt":1763474400000,"bestScore":8.25,"late":false},{"lessonCode":"lop-khac","available":false}]}'::jsonb$f$;
+select mtm_test100.refresh_reports();`);
+test('thẻ bài miễn hiện đã nộp, đúng hạn, điểm giữ; thẻ khác giữ nguyên',async()=>{
+ const r=(await one("select public.mtm_btvn_read($1,null) r",[daLam])).r;
+ const [moi,cu,khac]=r.lessons;
+ assert.equal(moi.exempt,true);assert.equal(moi.submittedAt,t1);assert.equal(moi.late,false);assert.equal(Number(moi.bestScore),8.25);assert.equal(moi.pendingGrading,false);
+ assert.equal(cu.exempt,undefined);assert.equal(cu.bestScore,8.25);assert.deepEqual(khac,{lessonCode:'lop-khac',available:false});});
+test('HS không được miễn: thẻ giữ nguyên chưa nộp',async()=>{
+ const r=(await one("select public.mtm_btvn_read($1,null) r",[chiNhap])).r;assert.equal(r.lessons[0].submittedAt,null);assert.equal(r.lessons[0].exempt,undefined);});
+test('Góc phụ huynh (mtm_btvn_read_real100) cũng thấy thẻ miễn',async()=>{
+ const r=(await one("select public.mtm_btvn_read_real100($1,null) r",[daLam])).r;assert.equal(r.lessons[0].exempt,true);});
+test('mtm_btvn_read chỉ service_role gọi được',async()=>{
+ for(const role of ['anon','authenticated'])assert.equal((await one("select has_function_privilege($1,'public.mtm_btvn_read(text,text)','execute') v",[role])).v,false);
+ assert.equal((await one("select has_function_privilege('service_role','public.mtm_btvn_read(text,text)','execute') v")).v,true);});
 await finish();await db.close();
