@@ -1,21 +1,27 @@
-import {useEffect,useRef,useState,type FormEvent} from 'react';
-import {HISTORY_NO_DATA,cleanHistoryQuery,defaultHistoryQuery,historyAttendance,historyAttendanceSource,historyDate,historyDateTime,historyEnrollment,historyRowKey,historyScore,historyScoreBasis,historyStudentName,historyWorkLabel,historyWorkStatus,validateHistoryPage,validateHistoryQuery,type StaffHistoryClass,type StaffHistoryPage,type StaffHistoryQuery,type StaffHistoryRow,type StaffHistoryWorkKind} from './staff-history';
+import {lazy,Suspense,useCallback,useEffect,useRef,useState,type FormEvent} from 'react';
+import {HISTORY_NO_DATA,cleanHistoryQuery,defaultHistoryQuery,historyAttendance,historyAttendanceSource,historyAttendanceTime,historyDate,historyDateTime,historyEnrollment,historyRowKey,historyScore,historyScoreBasis,historyStudentName,historyWorkLabel,historyWorkStatus,validateHistoryPage,validateHistoryQuery,type StaffHistoryClass,type StaffHistoryHomework,type StaffHistoryPage,type StaffHistoryQuery,type StaffHistoryRow,type StaffHistoryWorkKind} from './staff-history';
+import {canOpenStudentWork,type StaffStudentWorkData,type StaffStudentWorkRequest} from './staff-student-work';
 import './staff-history.css';
+const StaffStudentWorkDialog=lazy(()=>import('./StaffStudentWorkDialog'));
 export type {StaffHistoryPage,StaffHistoryQuery} from './staff-history';
 
 type View={owner:string;data:StaffHistoryPage|null;query:StaffHistoryQuery};
-export type StaffHistoryProps={owner:string;classes?:StaffHistoryClass[];loadPage:(query:StaffHistoryQuery)=>Promise<StaffHistoryPage>;initialData?:StaffHistoryPage;initialWorkKind?:StaffHistoryWorkKind};
+export type StaffHistoryProps={owner:string;classes?:StaffHistoryClass[];loadPage:(query:StaffHistoryQuery)=>Promise<StaffHistoryPage>;loadStudentWork?:(request:StaffStudentWorkRequest,signal?:AbortSignal)=>Promise<StaffStudentWorkData>;active?:boolean;initialData?:StaffHistoryPage;initialWorkKind?:StaffHistoryWorkKind};
 function initialPage(data:StaffHistoryPage|undefined,kind:StaffHistoryWorkKind){try{return data?validateHistoryPage(data,kind):null;}catch{return null;}}
-function Homework({row,kind}:{row:StaffHistoryRow;kind:StaffHistoryWorkKind}){
+function Homework({row,kind,busy,onOpen}:{row:StaffHistoryRow;kind:StaffHistoryWorkKind;busy:boolean;onOpen?:(item:StaffHistoryHomework)=>void}){
   if(!row.homework.length)return <span className="sh-no-data">{HISTORY_NO_DATA}</span>;
-  return <ul className="sh-homework-list">{row.homework.map((item,index)=><li key={`${item.assignment_id}|${index}`}><div><b>{item.title||historyWorkLabel(kind)}</b>{item.lesson_date&&<small>{kind==='exam'?'Ngày kiểm tra':'Ngày giao'}: {historyDate(item.lesson_date)}</small>}<small>{historyWorkStatus(item.status)}</small>{(item.submitted_at||item.status==='submitted')&&<small>Thời điểm nộp: {historyDateTime(item.submitted_at)}</small>}</div><strong className={item.score===null?'sh-no-data':''}>{historyScore(item.score)}</strong></li>)}</ul>;
+  return <ul className="sh-homework-list">{row.homework.map((item,index)=><li key={`${item.assignment_id}|${index}`}><div><b>{item.title||historyWorkLabel(kind)}</b>{item.lesson_date&&<small>{kind==='exam'?'Ngày kiểm tra':'Ngày giao'}: {historyDate(item.lesson_date)}</small>}<small>{historyWorkStatus(item.status)}</small>{item.status!=='not_released'&&(item.submitted_at||item.status==='submitted')&&<small>Thời điểm nộp: {historyDateTime(item.submitted_at)}</small>}</div><div className="sh-work-actions"><strong className={item.score===null||item.status==='not_released'?'sh-no-data':''}>{historyScore(item.status==='not_released'?null:item.score)}</strong>
+    {onOpen&&canOpenStudentWork(item)&&<button type="button" disabled={busy} onClick={()=>onOpen(item)}>Xem bài làm</button>}</div></li>)}</ul>;
 }
 
-export default function StaffHistory({owner,classes=[],loadPage,initialData,initialWorkKind='homework'}:StaffHistoryProps){
+export default function StaffHistory({owner,classes=[],loadPage,loadStudentWork,active=true,initialData,initialWorkKind='homework'}:StaffHistoryProps){
   const defaultQuery=()=>defaultHistoryQuery(undefined,initialWorkKind),firstOwner=useRef(owner),loader=useRef(loadPage),activeOwner=useRef(owner),generation=useRef(0),mounted=useRef(true);
   loader.current=loadPage;activeOwner.current=owner;
   const [form,setForm]=useState({owner,query:defaultQuery()}),[view,setView]=useState<View>(()=>({owner,data:initialPage(initialData,initialWorkKind),query:defaultQuery()}));
   const [busy,setBusy]=useState(false),[message,setMessage]=useState(''),[focus,setFocus]=useState<{owner:string;student_id:string;name:string}|null>(null);
+  const [work,setWork]=useState<{owner:string;row:StaffHistoryRow;item?:StaffHistoryHomework}|null>(null);
+  const closeWork=useCallback(()=>setWork(null),[]);
+  useEffect(()=>{if(!active)closeWork();},[active,closeWork]);
   const returnView=useRef<View|null>(null);
   const visible=view.owner===owner?view.data:null,draft=form.owner===owner?form.query:defaultQuery(),selected=focus?.owner===owner?focus:null;
   const options=[...new Map([...classes,...(visible?.classes??[])].map(item=>[item.class_id,item])).values()];
@@ -24,7 +30,7 @@ export default function StaffHistory({owner,classes=[],loadPage,initialData,init
   async function request(query:StaffHistoryQuery,clear=false){
     const error=validateHistoryQuery(query);if(error){setMessage(error);return;}
     const captured=cleanHistoryQuery(query),requestOwner=owner,token=++generation.current;
-    if(clear)setView({owner:requestOwner,data:null,query:captured});setBusy(true);setMessage('');
+    closeWork();if(clear)setView({owner:requestOwner,data:null,query:captured});setBusy(true);setMessage('');
     try{
       const result=validateHistoryPage(await loader.current(captured),captured.work_kind);
       if(!mounted.current||activeOwner.current!==requestOwner||generation.current!==token)return;
@@ -35,7 +41,7 @@ export default function StaffHistory({owner,classes=[],loadPage,initialData,init
     }finally{if(mounted.current&&activeOwner.current===requestOwner&&generation.current===token)setBusy(false);}
   }
   useEffect(()=>{
-    generation.current++;setBusy(false);setMessage('');setFocus(null);returnView.current=null;
+    generation.current++;setBusy(false);setMessage('');setFocus(null);closeWork();returnView.current=null;
     const query=defaultQuery();setForm({owner,query});
     if(owner){if(firstOwner.current!==owner)setView({owner,data:null,query});void request(query);}
     else setView({owner,data:null,query});
@@ -44,7 +50,7 @@ export default function StaffHistory({owner,classes=[],loadPage,initialData,init
   function edit(patch:Partial<StaffHistoryQuery>){setForm({owner,query:{...draft,...patch,page:1,student_id:undefined}});}
   function search(event:FormEvent){event.preventDefault();const query={...draft,page:1,student_id:undefined};const error=validateHistoryQuery(query);if(error){setMessage(error);return;}setFocus(null);returnView.current=null;void request(query);}
   function detail(row:StaffHistoryRow){returnView.current=view;setFocus({owner,student_id:row.student_id,name:historyStudentName(row)});void request({...view.query,student_id:row.student_id,name:undefined,page:1},true);}
-  function back(){generation.current++;setBusy(false);setMessage('');setFocus(null);const previous=returnView.current;if(previous?.owner===owner){setView(previous);setForm({owner,query:previous.query});}returnView.current=null;}
+  function back(){closeWork();generation.current++;setBusy(false);setMessage('');setFocus(null);const previous=returnView.current;if(previous?.owner===owner){setView(previous);setForm({owner,query:previous.query});}returnView.current=null;}
   const totalPages=visible?Math.max(1,Math.ceil(visible.total/visible.page_size)):1;
   const hasNext=visible?(visible.has_more??visible.page*visible.page_size<visible.total):false;
   if(!owner)return <section className="sh-root"><h2>Điểm &amp; điểm danh</h2><p role="status">Đăng nhập tài khoản được cấp quyền để tra cứu.</p></section>;
@@ -67,10 +73,20 @@ export default function StaffHistory({owner,classes=[],loadPage,initialData,init
     {visible&&visible.rows.length>0?<div className="sh-table-wrap" aria-busy={busy}><table className="sh-table"><caption>Mỗi dòng là một học sinh trong một buổi hoặc một ngày giao bài. Điểm trống và điểm danh trống là {HISTORY_NO_DATA.toLowerCase()}.</caption><thead><tr><th scope="col">Học sinh · lớp</th><th scope="col">Ngày</th><th scope="col">Điểm danh</th><th scope="col">{historyScoreBasis(visible.score_basis,view.query.mode,view.query.work_kind)}</th></tr></thead><tbody>{visible.rows.map(row=><tr key={historyRowKey(row)}>
       <td data-label="Học sinh · lớp"><strong>{historyStudentName(row)}</strong><span>{row.class_name||HISTORY_NO_DATA}</span><small className="sh-enrollment">{historyEnrollment(row.enrollment_status)}</small><small className="sh-student-id">Hồ sơ {row.student_id}</small>{!selected&&<button type="button" disabled={busy} onClick={()=>detail(row)} aria-label={`Xem lịch sử của ${historyStudentName(row)} · ${row.class_name} · hồ sơ ${row.student_id}`}>Xem lịch sử</button>}</td>
       <td data-label="Ngày"><strong>{historyDate(row.lesson_date)}</strong>{row.start_time&&<small>{row.start_time.slice(0,5)}</small>}</td>
-      <td data-label="Điểm danh"><span className={row.attendance_status?'sh-attendance':'sh-no-data'}>{historyAttendance(row.attendance_status)}</span>{historyAttendanceSource(row.attendance_source)&&<small>Nguồn: {historyAttendanceSource(row.attendance_source)}</small>}</td>
-      <td data-label={historyWorkLabel(view.query.work_kind)}><Homework row={row} kind={view.query.work_kind??'homework'}/></td>
+      <td data-label="Điểm danh"><span className={row.attendance_status?'sh-attendance':'sh-no-data'}>{historyAttendance(row.attendance_status)}</span>{historyAttendanceSource(row.attendance_source)&&<small>Nguồn: {historyAttendanceSource(row.attendance_source)}</small>}
+        {view.query.mode==='session'&&<small className="sh-attendance-times"><span>Giờ vào {historyAttendanceTime(row.attendance_time_in)??'—'}</span><span>Giờ ra {historyAttendanceTime(row.attendance_time_out)??'—'}</span></small>}
+      </td>
+      <td data-label={historyWorkLabel(view.query.work_kind)}>
+        <Homework row={row} kind={view.query.work_kind??'homework'} busy={busy} onOpen={loadStudentWork?item=>setWork({owner,row,item}):undefined}/>
+        {loadStudentWork&&view.query.mode==='session'&&view.query.work_kind!=='exam'&&
+          <button type="button" disabled={busy} onClick={()=>setWork({owner,row})} aria-label={'Xem kết quả thi của '+historyStudentName(row)}>Xem kết quả thi</button>}
+      </td>
     </tr>)}</tbody></table></div>:!busy&&<div className="sh-empty">{HISTORY_NO_DATA} trong phạm vi đang xem.</div>}
     {visible&&visible.total>0&&<nav className="sh-pagination" aria-label="Phân trang lịch sử"><button type="button" disabled={busy||visible.page<=1} onClick={()=>void request({...view.query,page:visible.page-1})}>Trang trước</button><span>Trang {visible.page}/{totalPages}</span><button type="button" disabled={busy||!hasNext} onClick={()=>void request({...view.query,page:visible.page+1})}>Trang sau</button></nav>}
+    {active&&loadStudentWork&&work?.owner===owner&&<Suspense fallback={<p role="status">Đang mở kết quả…</p>}>
+      <StaffStudentWorkDialog row={work.row} initialItem={work.item} mode={view.query.mode} loadPage={loadPage}
+        loadWork={loadStudentWork} onClose={closeWork}/>
+    </Suspense>}
     <p className="sh-history-note">Nhãn nghỉ hoặc chuyển lớp được giữ cùng hồ sơ lịch sử; không dùng các dòng cũ để xác nhận tình trạng học hiện tại.</p>
   </section>;
 }

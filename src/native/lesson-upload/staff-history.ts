@@ -5,7 +5,7 @@ export type StaffHistoryMode='session'|'assignment';
 export type StaffHistoryWorkKind=AssessmentWorkKind;
 export type StaffHistoryQuery={mode:StaffHistoryMode;work_kind?:StaffHistoryWorkKind;class_id?:string;name?:string;from_date:string;to_date:string;page:number;page_size:number;student_id?:string};
 export type StaffHistoryHomework={assignment_id:string;title:string;work_kind?:StaffHistoryWorkKind;exam_type?:'monthly'|'custom'|null;assessment_id?:string|null;opens_at?:string|null;closes_at?:string|null;duration_minutes?:number|null;score:number|null;status?:'submitted'|'pending'|'not_submitted'|'not_released'|string;submitted_at?:string|null;lesson_date?:string|null;due_at?:string|null};
-export type StaffHistoryRow={record_id:string;student_id:string;student_name:string;display_name?:string|null;class_id:string;class_name:string;lesson_date:string;start_time?:string|null;attendance_status:string|null;attendance_source?:string|null;enrollment_status?:'active'|'former'|'transferred'|'unknown';homework:StaffHistoryHomework[]};
+export type StaffHistoryRow={record_id:string;student_id:string;student_name:string;display_name?:string|null;class_id:string;class_name:string;lesson_date:string;start_time?:string|null;attendance_status:string|null;attendance_source?:string|null;attendance_time_in?:string|null;attendance_time_out?:string|null;enrollment_status?:'active'|'former'|'transferred'|'unknown';homework:StaffHistoryHomework[]};
 export type StaffHistoryPage={ok?:boolean;mode?:StaffHistoryMode;work_kind?:StaffHistoryWorkKind;classes:StaffHistoryClass[];rows:StaffHistoryRow[];total:number;page:number;page_size:number;has_more?:boolean;generated_at?:string;score_basis?:string;score_snapshot?:string;summary?:unknown};
 
 export function historyToday(now=new Date()){return new Intl.DateTimeFormat('sv-SE',{timeZone:'Asia/Ho_Chi_Minh',year:'numeric',month:'2-digit',day:'2-digit'}).format(now);}
@@ -35,6 +35,9 @@ const attendance:Record<string,string>={co_mat:'Có mặt',hoc_online:'Học onl
 export function historyAttendance(status:string|null|undefined){return status?attendance[status]??HISTORY_NO_DATA:HISTORY_NO_DATA;}
 const sources:Record<string,string>={van_tay:'Vân tay',zoom:'Zoom',quan_ly:'Quản lý',phu_huynh:'Phụ huynh',hoc_sinh:'Học sinh',chuyen_buoi:'Chuyển buổi'};
 export function historyAttendanceSource(source:string|null|undefined){return source?sources[source]??'':'';}
+export function historyAttendanceTime(time:string|null|undefined){
+  return typeof time==='string'&&/^(?:[01]\d|2[0-3]):[0-5]\d(?::[0-5]\d)?$/.test(time)?time:null;
+}
 export function historyEnrollment(status:StaffHistoryRow['enrollment_status']){
   return status==='former'?'Hồ sơ lịch sử · đã nghỉ':status==='transferred'?'Hồ sơ lịch sử · đã chuyển lớp':status==='active'?'Theo hồ sơ buổi học':'Hồ sơ lịch sử';
 }

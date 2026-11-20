@@ -15,6 +15,7 @@ import {buildClassOverview} from '../server/btvn/class-overview';
 import {createProductionEssayHandler} from '../server/btvn/tu-luan';
 import {createProductionTestCleanupHandler} from '../server/btvn/test-cleanup';
 import {createOnChuongHandler} from '../server/btvn/on-chuong';
+import {createProductionPublishedLessonPreview} from '../server/btvn/published-lesson-preview';
 type Req={method?:string;body?:unknown;headers:Record<string,string|string[]|undefined>};
 type Res={setHeader:(key:string,value:string|string[])=>void;status:(n:number)=>{json:(value:unknown)=>void}};
 const header=(req:Req,key:string)=>typeof req.headers[key]==='string'?req.headers[key] as string:'';
@@ -41,6 +42,11 @@ export function createBtvnApi(getEnv=()=>process.env,loadRepository:()=>Promise<
   const key=createHmac('sha256',networkSecret).update('mtm-btvn:'+address).digest('hex');
   if((req.body as {action?:unknown}|null)?.action==='test-cleanup'){
    const result=await createProductionTestCleanupHandler({SUPABASE_URL:env.SUPABASE_URL!,SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_SERVICE_ROLE_KEY!,MTM_HOMEWORK_PUBLISHABLE_KEY:env.MTM_HOMEWORK_PUBLISHABLE_KEY!},options.cleanupClient)(req.body,header(req,'authorization'));
+   return res.status(result.status).json(result.body);
+  }
+  if((req.body as {action?:unknown}|null)?.action==='lesson-published-preview'){
+   const result=await createProductionPublishedLessonPreview({SUPABASE_URL:env.SUPABASE_URL!,
+    SUPABASE_SERVICE_ROLE_KEY:env.SUPABASE_SERVICE_ROLE_KEY!,MTM_HOMEWORK_PUBLISHABLE_KEY:env.MTM_HOMEWORK_PUBLISHABLE_KEY!})(req.body,header(req,'authorization'));
    return res.status(result.status).json(result.body);
   }
   const parent=(req.body as {ph?:unknown}|null)?.ph;

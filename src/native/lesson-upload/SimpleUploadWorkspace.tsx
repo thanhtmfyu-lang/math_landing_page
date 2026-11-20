@@ -1,5 +1,5 @@
 import {lazy,Suspense,useCallback,useEffect,useRef,useState,type FormEvent} from 'react';
-import {lessonDashboard,retryLesson,staffHistory,submitLesson,uploadLessonFile} from './backend';
+import {lessonDashboard,retryLesson,staffHistory,staffStudentWork,submitLesson,uploadLessonFile} from './backend';
 import {LessonSubmitError,pendingAfterFailure} from './submission-receipt';
 import {clearPending,loadPending,savePending} from './pending-request-store';
 import {overallUploadProgress,uploadProgress} from './upload-progress';
@@ -8,8 +8,10 @@ import {latestForSession,listSessionAssessments,uploadsForSession,nearestSession
 import {defaultDueLocal,dueLocalToIso,uploadState,uploadTitle} from './simple-intake';
 import {normalizeAssessmentIntake,defaultExamConfig} from './assessment-intake';
 import type {StaffHistoryQuery} from './staff-history';
+import type {StaffStudentWorkRequest} from './staff-student-work';
 import {QA_INTAKE,assertQaIntakeFiles,assertQaIntakeFreshLane,assertQaIntakeSession,qaIntakePayload} from './qa-intake';
 const StaffHistory=lazy(()=>import('./StaffHistory'));
+const PublishedLessonPreview=lazy(()=>import('./PublishedLessonPreview'));
 
 const dateLabel=(date:string)=>new Intl.DateTimeFormat('vi-VN',{day:'2-digit',month:'2-digit',timeZone:'Asia/Ho_Chi_Minh'}).format(new Date(`${date}T12:00:00+07:00`));
 type Files={homework:File[];answer:File[];homework2:File[];answer2:File[];handout:File[]};
@@ -27,10 +29,11 @@ function FilePicker({label,files,onChange,required=false,images=true}:{label:str
 const vnInput=(iso:string)=>Number.isFinite(Date.parse(iso))?new Date(Date.parse(iso)+7*3600000).toISOString().slice(0,16):'';
 function examDefaults(s:LessonSession|undefined){try{return s?defaultExamConfig(s):null;}catch{return null;}}
 
-function Status({upload}:{upload:LessonUpload}){
+function Status({upload,onPreview}:{upload:LessonUpload;onPreview?:()=>void}){
   const status=uploadState(upload),progress=uploadProgress(upload),exam=upload.work_kind==='exam';
   return <article className="lu-simple-status" data-state={status.state}>
     <span className="lu-badge">Bản {upload.version}</span><h3>{progress.published?(exam?'Đề kiểm tra đã sẵn sàng':'Đã giao bài cho lớp'):status.label}</h3><p>{progress.published?'Bài đã có trên web. Các mục cần kiểm tra bổ sung được ghi bên dưới.':status.detail}</p><small>{upload.title}</small>
+    {progress.published&&onPreview&&<button type="button" className="lu-preview-action" aria-haspopup="dialog" onClick={onPreview}>Kiểm tra bài đã đăng</button>}
     <div className="lu-job-progress"><label htmlFor={`progress-${upload.id}`}>Đã xử lý <b>{progress.processedPercent}%</b> · còn {progress.remainingPercent}%</label><progress id={`progress-${upload.id}`} max={100} value={progress.processedPercent}/><small>Tính theo các bước đã hoàn tất, không phải thời gian chờ.</small></div>
     {progress.issues.map(issue=><div className="lu-issue" role={issue.status==='loi'?'alert':undefined} key={`${issue.paper}-${issue.step}`}><b>{upload.homework2_uploaded?`Đề ${issue.paper} · `:''}{exam?issue.label.replace('BTVN','đề kiểm tra'):issue.label}</b><p>{issue.detail||'Cần kiểm tra lại dữ liệu của bước này.'}</p></div>)}
     {upload.retry?.next_retry_at&&<p className="lu-retry-note">AI dự kiến thử lại lúc {new Date(upload.retry.next_retry_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}.</p>}
@@ -46,7 +49,10 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   const pendingScope=qaMode?QA_INTAKE.pendingScope:undefined;
   const first=nearestSession(data.sessions),[picked,setPicked]=useState(first?sessionKey(first):'');
   const [tab,setTab]=useState<'upload'|'history'>('upload'),[historyOpened,setHistoryOpened]=useState(false);
+  const [previewId,setPreviewId]=useState<string|null>(null);
+  const closePreview=useCallback(()=>setPreviewId(null),[]);
   const loadHistory=useCallback((query:StaffHistoryQuery)=>staffHistory(owner,query),[owner]);
+  const loadStudentWork=useCallback((request:StaffStudentWorkRequest,signal?:AbortSignal)=>staffStudentWork(owner,request,signal),[owner]);
   const [files,setFiles]=useState<Files>(emptyFiles),[scope,setScope]=useState(''),[scope2,setScope2]=useState(''),[title,setTitle]=useState('');
   const [answer,setAnswer]=useState(''),[answer2,setAnswer2]=useState(''),[video,setVideo]=useState('');
   const [deadlines,setDeadlines]=useState<Record<string,string>>({}),[busy,setBusy]=useState(false),[stage,setStage]=useState(''),[message,setMessage]=useState(''),[fileKey,setFileKey]=useState(0);
@@ -62,6 +68,8 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   const sessions=data.sessions.filter(s=>s.class_id===session?.class_id);
   const current=session?latestForSession(data.uploads,session,mode,examMode?assessmentId??'__new__':undefined):undefined;
   const assessments=session?listSessionAssessments(data.uploads,session):[],defaults=examDefaults(session);
+  const selectedPreview=examMode?assessments.find(upload=>upload.id===previewId):current?.id===previewId?current:undefined;
+  const preview=tab==='upload'&&uploadProgress(selectedPreview).published?selectedPreview:undefined;
   const overview=overallUploadProgress(data),locked=busy||!!pending||!!restored.error;
   const history=session?uploadsForSession(data.uploads,session,mode,examMode?assessmentId??'__new__':undefined):[];
   const targets=session?(examMode?[session.class_id]:session.class_ids??[session.class_id]).map(id=>{
@@ -72,7 +80,7 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   const dirty=!!pending||Object.values(files).some(f=>f.length>0)||!!(scope||scope2||title||answer||answer2||video)||Object.keys(deadlines).length>0||!!(examOpen||examClose||examDuration);
   useEffect(()=>{if(!picked&&data.sessions.length){const s=nearestSession(data.sessions);if(s)setPicked(sessionKey(s));}},[data.sessions,picked]);
   useEffect(()=>{if(!dirty)return;const handler=(event:BeforeUnloadEvent)=>{event.preventDefault();event.returnValue='';};window.addEventListener('beforeunload',handler);return()=>window.removeEventListener('beforeunload',handler);},[dirty]);
-  function reset(){setFiles(emptyFiles());setScope('');setScope2('');setTitle('');setAnswer('');setAnswer2('');setVideo('');setDeadlines({});setExamOpen('');setExamClose('');setExamDuration(null);setFileKey(n=>n+1);}
+  function reset(){closePreview();setFiles(emptyFiles());setScope('');setScope2('');setTitle('');setAnswer('');setAnswer2('');setVideo('');setDeadlines({});setExamOpen('');setExamClose('');setExamDuration(null);setFileKey(n=>n+1);}
   function selectSession(s:LessonSession){if(busy||pending||sessionKey(s)===picked)return;if(dirty&&!window.confirm('Đổi buổi học và bỏ phần chưa gửi?'))return;setPicked(sessionKey(s));reset();if(examMode)setAssessmentId(crypto.randomUUID());setMessage('');}
   function changeMode(next:'homework'|'exam'){if(next===mode&&tab==='history'){setTab('upload');return;}if(locked||next===mode&&tab==='upload')return;if(dirty&&!window.confirm('Chuyển mục và bỏ phần chưa gửi?'))return;reset();setMode(next);setTab('upload');if(next==='exam')setAssessmentId(crypto.randomUUID());setMessage('');}
   function newExam(){if(locked)return;if(dirty&&!window.confirm('Tạo đề khác và bỏ phần chưa gửi?'))return;reset();setAssessmentId(crypto.randomUUID());setMessage('Đề mới có định danh riêng; các đề trước vẫn được giữ.');}
@@ -122,7 +130,7 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   return <>
     {qaMode&&<section className="lu-panel lu-message" role="status"><h2>QA cách ly · không giao học sinh thật</h2><p>Chỉ {QA_INTAKE.classLabel} · ca17/11 00:10–00:11. BTVN và Đề kiểm tra đều ghi vào vùng thử. Giữ nguyên phiếu16/11 và kết quả cũ.</p><p>Nếu gửi tệp hoặc lưu bài chưa có xác nhận, dừng để đối soát biên nhận; không gửi lại hay tạo yêu cầu mới.</p></section>}
     <div className="lu-account"><span><b>{data.staff.display_name}</b><span className="lu-badge">{manager?'Quản lý':'Giáo viên'}</span></span><button type="button" onClick={onSignOut} disabled={busy||!!pending}>Đăng xuất</button></div>
-    <nav className="lu-workspace-tabs" aria-label="Công việc giáo viên"><button type="button" aria-current={tab==='upload'&&!examMode?'page':undefined} disabled={busy||!!pending&&mode!=='homework'} onClick={()=>changeMode('homework')}>BTVN</button><button type="button" aria-current={tab==='upload'&&examMode?'page':undefined} disabled={busy||!!pending&&mode!=='exam'} onClick={()=>changeMode('exam')}>Đề kiểm tra</button><button type="button" hidden={qaMode} aria-current={tab==='history'?'page':undefined} onClick={()=>{setHistoryOpened(true);setTab('history');}}>Điểm &amp; điểm danh</button></nav>
+    <nav className="lu-workspace-tabs" aria-label="Công việc giáo viên"><button type="button" aria-current={tab==='upload'&&!examMode?'page':undefined} disabled={busy||!!pending&&mode!=='homework'} onClick={()=>changeMode('homework')}>BTVN</button><button type="button" aria-current={tab==='upload'&&examMode?'page':undefined} disabled={busy||!!pending&&mode!=='exam'} onClick={()=>changeMode('exam')}>Đề kiểm tra</button><button type="button" hidden={qaMode} aria-current={tab==='history'?'page':undefined} onClick={()=>{closePreview();setHistoryOpened(true);setTab('history');}}>Điểm &amp; điểm danh</button></nav>
     <div hidden={tab!=='upload'}>
     {!examMode&&<section className="lu-delivery-summary" aria-label="Tiến độ giao bài trong tuần"><div><strong>{overview.publishedPercent}%</strong><span>Đã giao · {overview.publishedCount}/{overview.total} buổi</span></div><div><strong>{overview.unpublishedPercent}%</strong><span>Chưa giao · {overview.unpublishedCount} buổi</span></div><p>Tính trên các buổi đã kết thúc trong tuần; một buổi chỉ tính một lần.</p>{data.automation&&<p className="lu-automation-status">AI tự nhận bài: {!data.automation.enabled?'đang tạm dừng':data.automation.last_seen_at?`đã kết nối lúc ${new Date(data.automation.last_seen_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}`:'đang chờ kết nối'}</p>}</section>}
     <div className="lu-columns lu-simple-columns">
@@ -147,7 +155,14 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
         {restored.error&&<p className="lu-message" role="alert">{restored.error}</p>}{message&&<p className="lu-message" role="status">{message}</p>}{pending&&<div className="lu-pending" role="alert"><p>Yêu cầu chưa có xác nhận cuối. Biên nhận được giữ trên thẻ trình duyệt này để kiểm tra lại, kể cả khi tải lại trang.</p><button type="button" className="lu-primary" disabled={busy||qaMode} onClick={()=>void retry()}>{busy?'Đang kiểm tra…':'Kiểm tra lại cùng yêu cầu'}</button></div>}
       </section>
       <aside className="lu-panel lu-processing lu-simple-processing"><div className="lu-section-head"><h2>{examMode?'Các đề kiểm tra':'Trạng thái bài'}</h2><button type="button" disabled={busy||retryBusy} onClick={()=>void refresh()}>{retryBusy?'Đang cập nhật…':'Cập nhật'}</button></div><p className="lu-muted">{session?`${session.class_name} · ${dateLabel(session.lesson_date)}`:'Chọn lớp và buổi học'}</p>
-        {examMode&&<div className="lu-assessment-list"><button type="button" disabled={locked} onClick={newExam}>＋ Tạo đề kiểm tra khác</button>{assessments.map(u=><button type="button" key={u.assessment_id??u.id} aria-pressed={u.assessment_id===assessmentId} disabled={locked} onClick={()=>editExam(u)}><b>{u.title}</b><small>{u.exam_type==='custom'?'Kiểm tra khác':'Kiểm tra kết thúc tháng'} · Bản {u.version} · {uploadState(u).label}</small><span>Sửa đề này</span></button>)}</div>}{current?<Status upload={current}/>:<div className="lu-empty"><span aria-hidden="true">↑</span><h3>Chưa gửi bài</h3><p>Chọn tệp rồi bấm Gửi cho AI lên bài. Trạng thái sẽ tự cập nhật.</p></div>}
+        {examMode&&<div className="lu-assessment-list">
+          <button type="button" disabled={locked} onClick={newExam}>＋ Tạo đề kiểm tra khác</button>
+          {assessments.map(u=><div className="lu-assessment-item" key={u.assessment_id??u.id}>
+            <button type="button" aria-pressed={u.assessment_id===assessmentId} disabled={locked} onClick={()=>editExam(u)}><b>{u.title}</b><small>{u.exam_type==='custom'?'Kiểm tra khác':'Kiểm tra kết thúc tháng'} · Bản {u.version} · {uploadState(u).label}</small><span>Sửa đề này</span></button>
+            {uploadProgress(u).published&&<button type="button" className="lu-preview-action" aria-label={`Kiểm tra bài đã đăng · ${u.title}`} aria-haspopup="dialog" onClick={()=>setPreviewId(u.id)}>Kiểm tra bài đã đăng</button>}
+          </div>)}
+        </div>}
+        {current?<Status upload={current} onPreview={examMode?undefined:()=>setPreviewId(current.id)}/>:<div className="lu-empty"><span aria-hidden="true">↑</span><h3>Chưa gửi bài</h3><p>Chọn tệp rồi bấm Gửi cho AI lên bài. Trạng thái sẽ tự cập nhật.</p></div>}
         {current?.due_at_by_class&&<dl className="lu-saved-due">{Object.entries(current.due_at_by_class).map(([id,due])=><div key={id}><dt>Hạn · {data.sessions.find(s=>s.class_id===id)?.class_name??id}</dt><dd>{new Date(due).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})}</dd></div>)}</dl>}
         {history.length>0&&<details className="lu-history"><summary>Lịch sử · {history.length} bản</summary>{history.map(u=><div key={u.id}><b>Bản {u.version} · {u.title}</b><small>{new Date(u.created_at).toLocaleString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh'})} · {uploadState(u).label}</small></div>)}</details>}
         <p className="lu-muted">Tự cập nhật mỗi 30 giây khi mở trang.</p>
@@ -155,6 +170,11 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
     </div>
     {!examMode&&data.publisher_warnings?.filter(w=>data.sessions.some(s=>s.class_id===w.class_id&&s.lesson_date===w.lesson_date&&latestForSession(data.uploads,s,'homework')?.homework2_uploaded===true)).map(w=><p className="lu-message" role="alert" key={w.class_id+w.lesson_code}>{data.sessions.find(s=>s.class_id===w.class_id)?.class_name} · {dateLabel(w.lesson_date)}: {w.warnings.join(' · ')}</p>)}
     {manager&&!examMode&&<details className="lu-panel lu-week-overview"><summary>Các buổi trong tuần · {dateLabel(data.week_start)}–{dateLabel(data.week_end)}</summary><div className="lu-table-scroll"><table><thead><tr><th>Lớp · buổi học</th><th>BTVN</th><th>Trạng thái</th></tr></thead><tbody>{data.sessions.map(s=>{const u=latestForSession(data.uploads,s);return <tr key={sessionKey(s)}><th scope="row"><button type="button" disabled={busy} onClick={()=>{selectSession(s);formRef.current?.scrollIntoView({behavior:'smooth'});}}>{s.class_name}<small>{dateLabel(s.lesson_date)} · {s.start_time.slice(0,5)}</small></button></th><td>{u?.homework_uploaded||u?.has_homework?u.homework2_uploaded?'2 đề':'1 đề':'Chưa tải'}</td><td>{u?uploadState(u).label:'Chưa gửi'}</td></tr>;})}</tbody></table></div></details>}
-    </div><div hidden={tab!=='history'}>{!qaMode&&historyOpened&&<Suspense fallback={<p role="status">Đang mở điểm và điểm danh…</p>}><StaffHistory owner={owner} loadPage={loadHistory}/></Suspense>}</div>
+    </div><div hidden={tab!=='history'}>{!qaMode&&historyOpened&&<Suspense fallback={<p role="status">Đang mở điểm và điểm danh…</p>}><StaffHistory owner={owner} loadPage={loadHistory} loadStudentWork={loadStudentWork} active={tab==='history'}/></Suspense>}</div>
+    {preview&&session&&<Suspense fallback={<p role="status">Đang mở bài đã đăng…</p>}>
+      <PublishedLessonPreview key={`${picked}|${preview.id}`} owner={owner} uploadId={preview.id}
+        classId={session.class_id} className={session.class_name} title={preview.title} isTest={qaMode}
+        hasSecondPaper={!examMode&&preview.homework2_uploaded===true} onClose={closePreview}/>
+    </Suspense>}
   </>;
 }

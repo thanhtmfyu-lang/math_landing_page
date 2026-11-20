@@ -8,11 +8,18 @@ import {homeworkTitle,lessonHomeworkTitle,displayHomeworkDeadline} from '../src/
 import {monthlyResultsHidden} from '../src/native/homework/result-summary';
 const root=resolve('.'),require=createRequire(join(root,'package.json'));
 const fixture=join(root,'tests/fixtures/assessment-react.mts');
-async function load(file:string){const result=await build({entryPoints:[join(root,file)],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',alias:{react:fixture,'react/jsx-runtime':fixture},loader:{'.css':'empty'},logLevel:'error',plugins:[{name:'mock-staff-only',setup(b){b.onLoad({filter:/[\\/]lesson-upload[\\/]backend\.ts$/},()=>({loader:'js',contents:'export const lessonDashboard=(...a)=>globalThis.__assessmentApi.lessonDashboard(...a);export const submitLesson=(...a)=>globalThis.__assessmentApi.submitLesson(...a);export const uploadLessonFile=(...a)=>globalThis.__assessmentApi.uploadLessonFile(...a);export const retryLesson=async()=>({ok:true});export const staffHistory=async()=>({});'}));b.onLoad({filter:/[\\/]lesson-upload[\\/]files\.ts$/},()=>({loader:'js',contents:'export const privatePdf=async files=>files[0];'}));b.onLoad({filter:/HomeworkResult\.tsx$/},()=>({loader:'js',contents:'export const PdfViewer=()=>null;'}));b.onLoad({filter:/navigation-guard\.tsx?$/},()=>({loader:'js',contents:'export const useUnsavedGuard=()=>null;'}));}}]});const mod={exports:{} as any};new Function('require','module','exports',result.outputFiles[0].text)(require,mod,mod.exports);return mod.exports;}
+async function load(file:string){const result=await build({entryPoints:[join(root,file)],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',alias:{react:fixture,'react/jsx-runtime':fixture},loader:{'.css':'empty'},logLevel:'error',plugins:[{name:'mock-staff-only',setup(b){
+  b.onLoad({filter:/[\\/]lesson-upload[\\/]backend\.ts$/},()=>({loader:'js',contents:'export const lessonDashboard=(...a)=>globalThis.__assessmentApi.lessonDashboard(...a);export const submitLesson=(...a)=>globalThis.__assessmentApi.submitLesson(...a);export const uploadLessonFile=(...a)=>globalThis.__assessmentApi.uploadLessonFile(...a);export const loadPublishedLessonPreview=(...a)=>globalThis.__assessmentApi.loadPublishedLessonPreview(...a);export const retryLesson=async()=>({ok:true});export const staffHistory=async()=>({});export const staffStudentWork=async()=>({});'}));
+  b.onLoad({filter:/[\\/]lesson-upload[\\/]files\.ts$/},()=>({loader:'js',contents:'export const privatePdf=async files=>files[0];'}));
+  b.onLoad({filter:/HomeworkSession\.tsx$/},()=>({loader:'js',contents:'export const HomeworkReader=()=>null;'}));
+  b.onLoad({filter:/HomeworkResult\.tsx$/},()=>({loader:'js',contents:'export const PdfViewer=()=>null;'}));
+  b.onLoad({filter:/navigation-guard\.tsx?$/},()=>({loader:'js',contents:'export const useUnsavedGuard=()=>null;'}));
+}}]});const mod={exports:{} as any};new Function('require','module','exports',result.outputFiles[0].text)(require,mod,mod.exports);return mod.exports;}
 const {SimpleUploadWorkspace}=await load('src/native/lesson-upload/SimpleUploadWorkspace.tsx');
+const {default:PublishedLessonPreview}=await load('src/native/lesson-upload/PublishedLessonPreview.tsx');
 const {default:HomeworkAttempt}=await load('src/native/homework/HomeworkAttempt.tsx');
 const {default:ClassTestsSection}=await load('src/native/homework/ClassTestsSection.tsx');
-class Runtime {slots:any[]=[];index=0;changed=false;effects:(()=>void)[]=[];value:any;constructor(public fn:()=>any){}state(initial:any){const i=this.index++;if(!this.slots[i])this.slots[i]={value:typeof initial==='function'?initial():initial};return [this.slots[i].value,(v:any)=>{const next=typeof v==='function'?v(this.slots[i].value):v;if(!Object.is(next,this.slots[i].value)){this.slots[i].value=next;this.changed=true;}}];}ref(v:any){const i=this.index++;return this.slots[i]??(this.slots[i]={current:v});}same(a:any,b:any){return a&&b&&a.length===b.length&&a.every((v:any,i:number)=>Object.is(v,b[i]));}memo(value:any,deps:any){const i=this.index++;if(!this.slots[i]||!this.same(this.slots[i].deps,deps))this.slots[i]={value,deps};return this.slots[i].value;}effect(fn:any,deps:any){const i=this.index++,old=this.slots[i];if(!old||!this.same(old.deps,deps)){this.slots[i]={deps};this.effects.push(()=>fn());}}flush(){for(let n=0;n<30;n++){(globalThis as any).__mtmHookRuntime=this;this.index=0;this.changed=false;this.value=this.fn();this.effects.splice(0).forEach(f=>f());if(!this.changed)return this.value;}throw Error('Unstable hooks');}}
+class Runtime {slots:any[]=[];index=0;changed=false;effects:(()=>void)[]=[];value:any;constructor(public fn:()=>any){}state(initial:any){const i=this.index++;if(!this.slots[i])this.slots[i]={value:typeof initial==='function'?initial():initial};return [this.slots[i].value,(v:any)=>{const next=typeof v==='function'?v(this.slots[i].value):v;if(!Object.is(next,this.slots[i].value)){this.slots[i].value=next;this.changed=true;}}];}ref(v:any){const i=this.index++;return this.slots[i]??(this.slots[i]={current:v});}same(a:any,b:any){return a&&b&&a.length===b.length&&a.every((v:any,i:number)=>Object.is(v,b[i]));}memo(value:any,deps:any){const i=this.index++;if(!this.slots[i]||!this.same(this.slots[i].deps,deps))this.slots[i]={value,deps};return this.slots[i].value;}effect(fn:any,deps:any){const i=this.index++,old=this.slots[i];if(!old||!this.same(old.deps,deps)){const slot:{deps:unknown;cleanup?:()=>void}={deps};this.slots[i]=slot;this.effects.push(()=>{old?.cleanup?.();slot.cleanup=fn();});}}flush(){for(let n=0;n<30;n++){(globalThis as any).__mtmHookRuntime=this;this.index=0;this.changed=false;this.value=this.fn();this.effects.splice(0).forEach(f=>f());if(!this.changed)return this.value;}throw Error('Unstable hooks');}dispose(){for(const slot of this.slots)slot?.cleanup?.();}}
 const nodes=(v:any):any[]=>v==null||typeof v!=='object'?[]:Array.isArray(v)?v.flatMap(nodes):[v,...nodes(v.props?.children)];
 const text=(v:any):string=>v==null||typeof v==='boolean'?'':typeof v==='string'||typeof v==='number'?String(v):Array.isArray(v)?v.map(text).join(''):text(v.props?.children);
 const find=(r:Runtime,p:(e:any)=>boolean)=>{const n=nodes(r.flush()).find(p);assert.ok(n);return n;};
@@ -24,7 +31,7 @@ const data:any={staff:{user_id:owner,role:'ql',display_name:'Quản lý tổng h
 let calls:any[]=[],lost=false;
 const api={async uploadLessonFile(o:string,b:string,k:string){calls.push({op:'file',o,b,k});return `${o}/${b}/${k}.pdf`;},async submitLesson(o:string,p:any){calls.push({op:'submit',o,p:structuredClone(p)});if(lost)throw Error('Fixture response lost');return {ok:true,upload_id:'fixture-receipt',version:3};}};
 (globalThis as any).__assessmentApi=api;
-function mount(role='ql'){const m=new Map<string,string>();(globalThis as any).window={sessionStorage:{getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>m.set(k,v),removeItem:(k:string)=>m.delete(k)},confirm:()=>true,addEventListener(){},removeEventListener(){}};const r=new Runtime(()=>SimpleUploadWorkspace({data:{...data,staff:{...data.staff,role}},owner,onRefresh:async()=>{},onSignOut(){}}));r.flush();return r;}
+function mount(role='ql',dashboard=data){const m=new Map<string,string>();(globalThis as any).window={sessionStorage:{getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>m.set(k,v),removeItem:(k:string)=>m.delete(k)},confirm:()=>true,addEventListener(){},removeEventListener(){}};const r=new Runtime(()=>SimpleUploadWorkspace({data:{...dashboard,staff:{...dashboard.staff,role}},owner,onRefresh:async()=>{},onSignOut(){}}));r.flush();return r;}
 let count=0;const check=(fn:()=>void)=>{fn();count++;};
 for(const role of ['ql','gv']){const r=mount(role);check(()=>assert.ok(text(r.value).includes('BTVN')&&text(r.value).includes('Đề kiểm tra')&&text(r.value).includes('Điểm & điểm danh')));click(r,'Đề kiểm tra');check(()=>{assert.ok(text(r.value).includes('Tên đề kiểm tra'));assert.ok(!text(r.value).includes('Phạm vi bài tập'));assert.ok(!text(r.value).includes('Cùng bài cho:'));});check(()=>{assert.ok(text(r.value).includes('Đề tháng 11/2030'));assert.ok(text(r.value).includes('Đề khác · 13/11/2030'));assert.equal(nodes(r.value).filter(e=>e.type?.name==='Status').length,0);});
  const edit=find(r,e=>e.type==='button'&&text(e).includes('Đề tháng 11/2030')&&text(e).includes('Sửa đề này'));edit.props.onClick();r.flush();check(()=>{const status=find(r,e=>e.type?.name==='Status');assert.equal(status.props.upload.assessment_id,a1);});click(r,'＋ Tạo đề kiểm tra khác');
@@ -33,6 +40,70 @@ for(const role of ['ql','gv']){const r=mount(role);check(()=>assert.ok(text(r.va
  const file=new File(['%PDF-1.4 synthetic'],'fixture.pdf',{type:'application/pdf'});for(const picker of nodes(r.value).filter(e=>e.type?.name==='FilePicker'))picker.props.onChange([file]);r.flush();
  calls=[];lost=true;find(r,e=>e.type==='form').props.onSubmit({preventDefault(){}});for(let i=0;i<30;i++)await new Promise(resolve=>setImmediate(resolve));r.flush();const first=calls.find(x=>x.op==='submit');check(()=>{assert.ok(first);assert.equal(first.p.work_kind,'exam');assert.deepEqual(first.p.class_ids,[c1]);assert.equal(first.p.title,'Tên kiểm tra mới · 13/11/2030');assert.equal(first.p.task_scope,'Toàn bộ đề');assert.equal(first.p.exam_type,'custom');assert.equal(first.p.exam_config.duration_minutes,120);assert.equal(first.p.on_behalf_of,role==='ql'?base.teacher_key:null);});
  lost=false;click(r,'Kiểm tra lại cùng yêu cầu');for(let i=0;i<30;i++)await new Promise(resolve=>setImmediate(resolve));r.flush();check(()=>{const submits=calls.filter(x=>x.op==='submit');assert.equal(submits.length,2);assert.deepEqual(submits[0],submits[1]);assert.equal(calls.filter(x=>x.op==='file').length,2);});}
+// A staff preview opens only after publication and never enters the edit or send flow.
+{
+ const finished=[{step:6,status:'xong'},{step:4,status:'canh_bao'}];
+ const homework={...up,steps:finished,homework2_uploaded:true,paper2_steps:finished};
+ const exam={...data.uploads[1],class_ids:[c1],steps:finished};
+ const completed={...data,uploads:[homework,exam,data.uploads[2]]};
+ calls=[];
+ for(const role of ['ql','gv']){
+  const r=mount(role,completed);
+  const status=find(r,e=>e.type?.name==='Status');
+  const homeButton=nodes(status.type(status.props)).find(e=>e.type==='button'&&text(e)==='Kiểm tra bài đã đăng');
+  check(()=>{assert.ok(homeButton);assert.equal(homeButton.props.type,'button');});
+  homeButton.props.onClick();r.flush();
+  const homePreview=find(r,e=>e.props?.uploadId===homework.id);
+  check(()=>{assert.equal(homePreview.props.classId,c1);assert.equal(homePreview.props.hasSecondPaper,true);});
+  find(r,e=>e.type==='select'&&e.props.value===c1).props.onChange({target:{value:c2}});r.flush();
+  check(()=>assert.ok(!nodes(r.value).some(e=>e.props?.uploadId===homework.id)));
+  find(r,e=>e.type==='select'&&e.props.value===c2).props.onChange({target:{value:c1}});r.flush();
+  click(r,'Đề kiểm tra');
+  const buttons=nodes(r.value).filter(e=>e.type==='button'&&text(e)==='Kiểm tra bài đã đăng');
+  check(()=>{assert.equal(buttons.length,1);assert.equal(buttons[0].props['aria-label'],'Kiểm tra bài đã đăng · '+exam.title);});
+  buttons[0].props.onClick();r.flush();
+  const examPreview=find(r,e=>e.props?.uploadId===exam.id);
+  check(()=>{assert.equal(examPreview.props.classId,c1);assert.equal(examPreview.props.hasSecondPaper,false);assert.equal(nodes(r.value).filter(e=>e.type?.name==='Status').length,0);});
+  examPreview.props.onClose();r.flush();
+  check(()=>assert.ok(!nodes(r.value).some(e=>e.props?.uploadId===exam.id)));
+  const partial=mount(role,{...completed,uploads:[{...homework,paper2_steps:[{step:6,status:'dang'}]},exam,data.uploads[2]]});
+  const partialStatus=find(partial,e=>e.type?.name==='Status');
+  check(()=>assert.ok(!text(partialStatus.type(partialStatus.props)).includes('Kiểm tra bài đã đăng')));
+ }
+ check(()=>assert.equal(calls.length,0));
+}
+// The preview reads one published paper at a time. A late response cannot replace the selected paper.
+{
+ mount();
+ const pending:any[]=[];
+ (globalThis as any).__assessmentApi={...api,loadPublishedLessonPreview(o:string,request:any,signal:AbortSignal){
+  return new Promise((resolve,reject)=>pending.push({o,request,signal,resolve,reject}));
+ }};
+ let closed=false;
+ const onClose=()=>{closed=true;};
+ const r=new Runtime(()=>PublishedLessonPreview({owner,uploadId:up.id,classId:c1,className:base.class_name,title:up.title,isTest:false,hasSecondPaper:true,onClose}));
+ r.flush();
+ check(()=>{assert.match(text(r.value),/Đang mở bài đã đăng/);assert.deepEqual(pending[0].request,{uploadId:up.id,classId:c1,paper:1,isTest:false});});
+ click(r,'Đề 2');
+ check(()=>{assert.equal(pending[0].signal.aborted,true);assert.equal(pending[1].request.paper,2);});
+ pending[0].resolve({title:'Phản hồi cũ',exam:{questions:[]}});
+ pending[1].reject(Error('Máy chủ đang bận.'));
+ await Promise.resolve();r.flush();
+ check(()=>{assert.match(text(r.value),/Máy chủ đang bận/);assert.doesNotMatch(text(r.value),/Phản hồi cũ/);});
+ click(r,'Thử mở lại');
+ check(()=>assert.equal(pending[2].request.paper,2));
+ const pdf='https://example.invalid/signed-question.pdf',solution='https://example.invalid/teacher-only.pdf';
+ pending[2].resolve({kind:'homework',title:'BTVN tổng hợp · Đề 2',
+  exam:{questions:[{id:'q2',kind:'mc',sourceRef:'Câu 1',prompt:'Tính 2 + 3.',choices:['2','4','5','6']}],
+   sourcePdf:{url:pdf},mtmDocuments:{solutions:{url:solution}}}});
+ await Promise.resolve();r.flush();
+ check(()=>{assert.match(text(r.value),/BTVN tổng hợp · Đề 2/);assert.match(text(r.value),/Lớp tổng hợp A/);assert.deepEqual(nodes(r.value).filter(e=>e.type==='a').map(e=>e.props.href),[pdf]);});
+ const dialog=find(r,e=>e.type==='dialog');
+ check(()=>{dialog.props.onCancel({preventDefault(){}});assert.equal(closed,true);});
+ r.dispose();
+ check(()=>assert.equal(pending[2].signal.aborted,true));
+ (globalThis as any).__assessmentApi=api;
+}
 // A second QA tab may have an old empty view. Its fresh server read must stop before storage.
 {
  const qaClass='1ad4fa98-367b-474e-91d2-5d6ed12687b0',qaSession={...base,class_id:qaClass,class_name:'2K10 QA iPhone 1611',lesson_date:'2026-11-17',teacher_key:'thaythanh',start_time:'00:10:00',end_time:'00:11:00',class_ids:[qaClass],class_dates:{[qaClass]:'2026-11-17'},default_due_at_by_class:{[qaClass]:'2030-11-20T10:00:00Z'}};
