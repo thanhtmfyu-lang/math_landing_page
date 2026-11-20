@@ -16,6 +16,12 @@ try{
  await db.exec(readFileSync('supabase/migrations-pending/202610270100_is_test.sql','utf8'));
  await db.exec("alter role service_role bypassrls;create function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claim.role',true),'')$$;grant select,insert on storage.objects to service_role,authenticated;grant usage on schema storage to service_role,authenticated;");
  for(const name of ['202611020101_cong_up_btvn_gv.sql','202611020102_btvn_two_papers.sql','202611020103_lesson_upload_gateway.sql'])await db.exec(readFileSync('supabase/migrations-pending/'+name,'utf8'));
+ // Keep three consecutive completed Monday sessions within the SQL upload window.
+ const {mixedDate,pairDate,pairWeekEnd,singleDate,singleWeekEnd}=(await db.query<{
+  mixedDate:string;pairDate:string;pairWeekEnd:string;singleDate:string;singleWeekEnd:string;
+ }>(`with week as (select date_trunc('week',clock_timestamp() at time zone 'Asia/Ho_Chi_Minh')::date as monday)
+   select (monday-21)::text "mixedDate",(monday-14)::text "pairDate",(monday-8)::text "pairWeekEnd",
+    (monday-7)::text "singleDate",(monday-1)::text "singleWeekEnd" from week`)).rows[0];
  const owner='11111111-1111-4111-8111-111111111111',teacher='11111111-1111-4111-8111-111111111112',cid='22222222-2222-4222-8222-222222222222',sid='33333333-3333-4333-8333-333333333333';
  await db.query('insert into auth.users values($1),($2)',[owner,teacher]);
  await db.query("insert into public.mtm_staff(user_id,short_name,display_name,role,teacher_key) values($1,'fixture-admin','Admin thử','admin','thaythanh'),($2,'fixture-gv','GV thử','gv','thaytai')",[owner,teacher]);
@@ -27,7 +33,7 @@ try{
  async function call(name:string,args:Record<string,unknown>,roleName='service_role',uid?:string){return role(roleName,uid,async(tx:any)=>(await tx.query(`select public.${name}(${Object.keys(args).map((k,i)=>k+' => $'+(i+1)).join(',')}) result`,Object.values(args))).rows[0].result);}
  const path1=teacher+'/44444444-4444-4444-8444-444444444444/homework.pdf',path2=path1.replace('homework.pdf','homework2.pdf');
  for(const path of [path1,path2])await role('authenticated',teacher,tx=>tx.query("insert into storage.objects(bucket_id,name,metadata) values('mtm-lesson-private',$1,'{\"mimetype\":\"application/pdf\",\"size\":1000}')",[path]));
- const input={action:'create',class_ids:[cid],lesson_date:'2026-10-26',teacher_key:'thaytai',title:'Hai đề thử local',task_scope:'Câu 1–3',homework_path:path1,answer_text:'1D; ĐS: Đ S Đ S; TLN:2.5',homework2_path:path2,answer2_text:'1A; ĐS: Đ S Đ S; TLN:2.5'};
+ const input={action:'create',class_ids:[cid],lesson_date:pairDate,teacher_key:'thaytai',title:'Hai đề thử local',task_scope:'Câu 1–3',homework_path:path1,answer_text:'1D; ĐS: Đ S Đ S; TLN:2.5',homework2_path:path2,answer2_text:'1A; ĐS: Đ S Đ S; TLN:2.5'};
  await assert.rejects(()=>call('mtm_lesson_upload_api',{p:{...input,answer2_text:null}},'authenticated',teacher),/PAPER_TWO_ANSWERS_REQUIRED/);checks++;
  const upload=await call('mtm_lesson_upload_api',{p:input},'authenticated',teacher),code='web-'+upload.upload_id.replaceAll('-','');
  await assert.rejects(()=>call('mtm_lesson_upload_api',{p:{action:'worker_web_precedence',enabled:true}}),/LIVE_WEB_RECEIPT_REQUIRED/);checks++;
@@ -43,9 +49,9 @@ try{
  assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_lessons where active and $1=any(class_ids)',[cid])).rows[0].n,1);checks++;
  assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_second_papers where lesson_code=$1',[code])).rows[0].n,1);checks++;
  assert.equal((await db.query("select count(*) n from mtm_hw_private.lesson_upload_paper2_steps where upload_id=$1 and status='xong'",[upload.upload_id])).rows[0].n,6);checks++;
- const dashboard=await call('mtm_lesson_upload_api',{p:{action:'dashboard',from:'2026-10-26',to:'2026-11-01'}},'authenticated',owner);
+ const dashboard=await call('mtm_lesson_upload_api',{p:{action:'dashboard',from:pairDate,to:pairWeekEnd}},'authenticated',owner);
  assert(dashboard.uploads[0].homework2_uploaded);assert(dashboard.uploads[0].answer2_uploaded);assert.equal(dashboard.uploads[0].paper2_steps.length,6);assert(!JSON.stringify(dashboard).includes(path2));checks++;
- const progress=weekProgress(dashboard,new Date('2026-11-02T15:30:00Z'));assert.equal(progress.bars[0].done,2);assert.equal(progress.bars[0].total,2);assert.equal(progress.bars[0].percent,100);checks++;
+ const progress=weekProgress(dashboard,new Date(singleDate+'T22:30:00+07:00'));assert.equal(progress.bars[0].done,2);assert.equal(progress.bars[0].total,2);assert.equal(progress.bars[0].percent,100);checks++;
  const token='f'.repeat(64);await db.query("insert into mtm_hw_private.btvn_identity_sessions values(mtm_hw_private.token_digest('btvn-identity',$1),$2,clock_timestamp()+interval '1 hour',null)",[token,sid]);
  const repo=new SupabaseHomeworkRepository(client,async()=>({}),Date.now,async path=>'https://fixture.invalid/'+path+'?token=fixture');
  const selected=await repo.call(token,'select',code+'-de-2');assert.equal(selected.paperChoice?.paper,2);assert.equal(selected.paperChoice?.locked,false);assert.equal(selected.lessons?.length,1);assert.equal(selected.exam?.id,second.exam.id);assert(!JSON.stringify(selected).includes('acceptedAnswers'));assert(!JSON.stringify(selected).includes('"answer":"A"'));checks++;
@@ -64,11 +70,11 @@ try{
  const race=await Promise.allSettled([repo.call(token2,'start',code+'-de-1'),repo.call(token2,'start',code+'-de-2')]);
  assert.equal(race.filter(r=>r.status==='fulfilled').length,1,'two concurrent starts must choose one paper');checks++;
  assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid2,code])).rows[0].n,1);checks++;
- const single=await call('mtm_lesson_upload_api',{p:{...input,lesson_date:'2026-11-02',homework2_path:null,answer2_text:null}},'authenticated',teacher);
+ const single=await call('mtm_lesson_upload_api',{p:{...input,lesson_date:singleDate,homework2_path:null,answer2_text:null}},'authenticated',teacher);
  assert.equal((await runUploadOnce(createWorkerRepository(client),pipeline,state,'synthetic-single')).status,'complete');checks++;
  const singleCode='web-'+single.upload_id.replaceAll('-','');
  const singleState=await repo.call(token,'state',singleCode);assert.equal(singleState.paperChoice,undefined);checks++;
- const warnings=await call('mtm_lesson_upload_api',{p:{action:'dashboard',from:'2026-11-02',to:'2026-11-08'}},'authenticated',owner);
+ const warnings=await call('mtm_lesson_upload_api',{p:{action:'dashboard',from:singleDate,to:singleWeekEnd}},'authenticated',owner);
  assert(warnings.uploads[0].warnings[0].includes('Thiếu Đề 2'));assert(warnings.publisher_warnings[0].warnings[0].includes('Thiếu Đề 2'));checks++;
  assert.equal((await db.query('select warnings from mtm_hw_private.btvn_publication_warnings where lesson_code=$1',[code])).rows.length,0,'a full pair must clear its publication warning');checks++;
  assert.equal(JSON.stringify((await db.query('select receipts from mtm_hw_private.btvn_work where student_id=$1 and lesson_code=$2',[sid,code])).rows[0].receipts),old);checks++;
@@ -84,7 +90,7 @@ try{
  const publishPort={async rpc(action:string,payload:any){assert(['two_paper_pair_preflight','two_paper_pair_commit','two_paper_variant_preflight','two_paper_variant_commit'].includes(action));return call('mtm_btvn_two_paper_publish',{p_action:action,p_payload:payload});},async upload(path:string,bytes:Uint8Array,type:string){uploaded++;await role('service_role',undefined,tx=>tx.query('insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)',['mtm-btvn',path,JSON.stringify({mimetype:type,size:bytes.length})]));stored.set(path,bytes);}};
  const handler=createBtvnPublishHandler(publishPort,secret);
  const request=(body:any,key=secret)=>handler(new Request('https://fixture.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':key},body:JSON.stringify(body)}));
- const attach={action:'publish_variant',lesson_key:singleCode,expected_source_version:'c'.repeat(64),paper:{...prepared(second,singleCode,'2026-11-02'),source_version:'b'.repeat(64)},review_evidence:evidence};
+ const attach={action:'publish_variant',lesson_key:singleCode,expected_source_version:'c'.repeat(64),paper:{...prepared(second,singleCode,singleDate),source_version:'b'.repeat(64)},review_evidence:evidence};
  assert.equal((await request(attach,'wrong')).status,401);assert.equal(uploaded,0);checks++;
  assert.equal((await request({...attach,review_evidence:{...evidence,sympy:{status:'FAIL',receipt_hash:'3'.repeat(64)}}})).status,422);assert.equal(uploaded,0);checks++;
  assert.equal((await request({...attach,expected_source_version:'d'.repeat(64)})).status,422);assert.equal(uploaded,0);checks++;
@@ -96,7 +102,7 @@ try{
  // submitted historical drafts/receipts exact, even after adding paper two.
  await db.query("update mtm_hw_private.btvn_lessons set exam=jsonb_set(exam,'{versionHash}',to_jsonb($2::text)) where code=$1",[singleCode,'f'.repeat(64)]);
  const futureRetry=await repo.call(token,'start',singleCode);assert(futureRetry.draft);assert.equal(futureRetry.draft.examVersionHash,'f'.repeat(64));assert.equal(JSON.stringify(futureRetry.receipts),singleReceipts);checks++;
- const pairKey='fixture-pair-publisher',pairBody={action:'publish_pair',primary:prepared(fixture,pairKey,'2026-10-19'),second:{...prepared(second,pairKey,'2026-10-19'),source_version:'b'.repeat(64)},review_evidence:evidence};
+ const pairKey='fixture-pair-publisher',pairBody={action:'publish_pair',primary:prepared(fixture,pairKey,mixedDate),second:{...prepared(second,pairKey,mixedDate),source_version:'b'.repeat(64)},review_evidence:evidence};
  const paired=await request(pairBody);assert.equal(paired.status,200,paired.headers.get('X-MTM-Reject-Code')??'');assert.equal((await paired.json()).papers,2);checks++;
  assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_lessons where code=$1',[pairKey])).rows[0].n,1);checks++;
  assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_second_papers where lesson_code=$1',[pairKey])).rows[0].n,1);checks++;
@@ -134,7 +140,7 @@ try{
  const gatewayHandler=createBtvnPublishHandler(gatewayPort,secret),gatewayUrl='https://synthetic.supabase.co/functions/v1/mtm-btvn-publish';
  const transport:typeof fetch=async(url,init)=>gatewayHandler(new Request(url,init));
  const gatewayClient=createLessonGatewayClient(gatewayUrl,secret,transport);
- const gatewayUpload=await call('mtm_lesson_upload_api',{p:{...input,lesson_date:'2026-11-02'}},'authenticated',teacher);
+ const gatewayUpload=await call('mtm_lesson_upload_api',{p:{...input,lesson_date:singleDate}},'authenticated',teacher);
  const gatewayResult=await runUploadOnce(createWorkerRepository(gatewayClient),pipeline,state,'gateway-pair');assert.equal(gatewayResult.status,'complete',JSON.stringify(gatewayResult));checks++;
  const privateRequest={action:'lesson_upload_source',upload_id:gatewayUpload.upload_id,claim_token:'0'.repeat(8)+'-0000-4000-8000-'+ '0'.repeat(12),kind:'answer'};
  const unauthorized=await gatewayHandler(new Request(gatewayUrl,{method:'POST',body:JSON.stringify(privateRequest)}));assert.equal(unauthorized.status,401);checks++;
@@ -142,7 +148,7 @@ try{
  const answer2Path=path1.replace('homework.pdf','answer2.pdf');
  await role('authenticated',teacher,tx=>tx.query("insert into storage.objects(bucket_id,name,metadata) values('mtm-lesson-private',$1,'{\"mimetype\":\"application/pdf\",\"size\":1000}')",[answer2Path]));
  stored.set(answer2Path,new TextEncoder().encode('%PDF-1.4 synthetic teacher2 source'));
- await call('mtm_lesson_upload_api',{p:{...input,lesson_date:'2026-10-19',answer2_text:null,answer2_path:answer2Path}},'authenticated',teacher);
+ await call('mtm_lesson_upload_api',{p:{...input,lesson_date:mixedDate,answer2_text:null,answer2_path:answer2Path}},'authenticated',teacher);
  const seen:number[]=[];const mixed:Pipeline={...pipeline,async read(job){
   seen.push(job.paper??1);
   if(job.paper===2){assert.equal(job.answer_path,answer2Path);assert.equal(job.answer_text,null);const downloaded=await gatewayClient.rpc('mtm_lesson_upload_source',{upload_id:job.id,claim_token:job.claim_token,kind:'answer2'});assert.equal(downloaded.error,null);assert.equal(Buffer.from(downloaded.data.data_base64,'base64').toString(),'%PDF-1.4 synthetic teacher2 source');}
@@ -152,7 +158,7 @@ try{
  assert.equal((await runUploadOnce(createWorkerRepository(gatewayClient),mixed,state,'mixed-answer-sources')).status,'complete');assert.deepEqual(seen,[1,2]);checks++;
  const futureKey='fixture-future-before-variant';
  const normalHandler=createBtvnPublishHandler({...publishPort,async rpc(a:string,p:any){return call('mtm_btvn_pipeline',{p_action:a,p_payload:p},'mtm_btvn_publisher');}},secret);
- const futurePublished=await normalHandler(new Request('https://fixture.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({...prepared(fixture,futureKey,'2026-10-19'),source_version:'c'.repeat(64)})}));assert.equal(futurePublished.status,200,futurePublished.headers.get('X-MTM-Reject-Code')??'');checks++;
+ const futurePublished=await normalHandler(new Request('https://fixture.invalid',{method:'POST',headers:{'X-MTM-Publish-Secret':secret},body:JSON.stringify({...prepared(fixture,futureKey,mixedDate),source_version:'c'.repeat(64)})}));assert.equal(futurePublished.status,200,futurePublished.headers.get('X-MTM-Reject-Code')??'');checks++;
  const firstFuture=await repo.call(token,'start',futureKey);const oldFuture=await repo.call(token,'submit',futureKey,firstFuture.draft!.attemptId,{'mc-1':'D','tf-1':[true,false,true,false],'sa-1':'2.5'});
  const futureOriginal=(await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0],futureWorkBefore=(await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows;
  const correctionPort={upload:publishPort.upload,async rpc(a:string,p:any){return call('mtm_btvn_answer_correction_future_only',{p_action:a,p});}};
@@ -160,7 +166,7 @@ try{
  const previewFuture=await handleAnswerCorrection(correctionPort,correction);await handleAnswerCorrection(correctionPort,{...correction,action:'answer_correction_future_only_apply',expected_plan_sha256:previewFuture.plan_sha256});
  const correctedBeforeAttach=(await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0];assert.equal(correctedBeforeAttach.source_version,futureOriginal.source_version);assert.deepEqual(correctedBeforeAttach.material,futureOriginal.material);assert.deepEqual((await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows,futureWorkBefore);checks++;
  const metadataBeforeAttach=await call('mtm_btvn_publication_receipt',{p_code:futureKey});assert.deepEqual(correctedBeforeAttach.exam.questions[1],futureOriginal.exam.questions[1]);
- assert.equal((await request({...attach,lesson_key:futureKey,paper:{...prepared(second,futureKey,'2026-10-19'),source_version:'b'.repeat(64)}})).status,200);assert.deepEqual((await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0],correctedBeforeAttach);assert.deepEqual((await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows,futureWorkBefore);checks++;
+ assert.equal((await request({...attach,lesson_key:futureKey,paper:{...prepared(second,futureKey,mixedDate),source_version:'b'.repeat(64)}})).status,200);assert.deepEqual((await db.query('select exam,material,source_version from mtm_hw_private.btvn_lessons where code=$1',[futureKey])).rows[0],correctedBeforeAttach);assert.deepEqual((await db.query('select * from mtm_hw_private.btvn_work where lesson_code=$1',[futureKey])).rows,futureWorkBefore);checks++;
  const metadataAfterAttach=await call('mtm_btvn_publication_receipt',{p_code:futureKey});assert.deepEqual(metadataAfterAttach.canonical,metadataBeforeAttach.canonical);assert.equal(metadataAfterAttach.paper_count,2);checks++;
  const afterFutureStart=await repo.call(token,'start',futureKey),afterFutureSubmit=await repo.call(token,'submit',futureKey,afterFutureStart.draft!.attemptId,{'mc-1':'D','tf-1':[true,false,true,false],'sa-1':'2/3'});assert.equal(afterFutureSubmit.receipts.at(-1)!.score,10);assert.deepEqual(afterFutureSubmit.receipts.slice(0,oldFuture.receipts.length),oldFuture.receipts);checks++;
  const newPaper2Start=await repo.call(token2,'start',futureKey+'-de-2'),newPaper2Submit=await repo.call(token2,'submit',futureKey+'-de-2',newPaper2Start.draft!.attemptId,{'mc-1':'A','tf-1':[true,false,true,false],'sa-1':'2.5'});assert.equal(newPaper2Submit.receipts[0].score,10);assert.equal(newPaper2Submit.paperChoice?.paper,2);checks++;
