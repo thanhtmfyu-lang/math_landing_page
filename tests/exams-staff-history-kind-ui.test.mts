@@ -14,7 +14,7 @@ let html=render(page);
 assert.match(html,/Loại bài/);assert.match(html,/<option value="exam" selected="">Đề kiểm tra/);
 assert.match(html,/Các bài kiểm tra trong ngày/);assert.match(html,/Kiểm tra tích phân QA/);
 assert.match(html,/Chưa công bố kết quả/);assert.match(html,/Điểm bài kiểm tra chỉ hiển thị sau giờ đóng bài/);
-assert.match(html,/data-label="Đề kiểm tra"/);assert.match(html,/Ngày kiểm tra:/);
+assert.match(html,/class="sh-mobile-label">Đề kiểm tra/);assert.match(html,/Ngày kiểm tra:/);
 assert.doesNotMatch(html,/Các bài giao ở buổi trước/);
 html=render({...page,rows:[{...row,homework:[{...row.homework[0],score:9.75}]}]});
 assert.doesNotMatch(html,/9,75|9\.75|Kiểm tra tích phân QA/,'an unreleased score is rejected before rendering');
