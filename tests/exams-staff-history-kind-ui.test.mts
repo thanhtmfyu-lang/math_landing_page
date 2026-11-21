@@ -23,4 +23,11 @@ assert.match(html,/Phiếu BTVN tổng hợp QA/);assert.match(html,/>0<\/strong
 assert.doesNotMatch(html,/Điểm bài kiểm tra chỉ hiển thị/);
 html=render({...page,work_kind:undefined,rows:[{...row,homework:[{assignment_id:'legacy-hw',title:'BTVN không phải bài thi',score:0}]}]});
 assert.doesNotMatch(html,/BTVN không phải bài thi/,'legacy server ignoring exam filter cannot masquerade as exams');
+html=renderToStaticMarkup(React.createElement(mod.exports.default,{
+  owner:'synthetic-owner',classes:[{class_id:'dashboard-class',class_name:'Lớp từ lịch giáo viên'}],
+  loadPage:async()=>{throw Error('fixture history unavailable');},
+}));
+assert.match(html,/<option value="dashboard-class">Lớp từ lịch giáo viên<\/option>/,
+  'a class from the dashboard is selectable before the history report loads');
+
 console.log('StaffHistory kind SSR: filter, correct exam/date/status labels, unreleased-score suppression, legacy homework zero and old-server mismatch passed; static render only.');

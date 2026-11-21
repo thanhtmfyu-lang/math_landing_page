@@ -84,7 +84,7 @@ export default function StaffHistory({owner,classes=[],loadPage,loadStudentWork,
       if(!mounted.current||activeOwner.current!==requestOwner||generation.current!==token)return;
       setView({owner:requestOwner,data:result,query:captured});
     }catch{
-      if(mounted.current&&activeOwner.current===requestOwner&&generation.current===token)setMessage('Chưa tải được lịch sử. Kiểm tra kết nối và quyền truy cập, rồi thử lại.'+(!clear&&view.owner===requestOwner&&view.data?' Kết quả bên dưới là lần tra trước.':''));
+      if(mounted.current&&activeOwner.current===requestOwner&&generation.current===token)setMessage('Chưa tải được lịch sử. Thử chọn một lớp hoặc khoảng ngày ngắn hơn.'+(!clear&&view.owner===requestOwner&&view.data?' Kết quả bên dưới là lần tra trước.':''));
     }finally{if(mounted.current&&activeOwner.current===requestOwner&&generation.current===token)setBusy(false);}
   }
   useEffect(()=>{

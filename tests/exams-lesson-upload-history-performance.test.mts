@@ -55,7 +55,7 @@ try{
  // report must still return NULL when this student's confirmed row is missing.
  await db.query("insert into mtm_hw_private.attendance_raw(source,session_date,room,raw_name,time_in,class_label) values('van_tay',$1::date,'fixture','Unmatched fixture','19:30','2K11 XPT')",[newClassDay]);
  const epoch=(date:string,hour='18:00')=>Date.parse(date+'T'+hour+':00+07:00');
- async function lesson(code:string,cls:string,date:string,title:string,exam={questions:[] as any[]}){
+ async function lesson(code:string,cls:string,date:string,title:string,exam:{questions:unknown[];durationMinutes?:number}={questions:[]}){
   const label=cls===a?'2K10 XPT':cls===b?'2K11 XPT':'Lớp ngoài trung tâm giả';
   await db.query("insert into mtm_hw_private.btvn_lessons(code,owner_id,class_ids,material,exam,active,publish_status,source_version,is_test) values($1,$2,array[$3::uuid],$4,$5,true,'da_dang',$6,false)",[code,owner,cls,JSON.stringify({date,classNames:[label],classDates:{[label]:date}}),JSON.stringify({title,...exam}),'c'.repeat(64)]);
  }
@@ -140,8 +140,12 @@ try{
  const all={mode:'session',work_kind:'homework',from_date:day(-15),to_date:today};await call(all,manager);checks++;
  await assert.rejects(()=>legacyCall(all),/UNNECESSARY_RECEIPT_SCAN/);checks++;
  await db.exec(receiptDef);
+ const history123=readFileSync('supabase/migrations-pending/202611210123_staff_history_setwise_work.sql','utf8').replace(/\r\n/g,'\n');
+ await assert.rejects(()=>db.exec(history123),/HISTORY123_REQUIRES_ATTENDANCE_CLOCKS/);checks++;
+ await db.exec('rollback');
+ await db.exec(readFileSync('supabase/migrations-pending/202611200121_staff_student_work.sql','utf8'));
  // Staff see only the canonical clocks for a known attendance slot.
- await db.exec(readFileSync('supabase/migrations-pending/202611200122_staff_session_attendance_times.sql','utf8'));
+ await db.exec(readFileSync('supabase/migrations-pending/202611200122_staff_session_attendance_times.sql','utf8').replace(/\r\n/g,'\n'));
  assert.deepEqual((await db.query(identitySQL)).rows,identityBefore);checks++;
  await db.query("update mtm_hw_private.attendance set time_in=' 17:24 ',time_out='19:27:50' where student_id=$1 and session_date=$2::date",[s1,oldClassDay]);
  await db.query("insert into mtm_hw_private.attendance(student_id,class_label,session_date,status,source,time_in,time_out) values ($1,'2K10 XPT',$2::date,'vang_phep','quan_ly','17:28','19:28'),($3,'2K10 XPT',$2::date,'co_mat','van_tay','17:26','invalid'),($4,'2K11 XPT',$2::date,'hoc_online','zoom','19:32','21:30'),($4,'2K10 XPT',$5::date,'co_mat','quan_ly','18:01','19:01')",[s2,oldClassDay,s3,s1,oldAssignmentDay]);
@@ -161,12 +165,77 @@ try{
  const duplicateLabel=await call({...query,student_id:s1},manager);
  assert.deepEqual(clocks(duplicateLabel.rows[0]),[null,null]);checks++;
  await db.query("update mtm_hw_private.classes set label='Lớp ngoài trung tâm giả',owner_id=$1 where id=$2",[foreignOwner,foreignClass]);
- // Production-sized synthetic scale: 20 classes / 300 students / 180 lessons.
+ // The same day's BTVN is excluded from session mode, while that day's exam is included.
+ await lesson('fixture-homework-same-day',a,oldClassDay,'BTVN giao đúng ngày học');
+ await lesson('fixture-exam-same-day',a,oldClassDay,'Đề kiểm tra đúng ngày học',{questions:[],durationMinutes:2});
+ await db.query("update mtm_hw_private.btvn_lessons set kind='kiem-tra',assessment_id='77777777-7777-4777-8777-777777777773',exam_type='custom',opens_at=current_timestamp-interval '2 hours',closes_at=current_timestamp-interval '1 hour' where code='fixture-exam-same-day'");
+ await db.query("insert into mtm_hw_private.btvn_work(student_id,lesson_code,receipts) values($1,'fixture-exam-same-day',$2)",[s1,JSON.stringify([{attemptId:'fixture-exam-same-day',score:7,submittedAt:epoch(oldClassDay),late:false}])]);
+ const parityQueries:{query:Record<string,unknown>;uid:string}[]=[
+  {query,uid:gvA},
+  {query:{...query,mode:'assignment',student_id:s1},uid:gvA},
+  {query:{...query,work_kind:'exam',student_id:s1},uid:gvA},
+  {query:{...query,work_kind:'exam',mode:'assignment',student_id:s1},uid:gvA},
+  {query:{...query,mode:'assignment',work_kind:'exam',from_date:oldAssignmentDay},uid:manager},
+  {query:{...query,from_date:day(-15),to_date:today,page:2,page_size:1},uid:manager},
+  {query:{...query,name:'NO_SUCH_SYNTHETIC_STUDENT'},uid:gvA}
+ ];
+ // Compare both implementations on identical data, including submitted work.
  await db.query("insert into mtm_hw_private.classes(id,owner_id,label,grade) select md5('history114-class-'||n)::uuid,$1,'Lớp tổng hợp '||n,11 from generate_series(1,20)n",[owner]);
  await db.query("insert into mtm_hw_private.students(id,owner_id,class_id,full_name,school,school_class,public_alias,active,created_at) select md5('history114-student-'||n)::uuid,$1,md5('history114-class-'||((n-1)%20+1))::uuid,'HS tổng hợp '||n,'Trường giả','Lớp giả','MTM-'||lpad((1000+n)::text,12,'0'),true,$2::date from generate_series(1,300)n",[owner,day(-120)]);
  await db.query("insert into mtm_hw_private.timetable(class_label,weekday,start_hm,end_hm,teacher,mode) select 'Lớp tổng hợp '||n,$1,'17:00','19:00','thaytai','tại lớp' from generate_series(1,20)n",[wd(day(-1))]);
  await db.query("insert into mtm_hw_private.btvn_lessons(code,owner_id,class_ids,material,exam,active,publish_status,source_version,is_test) select 'history114-lesson-'||n,$1,array[md5('history114-class-'||((n-1)%20+1))::uuid],jsonb_build_object('date',($2::date-(1+7*((n-1)/20)))::text,'classNames',jsonb_build_array('Lớp tổng hợp '||((n-1)%20+1)),'classDates',jsonb_build_object('Lớp tổng hợp '||((n-1)%20+1),($2::date-(1+7*((n-1)/20)))::text)),jsonb_build_object('title','Bài tổng hợp '||n,'questions','[]'::jsonb),true,'da_dang',repeat('f',64),false from generate_series(1,180)n",[owner,today]);
- const started=Date.now(),scaled=await call({mode:'session',work_kind:'homework',from_date:day(-29),to_date:today,page_size:20},manager),elapsed=Date.now()-started;
- assert(scaled.total>=1200);assert.equal(scaled.rows.length,20);console.log(JSON.stringify({synthetic_scale:{classes:20,students:300,lessons:180,total:scaled.total,elapsed_ms:elapsed},live_SLO_verified:false}));checks++;
+ // Retired classes have assignment history and receipts but no reportable sessions.
+ await db.query("insert into mtm_hw_private.classes(id,owner_id,label,grade,active) select md5('history123-retired-class-'||n)::uuid,$1,'Lớp lịch sử '||n,11,false from generate_series(1,6)n",[owner]);
+ await db.query("insert into mtm_hw_private.students(id,owner_id,class_id,full_name,school,school_class,public_alias,active,created_at) select md5('history123-retired-student-'||n)::uuid,$1,md5('history123-retired-class-'||((n-1)%6+1))::uuid,'HS lịch sử '||n,'Trường giả','Lớp giả','MTM-'||lpad((2000+n)::text,12,'0'),true,$2::date from generate_series(1,90)n",[owner,day(-120)]);
+ await db.query("insert into mtm_hw_private.btvn_lessons(code,owner_id,class_ids,material,exam,active,publish_status,source_version,is_test) select 'history123-retired-lesson-'||n,$1,array[md5('history123-retired-class-'||((n-1)%6+1))::uuid],jsonb_build_object('date',($2::date-(1+7*((n-1)/6)))::text),jsonb_build_object('title','Bài lịch sử '||n,'questions','[]'::jsonb),true,'da_dang',repeat('e',64),false from generate_series(1,72)n",[owner,today]);
+ await db.query("insert into mtm_hw_private.btvn_work(student_id,lesson_code,receipts) select s.id,l.code,jsonb_build_array(jsonb_build_object('attemptId',l.code,'score',8,'submittedAt',$1::bigint,'late',false)) from mtm_hw_private.btvn_lessons l join mtm_hw_private.students s on s.class_id=any(l.class_ids) where (l.code like 'history114-lesson-%' or l.code like 'history123-retired-lesson-%') and mod(right(s.public_alias,12)::int,4)=0",[epoch(oldAssignmentDay)]);
+ const receiptCount=(await db.query("select count(*)::int n from mtm_hw_private.btvn_work where lesson_code like 'history114-lesson-%' or lesson_code like 'history123-retired-lesson-%'")).rows[0].n;
+ assert(receiptCount>500);checks++;
+ parityQueries.push({query:{mode:'assignment',from_date:day(-1),to_date:day(-1),name:'Lớp lịch sử 1'},uid:manager});
+ const oldReports=[];
+ for(const test of parityQueries)oldReports.push(stable(await call(test.query,test.uid)));
+ assert.deepEqual(new Set(oldReports[0].rows.find((r:any)=>r.student_id===s1).homework.map((h:any)=>h.assignment_id)),new Set(['fixture-old-a1','fixture-old-a2','fixture-old-a-stale']));checks++;
+ assert.deepEqual(oldReports[1].rows[0].homework.map((h:any)=>h.assignment_id),['fixture-homework-same-day']);checks++;
+ assert.deepEqual(oldReports[2].rows[0].homework.map((h:any)=>[h.assignment_id,h.score]),[['fixture-exam-same-day',7]]);checks++;
+ assert(oldReports.at(-1).rows.some((r:any)=>r.homework.some((h:any)=>h.assignment_id==='history123-retired-lesson-1')));checks++;
+ const workCases=[{assignment_id:'fixture-old-a1',work_kind:'homework',score:8.5},{assignment_id:'fixture-exam-same-day',work_kind:'exam',score:7}];
+ const readWork=async({assignment_id,work_kind}:typeof workCases[number])=>db.transaction(async tx=>{
+  await tx.exec('set transaction read only');await tx.exec('set local role authenticated');
+  await tx.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role','authenticated',true)",[gvA]);
+  const request={student_id:s1,class_id:a,lesson_date:oldClassDay,assignment_id,work_kind,mode:'session'};
+  return (await tx.query('select public.mtm_staff_student_work($1) result',[JSON.stringify(request)])).rows[0].result;
+ });
+ const oldWork=[];
+ for(const test of workCases){
+  const result=await readWork(test);
+  assert.equal(result.status,'ready');assert.equal(result.attempts[0].score,test.score);checks++;
+  oldWork.push(result);
+ }
+ const scaledQuery={mode:'session',work_kind:'homework',from_date:day(-29),to_date:today,page_size:20};
+ async function measure(){
+  const elapsed=[];
+  let result;
+  for(let run=0;run<3;run++){
+   const started=performance.now();
+   result=await call(scaledQuery,manager);
+   elapsed.push(Math.round(performance.now()-started));
+  }
+  return {result,elapsed};
+ }
+ const baseline=await measure();
+ await db.exec(history123);
+ assert.deepEqual((await db.query(identitySQL)).rows,identityBefore);checks++;
+ assert.deepEqual((await db.query("select rolname,rolsuper,rolcreaterole,rolbypassrls,rolconfig from pg_roles order by rolname")).rows,roleBefore);checks++;
+ for(const [index,test] of parityQueries.entries()){
+  assert.deepEqual(stable(await call(test.query,test.uid)),oldReports[index]);checks++;
+ }
+ for(const [index,test] of workCases.entries()){
+  assert.deepEqual(await readWork(test),oldWork[index]);checks++;
+ }
+ await assert.rejects(()=>call({...query,class_id:b}),/STAFF_HISTORY_CLASS_DENIED/);checks++;
+ const optimized=await measure();
+ assert.deepEqual(stable(optimized.result),stable(baseline.result));checks++;
+ assert(optimized.result.total>=1200);assert.equal(optimized.result.rows.length,20);checks++;
+ console.log(JSON.stringify({synthetic_scale:{scheduled_classes:20,retired_classes:6,students:390,lessons:252,receipts:receiptCount,total:optimized.result.total,before_ms:baseline.elapsed,after_ms:optimized.elapsed},live_SLO_verified:false}));
 }finally{await db.close();}
 console.log(`${checks} ca tra cứu nhân sự: phân quyền lớp, hai mode, lịch sử chuyển/nghỉ, điểm0/null, điểm danh thiếu=null, pagination, khôngmutate: đạt; PGlite giả, không mạng.`);
