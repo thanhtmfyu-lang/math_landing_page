@@ -10,7 +10,7 @@ export {LessonSubmitError} from './submission-receipt';
 export async function staffHistory(owner:string,query:StaffHistoryQuery):Promise<StaffHistoryPage>{
  const issue=validateHistoryQuery(query);if(issue)throw Error(issue);
  const {client,assertOwner}=await staffRequest(owner);
- const r=await client.rpc('mtm_lesson_upload_api',{p:{action:'staff_history',...cleanHistoryQuery(query)}});await assertOwner();
+ const r=await client.rpc('mtm_staff_history',{p:cleanHistoryQuery(query)});await assertOwner();
  if(r.error){if(r.error.code==='42501')throw new StaffAccessError('Tài khoản chưa có quyền xem lịch sử của lớp này.');throw Error('Chưa tải được điểm và điểm danh. Kiểm tra khoảng ngày hoặc thử lại.');}
  return validateHistoryPage(r.data as StaffHistoryPage,query.work_kind);
 }

@@ -70,10 +70,11 @@ try{
   await db.query('insert into mtm_hw_private.btvn_work(student_id,lesson_code,receipts) values($1,$2,$3)',[student,code,JSON.stringify([{attemptId:'fixture-'+code,score,submittedAt:submitted,late:false}])]);
  }
  await db.query("insert into mtm_hw_private.btvn_work(student_id,lesson_code,receipts) values($1,'fixture-paired',$2)",[onlyB,JSON.stringify([{attemptId:'fixture-pair-only-b',score:9,submittedAt:epoch(day(-11)),late:false}])]);
- const call=async(p:Record<string,unknown>,uid=gvA,role='authenticated')=>db.transaction(async tx=>{
+ const call=async(p:Record<string,unknown>,uid:string|null=gvA,role='authenticated',rpc:'mtm_lesson_upload_api'|'mtm_staff_history'='mtm_lesson_upload_api')=>db.transaction(async tx=>{
   await tx.exec('set transaction read only');await tx.exec('set local role '+role);
   await tx.query("select set_config('request.jwt.claim.sub',$1,true),set_config('request.jwt.claim.role',$2,true)",[uid??'',role]);
-  return (await tx.query('select public.mtm_lesson_upload_api($1) result',[JSON.stringify({action:'staff_history',...p})])).rows[0].result;
+  const payload=rpc==='mtm_staff_history'?p:{action:'staff_history',...p};
+  return (await tx.query(`select public.${rpc}($1) result`,[JSON.stringify(payload)])).rows[0].result;
  });
  const query={from_date:oldClassDay,to_date:oldClassDay,class_id:a};
  const old=await call(query);assert.equal(old.mode,'session');assert.equal(old.score_basis,'previous_assignment_day');assert.equal(old.total,3);checks++;
@@ -236,6 +237,43 @@ try{
  const optimized=await measure();
  assert.deepEqual(stable(optimized.result),stable(baseline.result));checks++;
  assert(optimized.result.total>=1200);assert.equal(optimized.result.rows.length,20);checks++;
+
+ // Reproduce Supabase's default grants when the dedicated RPC is created.
+ await db.exec('alter default privileges in schema public grant execute on functions to anon, authenticated, service_role, mtm_btvn_publisher');
+ await db.exec(readFileSync('supabase/migrations-pending/202611210124_staff_history_rpc.sql','utf8'));
+ await db.exec('alter default privileges in schema public revoke execute on functions from anon, authenticated, service_role, mtm_btvn_publisher');
+ const signature='public.mtm_staff_history(jsonb)';
+ const {rows:[rpcSettings]}=await db.query('select provolatile,prosecdef,proconfig from pg_proc where oid=$1::regprocedure',[signature]);
+ assert.deepEqual(rpcSettings,{provolatile:'s',prosecdef:true,proconfig:['search_path=""','statement_timeout=20s']});checks++;
+ const {rows:rpcGrants}=await db.query(`select r.rolname,g.is_grantable from pg_proc f
+  cross join lateral aclexplode(f.proacl) g left join pg_roles r on r.oid=g.grantee
+  where f.oid=$1::regprocedure and g.grantee<>f.proowner`,[signature]);
+ assert.deepEqual(rpcGrants,[{rolname:'authenticated',is_grantable:false}]);checks++;
+ assert.deepEqual((await db.query(identitySQL)).rows,identityBefore);checks++;
+ assert.deepEqual((await db.query("select rolname,rolsuper,rolcreaterole,rolbypassrls,rolconfig from pg_roles order by rolname")).rows,roleBefore);checks++;
+ for(const [index,test] of parityQueries.entries()){
+  assert.deepEqual(stable(await call(test.query,test.uid,'authenticated','mtm_staff_history')),oldReports[index]);checks++;
+ }
+ assert.deepEqual(stable(await call(scaledQuery,manager,'authenticated','mtm_staff_history')),stable(optimized.result));checks++;
+ for(const role of ['anon','service_role','mtm_btvn_publisher']){
+  await assert.rejects(()=>call(query,gvA,role,'mtm_staff_history'),{code:'42501',message:/permission denied for function mtm_staff_history/});checks++;
+ }
+ await assert.rejects(()=>call(query,foreignOwner,'authenticated','mtm_staff_history'),{code:'42501',message:'STAFF_REQUIRED'});checks++;
+ await assert.rejects(()=>call({...query,class_id:b},gvA,'authenticated','mtm_staff_history'),{code:'42501',message:'STAFF_HISTORY_CLASS_DENIED'});checks++;
+ await db.query('update public.mtm_staff set must_change_password=true where user_id=$1',[gvA]);
+ await assert.rejects(()=>call(query,gvA,'authenticated','mtm_staff_history'),{code:'42501',message:'PASSWORD_CHANGE_REQUIRED'});checks++;
+ await db.query('update public.mtm_staff set must_change_password=false,active=false where user_id=$1',[gvA]);
+ await assert.rejects(()=>call(query,gvA,'authenticated','mtm_staff_history'),{code:'42501',message:'STAFF_REQUIRED'});checks++;
+ await db.query('update public.mtm_staff set active=true where user_id=$1',[gvA]);
+ for(const [request,message] of [
+  [{...query,is_test:true},'STAFF_HISTORY_FILTER_INVALID'],
+  [{...query,work_kind:'all'},'STAFF_HISTORY_FILTER_INVALID'],
+  [{...query,page_size:101},'STAFF_HISTORY_PAGE'],
+  [{...query,from_date:day(-31),to_date:today},'STAFF_HISTORY_RANGE'],
+  [{...query,to_date:day(1)},'STAFF_HISTORY_RANGE'],
+ ] as const){
+  await assert.rejects(()=>call(request,gvA,'authenticated','mtm_staff_history'),{code:'22023',message});checks++;
+ }
  console.log(JSON.stringify({synthetic_scale:{scheduled_classes:20,retired_classes:6,students:390,lessons:252,receipts:receiptCount,total:optimized.result.total,before_ms:baseline.elapsed,after_ms:optimized.elapsed},live_SLO_verified:false}));
 }finally{await db.close();}
 console.log(`${checks} ca tra cứu nhân sự: phân quyền lớp, hai mode, lịch sử chuyển/nghỉ, điểm0/null, điểm danh thiếu=null, pagination, khôngmutate: đạt; PGlite giả, không mạng.`);
