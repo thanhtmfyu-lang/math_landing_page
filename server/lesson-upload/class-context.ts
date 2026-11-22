@@ -1,9 +1,9 @@
 import {createHash} from 'node:crypto';
 
 export const CLASS_CONTEXT_CONTRACT='MTM-WEB-CLASS-CONTEXT-20261114-v1';
-export type ClassContextJob={class_ids:string[];class_names:Record<string,string>;class_dates:Record<string,string>;lesson_date:string;class_grades?:Record<string,number>;grade_source?:string;class_grade_complete?:boolean;class_grade_issue?:string|null;homework_path?:string|null};
+export type ClassContextJob={class_ids:string[];class_names:Record<string,string>;class_dates:Record<string,string>;lesson_date:string;class_grades?:Record<string,number>;grade_source?:string;class_grade_complete?:boolean;class_grade_issue?:string|null;homework_path?:string|null;checkpoint?:Record<string,unknown>};
 /** Private checkpoint metadata. Never include this object in exam/material/publish. */
-export type ClassContextReceipt={contract:string;metadataSha256:string;sourceVersion:string};
+export type ClassContextReceipt={contract:string;metadataSha256:string;sourceVersion:string;priorGradeAuthorizationSha256?:string};
 const sha=/^[a-f0-9]{64}$/;
 const day=/^\d{4}-\d{2}-\d{2}$/;
 function ensure(value:unknown,code:string):asserts value {if(!value)throw Error(code);}
@@ -33,10 +33,17 @@ export function managedClassContext(job:ClassContextJob,sourceVersion:string){
  return {schema:CLASS_CONTEXT_CONTRACT,sourceVersion,grade_source:'managed_class_catalog',assignment_grade:grades![ids[0]],lesson_date:job.lesson_date,classes:keys.map(class_id=>({class_id,label:names[class_id],grade:grades![class_id],date:dates[class_id]}))};
 }
 export function classContextHash(job:ClassContextJob,sourceVersion:string){return createHash('sha256').update(canonicalClassJson(managedClassContext(job,sourceVersion)),'utf8').digest('hex');}
+function priorGradeAuthorizationHash(job:ClassContextJob):string|undefined {
+ const ownerResume=job.checkpoint?.operator_long_pdf_resume_v1;
+ if(!plain(ownerResume)||ownerResume.prior_grade_source==null)return undefined;
+ ensure(plain(ownerResume.prior_grade_source),'NATIVE_CLASS_GRADE_CONFLICT');
+ return createHash('sha256').update(canonicalClassJson(ownerResume.prior_grade_source),'utf8').digest('hex');
+}
 function validateReceipt(job:ClassContextJob,sourceVersion:string,value:unknown){
  ensure(plain(value),'NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED');
  ensure(value.contract===CLASS_CONTEXT_CONTRACT&&typeof value.metadataSha256==='string'&&sha.test(value.metadataSha256)&&value.sourceVersion===sourceVersion,'NATIVE_CLASS_METADATA_CHANGED');
  ensure(value.metadataSha256===classContextHash(job,sourceVersion),'NATIVE_CLASS_METADATA_CHANGED');
+ ensure(value.priorGradeAuthorizationSha256===priorGradeAuthorizationHash(job),'NATIVE_CLASS_METADATA_CHANGED');
 }
 export function validateClassContext(job:ClassContextJob,source:{sourceVersion:string;contextReceipt?:ClassContextReceipt},draft?:{exam:{grade:number};contextReceipt?:ClassContextReceipt}|null){
  if(!job.homework_path)return; // Existing materials-only flow has no native draft.
@@ -45,7 +52,8 @@ export function validateClassContext(job:ClassContextJob,source:{sourceVersion:s
 }
 /** The Python top-level receipt is accepted only after binding the claimed job. */
 export function contextReceiptFromNative(job:ClassContextJob,value:any):ClassContextReceipt{
- const receipt={contract:value?.class_context_contract,metadataSha256:value?.class_metadata_sha256,sourceVersion:value?.sourceVersion};
+ const receipt={contract:value?.class_context_contract,metadataSha256:value?.class_metadata_sha256,sourceVersion:value?.sourceVersion,
+  ...(value?.prior_grade_authorization_sha256===undefined?{}:{priorGradeAuthorizationSha256:value.prior_grade_authorization_sha256})};
  validateReceipt(job,value?.sourceVersion,receipt);
  return receipt;
 }

@@ -36,6 +36,23 @@ function harness({pair=false,hook=true}={}){
  const backfillDb={async rpc(name:string,{p}:any){assert.equal(name,'mtm_lesson_upload_api');if(p.action==='worker_pending_review')return {data:{job:{...job,checkpoint:structuredClone(durable),pending_reviews:(pair?[1,2]:[1]).map(paper=>({paper,source_version:paper===1?sourceVersion:'f'.repeat(64),request_hash:'a'.repeat(64)}))}},error:null};assert.equal(p.action,'worker_review_result');stats.reviewResults++;return {data:{ok:true},error:null};}};
  return {job,fixture,stats,state,pipeline,repo,cache,values,durable,raw,draft,backfillDb};
 }
+await test('a prior-grade owner receipt survives only the exact same private checkpoint', () => {
+ const job=baseJob();
+ const approval={schema:'mtm-owner-approved-prior-grade-homework-v1',assignment_grade:12,source_grade:11,authority_ref:'Quản lý duyệt tài liệu ôn tập 🧮'};
+ job.checkpoint={operator_long_pdf_resume_v1:{prior_grade_source:approval}};
+ const base=contextReceipt(job);
+ const digest=createHash('sha256').update(canonicalClassJson(approval)).digest('hex');
+ const pythonSource="import importlib.util,json,sys; s=importlib.util.spec_from_file_location('native',sys.argv[1]); m=importlib.util.module_from_spec(s); s.loader.exec_module(m); print(m.digest(m.encoded(json.loads(sys.stdin.buffer.read().decode('utf-8')))))";
+ const python=spawnSync('python',['-B','-c',pythonSource,join(root,'tools','lesson-upload','native-driver.py')],{input:JSON.stringify(approval),encoding:'utf8'});
+ assert.equal(python.status,0,python.stderr);assert.equal(python.stdout.trim(),digest);
+ const receipt=contextReceiptFromNative(job,{class_context_contract:base.contract,class_metadata_sha256:base.metadataSha256,sourceVersion,prior_grade_authorization_sha256:digest});
+ assert.equal(receipt.priorGradeAuthorizationSha256,digest);
+ validateClassContext(job,{sourceVersion,contextReceipt:receipt},{exam:{grade:12},contextReceipt:receipt});
+ assert.throws(()=>validateClassContext(job,{sourceVersion,contextReceipt:base}),/NATIVE_CLASS_METADATA_CHANGED/);
+ assert.throws(()=>validateClassContext(job,{sourceVersion,contextReceipt:receipt},{exam:{grade:11},contextReceipt:receipt}),/NATIVE_CLASS_GRADE_MISMATCH/);
+ assert.throws(()=>validateClassContext({...job,checkpoint:{}},{sourceVersion,contextReceipt:receipt}),/NATIVE_CLASS_METADATA_CHANGED/);
+});
+
 const noProviders=(h:ReturnType<typeof harness>)=>{assert.equal(h.stats.reads,0);assert.equal(h.stats.builds,0);assert.equal(h.stats.reviews,0);assert.equal(h.stats.commits,0);assert.equal(h.stats.bundles,0);assert.equal(h.stats.reviewResults,0);};
 
 await test('canonical context matches actual Python utility with Unicode and map order',()=>{

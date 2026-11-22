@@ -259,7 +259,9 @@ def teacher_upload_ai_class(native_ai_class):
  class TeacherUploadAI(native_ai_class):
   def _augment(self,stage,instruction):
    instruction=super()._augment(stage,instruction)
-   if stage=='extract':instruction+=teacher_scope_instruction(self.teacher_scope_context)+class_metadata_instruction(self.assignment_class_context)+teacher_branding_instruction()
+   if stage=='extract':
+    approved_grade=getattr(self,'approved_source_grade',None)
+    instruction+=teacher_scope_instruction(self.teacher_scope_context)+class_metadata_instruction(self.assignment_class_context,approved_grade)+teacher_branding_instruction()
    return instruction
  return TeacherUploadAI
 
@@ -305,9 +307,17 @@ def managed_class_context(job,source_version):
  if len(set(grades.values()))!=1:raise ValueError('NATIVE_CLASS_GRADE_AMBIGUOUS')
  return {'schema':CLASS_CONTEXT_CONTRACT,'sourceVersion':source_version,'grade_source':'managed_class_catalog','assignment_grade':grades[ids[0]],'lesson_date':lesson,'classes':[{'class_id':cid,'label':names[cid],'grade':grades[cid],'date':dates[cid]} for cid in sorted(ids)]}
 
-def class_metadata_instruction(context):
+def class_metadata_instruction(context, approved_source_grade=None):
  import json
- return (' DỮ LIỆU PHÂN LOẠI LỚP TỪ DANH MỤC QUẢN LÝ ĐÃ ĐƯỢC MÁY CHỦ GÁN CHO BÀI NÀY, không phải lời xác nhận cá nhân của giáo viên: '+json.dumps(context,ensure_ascii=False,sort_keys=True)+
+ class_facts=json.dumps(context,ensure_ascii=False,sort_keys=True)
+ if approved_source_grade is not None:
+  return (
+   ' DANH MỤC LỚP NHẬN BÀI: '+class_facts+
+   ' Quản lý đã xác nhận dùng đúng cặp PDF ôn tập khối '+str(approved_source_grade)+
+   ' cho lớp nhận bài này. Trường grade phải là assignment_grade của lớp nhận trong danh mục. '
+   'Giữ nguyên nội dung và nhãn nguồn của hai PDF. Nếu có bất định về Toán, khóa, phạm vi, crop hoặc nguồn, giữ nguyên needs_review và không tự nâng certain.'
+  )
+ return (' DỮ LIỆU PHÂN LOẠI LỚP TỪ DANH MỤC QUẢN LÝ ĐÃ ĐƯỢC MÁY CHỦ GÁN CHO BÀI NÀY, không phải lời xác nhận cá nhân của giáo viên: '+class_facts+
  ' Nếu PDF HS/GV không in rõ khối lớp, dùng assignment_grade của managed_class_catalog cho trường grade. Không suy khối từ tên lớp/2K, Oxyz hoặc chủ đề; thiếu nhãn khối trên PDF hay chủ đề giao thoa không tự nó làm bài toán chưa chắc chắn khi danh mục đã xác định lớp. '
  'Nếu tài liệu in RÕ khối lớp khác danh mục thì dừng needs_review/certain=false; không ép khối hoặc sửa nội dung. Mọi bất định Toán, khóa, phạm vi, crop hoặc nguồn khác vẫn giữ nguyên để kiểm; không nâng certain chỉ để khớp metadata.')
 
@@ -324,10 +334,61 @@ def explicit_heading_grades(texts):
    values.update(int(x) for x in re.findall(r'10|11|12',match.group(1)+match.group(2)))
  return values
 
-def check_source_grade(context,texts):
- explicit=explicit_heading_grades(texts)
- if any(value!=context['assignment_grade'] for value in explicit):raise ValueError('NATIVE_CLASS_GRADE_CONFLICT')
- return {'explicit_heading_grade_detected':bool(explicit),'catalog_assignment_grade':context['assignment_grade']}
+PRIOR_GRADE_AUTHORIZATION_SCHEMA = 'mtm-owner-approved-prior-grade-homework-v1'
+
+
+def prior_grade_approval(job, source_pin, class_context, class_context_hash):
+    """Read only the owner-written resume record bound to the original upload."""
+    checkpoint = job.get('checkpoint') or {}
+    resume = checkpoint.get('operator_long_pdf_resume_v1') if isinstance(checkpoint, dict) else None
+    approval = resume.get('prior_grade_source') if isinstance(resume, dict) else None
+    if approval is None:
+        return None
+
+    error = 'NATIVE_CLASS_GRADE_CONFLICT'
+    need(isinstance(approval, dict), error)
+    grade = approval.get('source_grade')
+    need(job.get('work_kind') == 'homework' and job.get('is_test') is False
+         and type(job.get('paper', 1)) is int and job.get('paper', 1) == 1
+         and type(job.get('version')) is int and len(class_context['classes']) == 1, error)
+    need(type(grade) is int and grade in (10, 11) and grade < class_context['assignment_grade'], error)
+    authority = resume.get('authority_ref')
+    need(isinstance(authority, str) and 8 <= len(authority.strip()) <= 240, error)
+    expected = {
+        'schema': PRIOR_GRADE_AUTHORIZATION_SCHEMA,
+        'upload_id': job['id'],
+        'version': job['version'],
+        'paper': 1,
+        'source_version': source_pin['sourceVersion'],
+        'scope_sha256': source_pin['scope_sha256'],
+        'homework_sha256': source_pin['homework_sha256'],
+        'answer_sha256': source_pin['answer_sha256'],
+        'class_context_sha256': class_context_hash,
+        'source_grade': grade,
+        'assignment_grade': class_context['assignment_grade'],
+        'authority_ref': authority,
+    }
+    need(encoded(approval) == encoded(expected), error)
+    return approval
+
+
+def check_source_grade(context, texts, approval=None):
+    explicit = explicit_heading_grades(texts)
+    if approval is not None:
+        need(len(texts) == 2
+             and all(explicit_heading_grades([text]) == {approval['source_grade']} for text in texts),
+             'NATIVE_CLASS_GRADE_CONFLICT')
+    elif any(value != context['assignment_grade'] for value in explicit):
+        raise ValueError('NATIVE_CLASS_GRADE_CONFLICT')
+    return {'explicit_heading_grade_detected': bool(explicit),
+            'catalog_assignment_grade': context['assignment_grade']}
+
+
+def bind_prior_grade_draft(record, approval):
+    expected = digest(encoded(approval)) if approval is not None else None
+    need(record.get('prior_grade_authorization_sha256') == expected, 'NATIVE_CLASS_METADATA_CHANGED')
+    return record
+
 
 def check_extracted_class_grade(extracted,context):
  if type(extracted.get('grade')) is not int or extracted['grade']!=context['assignment_grade']:raise ValueError('NATIVE_CLASS_GRADE_MISMATCH')
@@ -365,6 +426,12 @@ def main(value):
   context=managed_class_context(value['job'],value['sourceVersion']);context_hash=class_metadata_snapshot(folder/'class-metadata.json',context)
   if cached is not None:need(context_hash==cached.get('class_metadata_sha256'),'OPERATOR_CACHED_DRAFT_BINDING_CHANGED')
   record=checked_draft(record,value['sourceVersion'],context_hash);check_extracted_class_grade(record['draft']['exam'],context)
+  checkpoint=value['job'].get('checkpoint') or {}
+  resume=checkpoint.get('operator_long_pdf_resume_v1') if isinstance(checkpoint,dict) else None
+  if (isinstance(resume,dict) and resume.get('prior_grade_source') is not None) or record.get('prior_grade_authorization_sha256') is not None:
+   pin=_failure_json(_failure_read(folder/'source.json'))
+   need(pin.get('sourceVersion')==value['sourceVersion'],'SOURCE_CHANGED')
+   bind_prior_grade_draft(record,prior_grade_approval(value['job'],pin,context,context_hash))
   return {**record,'native_cache_record_sha256':digest(raw)} if cached is not None else record
  if stage=='prepare':
   job=value['job'];folder=work_path(runtime,job);folder.mkdir(parents=True,exist_ok=True,mode=0o700)
@@ -399,8 +466,11 @@ def main(value):
   else:atomic(pinfile,pin)
   _native_failure_context=failure_context(folder,job,stage,source_version=identity,expected_pin=pin)
   class_context=managed_class_context(job,identity);class_context_hash=class_metadata_snapshot(folder/'class-metadata.json',class_context,allow_create=True,writer=atomic)
+  approval=prior_grade_approval(job,pin,class_context,class_context_hash)
   if (folder/'draft.json').exists():
-   cached=checked_draft(json.loads((folder/'draft.json').read_text()),identity,class_context_hash);check_extracted_class_grade(cached['draft']['exam'],class_context);return cached
+   cached=checked_draft(json.loads((folder/'draft.json').read_text()),identity,class_context_hash)
+   check_extracted_class_grade(cached['draft']['exam'],class_context)
+   return bind_prior_grade_draft(cached,approval)
   (folder/'homework.original').write_bytes(hs);(folder/'answer.original').write_bytes(gv)
   visual_hs,visual_gv=pdf(hs,'hs'),pdf(gv,'gv')
   p.pdf(visual_hs);p.pdf(visual_gv)
@@ -409,7 +479,7 @@ def main(value):
    return worker.VersionWorker.extract_visual_pdf(holder,raw,directory,tag)
   (hs_text,hs_pages),(gv_text,gv_pages)=render_source_pdfs(extract_pdf,visual_hs,visual_gv,folder)
   inventory=source_inventory_pdf(visual_hs)
-  scoped_inventory(inventory,job['task_scope']);check_source_grade(class_context,[hs_text,gv_text])
+  scoped_inventory(inventory,job['task_scope']);check_source_grade(class_context,[hs_text,gv_text],approval)
   config=json.loads(runtime.config_path().read_text(encoding='utf-8-sig'));periods=[x['period'] for x in config['periods'] if x['start']<=job['lesson_date']<=x['end']];need(len(periods)==1,'SCHEDULE_UNAVAILABLE');config['period']=periods[0]
   code=job['lesson_code'];paper=job.get('paper',1);native_key=code+'-de-'+str(paper)
   row={'lesson_key':native_key,'lesson_date':job['lesson_date'],'class_dates':{job['class_names'][key]:date for key,date in job['class_dates'].items()},'class_name':', '.join(job['class_names'].values()),'title':job['title'],'homework':'web-upload://'+job['id']+'/'+str(paper)+'/hs','answers':'web-upload://'+job['id']+'/'+str(paper)+'/gv','homework_note':job['task_scope'],'scope_evidence':{'kind':'teacher-upload','upload_id':job['id'],'task_scope_sha256':scope_hash},'homework_labels':[job['task_scope']]}
@@ -421,6 +491,7 @@ def main(value):
   ai.audit_context=dict(ai.source_context)
   from btvn_native.errata import policy_for
   bind_teacher_context(ai,config,row,identity,job['task_scope'],policy_for);ai.assignment_class_context=class_context
+  if approval is not None:ai.approved_source_grade=approval['source_grade']
   from PIL import Image
   page_manifest=[]
   for tag,pages in [('hs',hs_pages),('gv',gv_pages)]:
@@ -451,7 +522,9 @@ def main(value):
   draft['exam']['sourceUrl']='https://minhthanhmath.vn'
   draft['exam']['answerVerificationNote']='Khóa giáo viên; kết quả kiểm độc lập theo biên nhận riêng.'
   from btvn_native.mtm_grading import seal
-  draft['exam']=seal(draft['exam']);record={'inventory_contract':INVENTORY_CONTRACT,'class_context_contract':CLASS_CONTEXT_CONTRACT,'class_metadata_sha256':class_context_hash,'sourceVersion':identity,'draft':draft,'extractor':{'provider':receipt['provider'],'model':receipt['actual_model']}};atomic(folder/'draft.json',record)
+  draft['exam']=seal(draft['exam']);record={'inventory_contract':INVENTORY_CONTRACT,'class_context_contract':CLASS_CONTEXT_CONTRACT,'class_metadata_sha256':class_context_hash,'sourceVersion':identity,'draft':draft,'extractor':{'provider':receipt['provider'],'model':receipt['actual_model']}}
+  if approval is not None:record['prior_grade_authorization_sha256']=digest(encoded(approval))
+  atomic(folder/'draft.json',record)
   return record
  if stage=='review':
   request=question_request(value['questions'],value['task_scope'],value['sourceVersion']);key=digest(encoded(request));queue=runtime.brain_root()/'cau-noi/lesson-upload-review';requestfile=queue/'requests'/(key+'.json')

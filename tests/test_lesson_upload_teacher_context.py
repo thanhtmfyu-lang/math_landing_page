@@ -126,4 +126,76 @@ class TeacherNativeContext(unittest.TestCase):
   row,config,result=self.prepare(forbidden,policy_for=lambda *args:None)
   self.assertEqual((row,config,result),before);self.assertIsNot(row,self.row);self.assertIsNot(result,self.result)
 
+class PriorGradeHomeworkTests(unittest.TestCase):
+    def setUp(self):
+        self.source = {
+            'sourceVersion': 'a' * 64, 'scope_sha256': 'b' * 64,
+            'homework_sha256': 'c' * 64, 'answer_sha256': 'd' * 64,
+        }
+        self.context = {'assignment_grade': 12, 'classes': [{'class_id': 'synthetic'}]}
+        self.binding = {
+            'schema': candidate.PRIOR_GRADE_AUTHORIZATION_SCHEMA,
+            'upload_id': '00000000-0000-4000-8000-000000000056', 'version': 1, 'paper': 1,
+            'source_version': self.source['sourceVersion'], 'scope_sha256': self.source['scope_sha256'],
+            'homework_sha256': self.source['homework_sha256'], 'answer_sha256': self.source['answer_sha256'],
+            'class_context_sha256': 'e' * 64, 'source_grade': 11, 'assignment_grade': 12,
+            'authority_ref': 'synthetic owner review',
+        }
+        self.job = {'id': self.binding['upload_id'], 'version': 1, 'paper': 1,
+                    'work_kind': 'homework', 'is_test': False, 'checkpoint': {
+                        'operator_long_pdf_resume_v1': {
+                            'authority_ref': self.binding['authority_ref'],
+                            'prior_grade_source': self.binding,
+                        },
+                    }}
+        self.texts = ['Toán 11\nCâu 1.', 'Lớp 11\nCâu 1.']
+
+    def approval(self):
+        return candidate.prior_grade_approval(self.job, self.source, self.context, 'e' * 64)
+
+    def test_exact_owner_approval_distinguishes_source_and_assignment_grade(self):
+        permit = self.approval()
+        self.assertEqual(permit, self.binding)
+        self.assertEqual(candidate.check_source_grade(self.context, self.texts, permit)['catalog_assignment_grade'], 12)
+        instruction = candidate.class_metadata_instruction(self.context, 11)
+        self.assertIn('ôn tập khối 11', instruction)
+        self.assertIn('assignment_grade', instruction)
+        self.assertEqual(candidate.check_extracted_class_grade({'grade': 12}, self.context)['grade'], 12)
+        with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_GRADE_MISMATCH'):
+            candidate.check_extracted_class_grade({'grade': 11}, self.context)
+
+    def test_different_source_paper_or_assessment_fails_closed(self):
+        for field, replacement in (
+            ('answer_sha256', 'f' * 64), ('scope_sha256', '2' * 64),
+            ('version', 2), ('paper', True), ('class_context_sha256', '0' * 64),
+        ):
+            with self.subTest(field=field):
+                old = self.binding[field]
+                self.binding[field] = replacement
+                try:
+                    with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_GRADE_CONFLICT'):
+                        self.approval()
+                finally:
+                    self.binding[field] = old
+        self.job['work_kind'] = 'exam'
+        with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_GRADE_CONFLICT'):
+            self.approval()
+
+    def test_both_pdf_headings_and_checkpoints_must_match(self):
+        permit = self.approval()
+        for texts in (['Toán 11', 'Toán 12'], ['Toán 11', ''], ['Toán 10 / 11', 'Toán 11']):
+            with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_GRADE_CONFLICT'):
+                candidate.check_source_grade(self.context, texts, permit)
+        receipt = {'prior_grade_authorization_sha256': candidate.digest(candidate.encoded(permit))}
+        self.assertIs(candidate.bind_prior_grade_draft(receipt, permit), receipt)
+        with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_METADATA_CHANGED'):
+            candidate.bind_prior_grade_draft({}, permit)
+        with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_METADATA_CHANGED'):
+            candidate.bind_prior_grade_draft(receipt, None)
+        self.job['checkpoint'] = {}
+        self.assertIsNone(self.approval())
+        with self.assertRaisesRegex(ValueError, 'NATIVE_CLASS_GRADE_CONFLICT'):
+            candidate.check_source_grade(self.context, self.texts)
+
+
 if __name__=='__main__':unittest.main(verbosity=2)
