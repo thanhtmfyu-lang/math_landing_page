@@ -77,6 +77,71 @@ def source_inventory_pdf(visual_hs):
  with fitz.open(stream=visual_hs,filetype='pdf') as document:
   return source_inventory([page.get_text() for page in document])
 
+NATIVE_RENDERER_PAGE_LIMIT = 40
+NATIVE_PDF_TOTAL_PAGE_LIMIT = 2 * NATIVE_RENDERER_PAGE_LIMIT
+
+
+def render_long_pdf(raw, page_count, folder, tag):
+    """Render original PDF pages with the native worker's DPI and pixel limit."""
+    import pypdfium2 as pdfium
+
+    scale = 200 / 72
+    images = []
+    texts = []
+    if not raw.startswith(b'%PDF-'):
+        raise ValueError('NATIVE_PDF_RENDER_INCOMPLETE')
+    with pdfium.PdfDocument(raw) as document:
+        need(len(document) == page_count, 'NATIVE_PDF_RENDER_INCOMPLETE')
+        for index in range(page_count):
+            page = document[index]
+            try:
+                need(page.get_width() * page.get_height() * scale * scale <= 30_000_000,
+                     'NATIVE_PDF_RENDER_INCOMPLETE')
+                text_page = page.get_textpage()
+                try:
+                    texts.append(text_page.get_text_range())
+                finally:
+                    text_page.close()
+                bitmap = page.render(scale=scale)
+                try:
+                    image = bitmap.to_pil()
+                    try:
+                        output = folder / f'{tag}-{index + 1}.png'
+                        image.save(output)
+                        images.append(output)
+                    finally:
+                        image.close()
+                finally:
+                    bitmap.close()
+            finally:
+                page.close()
+    text = '\n\f\n'.join(texts)
+    if len(text.strip()) < 40 or not re.search(r'(?:Câu|Cau)\s*\d+', text):
+        text = '[Nguồn PDF không có lớp chữ đọc được. Phải đọc đủ từng câu từ toàn bộ ảnh; không đoán nội dung mờ.]'
+    return text, images
+
+
+def render_source_pdfs(extract_pdf, homework_pdf, answer_pdf, folder):
+    """Preserve native crop coordinates, original source bytes and one AI request."""
+    import fitz
+
+    with fitz.open(stream=homework_pdf, filetype='pdf') as homework, fitz.open(stream=answer_pdf, filetype='pdf') as answers:
+        hs_count, gv_count = homework.page_count, answers.page_count
+    # The pre-existing limit was 40 pages for each file, up to 80 pages per pair.
+    need(0 < hs_count and 0 < gv_count and hs_count + gv_count <= NATIVE_PDF_TOTAL_PAGE_LIMIT,
+         'NATIVE_PDF_PAGE_LIMIT')
+
+    def render(raw, count, tag):
+        if count <= NATIVE_RENDERER_PAGE_LIMIT:
+            text, images = extract_pdf(raw, folder, tag)
+        else:
+            text, images = render_long_pdf(raw, count, folder, tag)
+        need(len(images) == count, 'NATIVE_PDF_RENDER_INCOMPLETE')
+        return text, images
+
+    return render(homework_pdf, hs_count, 'hs'), render(answer_pdf, gv_count, 'gv')
+
+
 def scoped_inventory(records,scope):
  """Resolve page/part + numeric scopes, subtracting exclusions before coverage."""
  need(isinstance(records,SourceInventory) and records,'NATIVE_SOURCE_INVENTORY_REQUIRED')
@@ -337,8 +402,13 @@ def main(value):
   if (folder/'draft.json').exists():
    cached=checked_draft(json.loads((folder/'draft.json').read_text()),identity,class_context_hash);check_extracted_class_grade(cached['draft']['exam'],class_context);return cached
   (folder/'homework.original').write_bytes(hs);(folder/'answer.original').write_bytes(gv)
-  visual_hs,visual_gv=pdf(hs,'hs'),pdf(gv,'gv');inventory=source_inventory_pdf(visual_hs)
-  holder=type('VisualHolder',(),{'visual_sources':[]})();hs_text,hs_pages=worker.VersionWorker.extract_visual_pdf(holder,visual_hs,folder,'hs');gv_text,gv_pages=worker.VersionWorker.extract_visual_pdf(holder,visual_gv,folder,'gv')
+  visual_hs,visual_gv=pdf(hs,'hs'),pdf(gv,'gv')
+  p.pdf(visual_hs);p.pdf(visual_gv)
+  holder=type('VisualHolder',(),{'visual_sources':[]})()
+  def extract_pdf(raw,directory,tag):
+   return worker.VersionWorker.extract_visual_pdf(holder,raw,directory,tag)
+  (hs_text,hs_pages),(gv_text,gv_pages)=render_source_pdfs(extract_pdf,visual_hs,visual_gv,folder)
+  inventory=source_inventory_pdf(visual_hs)
   scoped_inventory(inventory,job['task_scope']);check_source_grade(class_context,[hs_text,gv_text])
   config=json.loads(runtime.config_path().read_text(encoding='utf-8-sig'));periods=[x['period'] for x in config['periods'] if x['start']<=job['lesson_date']<=x['end']];need(len(periods)==1,'SCHEDULE_UNAVAILABLE');config['period']=periods[0]
   code=job['lesson_code'];paper=job.get('paper',1);native_key=code+'-de-'+str(paper)
@@ -486,6 +556,7 @@ PUBLIC_NATIVE_ERRORS=frozenset({'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURC
 
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT','NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED'})
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'CACHED_DRAFT_EXTRACTION_FORBIDDEN','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED','OPERATOR_CACHED_DRAFT_BINDING_CHANGED'})
+PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_PDF_PAGE_LIMIT','NATIVE_PDF_RENDER_INCOMPLETE'})
 
 def public_error(error):
  try:value=str(error)

@@ -37,7 +37,11 @@ function Status({upload,onPreview}:{upload:LessonUpload;onPreview?:()=>void}){
     <div className="lu-job-progress"><label htmlFor={`progress-${upload.id}`}>Đã xử lý <b>{progress.processedPercent}%</b> · còn {progress.remainingPercent}%</label><progress id={`progress-${upload.id}`} max={100} value={progress.processedPercent}/><small>Tính theo các bước đã hoàn tất, không phải thời gian chờ.</small></div>
     {progress.issues.map(issue=><div className="lu-issue" role={issue.status==='loi'?'alert':undefined} key={`${issue.paper}-${issue.step}`}><b>{upload.homework2_uploaded?`Đề ${issue.paper} · `:''}{exam?issue.label.replace('BTVN','đề kiểm tra'):issue.label}</b><p>{issue.detail||'Cần kiểm tra lại dữ liệu của bước này.'}</p></div>)}
     {upload.retry?.next_retry_at&&<p className="lu-retry-note">AI dự kiến thử lại lúc {new Date(upload.retry.next_retry_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}.</p>}
-    {upload.retry?.reason&&<p className="lu-retry-note">{upload.retry.reason}</p>}
+    {upload.retry?.last_error_code==='NATIVE_PDF_PAGE_LIMIT'
+      ?<p className="lu-retry-note">Đề và đáp án phải có ít nhất một trang mỗi tệp và tổng cộng tối đa 80 trang. Hãy giữ lại các trang thuộc phạm vi cần giao.</p>
+      :upload.retry?.last_error_code==='NATIVE_PDF_RENDER_INCOMPLETE'
+        ?<p className="lu-retry-note">Một số trang PDF chưa dựng được ảnh. Hãy kiểm tra tệp gốc trước khi gửi lại.</p>
+        :upload.retry?.reason&&<p className="lu-retry-note">{upload.retry.reason}</p>}
     <details><summary>Xem chi tiết xử lý</summary>{[upload.steps,...(upload.homework2_uploaded?[upload.paper2_steps??[]]:[])].map((steps,paper)=><div key={paper}>
       {upload.homework2_uploaded&&<h4>Đề {paper+1}</h4>}<ol className="lu-steps">{STEP_LABELS.map((label,i)=>{const step=steps.find(s=>s.step===i+1);return <li key={label} data-state={step?.status??'cho'}><span className="lu-step-icon" aria-hidden="true">{step?.status==='xong'?'✓':i+1}</span><div><strong>{exam?label.replace('BTVN','đề kiểm tra'):label}</strong>{step?.detail&&<p>{step.detail}</p>}</div></li>;})}</ol>
     </div>)}</details>
