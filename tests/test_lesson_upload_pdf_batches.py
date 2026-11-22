@@ -1,11 +1,14 @@
 
-from contextlib import closing
+from contextlib import closing, nullcontext
 from datetime import datetime, timedelta, timezone
 import importlib.util
+import json
 from pathlib import Path
+import sys
 import tempfile
 from types import SimpleNamespace
 import unittest
+from unittest.mock import patch
 from uuid import uuid4
 
 import fitz
@@ -33,6 +36,46 @@ def make_pdf(pages):
             page.insert_text((10, 25), f"Cau {number} - synthetic text for the native renderer", fontsize=5)
             page.draw_rect(fitz.Rect(30, 32, 45, 45), fill=(number / 100, 0.2, 0.3))
         return pdf.tobytes()
+
+
+SEGMENT_INSTRUCTION = ('\n' + driver.FULL_PAGE_BRANDING_CLAIM + '\nCHẾ ĐỘ ĐỌC CHIA ĐOẠN: '
+                       + driver.SEGMENT_FULL_PAGE_CLAIM)
+
+
+def segment_view(duplicate=False):
+    hs = [f'Cau {number} nội dung câu' for number in range(1, 40)]
+    gv = [f'Cau {number} nội dung lời giải' for number in range(1, 40)]
+    gv.insert(21, 'Lời giải tiếp ở trang sau')
+    if duplicate:
+        gv[30] = 'Cau 24 số câu trùng ngoài nhóm con'
+    pages = {tag: [f'{tag}-{number}.png' for number in range(1, len(texts) + 1)]
+             for tag, texts in [('hs', hs), ('gv', gv)]}
+    rows = [{'document': tag, 'page': number, 'width': 200, 'height': 100}
+            for tag, paths in pages.items() for number in range(1, len(paths) + 1)]
+    manifest = 'PAGE_MANIFEST: ' + json.dumps(rows) + '\nDữ liệu tổng hợp'
+    return driver.SegmentPageView((hs, gv), driver.source_inventory(hs),
+                                  [f'Câu {number}' for number in range(19, 25)],
+                                  pages['hs'], pages['gv'], manifest)
+
+
+def segment_question(gv_page=20):
+    return {'sourceRef': 'Câu 20', 'questionCrops': [{'page': 20}], 'solutionCrops': [{'page': gv_page}]}
+
+
+class RecordingBase:
+    extract_deadline = 1000
+
+    def __init__(self, result):
+        self.result = result
+        self.calls = []
+
+    def _engine(self):
+        return object()
+
+    def _ask_stage(self, stage, instruction, text, pages, *, native_context=None):
+        self.calls.append((stage, instruction, text, pages, native_context))
+        self.last_receipt = {'provider': 'synthetic'}
+        return self.result
 
 
 class NativePdfRenderTests(unittest.TestCase):
@@ -103,6 +146,74 @@ class NativePdfRenderTests(unittest.TestCase):
         self.assertNotIn("Cau 35", view)
         duplicated = answers + ["Cau 19"]
         self.assertIsNone(driver.long_pdf_text(hs, duplicated, 40, 42, driver.source_inventory(hs), ["Câu 19"]))
+
+    def test_segment_projection_uses_original_pages_and_local_redaction_counts(self):
+        view = segment_view()
+        targets = ['Câu 20', 'Câu 21']
+        instruction, text, pages, counts, views = view.project(targets, SEGMENT_INSTRUCTION)
+        self.assertEqual(counts, {'hs_count': 6, 'gv_count': 7})
+        self.assertEqual(views['hs']['numbers'], [1, 19, 20, 21, 22, 23])
+        self.assertEqual(views['gv']['numbers'], [1, 19, 20, 21, 22, 23, 24])
+        manifest = json.loads(text.splitlines()[0].removeprefix('PAGE_MANIFEST: '))
+        self.assertEqual([(x['document'], x['page']) for x in manifest],
+                         [(tag, number) for tag in ('hs', 'gv') for number in views[tag]['numbers']])
+        self.assertEqual(pages, [f'{row["document"]}-{row["page"]}.png' for row in manifest])
+        self.assertIn('Trang gốc 22:\nLời giải tiếp ở trang sau', text)
+        self.assertNotIn('Cau 36', text)
+        self.assertNotIn(driver.SEGMENT_FULL_PAGE_CLAIM, instruction)
+        self.assertNotIn(driver.FULL_PAGE_BRANDING_CLAIM, instruction)
+        self.assertIn('margin_redactions.hs/gv', instruction)
+
+    def test_only_existing_child_calls_are_projected_and_full_timeout_is_retained(self):
+        view = segment_view()
+        target = ['Câu 20']
+        result = {'certain': True, 'questions': [segment_question()], 'manualQuestions': []}
+        native_core = SimpleNamespace(ProviderError=ValueError)
+        ai = driver.teacher_upload_ai_class(RecordingBase)(result)
+        with patch.dict(sys.modules, {'btvn_native.btvn_strict_core': native_core}), \
+                patch.object(driver, 'long_pdf_timeout', return_value=nullcontext()) as timeout:
+            with ai.segment_page_view(view):
+                full = ai._ask_stage('extract', 'unchanged first prompt', 'unchanged first text', view.pages)
+                child = ai._ask_stage('extract', SEGMENT_INSTRUCTION, 'full text', view.pages,
+                                      native_context={'target_refs': target})
+                child_receipt = ai.last_receipt['segment_document_view']
+                fallback = ai._ask_stage('extract', 'unrecognized child', 'full text', view.pages,
+                                         native_context={'target_refs': target})
+        self.assertEqual(timeout.call_count, 3)
+        self.assertIs(full, result)
+        self.assertIs(child, result)
+        self.assertIs(fallback, result)
+        self.assertEqual(ai.calls[0], ('extract', 'unchanged first prompt', 'unchanged first text', view.pages, None))
+        self.assertLess(len(ai.calls[1][3]), len(view.pages))
+        self.assertEqual(ai.calls[1][4]['target_refs'], target)
+        self.assertEqual(child_receipt['wire_instruction_sha256'], driver.digest(ai.calls[1][1].encode('utf-8')))
+        self.assertIn(20, child_receipt['original_pages']['gv'])
+        self.assertEqual(ai.calls[2][3], view.pages)
+        self.assertIsNone(ai._segment_page_view)
+
+    def test_segment_falls_back_on_unproved_full_scope_or_unknown_child_targets(self):
+        self.assertIsNone(segment_view(duplicate=True).project(['Câu 20'], SEGMENT_INSTRUCTION))
+        self.assertIsNone(segment_view().project(['Câu 31'], SEGMENT_INSTRUCTION))
+        self.assertIsNone(segment_view().project(['Câu 21', 'Câu 20'], SEGMENT_INSTRUCTION))
+        self.assertIsNone(segment_view().project(['Câu 20', 'Câu 20'], SEGMENT_INSTRUCTION))
+
+    def test_segment_rejects_rebased_or_undelivered_crop_pages(self):
+        *_, views = segment_view().project(['Câu 20'], SEGMENT_INSTRUCTION)
+        def result(question):
+            return {'certain': True, 'questions': [question], 'manualQuestions': []}
+
+        valid = result(segment_question())
+        self.assertIs(driver.check_segment_pages(valid, views), valid)
+        for wrong in (2, 38):
+            invalid = result(segment_question(gv_page=wrong))
+            with self.assertRaisesRegex(ValueError, 'NATIVE_EXTRACT_INVENTORY_MISMATCH'):
+                driver.check_segment_pages(invalid, views)
+        self.assertIn(22, views['gv']['numbers'])
+        wrong_span = {**segment_question(), 'solutionCrops': [{'page': 20}, {'page': 22}]}
+        with self.assertRaisesRegex(ValueError, 'NATIVE_EXTRACT_INVENTORY_MISMATCH'):
+            driver.check_segment_pages(result(wrong_span), views)
+        uncertain = {**result(segment_question(gv_page=2)), 'certain': False}
+        self.assertIs(driver.check_segment_pages(uncertain, views), uncertain)
 
     def test_continuation_requires_exact_claim_source_and_executing_bundle(self):
         now = datetime.now(timezone.utc)

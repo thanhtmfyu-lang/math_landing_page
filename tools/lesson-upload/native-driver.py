@@ -199,14 +199,14 @@ def page_text_window(pages, page_count, records, targets):
     if indexes != sorted(indexes):
         return None
     starts = [records[index]['pageNo'] for index in indexes]
-    last = indexes[-1] + 1
-    end = records[last]['pageNo'] if last < len(records) else page_count
-    if not 1 <= starts[0] <= starts[-1] <= end <= page_count:
+    ends = [records[index + 1]['pageNo'] if index + 1 < len(records) else page_count for index in indexes]
+    if not all(1 <= start <= end <= page_count for start, end in zip(starts, ends)):
         return None
     # Include the front page for the source heading and adjacent pages for the
     # boundary context. The full images always accompany this text view.
-    numbers = sorted({1, *range(max(1, starts[0] - 1), min(page_count, end + 1) + 1)})
-    return starts, '\n'.join(f'Trang gốc {n}:\n{pages[n - 1].strip()}' for n in numbers)
+    numbers = sorted({1, *range(max(1, starts[0] - 1), min(page_count, ends[-1] + 1) + 1)})
+    text = '\n'.join(f'Trang gốc {n}:\n{pages[n - 1].strip()}' for n in numbers)
+    return list(zip(starts, ends)), numbers, text
 
 
 def answer_text_locators(pages):
@@ -233,15 +233,105 @@ def long_pdf_text(hs_pages, gv_pages, hs_count, gv_count, inventory, targets):
     gv_window = page_text_window(gv_pages, gv_count, answer_text_locators(gv_pages), targets)
     if hs_window is None or gv_window is None:
         return None
-    hs_starts, hs = hs_window
-    gv_starts, gv = gv_window
+    hs_spans, _, hs = hs_window
+    gv_spans, _, gv = gv_window
     if len(hs) + len(gv) >= sum(map(len, hs_pages)) + sum(map(len, gv_pages)):
         return None
-    anchors = dict(zip(targets, zip(hs_starts, gv_starts)))
+    anchors = {target: (hs_span[0], gv_span[0]) for target, hs_span, gv_span in zip(targets, hs_spans, gv_spans)}
     return ('\nChỉ mục vị trí bắt đầu câu [trang HS, trang GV] theo số trang gốc: '
             + json.dumps(anchors, ensure_ascii=False)
             + '\nLớp chữ bên dưới hỗ trợ các câu trong phạm vi. Dùng toàn bộ ảnh đầy đủ để kiểm nội dung và gỡ dấu nguồn từng trang.'
             + '\nHS:\n' + hs + '\nĐÁP ÁN GV:\n' + gv)
+
+
+SEGMENT_FULL_PAGE_CLAIM = ('Toàn bộ ảnh và PAGE_MANIFEST vẫn là PDF gốc đã làm sạch; '
+                           'page của crop giữ số trang HS/GV thật, không đánh lại số trang theo nhóm.')
+FULL_PAGE_BRANDING_CLAIM = 'Vẫn kiểm đầu/chân và toàn bộ nội dung của mọi trang HS/GV'
+
+
+class SegmentPageView:
+    """Use original image coordinates and per-attachment redaction arrays."""
+
+    def __init__(self, page_texts, inventory, targets, hs_pages, gv_pages, manifest):
+        self.targets = targets
+        self.pages = hs_pages + gv_pages
+        self.documents = {
+            'hs': (page_texts[0], hs_pages, inventory),
+            'gv': (page_texts[1], gv_pages, answer_text_locators(page_texts[1])),
+        }
+        self.manifest = {'hs': {}, 'gv': {}}
+        header = 'PAGE_MANIFEST: '
+        if not manifest.startswith(header):
+            return
+        try:
+            rows = json.loads(manifest[len(header):].split('\n', 1)[0])
+            for row in rows:
+                tag = row['document']
+                number = row['page']
+                dimensions = (row['width'], row['height'])
+                if (tag not in self.manifest or type(number) is not int or number in self.manifest[tag]
+                        or not all(type(value) is int and value > 0 for value in dimensions)):
+                    raise ValueError
+                self.manifest[tag][number] = dimensions
+        except (KeyError, TypeError, ValueError):
+            self.manifest = {'hs': {}, 'gv': {}}
+
+    def project(self, targets, instruction):
+        if (not isinstance(targets, list) or not 0 < len(targets) < len(self.targets)
+                or targets != [target for target in self.targets if target in targets]
+                or '\nCHẾ ĐỘ ĐỌC CHIA ĐOẠN:' not in instruction
+                or instruction.count(SEGMENT_FULL_PAGE_CLAIM) != 1):
+            return None
+
+        views = {}
+        attachments = []
+        page_manifest = []
+        for tag, (texts, images, records) in self.documents.items():
+            if self.manifest[tag].keys() != set(range(1, len(images) + 1)):
+                return None
+            # Require a deterministic map for the whole declared scope, not just
+            # an accidentally unique subset of a duplicated answer numbering.
+            if page_text_window(texts, len(images), records, self.targets) is None:
+                return None
+            window = page_text_window(texts, len(images), records, targets)
+            if window is None:
+                return None
+            spans, numbers, text = window
+            views[tag] = {'spans': dict(zip(targets, spans)), 'numbers': numbers, 'text': text}
+            for number in numbers:
+                width, height = self.manifest[tag][number]
+                attachments.append(images[number - 1])
+                page_manifest.append({'document': tag, 'page': number, 'width': width, 'height': height})
+        if len(attachments) >= len(self.pages):
+            return None
+
+        instruction = instruction.replace(
+            SEGMENT_FULL_PAGE_CLAIM,
+            'Ảnh của lượt con là tập con trang gốc theo PAGE_MANIFEST, theo đúng thứ tự đính kèm. '
+            'Trường page của crop và scopeSelection dùng số trang PDF gốc, không dùng vị trí ảnh đính kèm. '
+            'margin_redactions.hs/gv có đúng một phần tử cho mỗi ảnh HS/GV được đính kèm, lần lượt theo thứ tự trong từng tài liệu. '
+            'Chỉ kiểm che dấu ảnh được gửi trong lượt con. Kết quả che dấu của toàn bộ trang vẫn lấy từ lượt kiểm toàn bộ nguồn trước đó.',
+        ).replace(FULL_PAGE_BRANDING_CLAIM, 'Kiểm đầu/chân và nội dung của mọi trang HS/GV được đính kèm ở lượt con này')
+        anchors = {target: [views[tag]['spans'][target][0] for tag in ('hs', 'gv')] for target in targets}
+        text = ('PAGE_MANIFEST: ' + json.dumps(page_manifest, ensure_ascii=False)
+                + '\nMốc từng câu [trang HS gốc, trang GV gốc]: ' + json.dumps(anchors, ensure_ascii=False)
+                + '\nHS:\n' + views['hs']['text'] + '\nĐÁP ÁN GV:\n' + views['gv']['text'])
+        context = {tag + '_count': len(view['numbers']) for tag, view in views.items()}
+        return instruction, text, attachments, context, views
+
+
+def check_segment_pages(result, views):
+    if result.get('certain') is not True:
+        return result  # Preserve the original segmented uncertainty/halving path.
+    for question in result['questions'] + result['manualQuestions']:
+        for tag, field in (('hs', 'questionCrops'), ('gv', 'solutionCrops')):
+            view = views[tag]
+            span = view['spans'].get(question['sourceRef'])
+            crops = question[field]
+            need(span is not None and (not crops or crops[0]['page'] == span[0])
+                 and all(span[0] <= crop['page'] <= span[1] and crop['page'] in view['numbers'] for crop in crops),
+                 'NATIVE_EXTRACT_INVENTORY_MISMATCH')
+    return result
 
 
 def scoped_inventory(records,scope):
@@ -313,7 +403,10 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
  ai.check_access()
  text=long_pdf_text(*page_texts,len(hs_pages),len(gv_pages),inventory,targets) if page_texts is not None else None
  if text is None:text='\n'+hs_text+'\nĐÁP ÁN GV:\n'+gv_text
- extracted=ai.ask_stage('extract',instruction,manifest+text,hs_pages+gv_pages,native_context=context)
+ project=getattr(ai,'segment_page_view',None)
+ view=SegmentPageView(page_texts,inventory,targets,hs_pages,gv_pages,manifest) if project and page_texts is not None else None
+ with project(view) if project else contextlib.nullcontext():
+  extracted=ai.ask_stage('extract',instruction,manifest+text,hs_pages+gv_pages,native_context=context)
  return check_extracted_inventory(extracted,targets)
 
 def bind_teacher_context(ai,config,row,source_version,task_scope,policy_for):
@@ -361,6 +454,13 @@ def teacher_branding_instruction():
 
 def teacher_upload_ai_class(native_ai_class):
  class TeacherUploadAI(native_ai_class):
+  @contextlib.contextmanager
+  def segment_page_view(self,view):
+   previous=getattr(self,'_segment_page_view',None)
+   self._segment_page_view=view
+   try:yield
+   finally:self._segment_page_view=previous
+
   def _augment(self,stage,instruction):
    instruction=super()._augment(stage,instruction)
    if stage=='extract':
@@ -369,10 +469,26 @@ def teacher_upload_ai_class(native_ai_class):
    return instruction
   def _ask_stage(self, stage, instruction, text, pages, *, native_context=None):
    ask = super()._ask_stage
+   projection=None
    if stage == 'extract' and len(pages) > NATIVE_RENDERER_PAGE_LIMIT:
     from btvn_native.btvn_strict_core import ProviderError
+    view=getattr(self,'_segment_page_view',None)
+    if view is not None and list(pages)==view.pages and isinstance(native_context,dict) and set(native_context)=={'target_refs'}:
+     projection=view.project(native_context['target_refs'],instruction)
     with long_pdf_timeout(self._engine(), self.extract_deadline, ProviderError):
-     return ask(stage, instruction, text, pages, native_context=native_context)
+     if projection is None:
+      return ask(stage, instruction, text, pages, native_context=native_context)
+     segment_instruction,segment_text,attachments,counts,views=projection
+     result=ask(stage,segment_instruction,segment_text,attachments,native_context={**native_context,**counts})
+     check_segment_pages(result,views)
+     # The legacy cache records the assembled caller instruction separately.
+     # Keep the exact projected instruction and page map in the live receipt.
+     if isinstance(self.last_receipt,dict):
+      self.last_receipt={**self.last_receipt,'segment_document_view':{
+       'wire_instruction_sha256':digest(segment_instruction.encode('utf-8')),
+       'original_pages':{tag:view['numbers'] for tag,view in views.items()},
+      }}
+     return result
    return ask(stage, instruction, text, pages, native_context=native_context)
  return TeacherUploadAI
 
