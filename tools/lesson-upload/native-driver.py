@@ -409,8 +409,10 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
  if work is not None and page_texts is not None:
   view=SegmentPageView(page_texts,inventory,targets,hs_pages,gv_pages,manifest)
   answer_texts,answer_images,answer_locators=view.documents['gv']
-  # Image-only answer scans still use the established visual route.
-  unresolved_text_locators=any(page.strip() for page in answer_texts) and (
+  need(len(answer_texts)==len(answer_images),'NATIVE_PDF_RENDER_INCOMPLETE')
+  # A scanned answer PDF can have a selectable heading/footer without printed
+  # answer locators. Preserve its visual path until we see numbered answers.
+  unresolved_text_locators=bool(answer_locators) and (
       page_text_window(answer_texts,len(answer_images),answer_locators,targets) is None)
   if not unresolved_text_locators:
    outcome=extract_long_homework(ai,job,source_version,context,instruction,view,targets,work)

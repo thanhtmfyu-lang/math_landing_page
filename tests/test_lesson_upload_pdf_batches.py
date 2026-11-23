@@ -206,23 +206,29 @@ class NativePdfRenderTests(unittest.TestCase):
         with tempfile.TemporaryDirectory() as folder, patch.object(driver, 'extract_long_homework') as segmented:
             work = {'folder': Path(folder), 'prior': None}
             ai = SimpleNamespace(check_access=lambda: None, ask_stage=lambda *_, **__: self.fail('sent full PDF pair'))
-            for answer_page in ['Thiếu vị trí câu 21', 'Cau 20 lời giải bị lặp']:
-                answers = gv[:20] + [answer_page] + gv[21:]
+            bad_answers = [gv[:20] + [page] + gv[21:]
+                           for page in ['Thiếu vị trí câu 21', 'Cau 20 lời giải bị lặp']]
+            bad_answers.append(gv[:19] + [gv[20], gv[19]] + gv[21:])
+            for answers in bad_answers:
                 with self.assertRaisesRegex(ValueError, driver.LONG_PDF_LOCATOR_UNRESOLVED):
                     driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(answers),
                                           hs_images, gv_images, 'PAGE_MANIFEST: []',
                                           page_texts=(hs, answers), work=work)
+
+                # A prior acknowledgement still fences the source before reporting a new input error.
+                with self.assertRaisesRegex(ValueError, 'NATIVE_LONG_PDF_PROGRESS_MISMATCH'):
+                    driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(answers),
+                                          hs_images, gv_images, 'PAGE_MANIFEST: []', page_texts=(hs, answers),
+                                          work={**work, 'prior': {'progress_count': 1}})
             self.assertEqual(driver.public_error(ValueError(driver.LONG_PDF_LOCATOR_UNRESOLVED)),
                              driver.LONG_PDF_LOCATOR_UNRESOLVED)
+            with self.assertRaisesRegex(ValueError, 'NATIVE_PDF_RENDER_INCOMPLETE'):
+                driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(gv[:-1]),
+                                      hs_images, gv_images, 'PAGE_MANIFEST: []',
+                                      page_texts=(hs, gv[:-1]), work=work)
             segmented.assert_not_called()
 
-            # A prior acknowledgement still fences the source before reporting a new input error.
-            with self.assertRaisesRegex(ValueError, 'NATIVE_LONG_PDF_PROGRESS_MISMATCH'):
-                driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(answers),
-                                      hs_images, gv_images, 'PAGE_MANIFEST: []',
-                                      page_texts=(hs, answers), work={**work, 'prior': {'progress_count': 1}})
-
-            # PDFs without an answer text layer can still use the existing visual path.
+            # A scanned answer PDF may have no text, or just a text title/footer.
             seen = []
             extracted = {'inventory': ['Câu 20', 'Câu 21'], 'questions': [], 'manualQuestions': []}
 
@@ -232,11 +238,12 @@ class NativePdfRenderTests(unittest.TestCase):
 
             ai.ask_stage = visual_extract
             segmented.return_value = None
-            result = driver.extract_source(ai, p, job, 'a' * 64, hs_text, '',
-                                           hs_images, gv_images, 'PAGE_MANIFEST: []',
-                                           page_texts=(hs, [''] * 39), work=work)
-            self.assertEqual(seen, [hs_images + gv_images])
-            self.assertEqual(result, extracted)
+            for cover in ('', 'Đáp án PDF scan · Minh Thành Math'):
+                result = driver.extract_source(ai, p, job, 'a' * 64, hs_text, cover,
+                                               hs_images, gv_images, 'PAGE_MANIFEST: []',
+                                               page_texts=(hs, [cover] + [''] * 38), work=work)
+                self.assertEqual(result, extracted)
+            self.assertEqual(seen, [hs_images + gv_images, hs_images + gv_images])
 
     def test_segment_rejects_rebased_or_undelivered_crop_pages(self):
         *_, views = segment_view().project(['Câu 20'], SEGMENT_INSTRUCTION)

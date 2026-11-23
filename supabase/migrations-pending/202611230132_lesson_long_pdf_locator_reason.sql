@@ -1,3 +1,5 @@
+-- Apply before a worker emits the new code so the dashboard keeps its specific detail.
+-- The ordinary retry allowlist still rejects this input error without this migration.
 begin;
 
 do $long_pdf_locator$
