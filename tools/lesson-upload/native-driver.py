@@ -404,17 +404,15 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
  ai.check_access()
  text=long_pdf_text(*page_texts,len(hs_pages),len(gv_pages),inventory,targets) if page_texts is not None else None
  if text is None:text='\n'+hs_text+'\nĐÁP ÁN GV:\n'+gv_text
- project=getattr(ai,'segment_page_view',None)
- view=SegmentPageView(page_texts,inventory,targets,hs_pages,gv_pages,manifest) if project and page_texts is not None else None
- if work is not None and view is not None:
+ if work is not None and page_texts is not None:
+  view=SegmentPageView(page_texts,inventory,targets,hs_pages,gv_pages,manifest)
   outcome=extract_long_homework(ai,job,source_version,context,instruction,view,targets,work)
   if outcome is not None:return outcome
  if work is not None:
-  checkpoint=work['folder']/'long-pdf-work.json'
+  checkpoint=long_pdf_work_path(work,job['version'])
   need(work['prior'] is None and not checkpoint.exists() and not checkpoint.is_symlink(),
        'NATIVE_LONG_PDF_PROGRESS_MISMATCH')
- with project(view) if project else contextlib.nullcontext():
-  extracted=ai.ask_stage('extract',instruction,manifest+text,hs_pages+gv_pages,native_context=context)
+ extracted=ai.ask_stage('extract',instruction,manifest+text,hs_pages+gv_pages,native_context=context)
  return check_extracted_inventory(extracted,targets)
 
 def load_worker_helper(name):
@@ -422,6 +420,11 @@ def load_worker_helper(name):
     module = importlib.util.module_from_spec(spec)
     spec.loader.exec_module(module)
     return module
+
+
+def long_pdf_work_path(work, version):
+    need(type(version) is int and version > 0, 'NATIVE_LONG_PDF_PROGRESS_MISMATCH')
+    return work['folder'] / ('long-pdf-work-v' + str(version) + '.json')
 
 
 def extract_long_homework(ai, job, source_version, context, instruction, view, targets, work):
@@ -489,7 +492,7 @@ def extract_long_homework(ai, job, source_version, context, instruction, view, t
         return {'kind': 'extract', 'result': result, 'receipt': ai.last_receipt}
 
     with ai.long_pdf_batch():
-        records, yielded = progress.advance(work['folder']/'long-pdf-work.json', plan, tasks, work['prior'],
+        records, yielded = progress.advance(long_pdf_work_path(work,job['version']), plan, tasks, work['prior'],
                                             read=_failure_read, write=atomic, validate=validate, run=run)
     if yielded is not None:
         return yielded
@@ -570,12 +573,6 @@ def teacher_branding_instruction():
 def teacher_upload_ai_class(native_ai_class):
  class TeacherUploadAI(native_ai_class):
   @contextlib.contextmanager
-  def segment_page_view(self,view):
-   previous=getattr(self,'_segment_page_view',None)
-   self._segment_page_view=view
-   try:yield
-   finally:self._segment_page_view=previous
-  @contextlib.contextmanager
   def long_pdf_batch(self):
    previous=getattr(self,'_bounded_long_pdf_deadline',None)
    self._bounded_long_pdf_deadline=self.extract_deadline-150
@@ -601,30 +598,11 @@ def teacher_upload_ai_class(native_ai_class):
   def _ask_stage(self, stage, instruction, text, pages, *, native_context=None):
    ask = super()._ask_stage
    bounded=getattr(self,'_bounded_long_pdf_deadline',None)
-   if bounded is not None and stage in ('extract','branding_clean'):
+   if (bounded is not None and stage in ('extract','branding_clean')) or (stage=='extract' and len(pages)>NATIVE_RENDERER_PAGE_LIMIT):
     from btvn_native.btvn_strict_core import ProviderError
-    with long_pdf_timeout(self._engine(),bounded,ProviderError):
+    deadline=self.extract_deadline if bounded is None else bounded
+    with long_pdf_timeout(self._engine(),deadline,ProviderError):
      return ask(stage,instruction,text,pages,native_context=native_context)
-   projection=None
-   if stage == 'extract' and len(pages) > NATIVE_RENDERER_PAGE_LIMIT:
-    from btvn_native.btvn_strict_core import ProviderError
-    view=getattr(self,'_segment_page_view',None)
-    if view is not None and list(pages)==view.pages and isinstance(native_context,dict) and set(native_context)=={'target_refs'}:
-     projection=view.project(native_context['target_refs'],instruction)
-    with long_pdf_timeout(self._engine(), self.extract_deadline, ProviderError):
-     if projection is None:
-      return ask(stage, instruction, text, pages, native_context=native_context)
-     segment_instruction,segment_text,attachments,counts,views=projection
-     result=ask(stage,segment_instruction,segment_text,attachments,native_context={**native_context,**counts})
-     check_segment_pages(result,views)
-     # The legacy cache records the assembled caller instruction separately.
-     # Keep the exact projected instruction and page map in the live receipt.
-     if isinstance(self.last_receipt,dict):
-      self.last_receipt={**self.last_receipt,'segment_document_view':{
-       'wire_instruction_sha256':digest(segment_instruction.encode('utf-8')),
-       'original_pages':{tag:view['numbers'] for tag,view in views.items()},
-      }}
-     return result
    return ask(stage, instruction, text, pages, native_context=native_context)
  return TeacherUploadAI
 

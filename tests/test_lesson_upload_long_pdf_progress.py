@@ -16,6 +16,13 @@ progress = driver.load_worker_helper('native-long-pdf')
 
 
 class LongPdfProgressTests(unittest.TestCase):
+    def test_versions_have_distinct_native_checkpoints(self):
+        work = {'folder': Path('private-paper')}
+        self.assertEqual(driver.long_pdf_work_path(work, 1).name, 'long-pdf-work-v1.json')
+        self.assertNotEqual(driver.long_pdf_work_path(work, 1), driver.long_pdf_work_path(work, 2))
+        with self.assertRaisesRegex(ValueError, progress.MISMATCH):
+            driver.long_pdf_work_path(work, '../bad')
+
     def test_unacknowledged_checkpoint_is_returned_without_resending(self):
         sent = []
         plan = {'sourceVersion': 'a' * 64}

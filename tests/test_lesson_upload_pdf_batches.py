@@ -164,7 +164,7 @@ class NativePdfRenderTests(unittest.TestCase):
         self.assertNotIn(driver.FULL_PAGE_BRANDING_CLAIM, instruction)
         self.assertIn('margin_redactions.hs/gv', instruction)
 
-    def test_only_existing_child_calls_are_projected_and_full_timeout_is_retained(self):
+    def test_legacy_extract_keeps_full_input_and_planned_units_keep_a_separate_deadline(self):
         view = segment_view()
         target = ['Câu 20']
         result = {'certain': True, 'questions': [segment_question()], 'manualQuestions': []}
@@ -172,24 +172,22 @@ class NativePdfRenderTests(unittest.TestCase):
         ai = driver.teacher_upload_ai_class(RecordingBase)(result)
         with patch.dict(sys.modules, {'btvn_native.btvn_strict_core': native_core}), \
                 patch.object(driver, 'long_pdf_timeout', return_value=nullcontext()) as timeout:
-            with ai.segment_page_view(view):
-                full = ai._ask_stage('extract', 'unchanged first prompt', 'unchanged first text', view.pages)
-                child = ai._ask_stage('extract', SEGMENT_INSTRUCTION, 'full text', view.pages,
-                                      native_context={'target_refs': target})
-                child_receipt = ai.last_receipt['segment_document_view']
-                fallback = ai._ask_stage('extract', 'unrecognized child', 'full text', view.pages,
-                                         native_context={'target_refs': target})
-        self.assertEqual(timeout.call_count, 3)
+            full = ai._ask_stage('extract', 'unchanged first prompt', 'unchanged first text', view.pages)
+            child = ai._ask_stage('extract', SEGMENT_INSTRUCTION, 'full text', view.pages,
+                                  native_context={'target_refs': target})
+            unit_images = view.pages[:4]
+            with ai.long_pdf_batch():
+                batch = ai._ask_stage('branding_clean', 'approved phase', 'page text', unit_images,
+                                      native_context={'page_numbers': [1, 2, 3, 4]})
+        self.assertEqual([call.args[1] for call in timeout.call_args_list], [1000, 1000, 850])
         self.assertIs(full, result)
         self.assertIs(child, result)
-        self.assertIs(fallback, result)
+        self.assertIs(batch, result)
         self.assertEqual(ai.calls[0], ('extract', 'unchanged first prompt', 'unchanged first text', view.pages, None))
-        self.assertLess(len(ai.calls[1][3]), len(view.pages))
+        self.assertEqual(ai.calls[1][3], view.pages)
         self.assertEqual(ai.calls[1][4]['target_refs'], target)
-        self.assertEqual(child_receipt['wire_instruction_sha256'], driver.digest(ai.calls[1][1].encode('utf-8')))
-        self.assertIn(20, child_receipt['original_pages']['gv'])
-        self.assertEqual(ai.calls[2][3], view.pages)
-        self.assertIsNone(ai._segment_page_view)
+        self.assertEqual(ai.calls[2][3], unit_images)
+        self.assertIsNone(ai._bounded_long_pdf_deadline)
 
     def test_segment_falls_back_on_unproved_full_scope_or_unknown_child_targets(self):
         self.assertIsNone(segment_view(duplicate=True).project(['Câu 20'], SEGMENT_INSTRUCTION))
