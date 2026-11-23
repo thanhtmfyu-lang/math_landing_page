@@ -31,4 +31,15 @@ select jsonb_build_object(
  'baiTheoNguon',coalesce((select jsonb_agg(jsonb_build_object('dot',dot,'nguon',nguon,'so',so) order by dot,so desc,nguon)
    from (select coalesce(p.dot,'tu-do') dot,coalesce(p.chi_tiet->>'nguon','khong-ma') nguon,count(*) so from mtm_test100.pt_luot p
     where (p.nop_luc at time zone 'Asia/Ho_Chi_Minh')::date between date '__TU__' and date '__DEN__' group by 1,2) x),'[]'::jsonb),
+ -- Kiểm nguồn: số thô chưa lọc, để phân biệt "thật sự 0" với lỗi dữ liệu/lọc.
+ 'kiemNguon',jsonb_build_object(
+  'luotTatCa',(select count(*) from mtm_phong_thi.luot),
+  'luotSauLoc',(select count(*) from mtm_test100.pt_luot),
+  'luotHsa1Tho',(select count(*) from mtm_phong_thi.luot where dot='hsa-thu-2026-11'),
+  'luotMoiNhat',(select to_char(max(nop_luc) at time zone 'Asia/Ho_Chi_Minh','YYYY-MM-DD HH24:MI') from mtm_phong_thi.luot),
+  'dotCoBai',coalesce((select jsonb_object_agg(coalesce(dot,'tu-do'),so) from (select dot,count(*) so from mtm_phong_thi.luot group by 1) x),'{}'::jsonb),
+  'taiKhoanTatCa',(select count(*) from mtm_phong_thi.tai_khoan),
+  'taiKhoanThu',(select count(*) from mtm_phong_thi.tai_khoan where is_test),
+  'leadTatCa',(select count(*) from mtm_lead.leads),
+  'leadMoiNhat',(select to_char(max(created_at) at time zone 'Asia/Ho_Chi_Minh','YYYY-MM-DD HH24:MI') from mtm_lead.leads)),
  'soPheu',public.mtm_pt_so_pheu(date '__TU__',date '__DEN__')) as so;
