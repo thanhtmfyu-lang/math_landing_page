@@ -3,7 +3,7 @@ import R106PageIntro from '../../migration/R106PageIntro';
 import {postLead} from '../../components/lead-client';
 import {emailRegistration} from '../../components/registration-submit';
 import {describeLeadSource,storedLeadSource} from '../../components/lead-source';
-import {KS,KS_LOP,chuanZalo,ksRegistration,soBaoDanh,type KsDangKy} from './ky-khao-sat';
+import {KS,KS_LOP,KS_THOI_GIAN,chuanZalo,ksRegistration,soBaoDanh,type KsDangKy} from './ky-khao-sat';
 import './hsa-mock.css';
 import './entrance-test.css';
 import './ky-khao-sat.css';
@@ -42,7 +42,7 @@ export default function KyKhaoSat(){
    <section className="hsa-card ks-info" aria-labelledby="ks-info-title">
     <h2 id="ks-info-title">Thể lệ</h2>
     <dl className="ks-rules">
-     <div><dt>Thời gian</dt><dd>Mở từ 08:00 thứ Bảy 05/12 đến 21:00 Chủ nhật 06/12/2026. Em chọn lúc rảnh, làm liền {KS.phut} phút, nộp 1 lần.</dd></div>
+     <div><dt>Thời gian</dt><dd>{KS_THOI_GIAN}. Em chọn lúc rảnh, làm liền {KS.phut} phút, nộp 1 lần.</dd></div>
      <div><dt>Hình thức</dt><dd>Làm trên minhthanhmath.vn bằng máy tính hoặc điện thoại, vào phòng thi bằng số báo danh.</dd></div>
      <div><dt>Đề</dt><dd>3 đề riêng cho lớp 10, 11, 12: 12 câu trắc nghiệm, 4 câu đúng sai, 6 câu trả lời ngắn, chấm tự động.</dd></div>
      <div><dt>Kết quả</dt><dd>Bảng xếp hạng theo khối công bố lúc {KS.xepHang}. Mỗi em nhận báo cáo 1 trang gửi Zalo phụ huynh: điểm, vị trí trong khối, 3 dạng mất điểm, việc cần làm trong 4 tuần.</dd></div>

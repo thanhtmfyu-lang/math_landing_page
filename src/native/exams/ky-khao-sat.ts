@@ -1,8 +1,17 @@
 import {normalizeRegistration,type Registration} from '../../components/registration-submit';
 import {SDT_HS,chuanSdt} from '../../components/student-phone';
+import dotRaw from '../../../server/phong-thi/dot.json';
+/** Giờ mở/đóng lấy từ lịch đợt của Phòng thi (server/phong-thi/dot.json): một nguồn cho /ky-khao-sat và /phong-thi-thu. */
+const KS_DOT=(dotRaw.dot as {ma:string;mo:string;dong:string;nguon?:string}[]).find(d=>d.ma==='ks-hk1-2026');
+if(!KS_DOT)throw new Error('Thiếu đợt ks-hk1-2026 trong dot.json');
 /** Kỳ khảo sát MTM cuối kỳ I 2026–2027 (anh Thành duyệt mở cho học sinh ngoài 20/10/2026). Trang /ky-khao-sat chỉ nhận đăng ký;
  * ngày thi học sinh vào phòng thi /phong-thi-thu bằng số báo danh. Đăng ký đổ về kho lead (kind dang-ky, nguồn ky-khao-sat-ck1-2026). */
-export const KS={ma:'ky-khao-sat-ck1-2026',ten:'Kỳ khảo sát MTM cuối kỳ I năm học 2026–2027',mo:'2026-12-05T08:00:00+07:00',dong:'2026-12-06T21:00:00+07:00',xepHang:'20:00 thứ Hai 07/12/2026',phut:90} as const;
+export const KS={ma:'ky-khao-sat-ck1-2026',ten:'Kỳ khảo sát MTM cuối kỳ I năm học 2026–2027',mo:KS_DOT.mo,dong:KS_DOT.dong,xepHang:'20:00 thứ Hai 07/12/2026',phut:90} as const;
+const THU=['Chủ nhật','thứ Hai','thứ Ba','thứ Tư','thứ Năm','thứ Sáu','thứ Bảy'];
+/** "07:00 thứ Bảy 05/12" theo giờ Việt Nam. */
+export function gioVN(iso:string){const d=new Date(Date.parse(iso)+7*36e5);const p=(n:number)=>String(n).padStart(2,'0');
+ return `${p(d.getUTCHours())}:${p(d.getUTCMinutes())} ${THU[d.getUTCDay()]} ${p(d.getUTCDate())}/${p(d.getUTCMonth()+1)}`;}
+export const KS_THOI_GIAN=`Mở từ ${gioVN(KS.mo)} đến ${gioVN(KS.dong)}/${new Date(Date.parse(KS.dong)+7*36e5).getUTCFullYear()}`;
 export const KS_LOP=['10','11','12'] as const;
 export type KsLop=typeof KS_LOP[number];
 export type KsDangKy={hoTen:string;lop:KsLop|'';truong:string;sdtHs:string;zaloPh:string;dongY:boolean};

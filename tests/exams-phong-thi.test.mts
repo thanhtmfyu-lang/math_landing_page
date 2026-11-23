@@ -157,6 +157,10 @@ assert.equal(phanViHsa(30).top,26.19);assert.ok(phanViHsa(34).top>5.18&&phanViHs
 assert.deepEqual(validateDot(DOT),[]);
 assert.ok(DOT.some(t=>t.ma==='ks-hk1-2026'&&t.khoi)&&DOT.filter(t=>t.loai==='hsa').length===5&&DOT.some(t=>t.ma==='thpt-thu-2026-11'&&t.kin));
 assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,mo:'2026-12-02T07:00:00+07:00',dong:'2026-12-01T07:00:00+07:00'}]).length>0);
+// Mã ?nguon= từng đợt (W6/W9): THPT 29–30/11 = THPT1, HSA 12–13/12 = HSA2; mã hợp lệ, không trùng.
+assert.equal(DOT.find(t=>t.ma==='thpt-thu-2026-11')?.nguon,'THPT1');assert.equal(DOT.find(t=>t.ma==='hsa-thu-2026-12')?.nguon,'HSA2');
+assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,nguon:'thpt-1',mo:'2026-12-01T07:00:00+07:00',dong:'2026-12-02T07:00:00+07:00'}]).length>0);
+assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,nguon:'KS',mo:'2026-12-01T07:00:00+07:00',dong:'2026-12-02T07:00:00+07:00'},{ma:'x2y',ten:'Đợt',loai:'thpt',de:null,nguon:'KS',mo:'2026-12-01T07:00:00+07:00',dong:'2026-12-02T07:00:00+07:00'}]).some(e=>/trùng mã nguon/.test(e)));
 assert.ok(validateDot([{ma:'x1y',ten:'Đợt',loai:'thpt',de:null,mo:'2026-12-01 07:00',dong:'2026-12-02T07:00:00+07:00'}]).length>0);
 const DS:PtDot[]=[{ma:'dot-thu',ten:'Đợt thử',loai:'thpt',de:'tsa-mau',mo:'2026-11-25T07:00:00+07:00',dong:'2026-11-26T22:00:00+07:00'},
  {ma:'dot-an',ten:'Đợt ẩn',loai:'thpt',de:'chua-gan',mo:'2026-11-25T07:00:00+07:00',dong:'2026-11-26T22:00:00+07:00'},

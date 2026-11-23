@@ -1,5 +1,6 @@
 import assert from 'node:assert/strict';
-import {KS,chuanZalo,ksRegistration,soBaoDanh} from '../src/native/exams/ky-khao-sat';
+import {KS,KS_THOI_GIAN,chuanZalo,gioVN,ksRegistration,soBaoDanh} from '../src/native/exams/ky-khao-sat';
+import dotRaw from '../server/phong-thi/dot.json';
 // Số báo danh cố định theo SĐT phụ huynh + họ tên (không phân biệt hoa thường, khoảng trắng) + lớp.
 const a=await soBaoDanh('0967365413','Nguyễn Văn An','11');
 assert.match(a,/^KS11-[A-HJ-NP-Z2-9]{6}$/);
@@ -18,4 +19,9 @@ assert.throws(()=>ksRegistration({...f,sdtHs:''},a,''),/SĐT của em/);assert.t
 assert.throws(()=>ksRegistration({...f,truong:' '},a,''),/trường/);
 assert.throws(()=>ksRegistration({...f,dongY:false},a,''),/đồng ý/);
 assert.throws(()=>ksRegistration({...f,zaloPh:'12345'},a,''),/di động/);
+// 23/11: /ky-khao-sat và /phong-thi-thu đọc cùng giờ trong dot.json (trước đây lệch 08:00–21:00 với 07:00–22:00).
+const ks=dotRaw.dot.find(d=>d.ma==='ks-hk1-2026')!;
+assert.equal(KS.mo,ks.mo);assert.equal(KS.dong,ks.dong);
+assert.equal(gioVN('2026-12-05T07:00:00+07:00'),'07:00 thứ Bảy 05/12');assert.equal(gioVN('2026-12-06T22:00:00+07:00'),'22:00 Chủ nhật 06/12');
+assert.equal(KS_THOI_GIAN,`Mở từ ${gioVN(ks.mo)} đến ${gioVN(ks.dong)}/2026`);
 console.log('ky-khao-sat: ok');

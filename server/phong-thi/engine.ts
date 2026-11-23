@@ -232,7 +232,9 @@ export type PtKhoi=typeof PT_KHOI[number];
 /** Đợt khảo sát theo khối (có khoi): thí sinh đăng ký lấy SBD dạng {sbd}-{khối}-{số thứ tự 4 chữ số}, đề lấy theo khối; de để null. */
 export type PtDot={ma:string;ten:string;de:string|null;mo:string;dong:string;loai:PtLoai;moTa?:string;khoi?:Record<PtKhoi,string|null>;sbd?:string;
  /** Đề mới ra lần đầu ở đợt này: giữ kín đến khi đợt đóng như đề khảo sát. */
- kin?:boolean};
+ kin?:boolean;
+ /** Mã chương trình marketing cho link ?nguon=<mã>-<kênh> (đếm phễu W6/W9), ví dụ HSA1, KS. */
+ nguon?:string};
 export type PtDotCongKhai={ma:string;ten:string;loai:PtLoai;mo:string;dong:string;moTa?:string;trangThai:'sap-mo'|'dang-mo';de:{id:string;tieuDe:string;thoiGian:number;soCau:number;tang:PtTang}|null;
  dangKy?:{khoi:Record<PtKhoi,boolean>};cuaEm?:{sbd:string;khoi:PtKhoi;ten:string}};
 const okDotMa=(v:unknown)=>typeof v==='string'&&/^[a-z0-9][a-z0-9-]{2,59}$/.test(v);
@@ -248,6 +250,8 @@ export function validateDot(ds:unknown):string[]{
    if(!t.khoi||typeof t.khoi!=='object'||!PT_KHOI.every(k=>t.khoi[k]===null||okId(t.khoi[k]))||Object.keys(t.khoi).some(k=>!(PT_KHOI as readonly string[]).includes(k)))e.push(at+'khoi cần id đề hoặc null cho 10, 11, 12');
    if(typeof t.sbd!=='string'||!/^[A-Z][A-Z0-9]{1,7}$/.test(t.sbd))e.push(at+'sbd là tiền tố số báo danh, ví dụ KS26');}
   if(t?.kin!==undefined&&typeof t.kin!=='boolean')e.push(at+'kin là true hoặc false');
+  if(t?.nguon!==undefined&&(typeof t.nguon!=='string'||!/^[A-Z][A-Z0-9]{1,15}$/.test(t.nguon)))e.push(at+'nguon là mã chương trình in hoa, ví dụ HSA1');
+  if(typeof t?.nguon==='string'&&ds.some((u:any,j)=>j<i&&u?.nguon===t.nguon))e.push(at+'trùng mã nguon');
   const iso=/^\d{4}-\d\d-\d\dT\d\d:\d\d(:\d\d)?(Z|[+-]\d\d:\d\d)$/;
   if(!iso.test(t?.mo??'')||!iso.test(t?.dong??'')||!(Date.parse(t.dong)>Date.parse(t.mo)))e.push(at+'mo, dong là giờ ISO có múi giờ, dong sau mo');
  });
