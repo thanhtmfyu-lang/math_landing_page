@@ -86,6 +86,7 @@ NATIVE_RENDERER_PAGE_LIMIT = 40
 NATIVE_PDF_TOTAL_PAGE_LIMIT = 2 * NATIVE_RENDERER_PAGE_LIMIT
 LONG_PDF_REQUEST_TIME = 330
 LONG_PDF_EXTRACT_DEADLINE = 650  # The native adapter terminates the process at 780 s.
+LONG_PDF_LOCATOR_UNRESOLVED = 'NATIVE_LONG_PDF_LOCATOR_UNRESOLVED'
 
 
 def render_long_pdf(raw, page_count, folder, tag):
@@ -404,14 +405,21 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
  ai.check_access()
  text=long_pdf_text(*page_texts,len(hs_pages),len(gv_pages),inventory,targets) if page_texts is not None else None
  if text is None:text='\n'+hs_text+'\nĐÁP ÁN GV:\n'+gv_text
+ unresolved_text_locators=False
  if work is not None and page_texts is not None:
   view=SegmentPageView(page_texts,inventory,targets,hs_pages,gv_pages,manifest)
-  outcome=extract_long_homework(ai,job,source_version,context,instruction,view,targets,work)
-  if outcome is not None:return outcome
+  answer_texts,answer_images,answer_locators=view.documents['gv']
+  # Image-only answer scans still use the established visual route.
+  unresolved_text_locators=any(page.strip() for page in answer_texts) and (
+      page_text_window(answer_texts,len(answer_images),answer_locators,targets) is None)
+  if not unresolved_text_locators:
+   outcome=extract_long_homework(ai,job,source_version,context,instruction,view,targets,work)
+   if outcome is not None:return outcome
  if work is not None:
   checkpoint=long_pdf_work_path(work,job['version'])
   need(work['prior'] is None and not checkpoint.exists() and not checkpoint.is_symlink(),
        'NATIVE_LONG_PDF_PROGRESS_MISMATCH')
+  need(not unresolved_text_locators,LONG_PDF_LOCATOR_UNRESOLVED)
  extracted=ai.ask_stage('extract',instruction,manifest+text,hs_pages+gv_pages,native_context=context)
  return check_extracted_inventory(extracted,targets)
 
@@ -1029,7 +1037,7 @@ PUBLIC_NATIVE_ERRORS=frozenset({'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURC
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT','NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED'})
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'CACHED_DRAFT_EXTRACTION_FORBIDDEN','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED','OPERATOR_CACHED_DRAFT_BINDING_CHANGED'})
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_PDF_PAGE_LIMIT','NATIVE_PDF_RENDER_INCOMPLETE','OPERATOR_TIMEOUT_CONTINUATION_CHANGED'})
-PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_LONG_PDF_PROGRESS_MISMATCH','NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN','NATIVE_LONG_PDF_BRANDING_REVIEW_REQUIRED','NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED'})
+PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_LONG_PDF_PROGRESS_MISMATCH','NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN','NATIVE_LONG_PDF_BRANDING_REVIEW_REQUIRED','NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED',LONG_PDF_LOCATOR_UNRESOLVED})
 
 def public_error(error):
  try:value=str(error)

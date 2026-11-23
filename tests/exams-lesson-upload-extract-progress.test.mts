@@ -46,6 +46,8 @@ try{
  const before=await metadata();
  await db.exec('alter default privileges grant execute on functions to anon,authenticated,service_role');
  await db.exec(migration('202611230125_lesson_extract_yield.sql'));
+  await db.exec(migration('202611230132_lesson_long_pdf_locator_reason.sql'));
+  await db.exec(migration('202611230132_lesson_long_pdf_locator_reason.sql'));
  assert.deepEqual(await metadata(),before);
  const privateAcl=(await db.query(`select
   has_function_privilege('service_role','mtm_hw_private.lesson_upload_extract_yield125(jsonb)','EXECUTE') as svc,
@@ -188,6 +190,14 @@ try{
  const resumedPair=(await claim()).job;
  assert.deepEqual(Object.keys(resumedPair.extract_progress).sort(),['1','2']);
  assert.equal(resumedPair.extract_progress['2'].progress_hash,'f'.repeat(64));
+  const locatorFailure=await svc({action:'worker_record_failure',upload_id:pair,
+   claim_token:resumedPair.claim_token,step:2,paper:2,code:'NATIVE_LONG_PDF_LOCATOR_UNRESOLVED'});
+  assert.equal(locatorFailure.can_retry,false);
+  assert.equal(locatorFailure.last_error_code,'NATIVE_LONG_PDF_LOCATOR_UNRESOLVED');
+  assert.match(locatorFailure.reason,/Kiểm tra số phần, số câu và thứ tự/);
+  assert.deepEqual((await db.query('select status,detail from mtm_hw_private.lesson_upload_paper2_steps where upload_id=$1 and step=2',[pair])).rows[0],
+    {status:'loi',detail:locatorFailure.reason});
+  assert.equal((await row(pair)).retry_status,'needs_input');
  assert.equal((await db.query('select count(*) n from mtm_hw_private.lesson_publish_capability')).rows[0].n,0);
 }finally{await db.close();}
 console.log('Step-2 yield: parser, Edge worker, direct/service SQL, current/version/paper, one refund, real timeout cap, no publish: passed (PGlite synthetic).');

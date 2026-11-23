@@ -15,6 +15,7 @@ const codes=[
  'NATIVE_EXTRACT_INVENTORY_MISMATCH','NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED',
  'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT',
  'NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED',
+ 'NATIVE_LONG_PDF_LOCATOR_UNRESOLVED',
 ];
 let calls=0,cases=0;
 const db={sourceOrigin:'https://example.invalid',async rpc(name:string){calls++;assert.equal(name,'mtm_lesson_upload_source');return {data:{data_base64:Buffer.from('SYNTHETIC_HS').toString('base64')},error:null};}};

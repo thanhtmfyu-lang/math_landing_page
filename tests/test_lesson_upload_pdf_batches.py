@@ -195,6 +195,49 @@ class NativePdfRenderTests(unittest.TestCase):
         self.assertIsNone(segment_view().project(['Câu 21', 'Câu 20'], SEGMENT_INSTRUCTION))
         self.assertIsNone(segment_view().project(['Câu 20', 'Câu 20'], SEGMENT_INSTRUCTION))
 
+    def test_new_long_upload_returns_safe_error_for_unmatched_text_answers(self):
+        hs = [f'Cau {number} nội dung câu' for number in range(1, 40)]
+        gv = [f'Cau {number} lời giải' for number in range(1, 40)]
+        hs_text = '\f'.join(hs)
+        hs_images = [f'hs-{number}.png' for number in range(1, 40)]
+        gv_images = [f'gv-{number}.png' for number in range(1, 40)]
+        job = {'version': 1, 'title': 'Synthetic', 'task_scope': 'Câu 20–21'}
+        p = SimpleNamespace(EXTRACT_PROMPT='Synthetic prompt')
+        with tempfile.TemporaryDirectory() as folder, patch.object(driver, 'extract_long_homework') as segmented:
+            work = {'folder': Path(folder), 'prior': None}
+            ai = SimpleNamespace(check_access=lambda: None, ask_stage=lambda *_, **__: self.fail('sent full PDF pair'))
+            for answer_page in ['Thiếu vị trí câu 21', 'Cau 20 lời giải bị lặp']:
+                answers = gv[:20] + [answer_page] + gv[21:]
+                with self.assertRaisesRegex(ValueError, driver.LONG_PDF_LOCATOR_UNRESOLVED):
+                    driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(answers),
+                                          hs_images, gv_images, 'PAGE_MANIFEST: []',
+                                          page_texts=(hs, answers), work=work)
+            self.assertEqual(driver.public_error(ValueError(driver.LONG_PDF_LOCATOR_UNRESOLVED)),
+                             driver.LONG_PDF_LOCATOR_UNRESOLVED)
+            segmented.assert_not_called()
+
+            # A prior acknowledgement still fences the source before reporting a new input error.
+            with self.assertRaisesRegex(ValueError, 'NATIVE_LONG_PDF_PROGRESS_MISMATCH'):
+                driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(answers),
+                                      hs_images, gv_images, 'PAGE_MANIFEST: []',
+                                      page_texts=(hs, answers), work={**work, 'prior': {'progress_count': 1}})
+
+            # PDFs without an answer text layer can still use the existing visual path.
+            seen = []
+            extracted = {'inventory': ['Câu 20', 'Câu 21'], 'questions': [], 'manualQuestions': []}
+
+            def visual_extract(_stage, _instruction, _text, images, **_):
+                seen.append(images)
+                return extracted
+
+            ai.ask_stage = visual_extract
+            segmented.return_value = None
+            result = driver.extract_source(ai, p, job, 'a' * 64, hs_text, '',
+                                           hs_images, gv_images, 'PAGE_MANIFEST: []',
+                                           page_texts=(hs, [''] * 39), work=work)
+            self.assertEqual(seen, [hs_images + gv_images])
+            self.assertEqual(result, extracted)
+
     def test_segment_rejects_rebased_or_undelivered_crop_pages(self):
         *_, views = segment_view().project(['Câu 20'], SEGMENT_INSTRUCTION)
         def result(question):
