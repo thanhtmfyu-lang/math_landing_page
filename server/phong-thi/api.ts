@@ -169,9 +169,11 @@ export function createPhongThiApi(getEnv=()=>process.env as Record<string,string
  if(action==='nop'&&out.status===200&&db){
   const b=out.body as any,k=b.ketQua,ten=body.ten===undefined||body.ten===null||body.ten===''?null:sanitizeDisplayName(body.ten);
   const nguoi=b.sbd?'sbd:'+b.sbd:nguoiCua(ai);
+  // Mã ?nguon= của phòng marketing (ví dụ THPT1-FB) để đếm bài theo kênh; sai dạng thì bỏ, không chặn nộp.
+  const nguon=maNguonNop(body.nguon);
   try{const r=await rpc('mtm_pt_ghi_luot',{p_nonce:b.nonce,p_de:k.de,p_loai:k.loai,p_nguoi:nguoi,p_hoc_sinh:ai.kieu==='hoc-sinh'?ai.id:null,p_tai_khoan:ai.kieu==='tai-khoan'?ai.id:null,
     p_diem:k.diem,p_thang:k.thangDiem,p_dung:k.dung,p_tong:k.tong,p_giay:b.giay,p_qua_gio:b.quaGio,
-    p_chi_tiet:{phan:k.theoPhan,cau:k.cau.map((c:any)=>[c.ma,c.dung?1:0,c.daLam?1:0,c.giay??null]),...(b.thoiGian?{coThoiGian:true}:{})},p_ten:b.sbd?null:ten,p_dot:b.dot??null,p_sbd:b.sbd??null});
+    p_chi_tiet:{phan:k.theoPhan,cau:k.cau.map((c:any)=>[c.ma,c.dung?1:0,c.daLam?1:0,c.giay??null]),...(b.thoiGian?{coThoiGian:true}:{}),...(nguon?{nguon}:{})},p_ten:b.sbd?null:ten,p_dot:b.dot??null,p_sbd:b.sbd??null});
    b.xepHang=r.ok?await r.json():{status:'loi'};}catch{b.xepHang={status:'loi'};}
   const ts=thiSinh as PtThiSinh|null;
   if(b.sbd&&ts&&ts.sbd===b.sbd)try{const r=await rpc('mtm_pt_khao_sat',{p_dot:ts.dot,p_khoi:Number(ts.khoi),p_sbd:ts.sbd,p_limit:1});
@@ -186,5 +188,7 @@ async function taiKhoan(token:string,rpc:(n:string,a:Record<string,unknown>)=>Pr
  if(!x||typeof x.id!=='string')return null;
  return {kieu:'tai-khoan',id:x.id,ten:String(x.ten??''),goi:(Array.isArray(x.goi)?x.goi:[]).map((g:any)=>({loai:(Array.isArray(g.loai)?g.loai:[]).filter((l:unknown)=>(PT_LOAI as readonly unknown[]).includes(l)),den:String(g.den)}))};
 }
+/** Mã ?nguon= gửi kèm bài nộp: đúng dạng mã marketing thì giữ, còn lại bỏ (không chặn nộp). */
+export const maNguonNop=(v:unknown)=>typeof v==='string'&&/^[A-Za-z0-9][A-Za-z0-9_-]{0,59}$/.test(v)?v:null;
 export {GOI};
 // Vercel Hobby giới hạn 12 hàm: phục vụ qua api/exam.ts (rewrite /api/phong-thi -> /api/exam?muc=phong-thi).
