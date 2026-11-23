@@ -28,4 +28,7 @@ select jsonb_build_object(
     where (t.tao_luc at time zone 'Asia/Ho_Chi_Minh')::date between date '__TU__' and date '__DEN__')),
  'dangKyTheoNguon',coalesce((select jsonb_agg(jsonb_build_object('nguon',nguon,'kind',kind,'so',so) order by so desc,nguon,kind)
    from (select nguon,kind,count(*) so from ld group by 1,2) x),'[]'::jsonb),
+ 'baiTheoNguon',coalesce((select jsonb_agg(jsonb_build_object('dot',dot,'nguon',nguon,'so',so) order by dot,so desc,nguon)
+   from (select coalesce(p.dot,'tu-do') dot,coalesce(p.chi_tiet->>'nguon','khong-ma') nguon,count(*) so from mtm_test100.pt_luot p
+    where (p.nop_luc at time zone 'Asia/Ho_Chi_Minh')::date between date '__TU__' and date '__DEN__' group by 1,2) x),'[]'::jsonb),
  'soPheu',public.mtm_pt_so_pheu(date '__TU__',date '__DEN__')) as so;

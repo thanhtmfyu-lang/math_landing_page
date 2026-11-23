@@ -1,6 +1,7 @@
 # Số phễu cho phòng marketing (HSA1, tài khoản ngoài, đăng ký theo mã ?nguon=). 21:00 giờ VN hằng ngày + chạy tay.
 # Kho công khai: log KHÔNG in số. Kết quả mã hóa bằng khóa công khai .github/so-pheu/khoa-cong-khai.pem,
-# tải lên artifact "so-pheu"; chỉ người giữ khóa riêng (thư mục nội bộ của công ty) mới mở được.
+# ghi bản mã hóa (base64) vào thân issue nhãn "so-pheu" và artifact "so-pheu"; chỉ người giữ khóa riêng
+# (thư mục nội bộ của công ty) mới mở được. Đọc bằng API GitHub: issue nhãn so-pheu, tách khối giữa hai dòng ---.
 # Chỉ một truy vấn đọc số tổng, nhẹ, nên được chạy cả giờ có ca học.
 name: Số phễu hằng ngày
 
@@ -20,6 +21,7 @@ on:
 
 permissions:
   contents: read
+  issues: write
 
 concurrency:
   group: so-pheu
@@ -61,6 +63,18 @@ jobs:
           echo "$tu $den" > ra/khoang.txt
           shred -u /tmp/so.json /tmp/k.txt /tmp/ket-qua.json
           echo "ĐẠT  số phễu $tu → $den (đã mã hóa)"
+      - name: Ghi bản mã hóa vào issue so-pheu
+        env:
+          GH_TOKEN: ${{ github.token }}
+          GH_REPO: ${{ github.repository }}
+        run: |
+          gh label create so-pheu --color 0e8a16 --description "Số phễu marketing (đã mã hóa)" 2>/dev/null || true
+          { echo "Số phễu đã mã hóa, chỉ mở được bằng khóa riêng nội bộ. Khoảng: $(cat ra/khoang.txt). Cập nhật: $(TZ=Asia/Ho_Chi_Minh date '+%F %H:%M')"
+            echo; echo '---k'; base64 -w0 ra/k.enc; echo; echo '---so'; base64 -w0 ra/so.json.enc; echo; echo '---het'; } > /tmp/than.md
+          so=$(gh issue list --label so-pheu --state open --json number --jq '.[0].number // empty')
+          if [ -z "$so" ]; then gh issue create --title "Số phễu hằng ngày (mã hóa)" --label so-pheu --body-file /tmp/than.md >/dev/null
+          else gh issue edit "$so" --body-file /tmp/than.md >/dev/null; fi
+          echo "ĐẠT  đã ghi issue so-pheu"
       - uses: actions/upload-artifact@v4
         with:
           name: so-pheu

@@ -2,7 +2,7 @@ import assert from 'node:assert/strict';
 import {randomBytes} from 'node:crypto';
 import {baoCao,cham,deAnTheoDot,deCongKhai,dotCongKhai,dotDangMo,kiemBaoLoi,kiemDangKyDot,mucLuc,normShort,tenDe,phanViHsa,quyenMo,tenRutGon,thoiGianCau,validateDe,validateDot,type PtDe,type PtDot,type PtKho} from '../server/phong-thi/engine';
 import {DOT,docVe,dongGoi,kyVe,moGoi,phongThiKey,loadKho,xuLy} from '../server/phong-thi/handler';
-import {createPhongThiApi,chuanSdt,bamMatKhau,dungMatKhau,ipBam,taoMaTraCuu} from '../server/phong-thi/api';
+import {maNguonNop,createPhongThiApi,chuanSdt,bamMatKhau,dungMatKhau,ipBam,taoMaTraCuu} from '../server/phong-thi/api';
 
 // Đề THPT giả đúng cấu trúc 2025: 12 trắc nghiệm, 4 đúng sai, 6 trả lời ngắn.
 const thpt:PtDe={id:'thpt-mau-01',loai:'thpt',tieuDe:'Đề mẫu THPT kiểm thử',nam:2026,nhom:'mtm',tang:'tra-phi',thoiGian:90,nguon:{ten:'MTM kiểm thử'},
@@ -110,6 +110,8 @@ const calls:string[]=[];
 const transport=(ok:Record<string,unknown>)=>(async(url:string,init:any)=>{const name=String(url).split('/').pop()!;calls.push(name);return name in ok?new Response(JSON.stringify(ok[name]),{status:200}):new Response('{}',{status:401});}) as unknown as typeof fetch;
 process.chdir(process.cwd());
 const env={SUPABASE_URL:'https://x.supabase.co',SUPABASE_SERVICE_ROLE_KEY:'k',MTM_PHONG_THI_KEY:''};
+// Mã ?nguon= kèm bài nộp: giữ mã đúng dạng, bỏ mọi thứ khác.
+for(const[v,m]of[['THPT1-FB','THPT1-FB'],['HSA2_zalo','HSA2_zalo'],['x y',null],['<script>',null],['-a',null],['a'.repeat(61),null],[42,null],[undefined,null]] as const)assert.equal(maNguonNop(v),m,String(v));
 const api0=createPhongThiApi(()=>env,transport({}),()=>now);
 assert.equal((await call(api0,{method:'POST',headers:{origin:'https://evil.vn',host:'minhthanhmath.vn'},body:{action:'mo',de:'x'}})).status,403);
 assert.equal((await call(api0,{method:'GET',headers:{}})).status,503,'thiếu khóa thì báo đang cập nhật');
@@ -272,7 +274,11 @@ assert.equal(typeof kiemBaoLoi({de:'thpt-mau-01',ma:'I-1',noiDung:'x'.repeat(501
    assert.equal(xuLy('mo',{de:d.id,dot:t.ma},HS,KT,Date.parse(t.dong)+60000).status,403,t.ma+' sau giờ đóng');}}
   const an=deAnTheoDot(DOT,Date.parse('2026-11-20T10:00:00+07:00')),cong=kt.de.find(x=>x.tang==='cong-khai'&&!an.has(x.id))!;
   const mR=await PR({action:'mo',de:cong.id});const nR=await PR({action:'nop',de:cong.id,ve:mR.body.ve,traLoi:{},thoiGian:{[cong.cau[0].ma]:0}});
-  assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot_real100')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);
+  assert.equal(nR.status,200);const gl=rec.find(r=>r.name==='mtm_pt_ghi_luot_real100')!.args;assert.deepEqual(gl.p_chi_tiet.cau[0],[cong.cau[0].ma,0,0,0]);assert.equal(gl.p_dot,null);assert.equal(gl.p_sbd,null);assert.equal(gl.p_chi_tiet.nguon,undefined);
+  // Mã ?nguon= marketing đi kèm bài nộp (đếm bài theo kênh); sai dạng thì bỏ mà vẫn nộp được.
+  for(const[gui,mong]of[['THPT1-FB','THPT1-FB'],['x y<script>',undefined],[42,undefined]] as const){
+   const m2=await PR({action:'mo',de:cong.id});const n2=await PR({action:'nop',de:cong.id,ve:m2.body.ve,traLoi:{},thoiGian:{},nguon:gui});assert.equal(n2.status,200,String(gui));
+   const g2=rec.filter(r=>r.name==='mtm_pt_ghi_luot_real100').at(-1)!.args;assert.equal(g2.p_chi_tiet.nguon,mong,String(gui));}
  }
 }
 

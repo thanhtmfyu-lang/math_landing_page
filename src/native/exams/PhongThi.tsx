@@ -6,9 +6,12 @@ import {Link} from '../../migration/navigation';
 import {ZALO_ASSISTANT_URL} from '../../components/mtm-contact';
 import {ResultShareCard} from '../../components/ResultShareCard';
 import {PT_LOAI,PT_LOAI_TEN,PT_NHOM_TEN,baoCao,tenChuDe,type PtDeCongKhai,type PtDotCongKhai,type PtKetQua,type PtKhoi,type PtLoai,type PtMucLuc,type PtCauCongKhai} from '../../../server/phong-thi/engine';
+import {storedLeadSource} from '../../components/lead-source';
 import './hsa-mock.css';
 import './entrance-test.css';
 import './phong-thi.css';
+
+const nguonNop=()=>storedLeadSource()?.ma;
 
 const API='/api/phong-thi',KEY='mtm:phong-thi:v1';
 type Quyen={mo:true}|{mo:false;lyDo:'hoc-sinh-mtm'|'can-goi'};
@@ -223,7 +226,7 @@ function PhongLam({luot,update}:{luot:Luot;update:(l:Luot|null)=>void}){
  // Đánh dấu câu cần xem lại trước khi nộp (như phần mềm thi trên máy của HSA/TSA).
  const doiCo=(ma:string)=>{const n=new Set(ref.current.co??[]);n.has(ma)?n.delete(ma):n.add(ma);ghi({...ref.current,co:[...n]});};
  const nop=useCallback(async(tenBxh:string)=>{if(busy)return;setBusy(true);setLoi('');const s=ref.current;
-  try{const d=await goi<{ketQua:PtKetQua;giay:number;quaGio:boolean;xepHang?:XepHang;khaoSat?:KhaoSat}>({action:'nop',de:s.de.id,ve:s.ve,traLoi:s.traLoi,thoiGian:{...tg.current},...(tenBxh.trim()?{ten:tenBxh.trim()}:{})});
+  try{const d=await goi<{ketQua:PtKetQua;giay:number;quaGio:boolean;xepHang?:XepHang;khaoSat?:KhaoSat}>({action:'nop',de:s.de.id,ve:s.ve,traLoi:s.traLoi,thoiGian:{...tg.current},...(tenBxh.trim()?{ten:tenBxh.trim()}:{}),...(nguonNop()?{nguon:nguonNop()}:{})});
    update({...s,tg:{...tg.current},ketQua:d.ketQua,giay:d.giay,quaGio:d.quaGio,xepHang:d.xepHang,khaoSat:d.khaoSat,nopLuc:Date.now()});window.scrollTo({top:0});}
   catch(e){setLoi((e as Error).message||'Chưa nộp được bài. Bài làm vẫn được lưu, em bấm nộp lại.');setBusy(false);}
  },[busy,update]);
