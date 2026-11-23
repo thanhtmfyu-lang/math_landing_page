@@ -80,7 +80,8 @@ try{
   throw Error('ROLLBACK_FIXTURE');
  }),/ROLLBACK_FIXTURE/);
  let seen:unknown;
- const pipeline:Pipeline={extractor:{provider:'codex',model:'fixture'},async read(job){seen=job.extract_progress;return yielded;},
+ const readPapers:number[]=[];
+ const pipeline:Pipeline={extractor:{provider:'codex',model:'fixture'},async read(job){readPapers.push(job.paper??1);seen=job.extract_progress;return yielded;},
   async build(){assert.fail('build after yield');},async review(){assert.fail('review after yield');},
   async materials(){assert.fail('materials after yield');}};
  const state:PrivateState={async save(){assert.fail('whole-source checkpoint after yield');},async load(){assert.fail('unexpected load');}};
@@ -132,7 +133,46 @@ try{
  assert.equal(timeout.status,'retry_exhausted');
  assert.equal((await row()).retry_count,3);
  assert.equal((await claim()).job,null);
+
+ // A new version of the same row starts its own progress ledger.
+ await db.query(`update mtm_hw_private.lesson_uploads set version=2,title='Fixture replacement title',
+   homework_path='fixture-hs-v2.pdf',attempt_count=0,retry_status='queued',next_retry_at=null where id=$1`,[id]);
+ await db.query("update mtm_hw_private.lesson_upload_steps set status='cho' where upload_id=$1 and step=2",[id]);
+ const replacement=(await claim()).job;
+ assert.equal(replacement.id,id);
+ assert.equal(replacement.version,2);
+ assert.deepEqual(replacement.extract_progress,{});
+ assert.equal(replacement.extract_progress_invalid,undefined);
+ await step(id,replacement.claim_token,1,2);
+ const replacementEvidence={...evidence(id,replacement.claim_token,1,1,'9'.repeat(64)),version:2,
+   source_version:'8'.repeat(64),plan_hash:'7'.repeat(64)};
+ await assert.rejects(()=>svc({...replacementEvidence,version:1}),/STALE_UPLOAD_OR_LEASE/);
+ assert.equal((await svc(replacementEvidence)).status,'yielded_extract');
+ const receipts=(await db.query(`select version,progress_count from mtm_hw_private.lesson_upload_extract_progress125
+   where upload_id=$1 and paper=1 order by version`,[id])).rows;
+ assert.deepEqual(receipts,[{version:1,progress_count:2},{version:2,progress_count:1}]);
+ await expire();
+ const replacementResumed=(await claim()).job;
+ assert.deepEqual(replacementResumed.extract_progress,{'1':{sourceVersion:replacementEvidence.source_version,
+  plan_hash:replacementEvidence.plan_hash,progress_count:1,progress_hash:replacementEvidence.progress_hash}});
+ await db.query("update mtm_hw_private.lesson_uploads set title='Changed in same version' where id=$1",[id]);
+ await assert.rejects(()=>svc({...replacementEvidence,claim_token:replacementResumed.claim_token,
+  progress_count:2,progress_hash:'6'.repeat(64)}),/EXTRACT_YIELD_BINDING_CHANGED/);
+ await db.query("update mtm_hw_private.lesson_uploads set lease_until=clock_timestamp()-interval '1 second' where id=$1",[id]);
+ readPapers.length=0;
+ assert.deepEqual(await runUploadOnce(repo,pipeline,state,'fixture'),{status:'blocked',uploadId:id,code:'EXTRACT_YIELD_BINDING_CHANGED'});
+ assert.deepEqual(readPapers,[]);
+ assert.equal((await row()).retry_status,'needs_input');
+
+ // The normal pair path returns after paper 1 yields. Paper 2 and publication never start.
  await make(pair,true);
+ assert.deepEqual(await runUploadOnce(repo,pipeline,state,'fixture'),{status:'yielded_extract',uploadId:pair});
+ assert.deepEqual(readPapers,[1]);
+ const untouchedPaperTwo=(await db.query('select status,detail from mtm_hw_private.lesson_upload_paper2_steps where upload_id=$1 and step=2',[pair])).rows[0];
+ assert.deepEqual(untouchedPaperTwo,{status:'cho',detail:''});
+ assert.equal((await row(pair)).finished_at,null);
+ assert.equal((await row(pair)).checkpoint.publish_receipts,undefined);
+ await expire(pair);
  const paired=(await claim()).job;
  assert.equal(paired.id,pair);
  for(const n of [2,3])await step(pair,paired.claim_token,1,n,'xong');
@@ -146,7 +186,7 @@ try{
  assert.equal((await row(pair)).retry_count,2);
  await expire(pair);
  const resumedPair=(await claim()).job;
- assert.deepEqual(Object.keys(resumedPair.extract_progress),['2']);
+ assert.deepEqual(Object.keys(resumedPair.extract_progress).sort(),['1','2']);
  assert.equal(resumedPair.extract_progress['2'].progress_hash,'f'.repeat(64));
  assert.equal((await db.query('select count(*) n from mtm_hw_private.lesson_publish_capability')).rows[0].n,0);
 }finally{await db.close();}

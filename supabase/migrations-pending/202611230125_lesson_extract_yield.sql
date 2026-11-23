@@ -13,7 +13,7 @@ create table mtm_hw_private.lesson_upload_extract_progress125 (
   progress_count integer not null check (progress_count between 1 and 128),
   progress_hash text not null check (progress_hash ~ '^[a-f0-9]{64}$'),
   last_claim_token uuid not null,
-  primary key (upload_id,paper)
+  primary key (upload_id,paper,version)
 );
 alter table mtm_hw_private.lesson_upload_extract_progress125 enable row level security;
 revoke all on mtm_hw_private.lesson_upload_extract_progress125
@@ -77,9 +77,9 @@ begin
     then raise exception 'EXTRACT_YIELD_SCOPE_REQUIRED';end if;
   binding:=mtm_hw_private.lesson_upload_extract_binding125(u);
   select * into prev from mtm_hw_private.lesson_upload_extract_progress125
-    where upload_id=u.id and paper=paper_num;
+    where upload_id=u.id and paper=paper_num and version=u.version;
   prior_exists:=found;
-  if prior_exists and (prev.version<>u.version or prev.upload_binding_sha<>binding
+  if prior_exists and (prev.upload_binding_sha<>binding
       or prev.source_version<>p->>'source_version' or prev.plan_hash<>p->>'plan_hash') then
     raise exception 'EXTRACT_YIELD_BINDING_CHANGED';
   end if;
@@ -111,7 +111,7 @@ begin
   insert into mtm_hw_private.lesson_upload_extract_progress125 as progress
     (upload_id,paper,version,upload_binding_sha,source_version,plan_hash,progress_count,progress_hash,last_claim_token)
   values (u.id,paper_num,u.version,binding,p->>'source_version',p->>'plan_hash',completed,p->>'progress_hash',new_claim)
-  on conflict (upload_id,paper) do update set
+  on conflict (upload_id,paper,version) do update set
     progress_count=excluded.progress_count,progress_hash=excluded.progress_hash,last_claim_token=excluded.last_claim_token;
   if paper_num=1 then
     update mtm_hw_private.lesson_upload_steps set detail='Đã lưu phần PDF đã đọc. Hệ thống sẽ tự tiếp tục.',updated_at=now_at
@@ -136,14 +136,14 @@ begin
   if jsonb_typeof(r->'job') is distinct from 'object' then return r;end if;
   select * into u from mtm_hw_private.lesson_uploads where id=(r #>>'{job,id}')::uuid;
   if not found then raise exception 'EXTRACT_YIELD_BINDING_CHANGED';end if;
-  if exists(select 1 from mtm_hw_private.lesson_upload_extract_progress125 x where x.upload_id=u.id
-    and (x.version<>u.version or x.upload_binding_sha<>mtm_hw_private.lesson_upload_extract_binding125(u))) then
+  if exists(select 1 from mtm_hw_private.lesson_upload_extract_progress125 x where x.upload_id=u.id and x.version=u.version
+    and x.upload_binding_sha<>mtm_hw_private.lesson_upload_extract_binding125(u)) then
     -- Return the claim so the worker can surface a permanent hold and unblock the queue.
     return jsonb_set(r,'{job,extract_progress_invalid}','true'::jsonb);
   end if;
   select jsonb_object_agg(x.paper::text,jsonb_build_object(
     'sourceVersion',x.source_version,'plan_hash',x.plan_hash,'progress_count',x.progress_count,'progress_hash',x.progress_hash
-  )) into progress from mtm_hw_private.lesson_upload_extract_progress125 x where x.upload_id=u.id;
+  )) into progress from mtm_hw_private.lesson_upload_extract_progress125 x where x.upload_id=u.id and x.version=u.version;
   if u.work_kind is distinct from 'homework'
     or u.checkpoint ?| array['operator_timeout_continuation_v1','operator_cached_draft']
     or not ((u.homework_path is not null and u.answer_path is not null)
