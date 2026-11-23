@@ -32,6 +32,9 @@ async function chay() {
   if (js) { const r = await mo(GOC + js); ghi('file JS chính', r, r.status === 200 && r.body.length > 1000); }
   else ghi('file JS chính', home, false, 'không thấy file JS trong trang chủ');
   for (const p of API) { const r = await mo(GOC + p); ghi(p, r, r.status > 0 && r.status < 500); }
+  // Phòng thi phải đang ghi lượt vào CSDL (MTM_PHONG_THI_DB=1): bảng vàng trả enabled:true. enabled:false = bài nộp không được lưu.
+  { const r = await mo(GOC + '/api/phong-thi?xep-hang-dot=thpt-thu-2026-11'); let en = null; try { en = JSON.parse(r.body).enabled; } catch { /* không phải JSON */ }
+    ghi('phòng thi ghi CSDL', r, r.status === 200 && en === true, en === false ? 'máy chủ đang tắt ghi CSDL, bài nộp không được lưu' : ''); }
   return dong;
 }
 
