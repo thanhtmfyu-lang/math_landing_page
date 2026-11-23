@@ -34,7 +34,7 @@ export interface WorkerRepository {
  current(job:UploadJob):Promise<void>;
  step(job:UploadJob,step:number,status:'dang'|'xong'|'loi'|'canh_bao',detail:string,checkpoint:Record<string,unknown>,paper?:1|2):Promise<void>;
  yieldExtract?(job:UploadJob,progress:ExtractProgress):Promise<void>;
- waitReview?(job:UploadJob,request:PendingReview):Promise<{allowed:boolean}>;
+ waitReview?(job:UploadJob,request:PendingReview):Promise<{allowed:boolean;terminal?:boolean;code?:string}>;
  /** Persist only a safe code under the same claim; SQL owns retry eligibility. */
  recordFailure?(job:UploadJob,step:number,code:string):Promise<void>;
  publishBundle?(job:UploadJob,primary:unknown,second:unknown):Promise<void>;
@@ -157,16 +157,18 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   await save('draft',draft);
   if(cached){ensure(cp.draft===cached.normalized_draft_ref,'OPERATOR_CACHED_DRAFT_BINDING_CHANGED');cp.operator_cached_draft={...cached};}
   await mark(3,'xong',draft?'':'Không áp dụng: buổi này chỉ có học liệu/video.');step=4;await mark(4,'dang');
-  let proof:any=null,teacherPending=false;
+  let proof:any=null;
   if(draft){
    const result:IndependentReview|PendingReview=cp.review?await state.load(cp.review):await pipeline.review({questions:reviewQuestions(draft.exam),task_scope:job.task_scope,sourceVersion:source.sourceVersion});
    if('status' in result&&result.status==='pending'){
     ensure(repo.waitReview&&/^[a-f0-9]{64}$/.test(result.request_hash)&&result.sourceVersion===source.sourceVersion,'PENDING_REVIEW_AUTHORITY_REQUIRED');
-    const permission=await repo.waitReview(job,result);
-    if(!permission.allowed)return {status:'waiting_review' as const,uploadId:job.id};
-    teacherPending=true;proof={validator:true,independent:false,teacher_source:true,status:'teacher-pending',request_hash:result.request_hash,extractor_provider:pipeline.extractor.provider};
+    const wait=await repo.waitReview(job,result);
+    if(wait.terminal===true&&(wait.code==='INDEPENDENT_REVIEW_TIMEOUT'||wait.code==='INDEPENDENT_REVIEW_DEADLINE_ELAPSED')){
+     // The gateway settled this claim atomically. Do not write it a second time.
+     return {status:'blocked' as const,uploadId:job.id,code:wait.code};
+    }
+    return {status:'waiting_review' as const,uploadId:job.id};
    }
-   if(!teacherPending){
    const review=result as IndependentReview;
    ensure(review&&['grok','agy'].includes(review.provider)&&review.model?.trim()&&/^[a-f0-9]{64}$/.test(review.receipt_hash),'INDEPENDENT_REVIEW_REQUIRED');
    const slots=verifyTeacher(draft,source);ensure(Array.isArray(review.slots)&&review.slots.length===slots.length,'REVIEW_COVERAGE');
@@ -177,7 +179,7 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
    for(const slot of proof.slots){
     const q=draft.exam.questions.find(q=>q.id===slot.question_id)!;
     const equal=q.kind==='short'&&typeof slot.actual==='string'?q.acceptedAnswers.some(answer=>draft.exam.rubricVersion===MTM_SCORING_VERSION?normalizeMtmShort(answer,q.shortRule!)!==null&&normalizeMtmShort(answer,q.shortRule!)===normalizeMtmShort(slot.actual,q.shortRule!):normalizedShort(q.mode,answer)!==null&&normalizedShort(q.mode,answer)===normalizedShort(q.mode,slot.actual)):JSON.stringify(slot.expected)===JSON.stringify(slot.actual);
-    if(!equal){const label=q.sourceRef.replace(/[^\p{L}\p{N}\s.,()/-]/gu,'').slice(0,80)||'câu đã giao';mismatchDetail=`Đáp án ${label}${slot.slot==='answer'?'':' ý '+slot.slot} chưa khớp kết quả giải độc lập; thầy kiểm tra và up lại.`;break;}
+    if(!equal){const label=q.sourceRef.replace(/[^\p{L}\p{N}\s.,()/-]/gu,'').slice(0,80)||'câu đã giao';mismatchDetail=`Đáp án ${label}${slot.slot==='answer'?'':' ý '+slot.slot} chưa khớp kết quả giải độc lập. Hệ thống đã giữ bài lại.`;break;}
    }
    // Run the SAME production validator before step 4 can turn green; no upload/RPC writes.
    let accepted=false;const secret='lesson-upload-local-validation-'.repeat(2);
@@ -185,9 +187,8 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
    const response=await validator(publishRequest(job,source,draft,proof,{handoutUrl:null,materialUrl:null},secret));
    ensure(response.ok&&accepted,'INDEPENDENT_ANSWER_MISMATCH');
    await save('review',review);
-   }
   }
-  await mark(4,teacherPending?'canh_bao':'xong',teacherPending?'Chưa kiểm chéo — máy sẽ kiểm sau':draft?'':'Không áp dụng: không có BTVN cần giải độc lập.');step=5;await mark(5,'dang');
+  await mark(4,'xong',draft?'':'Không áp dụng: không có BTVN cần giải độc lập.');step=5;await mark(5,'dang');
   const materials=cp.materials?await state.load(cp.materials):await pipeline.materials(job,'lesson-upload:'+job.id+':materials');
   ensure(materials&&(!job.handout_path||materials.handoutUrl||materials.materialUrl||materials.pending===true),'MATERIALS_REQUIRED');
   for(const url of [materials.handoutUrl,materials.materialUrl])if(url){
@@ -199,7 +200,7 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   // current() here plus the atomic DB fence prevent stale jobs publishing after a reupload.
   await repo.current(job);
   if(draft){
-   const secret='lesson-upload-service-validation-'.repeat(2),handler=createBtvnPublishHandler(repo.publisher(job),secret,teacherPending?{teacherPending:{requestHash:proof.request_hash,sourceVersion:source.sourceVersion}}:{});
+   const secret='lesson-upload-service-validation-'.repeat(2),handler=createBtvnPublishHandler(repo.publisher(job),secret);
    const response=await handler(publishRequest(job,source,draft,proof,materials,secret)),receipt=await response.json();
    if(!response.ok)throw Error(typeof receipt?.error_code==='string'&&/^[A-Z][A-Z0-9_]{2,70}$/.test(receipt.error_code)?receipt.error_code:'PUBLISH_NOT_CONFIRMED');
    ensure(['da_dang','already_published'].includes(receipt.status),'PUBLISH_NOT_CONFIRMED');
@@ -220,7 +221,7 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
    NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN:'Chưa xác minh được kết quả lần đọc PDF gần nhất. Cần đối soát trước khi tiếp tục.',
    NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED:'Một phần PDF chưa đọc được chắc chắn. Cần đối chiếu thủ công trước khi giao bài.',
     NATIVE_LONG_PDF_LOCATOR_UNRESOLVED:'Chưa ghép được câu giữa tệp đề và đáp án. Kiểm tra số phần, số câu và thứ tự trong hai PDF.',
-   INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên; thầy kiểm tra và up lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ hoặc không khớp phiên bản đã gửi; quản lý kiểm tra.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
+   INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên. Hệ thống đã giữ bài lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ hoặc không khớp phiên bản đã gửi; quản lý kiểm tra.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
   try{await mark(step,retryable?'dang':'loi',code==='INDEPENDENT_ANSWER_MISMATCH'&&mismatchDetail?mismatchDetail:detail[code]??(retryable?'Kết nối tạm gián đoạn; giữ tiến độ để đối soát và tiếp tục cùng phiên bản.':'Chưa xử lý xong bước này; quản lý kiểm tra biên nhận riêng.'));}catch{/* Claim lost/superseded: never mutate its replacement. */}
   try{await repo.recordFailure?.(job,step,code);}catch{/* An unknown recording outcome never creates a new version or resets attempts. */}
   return {status:retryable?'retry' as const:'blocked' as const,uploadId:job.id,code};

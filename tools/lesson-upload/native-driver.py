@@ -186,9 +186,9 @@ def long_pdf_timeout(engine, deadline, provider_error, *, monotonic=time.monoton
         engine.send = original_send
 
 
-def page_text_window(pages, page_count, records, targets):
+def page_text_window(pages, page_count, records, targets, *, allow_reordered=False):
     """Keep text through the next locator to cover answers that span pages."""
-    if len(pages) != page_count or not targets:
+    if len(pages) != page_count or not targets or len(set(targets)) != len(targets):
         return None
     positions = {ref: [] for ref in targets}
     for index, record in enumerate(records):
@@ -197,7 +197,8 @@ def page_text_window(pages, page_count, records, targets):
     if any(len(indexes) != 1 for indexes in positions.values()):
         return None
     indexes = [positions[ref][0] for ref in targets]
-    if indexes != sorted(indexes):
+    reordered = indexes != sorted(indexes)
+    if reordered and not allow_reordered:
         return None
     starts = [records[index]['pageNo'] for index in indexes]
     ends = [records[index + 1]['pageNo'] if index + 1 < len(records) else page_count for index in indexes]
@@ -205,7 +206,11 @@ def page_text_window(pages, page_count, records, targets):
         return None
     # Include the front page for the source heading and adjacent pages for the
     # boundary context. The full images always accompany this text view.
-    numbers = sorted({1, *range(max(1, starts[0] - 1), min(page_count, ends[-1] + 1) + 1)})
+    # Answer pages may be out of question order. Match by the unique printed
+    # reference and retain physical PDF order for text, images and crop checks.
+    ranges = list(zip(starts, ends)) if reordered else [(starts[0], ends[-1])]
+    numbers = sorted({1, *(n for start, end in ranges
+                           for n in range(max(1, start - 1), min(page_count, end + 1) + 1))})
     text = '\n'.join(f'Trang gốc {n}:\n{pages[n - 1].strip()}' for n in numbers)
     return list(zip(starts, ends)), numbers, text
 
@@ -231,7 +236,7 @@ def answer_text_locators(pages):
 
 def long_pdf_text(hs_pages, gv_pages, hs_count, gv_count, inventory, targets):
     hs_window = page_text_window(hs_pages, hs_count, inventory, targets)
-    gv_window = page_text_window(gv_pages, gv_count, answer_text_locators(gv_pages), targets)
+    gv_window = page_text_window(gv_pages, gv_count, answer_text_locators(gv_pages), targets, allow_reordered=True)
     if hs_window is None or gv_window is None:
         return None
     hs_spans, _, hs = hs_window
@@ -293,9 +298,10 @@ class SegmentPageView:
                 return None
             # Require a deterministic map for the whole declared scope, not just
             # an accidentally unique subset of a duplicated answer numbering.
-            if page_text_window(texts, len(images), records, self.targets) is None:
+            allow_reordered = tag == 'gv'
+            if page_text_window(texts, len(images), records, self.targets, allow_reordered=allow_reordered) is None:
                 return None
-            window = page_text_window(texts, len(images), records, targets)
+            window = page_text_window(texts, len(images), records, targets, allow_reordered=allow_reordered)
             if window is None:
                 return None
             spans, numbers, text = window
@@ -413,7 +419,7 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
   # A scanned answer PDF can have a selectable heading/footer without printed
   # answer locators. Preserve its visual path until we see numbered answers.
   unresolved_text_locators=bool(answer_locators) and (
-      page_text_window(answer_texts,len(answer_images),answer_locators,targets) is None)
+      page_text_window(answer_texts,len(answer_images),answer_locators,targets,allow_reordered=True) is None)
   if not unresolved_text_locators:
    outcome=extract_long_homework(ai,job,source_version,context,instruction,view,targets,work)
    if outcome is not None:return outcome

@@ -42,12 +42,17 @@ try{
   '202611130108_lesson_upload_retry.sql','202611130109_lesson_staff_history.sql','202611130110_lesson_assessment.sql'])await db.exec(migration(name));
  const metadata=async()=>(await db.query(`select oid,proacl::text,proowner,prosecdef,proconfig from pg_proc where oid in
    ('public.mtm_lesson_upload_gateway(jsonb)'::regprocedure,'public.mtm_lesson_upload_api(jsonb)'::regprocedure,
-    'mtm_hw_private.lesson_retry_reason108(text)'::regprocedure) order by oid`)).rows;
+    'mtm_hw_private.lesson_retry_reason108(text)'::regprocedure,
+    'public.mtm_lesson_upload_api_before_deadline107(jsonb)'::regprocedure,
+    'public.mtm_lesson_upload_api_before_review_gateway(jsonb)'::regprocedure,
+    'mtm_hw_private.lesson_teacher_pending_allowed(mtm_hw_private.lesson_uploads,jsonb,text,integer)'::regprocedure) order by oid`)).rows;
  const before=await metadata();
  await db.exec('alter default privileges grant execute on functions to anon,authenticated,service_role');
  await db.exec(migration('202611230125_lesson_extract_yield.sql'));
   await db.exec(migration('202611230132_lesson_long_pdf_locator_reason.sql'));
   await db.exec(migration('202611230132_lesson_long_pdf_locator_reason.sql'));
+ await db.exec(migration('202611230133_lesson_review_before_publish.sql'));
+ await db.exec(migration('202611230133_lesson_review_before_publish.sql'));
  assert.deepEqual(await metadata(),before);
  const privateAcl=(await db.query(`select
   has_function_privilege('service_role','mtm_hw_private.lesson_upload_extract_yield125(jsonb)','EXECUTE') as svc,
@@ -179,8 +184,29 @@ try{
  assert.equal(paired.id,pair);
  for(const n of [2,3])await step(pair,paired.claim_token,1,n,'xong');
  await step(pair,paired.claim_token,1,4);
- assert.equal((await svc({action:'worker_wait_review',upload_id:pair,claim_token:paired.claim_token,paper:1,request_hash:'e'.repeat(64),source_version:'f'.repeat(64)})).allowed,false);
+ const waiting={action:'worker_wait_review',upload_id:pair,claim_token:paired.claim_token,paper:1,
+   request_hash:'e'.repeat(64),source_version:'f'.repeat(64)};
+ assert.deepEqual(await svc(waiting),{allowed:false,independent_required:true});
  assert.equal((await row(pair)).attempt_count,2);
+ const originalReviewTime=(await db.query('select requested_at from mtm_hw_private.lesson_review_requests where upload_id=$1 and paper=1',[pair])).rows[0];
+ assert.deepEqual(await svc(waiting),{allowed:false,independent_required:true});
+ assert.equal((await row(pair)).attempt_count,2,'never refund the same claim twice');
+ assert((await row(pair)).lease_until.getTime()>Date.now());
+ const stored=(await db.query('select requested_at from mtm_hw_private.lesson_review_requests where upload_id=$1 and paper=1',[pair])).rows[0];
+ assert.deepEqual(stored,originalReviewTime,'waiting never rewrites the review request');
+ const unreviewed={validator:true,independent:false,teacher_source:true,status:'teacher-pending',request_hash:waiting.request_hash};
+ const publisherException=(await db.query(`select mtm_hw_private.lesson_teacher_pending_allowed(u,$2::jsonb,$3,1) allowed
+   from mtm_hw_private.lesson_uploads u where id=$1`,[pair,JSON.stringify(unreviewed),waiting.source_version])).rows[0];
+ assert.equal(publisherException.allowed,false,'never grant the old publisher exception');
+ await assert.rejects(()=>db.transaction(async tx=>{
+  await tx.query("update mtm_hw_private.lesson_upload_paper2_steps set status='xong' where upload_id=$1 and step<6",[pair]);
+  await tx.exec("set local role service_role;select set_config('request.jwt.claim.role','service_role',true)");
+  const lesson_key='web-'+pair.replaceAll('-','');
+  return tx.query('select public.mtm_lesson_upload_gateway($1)',[JSON.stringify({action:'worker_publish',
+    upload_id:pair,claim_token:paired.claim_token,payload:{lesson_key,exam:{id:'paper-one'}},
+    variant_payload:{lesson_key,source_version:waiting.source_version,exam:{id:'paper-two',questions:[{}]},assets:[],
+      verification:{...unreviewed,provider:'grok'}}})]);
+ }),/INVALID_SECOND_PAPER/);
  await step(pair,paired.claim_token,2,2);
  const paperTwo=evidence(pair,paired.claim_token,2,1,'f'.repeat(64));
  assert.equal((await svc(paperTwo)).status,'yielded_extract');
@@ -198,6 +224,52 @@ try{
   assert.deepEqual((await db.query('select status,detail from mtm_hw_private.lesson_upload_paper2_steps where upload_id=$1 and step=2',[pair])).rows[0],
     {status:'loi',detail:locatorFailure.reason});
   assert.equal((await row(pair)).retry_status,'needs_input');
+ // A late result cannot race the terminal wait: the current claim records
+ // exactly one step-4 failure and releases the lease without a publication.
+ for(const [suffix,expiredDue,code,message] of [
+  ['555555555555',false,'INDEPENDENT_REVIEW_TIMEOUT',/kiểm độc lập trong 20 phút/],
+  ['666666666666',true,'INDEPENDENT_REVIEW_DEADLINE_ELAPSED',/Hạn nộp đã qua.*kiểm độc lập/],
+ ] as const){
+  const expiredId='55555555-5555-4555-8555-'+suffix;
+  await make(expiredId);
+  await db.query(`update mtm_hw_private.lesson_uploads set attempt_count=0,retry_count=0,last_error_code=null,
+    due_at_by_class=jsonb_build_object($2::text,clock_timestamp()+interval '1 hour')
+    where id=$1`,[expiredId,classId]);
+  if(expiredDue){
+   const earlierClass='88888888-8888-4888-8888-888888888888';
+   await db.query(`update mtm_hw_private.lesson_uploads
+    set class_ids=class_ids||array[$2::uuid],
+        class_dates=class_dates||jsonb_build_object($2::text,lesson_date::text),
+        class_names=class_names||jsonb_build_object($2::text,'Earlier class'),
+        due_at_by_class=due_at_by_class||jsonb_build_object($2::text,clock_timestamp()-interval '1 minute')
+    where id=$1`,[expiredId,earlierClass]);
+  }
+  const expired=(await claim()).job;
+  assert.equal(expired.id,expiredId);
+  assert.equal(expired.attempt_count,1);
+  for(const n of [2,3])await step(expiredId,expired.claim_token,1,n,'xong');
+  await step(expiredId,expired.claim_token,1,4);
+  const late={...waiting,upload_id:expiredId,claim_token:expired.claim_token};
+  if(!expiredDue)await db.query(`insert into mtm_hw_private.lesson_review_requests(upload_id,paper,request_hash,source_version,requested_at)
+   values($1,1,$2,$3,clock_timestamp()-interval '21 minutes')`,[expiredId,late.request_hash,late.source_version]);
+  assert.deepEqual(await svc(late),{allowed:false,independent_required:true,terminal:true,code});
+  const status=await row(expiredId);
+  assert.equal(status.last_error_code,code);
+  assert.equal(status.retry_status,'needs_input');
+  assert.equal(status.failed_step,4);
+  assert.equal(status.failed_paper,1);
+  assert.equal(status.attempt_count,1);
+  assert.equal(status.retry_count,1);
+  assert.equal(status.failure_claim_token,expired.claim_token);
+  assert(status.lease_until.getTime()<Date.now());
+  assert.equal(status.checkpoint.publish_receipts,undefined);
+  const persisted=(await db.query('select status,detail from mtm_hw_private.lesson_upload_steps where upload_id=$1 and step=4',[expiredId])).rows[0];
+  assert.equal(persisted.status,'loi');
+  assert.match(persisted.detail,message);
+  await assert.rejects(()=>svc(late),/STALE_UPLOAD_OR_LEASE/);
+  assert.equal((await row(expiredId)).retry_count,1);
+  assert.equal((await claim()).job,null);
+ }
  assert.equal((await db.query('select count(*) n from mtm_hw_private.lesson_publish_capability')).rows[0].n,0);
 }finally{await db.close();}
 console.log('Step-2 yield: parser, Edge worker, direct/service SQL, current/version/paper, one refund, real timeout cap, no publish: passed (PGlite synthetic).');

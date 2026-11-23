@@ -208,7 +208,6 @@ class NativePdfRenderTests(unittest.TestCase):
             ai = SimpleNamespace(check_access=lambda: None, ask_stage=lambda *_, **__: self.fail('sent full PDF pair'))
             bad_answers = [gv[:20] + [page] + gv[21:]
                            for page in ['Thiếu vị trí câu 21', 'Cau 20 lời giải bị lặp']]
-            bad_answers.append(gv[:19] + [gv[20], gv[19]] + gv[21:])
             for answers in bad_answers:
                 with self.assertRaisesRegex(ValueError, driver.LONG_PDF_LOCATOR_UNRESOLVED):
                     driver.extract_source(ai, p, job, 'a' * 64, hs_text, '\f'.join(answers),
@@ -244,6 +243,39 @@ class NativePdfRenderTests(unittest.TestCase):
                                                page_texts=(hs, [cover] + [''] * 38), work=work)
                 self.assertEqual(result, extracted)
             self.assertEqual(seen, [hs_images + gv_images, hs_images + gv_images])
+
+    def test_reordered_teacher_answers_bind_each_original_page_without_reordering_source(self):
+        original = segment_view()
+        answer_texts, answer_images, _ = original.documents['gv']
+        reordered = answer_texts.copy()
+        reordered[19], reordered[20] = reordered[20], reordered[19]
+        original.documents['gv'] = (reordered, answer_images, driver.answer_text_locators(reordered))
+        targets = ['Câu 20', 'Câu 21']
+        _, text, images, _, views = original.project(targets, SEGMENT_INSTRUCTION)
+        self.assertEqual(views['hs']['spans'], {'Câu 20': (20, 21), 'Câu 21': (21, 22)})
+        self.assertEqual(views['gv']['spans'], {'Câu 20': (21, 23), 'Câu 21': (20, 21)})
+        self.assertIn('"Câu 20": [20, 21], "Câu 21": [21, 20]', text)
+        manifest = json.loads(text.splitlines()[0].removeprefix('PAGE_MANIFEST: '))
+        self.assertEqual(images, [f'{row["document"]}-{row["page"]}.png' for row in manifest])
+
+        good = {'certain': True, 'questions': [segment_question(gv_page=21)], 'manualQuestions': []}
+        self.assertIs(driver.check_segment_pages(good, views), good)
+        bad = {**good, 'questions': [segment_question(gv_page=20)]}
+        with self.assertRaisesRegex(ValueError, 'NATIVE_EXTRACT_INVENTORY_MISMATCH'):
+            driver.check_segment_pages(bad, views)
+
+        hs_texts, hs_images, inventory = original.documents['hs']
+        with tempfile.TemporaryDirectory() as folder, patch.object(driver, 'extract_long_homework') as segmented:
+            segmented.return_value = good
+            ai = SimpleNamespace(check_access=lambda: None, ask_stage=lambda *_, **__: self.fail('full PDF fallback'))
+            p = SimpleNamespace(EXTRACT_PROMPT='Synthetic prompt')
+            work = {'folder': Path(folder), 'prior': None}
+            job = {'version': 1, 'title': 'Synthetic', 'task_scope': 'Câu 20–21'}
+            result = driver.extract_source(ai, p, job, 'a' * 64, '\f'.join(hs_texts), '\f'.join(reordered),
+                                          hs_images, answer_images, 'PAGE_MANIFEST: []', inventory,
+                                          page_texts=(hs_texts, reordered), work=work)
+            self.assertIs(result, good)
+            segmented.assert_called_once()
 
     def test_segment_rejects_rebased_or_undelivered_crop_pages(self):
         *_, views = segment_view().project(['Câu 20'], SEGMENT_INSTRUCTION)

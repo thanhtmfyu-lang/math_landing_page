@@ -1,8 +1,9 @@
 import {lazy,Suspense,useCallback,useEffect,useRef,useState,type FormEvent} from 'react';
-import {lessonDashboard,retryLesson,staffHistory,staffStudentWork,submitLesson,uploadLessonFile} from './backend';
+import {lessonDashboard,staffHistory,staffStudentWork,submitLesson,uploadLessonFile} from './backend';
 import {LessonSubmitError,pendingAfterFailure} from './submission-receipt';
 import {clearPending,loadPending,savePending} from './pending-request-store';
 import {overallUploadProgress,uploadProgress} from './upload-progress';
+import {useUploadOutcomes} from './use-upload-outcomes';
 import {privatePdf} from './files';
 import {latestForSession,listSessionAssessments,uploadsForSession,nearestSession,normalizedVideoUrl,sessionKey,STEP_LABELS,validateUpload,type LessonSession,type LessonUpload,type UploadDashboard} from './model';
 import {defaultDueLocal,dueLocalToIso,uploadState,uploadTitle} from './simple-intake';
@@ -51,6 +52,7 @@ function Status({upload,onPreview}:{upload:LessonUpload;onPreview?:()=>void}){
 /** All writes use the authenticated staff adapter; this view also accepts synthetic dashboard fixtures for QA. */
 export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=false}:{data:UploadDashboard;owner:string;onRefresh:()=>Promise<void>;onSignOut:()=>void;qaMode?:boolean}){
   const pendingScope=qaMode?QA_INTAKE.pendingScope:undefined;
+  const outcomes=useUploadOutcomes(owner,data,!qaMode&&data.staff.user_id===owner);
   const first=nearestSession(data.sessions),[picked,setPicked]=useState(first?sessionKey(first):'');
   const [tab,setTab]=useState<'upload'|'history'>('upload'),[historyOpened,setHistoryOpened]=useState(false);
   const [previewId,setPreviewId]=useState<string|null>(null);
@@ -91,15 +93,15 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   function editExam(u:LessonUpload){if(locked||!u.assessment_id)return;if(dirty&&!window.confirm('Mở đề đã có và bỏ phần chưa gửi?'))return;reset();setAssessmentId(u.assessment_id);setTitle(u.title);setExamType(u.exam_type??'monthly');if(u.exam_config){setExamOpen(vnInput(u.exam_config.opens_at));setExamClose(vnInput(u.exam_config.closes_at));setExamDuration(u.exam_config.duration_minutes);}setMessage('Đang sửa cùng đề. Gửi lại đủ đề và đáp án để tạo phiên bản mới.');}
   function changeFiles(kind:keyof Files,value:File[]){setFiles(old=>({...old,[kind]:value}));setMessage('');}
   async function refresh(){if(retryBusy)return;setRetryBusy(true);try{
-    let note='';if(!qaMode&&current?.retry?.can_retry&&!['needs_input','retry_exhausted','exhausted','published','complete'].includes(current.retry.status)&&!uploadProgress(current).published&&!busy&&!pending){const receipt=await retryLesson(owner,current.id);note=receipt.reason||(['queued','already_queued'].includes(receipt.status)?'AI đã nhận yêu cầu xử lý lại phần lỗi.':'Đã cập nhật trạng thái xử lý.');}
-    await onRefresh();if(alive.current&&note)setMessage(note);
+    await onRefresh();
   }catch(e){if(alive.current)setMessage(e instanceof Error?e.message:'Chưa cập nhật được tiến độ.');}finally{if(alive.current)setRetryBusy(false);}}
   async function deliver(payload:Record<string,unknown>){
     if(qaMode)qaIntakePayload(payload);
     savePending(window.sessionStorage,owner,payload,pendingScope);setPending(payload);
     try{
       const result=await submitLesson(owner,payload,{qa:qaMode});if(!alive.current)return;
-      clearPending(window.sessionStorage,owner,pendingScope);setPending(null);reset();setMessage(`${result.already_received?'Đã xác nhận':'Đã nhận'} bản ${result.version}. Hệ thống tự nhận bài mới để AI xử lý và đăng; không cần bấm chạy thêm.`);
+      await outcomes.remember(result.upload_id,result.version);if(!alive.current)return;
+      clearPending(window.sessionStorage,owner,pendingScope);setPending(null);reset();setMessage(`${result.already_received?'Đã xác nhận':'Đã nhận'} bản ${result.version}. AI sẽ tự xử lý và báo kết quả tại đây.`);
       try{await onRefresh();}catch{if(alive.current)setMessage(`Đã nhận bản ${result.version}. Bấm Cập nhật để xem tiến độ.`);}
     }catch(e){if(!qaMode&&e instanceof LessonSubmitError&&e.outcome==='rejected')clearPending(window.sessionStorage,owner,pendingScope);if(alive.current)setPending(current=>qaMode?payload:pendingAfterFailure(current,payload,e));throw e;}
   }
@@ -134,6 +136,12 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   return <>
     {qaMode&&<section className="lu-panel lu-message" role="status"><h2>QA cách ly · không giao học sinh thật</h2><p>Chỉ {QA_INTAKE.classLabel} · ca17/11 00:10–00:11. BTVN và Đề kiểm tra đều ghi vào vùng thử. Giữ nguyên phiếu16/11 và kết quả cũ.</p><p>Nếu gửi tệp hoặc lưu bài chưa có xác nhận, dừng để đối soát biên nhận; không gửi lại hay tạo yêu cầu mới.</p></section>}
     <div className="lu-account"><span><b>{data.staff.display_name}</b><span className="lu-badge">{manager?'Quản lý':'Giáo viên'}</span></span><button type="button" onClick={onSignOut} disabled={busy||!!pending}>Đăng xuất</button></div>
+     <div role="status" aria-live="polite">
+       {outcomes.notices.length>0&&<section className="lu-panel lu-outcomes" aria-label="Kết quả xử lý bài">
+         <div className="lu-section-head"><h2>Kết quả xử lý bài</h2><button type="button" onClick={outcomes.dismiss}>Đóng thông báo</button></div>
+         <ul>{outcomes.notices.map(outcome=><li key={outcome.key} data-outcome={outcome.status}><strong>{outcome.title}</strong>{outcome.detail&&<p>{outcome.detail}</p>}</li>)}</ul>
+       </section>}
+     </div>
     <nav className="lu-workspace-tabs" aria-label="Công việc giáo viên"><button type="button" aria-current={tab==='upload'&&!examMode?'page':undefined} disabled={busy||!!pending&&mode!=='homework'} onClick={()=>changeMode('homework')}>BTVN</button><button type="button" aria-current={tab==='upload'&&examMode?'page':undefined} disabled={busy||!!pending&&mode!=='exam'} onClick={()=>changeMode('exam')}>Đề kiểm tra</button><button type="button" hidden={qaMode} aria-current={tab==='history'?'page':undefined} onClick={()=>{closePreview();setHistoryOpened(true);setTab('history');}}>Điểm &amp; điểm danh</button></nav>
     <div hidden={tab!=='upload'}>
     {!examMode&&<section className="lu-delivery-summary" aria-label="Tiến độ giao bài trong tuần"><div><strong>{overview.publishedPercent}%</strong><span>Đã giao · {overview.publishedCount}/{overview.total} buổi</span></div><div><strong>{overview.unpublishedPercent}%</strong><span>Chưa giao · {overview.unpublishedCount} buổi</span></div><p>Tính trên các buổi đã kết thúc trong tuần; một buổi chỉ tính một lần.</p>{data.automation&&<p className="lu-automation-status">AI tự nhận bài: {!data.automation.enabled?'đang tạm dừng':data.automation.last_seen_at?`đã kết nối lúc ${new Date(data.automation.last_seen_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}`:'đang chờ kết nối'}</p>}</section>}

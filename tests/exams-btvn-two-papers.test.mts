@@ -115,8 +115,8 @@ try{
   await handleTwoPaperPublication(pinPort,{...attach,paper:{action:'publish',kind:'btvn'}},async(_input,p)=>{await p.rpc('publish',{lesson_key:singleCode,material:{...canonical,classOpensAt:{[label]:recomputed}}});return new Response('{}');});
   assert.deepEqual(committed.second.material,canonical);assert.equal(committed.second.material.classOpensAt[label],original);checks++;
  }
- // Missing PC review uses the authoritative immutable DB clock, never a client
- // timestamp. Both papers queue immediately and publish truthfully after 20m.
+ // Both papers queue for independent review. Even an older SQL103 grant to
+ // publish teacher-pending after 20m cannot authorize the current worker.
  const delayed=await call('mtm_lesson_upload_api',{p:input},'authenticated',teacher),delayedCode='web-'+delayed.upload_id.replaceAll('-','');
  await db.query('update mtm_hw_private.lesson_uploads set attempt_count=1 where id=$1',[delayed.upload_id]);
  const pending:Pipeline={...pipeline,async review(input){return {status:'pending',sourceVersion:input.sourceVersion,request_hash:(input.sourceVersion==='b'.repeat(64)?'8':'7').repeat(64)};}};
@@ -129,8 +129,19 @@ try{
  assert.equal((await db.query('select attempt_count from mtm_hw_private.lesson_uploads where id=$1',[delayed.upload_id])).rows[0].attempt_count,1);checks++;
  await db.query("update mtm_hw_private.lesson_review_requests set requested_at=clock_timestamp()-interval '21 minutes' where upload_id=$1",[delayed.upload_id]);
  await db.query("update mtm_hw_private.lesson_uploads set lease_until=clock_timestamp()-interval '1 second' where id=$1",[delayed.upload_id]);
- const late=await runUploadOnce(createWorkerRepository(client),pending,state,'pending-pair');assert.equal(late.status,'complete',JSON.stringify({late,rpcError}));checks++;
- const proof=(await db.query('select verification from mtm_hw_private.btvn_lessons where code=$1',[delayedCode])).rows[0].verification;assert.equal(proof.independent,false);assert.equal(proof.status,'teacher-pending');checks++;
+ const late=await runUploadOnce(createWorkerRepository(client),pending,state,'pending-pair');assert.equal(late.status,'waiting_review',JSON.stringify({late,rpcError}));checks++;
+ assert.equal((await db.query('select count(*) n from mtm_hw_private.btvn_lessons where code=$1',[delayedCode])).rows[0].n,0);checks++;
+ await db.query("update mtm_hw_private.lesson_uploads set lease_until=clock_timestamp()-interval '1 second' where id=$1",[delayed.upload_id]);
+ const observed:Pipeline={...pipeline,async review(input){return {provider:'grok',model:'synthetic-grok',receipt_hash:'d'.repeat(64),
+  slots:(input.sourceVersion==='b'.repeat(64)?second:fixture).verification.slots};}};
+ const reviewed=await runUploadOnce(createWorkerRepository(client),observed,state,'reviewed-pair');
+ assert.equal(reviewed.status,'complete',JSON.stringify({reviewed,rpcError}));checks++;
+ const proof=(await db.query('select verification from mtm_hw_private.btvn_lessons where code=$1',[delayedCode])).rows[0].verification;
+ assert.equal(proof.independent,true);assert.equal(reads,beforeReads+2);checks++;
+ // Seed the already-published legacy verification marker to test the historical
+ // backfill path without authorizing the modern worker to publish it.
+ await db.query("update mtm_hw_private.btvn_lessons set verification=$2::jsonb where code=$1",
+  [delayedCode,JSON.stringify({validator:true,independent:false,teacher_source:true,status:'teacher-pending',request_hash:'7'.repeat(64)})]);
  const primaryBefore=JSON.stringify((await db.query('select material,exam from mtm_hw_private.btvn_lessons where code=$1',[delayedCode])).rows[0]);
  const lateReview={action:'worker_review_result',upload_id:delayed.upload_id,paper:1,request_hash:'7'.repeat(64),source_version:'c'.repeat(64),provider:'grok',model:'synthetic-grok',receipt_hash:'9'.repeat(64),matched:false};
  const lateResult=await call('mtm_lesson_upload_gateway',{p:lateReview});assert(lateResult.key_unchanged&&lateResult.grades_unchanged);assert.equal((await db.query('select status from mtm_hw_private.lesson_upload_steps where upload_id=$1 and step=4',[delayed.upload_id])).rows[0].status,'loi');checks++;
@@ -175,5 +186,5 @@ try{
  const receiptResponse=await inspectRequest(futureKey),publication=await receiptResponse.json();assert.equal(receiptResponse.status,200);assert.equal(publication.paper_count,2);assert.equal(publication.canonical.exam_version_hash,correctedBeforeAttach.exam.versionHash);assert.equal(publication.second_paper.source_version,'b'.repeat(64));assert.deepEqual(publication.canonical.material,correctedBeforeAttach.material);assert(Object.hasOwn(publication.canonical.due_by_class,'2K10 9+'));assert.equal(publication.canonical.storage_private,true);assert.match(publication.canonical.exam_sha256,/^[a-f0-9]{64}$/);assert.equal(publication.canonical.exam,undefined);assert(!JSON.stringify(publication).includes('data_base64'));assert(!JSON.stringify(publication).includes('"acceptedAnswers"'));assert(!JSON.stringify(publication).includes(sid));checks++;
  const afterInspect=await (await inspectRequest(futureKey)).json();assert.equal(afterInspect.canonical.work_history_sha256,publication.canonical.work_history_sha256);assert.equal(afterInspect.canonical.work_due_sha256,publication.canonical.work_due_sha256);assert.equal((await inspectRequest(futureKey,'wrong')).status,401);assert.equal((await (await inspectRequest('fixture-missing')).json()).status,'not_found');checks++;
  for(const roleName of ['anon','authenticated','mtm_btvn_publisher']){await assert.rejects(()=>call('mtm_btvn_publication_receipt',{p_code:futureKey},roleName));checks++;}
- console.log(`${checks} ca hai đề full schema: hai key,1buổi,timer20m,hậu kiểm giữđiểm,private gateway,mixed source,future-only trướcvariant,receiptreadonly: đạt; dữ liệu giả local.`);
+ console.log(`${checks} ca hai đề full schema: hai key,1buổi,chờ quá 20 phút,hậu kiểm giữđiểm,private gateway,mixed source,future-only trướcvariant,receiptreadonly: đạt; dữ liệu giả local.`);
 }finally{await db.close();}

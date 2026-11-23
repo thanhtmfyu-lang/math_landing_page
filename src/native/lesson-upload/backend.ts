@@ -25,13 +25,6 @@ export async function staffStudentWork(owner:string,request:StaffStudentWorkRequ
  }
  return validateStaffStudentWork(result.data,request);
 }
-export async function retryLesson(owner:string,uploadId:string){
- const {client,assertOwner}=await staffRequest(owner);
- const r=await client.rpc('mtm_lesson_upload_api',{p:{action:'request_retry',upload_id:uploadId}});await assertOwner();
- if(r.error)throw Error(r.error.code==='42501'?'Tài khoản chưa có quyền xử lý bài của lớp này.':'Chưa cập nhật được yêu cầu xử lý lại. Bài đang lưu vẫn được giữ nguyên.');
- if(r.data?.ok!==true||r.data.upload_id!==uploadId)throw Error('Chưa nhận được biên nhận xử lý lại. Bấm Cập nhật để kiểm tra.');
- return r.data as {ok:true;accepted:boolean;status:string;upload_id:string;reason?:string;next_retry_at?:string|null};
-}
 export class StaffAccessError extends Error{}
 /** A captured access token keeps a delayed request from using another staff member's session. */
 async function staffRequest(expectedOwner:string){

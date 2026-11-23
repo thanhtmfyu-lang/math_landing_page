@@ -28,6 +28,36 @@ assert.throws(()=>nextWeekDue('2026-11-02','25:00'));
  assert.equal((await runUploadOnce(h.repo,h.pipeline,h.state,'fixture')).status,'complete');assert.equal(h.stats().commits,1);assert.equal(h.stats().reads,1);assert.equal(h.stats().reviews,1);
 }
 {
+ const h=harness(), independent=h.pipeline.review;
+ let reviewWaits=0;
+ const repo={...h.repo,async waitReview(_job:UploadJob,request:{request_hash:string;sourceVersion:string}){
+  reviewWaits++;
+  assert.equal(request.sourceVersion,'c'.repeat(64));
+  return {allowed:true}; // Old server or a stale approval still cannot publish early.
+ }};
+ h.pipeline.review=async()=>({status:'pending',request_hash:'e'.repeat(64),sourceVersion:'c'.repeat(64)});
+ assert.deepEqual(await runUploadOnce(repo,h.pipeline,h.state,'fixture'),{status:'waiting_review',uploadId:h.job.id});
+ assert.equal(reviewWaits,1);
+ assert.equal(h.stats().commits,0);
+ assert.equal(h.stats().uploads,0);
+ assert.ok(!h.marks.some(mark=>mark.step>4 || mark.step===4&&mark.status==='xong'));
+ h.pipeline.review=independent;
+ assert.equal((await runUploadOnce(repo,h.pipeline,h.state,'fixture')).status,'complete');
+ assert.equal(h.stats().commits,1);
+ assert.equal(h.stats().reads,1);
+ assert.equal(h.stats().builds,1);
+}
+for(const code of ['INDEPENDENT_REVIEW_TIMEOUT','INDEPENDENT_REVIEW_DEADLINE_ELAPSED']){
+ const h=harness();
+ h.pipeline.review=async()=>({status:'pending',request_hash:'e'.repeat(64),sourceVersion:'c'.repeat(64)});
+ const repo={...h.repo,async waitReview(){return {allowed:false,terminal:true,code};},
+   async recordFailure(){assert.fail('gateway already settled the claim');}};
+ assert.deepEqual(await runUploadOnce(repo,h.pipeline,h.state,'fixture'),{status:'blocked',uploadId:h.job.id,code});
+ assert.equal(h.stats().commits,0);
+ assert.equal(h.stats().uploads,0);
+ assert.ok(!h.marks.some(mark=>mark.step>4));
+}
+{
  const h=harness();h.pipeline.review=async()=>null as any;
  assert.equal((await runUploadOnce(h.repo,h.pipeline,h.state,'fixture')).status,'blocked');assert.equal(h.stats().commits,0);assert.equal(h.stats().uploads,0);assert.equal(h.marks.at(-1).step,4);
 }

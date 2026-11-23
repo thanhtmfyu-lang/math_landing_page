@@ -9,7 +9,7 @@ import {monthlyResultsHidden} from '../src/native/homework/result-summary';
 const root=resolve('.'),require=createRequire(join(root,'package.json'));
 const fixture=join(root,'tests/fixtures/assessment-react.mts');
 async function load(file:string){const result=await build({entryPoints:[join(root,file)],bundle:true,write:false,platform:'node',format:'cjs',jsx:'automatic',packages:'external',alias:{react:fixture,'react/jsx-runtime':fixture},loader:{'.css':'empty'},logLevel:'error',plugins:[{name:'mock-staff-only',setup(b){
-  b.onLoad({filter:/[\\/]lesson-upload[\\/]backend\.ts$/},()=>({loader:'js',contents:'export const lessonDashboard=(...a)=>globalThis.__assessmentApi.lessonDashboard(...a);export const submitLesson=(...a)=>globalThis.__assessmentApi.submitLesson(...a);export const uploadLessonFile=(...a)=>globalThis.__assessmentApi.uploadLessonFile(...a);export const loadPublishedLessonPreview=(...a)=>globalThis.__assessmentApi.loadPublishedLessonPreview(...a);export const retryLesson=async()=>({ok:true});export const staffHistory=async()=>({});export const staffStudentWork=async()=>({});'}));
+  b.onLoad({filter:/[\\/]lesson-upload[\\/]backend\.ts$/},()=>({loader:'js',contents:'export const lessonDashboard=(...a)=>globalThis.__assessmentApi.lessonDashboard(...a);export const submitLesson=(...a)=>globalThis.__assessmentApi.submitLesson(...a);export const uploadLessonFile=(...a)=>globalThis.__assessmentApi.uploadLessonFile(...a);export const loadPublishedLessonPreview=(...a)=>globalThis.__assessmentApi.loadPublishedLessonPreview(...a);export const retryLesson=(...a)=>globalThis.__assessmentApi.retryLesson(...a);export const staffHistory=async()=>({});export const staffStudentWork=async()=>({});'}));
   b.onLoad({filter:/[\\/]lesson-upload[\\/]files\.ts$/},()=>({loader:'js',contents:'export const privatePdf=async files=>files[0];'}));
   b.onLoad({filter:/HomeworkSession\.tsx$/},()=>({loader:'js',contents:'export const HomeworkReader=()=>null;'}));
   b.onLoad({filter:/HomeworkResult\.tsx$/},()=>({loader:'js',contents:'export const PdfViewer=()=>null;'}));
@@ -29,7 +29,7 @@ const base={class_id:c1,class_name:'Lớp tổng hợp A',lesson_date:'2030-11-1
 const up={id:'fixture-homework',class_ids:[c1,c2],lesson_date:base.lesson_date,teacher_key:base.teacher_key,title:'BTVN tổng hợp',task_scope:'Câu1',version:1,created_at:'2030-11-13T10:00:00Z',homework_uploaded:true,steps:[{step:1,status:'xong'}]};
 const data:any={staff:{user_id:owner,role:'ql',display_name:'Quản lý tổng hợp'},sessions:[base,{...base,class_id:c2,class_name:'Lớp tổng hợp B'}],teachers:[],uploads:[up,{...up,id:'exam-a',work_kind:'exam',assessment_id:a1,exam_type:'monthly',title:'Đề tháng 11/2030',version:2},{...up,id:'exam-b',work_kind:'exam',assessment_id:a2,exam_type:'custom',title:'Đề khác · 13/11/2030',version:1}],week_start:'2030-11-11',week_end:'2030-11-17',server_now:'2030-11-13T20:00:00+07:00'};
 let calls:any[]=[],lost=false;
-const api={async uploadLessonFile(o:string,b:string,k:string){calls.push({op:'file',o,b,k});return `${o}/${b}/${k}.pdf`;},async submitLesson(o:string,p:any){calls.push({op:'submit',o,p:structuredClone(p)});if(lost)throw Error('Fixture response lost');return {ok:true,upload_id:'fixture-receipt',version:3};}};
+const api={async uploadLessonFile(o:string,b:string,k:string){calls.push({op:'file',o,b,k});return `${o}/${b}/${k}.pdf`;},async submitLesson(o:string,p:any){calls.push({op:'submit',o,p:structuredClone(p)});if(lost)throw Error('Fixture response lost');return {ok:true,upload_id:'fixture-receipt',version:3};},async retryLesson(){calls.push({op:'retry'});return {ok:true};}};
 (globalThis as any).__assessmentApi=api;
 function mount(role='ql',dashboard=data){const m=new Map<string,string>();(globalThis as any).window={sessionStorage:{getItem:(k:string)=>m.get(k)??null,setItem:(k:string,v:string)=>m.set(k,v),removeItem:(k:string)=>m.delete(k)},confirm:()=>true,addEventListener(){},removeEventListener(){}};const r=new Runtime(()=>SimpleUploadWorkspace({data:{...dashboard,staff:{...dashboard.staff,role}},owner,onRefresh:async()=>{},onSignOut(){}}));r.flush();return r;}
 let count=0;const check=(fn:()=>void)=>{fn();count++;};
@@ -40,6 +40,28 @@ for(const role of ['ql','gv']){const r=mount(role);check(()=>assert.ok(text(r.va
  const file=new File(['%PDF-1.4 synthetic'],'fixture.pdf',{type:'application/pdf'});for(const picker of nodes(r.value).filter(e=>e.type?.name==='FilePicker'))picker.props.onChange([file]);r.flush();
  calls=[];lost=true;find(r,e=>e.type==='form').props.onSubmit({preventDefault(){}});for(let i=0;i<30;i++)await new Promise(resolve=>setImmediate(resolve));r.flush();const first=calls.find(x=>x.op==='submit');check(()=>{assert.ok(first);assert.equal(first.p.work_kind,'exam');assert.deepEqual(first.p.class_ids,[c1]);assert.equal(first.p.title,'Tên kiểm tra mới · 13/11/2030');assert.equal(first.p.task_scope,'Toàn bộ đề');assert.equal(first.p.exam_type,'custom');assert.equal(first.p.exam_config.duration_minutes,120);assert.equal(first.p.on_behalf_of,role==='ql'?base.teacher_key:null);});
  lost=false;click(r,'Kiểm tra lại cùng yêu cầu');for(let i=0;i<30;i++)await new Promise(resolve=>setImmediate(resolve));r.flush();check(()=>{const submits=calls.filter(x=>x.op==='submit');assert.equal(submits.length,2);assert.deepEqual(submits[0],submits[1]);assert.equal(calls.filter(x=>x.op==='file').length,2);});}
+// The active staff portal reports a terminal outcome once and refreshes without a retry write.
+{
+  mount().dispose();
+  const storage=new Map<string,string>();
+  (globalThis as any).window.localStorage={getItem:(key:string)=>storage.get(key)??null,setItem:(key:string,value:string)=>storage.set(key,value)};
+  const uploaded={...up,id:'44444444-4444-4444-8444-444444444444',is_current:true,retry:{status:'retry_wait',can_retry:true,retry_count:1,attempt_count:1}};
+  let page={...data,uploads:[uploaded]},refreshes=0;
+  const render=()=>SimpleUploadWorkspace({data:page,owner,onRefresh:async()=>{refreshes++;},onSignOut(){}});
+  const r=new Runtime(render);
+  r.flush();calls=[];
+  check(()=>assert.ok(!text(r.value).includes('Kết quả xử lý bài')));
+  click(r,'Cập nhật');await new Promise(resolve=>setImmediate(resolve));r.flush();
+  check(()=>{assert.equal(refreshes,1);assert.deepEqual(calls,[]);});
+  page={...data,server_now:'2030-11-13T20:01:00+07:00',uploads:[{...uploaded,retry:{...uploaded.retry,can_retry:false,status:'published'},steps:[{step:6,status:'xong'}]}]};
+  r.flush();
+  check(()=>assert.ok(text(r.value).includes('Đã giao BTVN · BTVN tổng hợp')));
+  click(r,'Đóng thông báo');
+  check(()=>assert.ok(!text(r.value).includes('Kết quả xử lý bài')));
+  r.dispose();const reloaded=new Runtime(render);reloaded.flush();
+  check(()=>assert.ok(!text(reloaded.value).includes('Kết quả xử lý bài')));
+  reloaded.dispose();
+}
 // A staff preview opens only after publication and never enters the edit or send flow.
 {
  const finished=[{step:6,status:'xong'},{step:4,status:'canh_bao'}];
