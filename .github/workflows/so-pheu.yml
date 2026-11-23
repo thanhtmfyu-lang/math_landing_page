@@ -1,4 +1,5 @@
 # Số phễu cho phòng marketing (HSA1, tài khoản ngoài, đăng ký theo mã ?nguon=). 21:00 giờ VN hằng ngày + chạy tay.
+# Lịch 21:00 VN (14:00 UTC); nếu lịch đứng, đổi tệp này trên main để GitHub đăng ký lại.
 # Kho công khai: log KHÔNG in số. Kết quả mã hóa bằng khóa công khai .github/so-pheu/khoa-cong-khai.pem,
 # ghi bản mã hóa (base64) vào thân issue nhãn "so-pheu" và artifact "so-pheu"; chỉ người giữ khóa riêng
 # (thư mục nội bộ của công ty) mới mở được. Đọc bằng API GitHub: issue nhãn so-pheu, tách khối giữa hai dòng ---.

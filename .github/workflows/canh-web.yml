@@ -1,4 +1,5 @@
 # Canh web minhthanhmath.vn 24/7: 10 phút một lần mở các trang và API chính.
+# Lịch (schedule) đăng ký lại khi tệp này đổi trên main: sau đợt GitHub khóa 08–09/11 lịch không tự chạy lại.
 # Lỗi thì mở (hoặc ghi thêm vào) issue có nhãn "web-loi"; web sống lại thì
 # đóng issue. Javis đọc issue nhãn "web-loi" để báo nhóm Zalo quản lý.
 name: Canh web 24/7
