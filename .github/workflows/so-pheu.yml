@@ -55,7 +55,7 @@ jobs:
           if [ "$code" -lt 200 ] || [ "$code" -ge 300 ]; then
             echo "LỖI truy vấn (HTTP $code): $(jq -r '.message // empty' /tmp/ket-qua.json 2>/dev/null | head -n1 | sed -E 's/DETAIL.*//; s/[0-9]{3,}/***/g' | head -c 300)"; exit 1; fi
           # Phòng thi có ghi CSDL không (cờ MTM_PHONG_THI_DB ở Vercel): bảng xếp hạng công khai trả enabled.
-          bxh=$(curl -sS -m 20 "https://minhthanhmath.vn/api/phong-thi?xep-hang-dot=hsa-thu-2026-11" | jq -r '.enabled // "khong-ro"' 2>/dev/null || echo khong-ro)
+          bxh=$(curl -sS -m 20 "https://minhthanhmath.vn/api/phong-thi?xep-hang-dot=hsa-thu-2026-11" | jq -r 'if type=="object" and has("enabled") then (.enabled|tostring) else "khong-ro" end' 2>/dev/null || echo khong-ro)
           echo "Phòng thi ghi CSDL (bảng xếp hạng enabled): $bxh"
           mkdir -p ra; jq -c --arg b "$bxh" '.[0].so + {phongThiGhiCsdl:$b}' /tmp/ket-qua.json > /tmp/so.json
           [ "$(jq -r 'type' /tmp/so.json)" = object ] || { echo "Kết quả không đúng dạng"; exit 1; }
