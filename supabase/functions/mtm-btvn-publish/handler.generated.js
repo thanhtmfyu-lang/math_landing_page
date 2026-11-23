@@ -1759,8 +1759,23 @@ async function handleTwoPaperPublication(port, body, validate) {
   return port.rpc(pair ? "two_paper_pair_commit" : "two_paper_variant_commit", payload);
 }
 
+// server/lesson-upload/extract-progress.ts
+var EXTRACT_PROGRESS_LIMIT = 128;
+var sha3 = /^[a-f0-9]{64}$/;
+var progressFields = "plan_hash,progress_count,progress_hash,sourceVersion";
+var yieldFields = progressFields + ",status";
+function record6(value) {
+  return value !== null && typeof value === "object" && !Array.isArray(value);
+}
+function extractProgress(value) {
+  if (!record6(value) || Object.keys(value).sort().join(",") !== progressFields) return null;
+  const { sourceVersion, plan_hash, progress_count, progress_hash } = value;
+  if (typeof sourceVersion !== "string" || !sha3.test(sourceVersion) || typeof plan_hash !== "string" || !sha3.test(plan_hash) || typeof progress_hash !== "string" || !sha3.test(progress_hash) || typeof progress_count !== "number" || !Number.isSafeInteger(progress_count) || progress_count < 1 || progress_count > EXTRACT_PROGRESS_LIMIT) return null;
+  return { sourceVersion, plan_hash, progress_count, progress_hash };
+}
+
 // server/lesson-upload/gateway.ts
-var actions = /* @__PURE__ */ new Set(["worker_claim", "worker_assert_current", "worker_checkpoint", "worker_finish", "worker_publish", "worker_materials", "worker_wait_review", "worker_pending_review", "worker_review_result", "worker_record_failure", "worker_automation_config", "worker_heartbeat"]);
+var actions = /* @__PURE__ */ new Set(["worker_claim", "worker_assert_current", "worker_checkpoint", "worker_finish", "worker_publish", "worker_materials", "worker_wait_review", "worker_pending_review", "worker_review_result", "worker_record_failure", "worker_automation_config", "worker_heartbeat", "worker_yield_extract"]);
 function need(value, code) {
   if (!value) throw Error(code);
 }
@@ -1770,6 +1785,10 @@ async function handleLessonUploadGateway(port, body, validate) {
   need(["lesson_upload_worker", "lesson_upload_source", "lesson_upload_asset", "lesson_upload_asset_read"].includes(action), "INVALID_LESSON_UPLOAD_ACTION");
   if (action === "lesson_upload_worker") {
     need(Object.keys(body).every((k) => ["action", "payload"].includes(k)) && body.payload && actions.has(body.payload.action), "INVALID_LESSON_WORKER_ACTION");
+    if (body.payload.action === "worker_yield_extract") {
+      const { upload_id, claim_token, version, paper, source_version, plan_hash, progress_count, progress_hash } = body.payload;
+      need(Object.keys(body.payload).sort().join(",") === "action,claim_token,paper,plan_hash,progress_count,progress_hash,source_version,upload_id,version" && uuid(upload_id) && uuid(claim_token) && Number.isSafeInteger(version) && version > 0 && version <= 999999999 && [1, 2].includes(paper) && extractProgress({ plan_hash, progress_count, progress_hash, sourceVersion: source_version }), "INVALID_EXTRACT_YIELD_PAYLOAD");
+    }
     if (body.payload.action === "worker_publish") {
       need(validate && port.readPrivate, "WORKER_VALIDATOR_REQUIRED");
       await port.rpc("lesson_upload_gateway", { action: "worker_assert_current", upload_id: body.payload.upload_id, claim_token: body.payload.claim_token });

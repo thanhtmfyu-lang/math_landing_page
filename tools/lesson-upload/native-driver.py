@@ -276,8 +276,9 @@ class SegmentPageView:
         except (KeyError, TypeError, ValueError):
             self.manifest = {'hs': {}, 'gv': {}}
 
-    def project(self, targets, instruction):
-        if (not isinstance(targets, list) or not 0 < len(targets) < len(self.targets)
+    def project(self, targets, instruction, *, allow_complete_scope=False):
+        ceiling = len(self.targets) if allow_complete_scope else len(self.targets) - 1
+        if (not isinstance(targets, list) or not 0 < len(targets) <= ceiling
                 or targets != [target for target in self.targets if target in targets]
                 or '\nCHẾ ĐỘ ĐỌC CHIA ĐOẠN:' not in instruction
                 or instruction.count(SEGMENT_FULL_PAGE_CLAIM) != 1):
@@ -393,7 +394,7 @@ def check_extracted_inventory(extracted,targets):
  if extracted.get('certain') is True:need(set(refs)==set(targets),'NATIVE_EXTRACT_INVENTORY_MISMATCH')
  return extracted
 
-def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,manifest,inventory=None,*,page_texts=None):
+def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,manifest,inventory=None,*,page_texts=None,work=None):
  inventory=source_inventory(hs_text) if inventory is None else inventory
  need(not hs_pages or len(hs_pages)==inventory.page_count,'NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED')
  selected=scoped_inventory(inventory,job['task_scope']);targets=[r['sourceRef'] for r in selected]
@@ -405,9 +406,123 @@ def extract_source(ai,p,job,source_version,hs_text,gv_text,hs_pages,gv_pages,man
  if text is None:text='\n'+hs_text+'\nĐÁP ÁN GV:\n'+gv_text
  project=getattr(ai,'segment_page_view',None)
  view=SegmentPageView(page_texts,inventory,targets,hs_pages,gv_pages,manifest) if project and page_texts is not None else None
+ if work is not None and view is not None:
+  outcome=extract_long_homework(ai,job,source_version,context,instruction,view,targets,work)
+  if outcome is not None:return outcome
+ if work is not None:
+  checkpoint=work['folder']/'long-pdf-work.json'
+  need(work['prior'] is None and not checkpoint.exists() and not checkpoint.is_symlink(),
+       'NATIVE_LONG_PDF_PROGRESS_MISMATCH')
  with project(view) if project else contextlib.nullcontext():
   extracted=ai.ask_stage('extract',instruction,manifest+text,hs_pages+gv_pages,native_context=context)
  return check_extracted_inventory(extracted,targets)
+
+def load_worker_helper(name):
+    spec = importlib.util.spec_from_file_location('web_' + name.replace('-', '_'), Path(__file__).with_name(name + '.py'))
+    module = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(module)
+    return module
+
+
+def extract_long_homework(ai, job, source_version, context, instruction, view, targets, work):
+    """Advance only complete, source-bound batches, then use the usual assembler."""
+    import copy
+    from btvn_native.errata import check_extracted, sections_for_questions
+    from btvn_native.segmented_extract import mark_authored_manual
+
+    progress = load_worker_helper('native-long-pdf')
+    page_proof = load_worker_helper('native-page-proof')
+    proof_units = list(page_proof.proof_units(work['manifest'], work['hs_pages'], work['gv_pages']))
+    evidence = work['valid_receipt']
+    lesson_key = ai.source_context['lesson_key']
+
+    tasks = [{'kind': 'page', 'unit': unit} for unit in proof_units]
+    for start in range(0, len(targets), 6):
+        selected = targets[start:start + 6]
+        request = ai._augment('extract', instruction)
+        request += ('\nCHẾ ĐỘ ĐỌC CHIA ĐOẠN: ' + SEGMENT_FULL_PAGE_CLAIM
+                    + '\nCHỈ trả câu và khóa từ các locator trong CURRENT_TARGET_REFS. '
+                      'inventory và scopeSelection chỉ mô tả các locator này. Giữ cấu trúc nguồn, '
+                      'kiểm đủ mỗi câu và lời giải theo ảnh gốc. CURRENT_TARGET_REFS: '
+                    + json.dumps(selected, ensure_ascii=False))
+        projected = view.project(selected, request, allow_complete_scope=True)
+        if projected is None:
+            return None
+        wire_instruction, text, attachments, counts, views = projected
+        request_binding = {
+            'stage': 'extract', 'instruction': wire_instruction, 'text': text,
+            'images': [digest(path.read_bytes()) for path in attachments],
+        }
+        tasks.append({'kind': 'extract', 'targets': selected, 'instruction': wire_instruction,
+                      'text': text, 'attachments': attachments, 'views': views,
+                      'context': {**context, **counts, 'target_refs': selected},
+                      'request_sha256': digest(encoded(request_binding))})
+    plan = {'version': progress.VERSION, 'sourceVersion': source_version,
+            'upload_id': job['id'], 'upload_version': job['version'], 'paper': job.get('paper', 1),
+            'class_metadata_sha256': work['class_metadata_sha256'], 'scope_sha256': context['task_scope_sha256'],
+            'inventory_sha256': context['inventory_sha256'], 'provider_spec_sha256': digest(encoded(ai.spec)),
+            'units': [task['unit']['unit_sha256'] if task['kind'] == 'page' else
+                      task['request_sha256'] for task in tasks]}
+
+    def validate(task, saved):
+        if task['kind'] == 'page':
+            need(page_proof.validate_branding_unit(task['unit'], saved, evidence, source_version=source_version,
+                                                  lesson_key=lesson_key), progress.MISMATCH)
+            return
+        need(isinstance(saved, dict) and saved.get('kind') == 'extract', progress.MISMATCH)
+        receipt = saved.get('receipt', {})
+        need(progress.receipt_matches(receipt, evidence, 'extract', source_version, lesson_key)
+             and receipt['request_sha256'] == task['request_sha256'], progress.MISMATCH)
+        result = saved.get('result')
+        check_extracted_inventory(result, task['targets'])
+        need(result.get('certain') is True and result.get('question_only') is True
+             and result.get('coverage_complete') is True and result.get('needs_review') is False
+             and not result.get('issues'), 'NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED')
+        check_segment_pages(result, task['views'])
+        check_extracted(copy.deepcopy(result))
+
+    def run(task):
+        if task['kind'] == 'page':
+            return page_proof.check_branding_unit(ai, task['unit'], evidence)
+        result = ai.ask_long_extract_unit(task['instruction'], task['text'], task['attachments'], task['context'])
+        result = mark_authored_manual(result)
+        return {'kind': 'extract', 'result': result, 'receipt': ai.last_receipt}
+
+    with ai.long_pdf_batch():
+        records, yielded = progress.advance(work['folder']/'long-pdf-work.json', plan, tasks, work['prior'],
+                                            read=_failure_read, write=atomic, validate=validate, run=run)
+    if yielded is not None:
+        return yielded
+
+    segments = records[len(proof_units):]
+    parts = [entry['result'] for entry in segments]
+    invariant = ('grade', 'source_format', 'weightPolicy', 'sourceRubric')
+    need(all(all(part.get(name) == parts[0].get(name) for name in invariant) for part in parts),
+         'NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED')
+    combined = copy.deepcopy(parts[0])
+    for field in ('questions', 'manualQuestions', 'errata'):
+        combined[field] = [copy.deepcopy(item) for part in parts for item in part[field]]
+    ordered = {ref: n for n, ref in enumerate(targets)}
+    for name in ('questions', 'manualQuestions'):
+        combined[name].sort(key=lambda q: ordered[q['sourceRef']])
+    for number, item in enumerate(combined['questions'], 1):
+        item['id'] = 'q' + str(number)
+    # The separate page proofs cover both untouched original arrays.
+    # No redactions are added by a per-question response.
+    combined.update(inventory=targets, branding_verified=True,
+                    margin_redactions={tag: [[] for _ in work[tag + '_pages']] for tag in ('hs', 'gv')})
+    combined['sections'] = sections_for_questions(combined) if combined['questions'] else []
+    selected_pages = {task['views']['hs']['spans'][ref][0]
+                      for task in tasks[len(proof_units):] for ref in task['targets']}
+    selected_pages.update(crop['page'] for item in combined['questions'] + combined['manualQuestions']
+                          for crop in item['questionCrops'])
+    combined['scopeSelection'] = {'text': job['task_scope'], 'sections': [
+        {'label': job['task_scope'], 'pages': sorted(selected_pages), 'sourceRefs': targets}], 'excluded': []}
+    check_extracted_inventory(combined, targets)
+    check_extracted(copy.deepcopy(combined))
+    ai.last_receipt = {**segments[-1]['receipt'], 'web_long_pdf_progress_sha256': progress.stamp(progress.digest(plan), records)}
+    return combined
+
 
 def bind_teacher_context(ai,config,row,source_version,task_scope,policy_for):
  if not isinstance(task_scope,str) or not task_scope.strip():raise ValueError('NATIVE_SCOPE_UNRESOLVED')
@@ -460,6 +575,22 @@ def teacher_upload_ai_class(native_ai_class):
    self._segment_page_view=view
    try:yield
    finally:self._segment_page_view=previous
+  @contextlib.contextmanager
+  def long_pdf_batch(self):
+   previous=getattr(self,'_bounded_long_pdf_deadline',None)
+   self._bounded_long_pdf_deadline=self.extract_deadline-150
+   try:yield
+   finally:self._bounded_long_pdf_deadline=previous
+
+  def ask_long_extract_unit(self,instruction,text,pages,native_context):
+   from btvn_native.reviewer_backends import audit
+   try:
+    result=self._ask_stage('extract',instruction,text,pages,native_context=native_context)
+   except Exception as error:
+    audit(self,instruction,error)
+    raise
+   audit(self,instruction)
+   return result
 
   def _augment(self,stage,instruction):
    instruction=super()._augment(stage,instruction)
@@ -469,6 +600,11 @@ def teacher_upload_ai_class(native_ai_class):
    return instruction
   def _ask_stage(self, stage, instruction, text, pages, *, native_context=None):
    ask = super()._ask_stage
+   bounded=getattr(self,'_bounded_long_pdf_deadline',None)
+   if bounded is not None and stage in ('extract','branding_clean'):
+    from btvn_native.btvn_strict_core import ProviderError
+    with long_pdf_timeout(self._engine(),bounded,ProviderError):
+     return ask(stage,instruction,text,pages,native_context=native_context)
    projection=None
    if stage == 'extract' and len(pages) > NATIVE_RENDERER_PAGE_LIMIT:
     from btvn_native.btvn_strict_core import ProviderError
@@ -772,7 +908,18 @@ def main(value):
    for number,path in enumerate(pages,1):
     with Image.open(path) as image:page_manifest.append({'document':tag,'page':number,'width':image.width,'height':image.height})
   manifest='PAGE_MANIFEST: '+json.dumps(page_manifest)+'\nẢnh đầu '+str(len(hs_pages))+' trang HS; ảnh sau '+str(len(gv_pages))+' trang GV. Crop đếm riêng từng PDF từ1.'
-  extracted=extract_source(ai,p,job,identity,hs_text,gv_text,hs_pages,gv_pages,manifest,inventory=inventory,page_texts=text_view)
+  work=None
+  active_progress=job.get('extract_progress') or {}
+  need(isinstance(active_progress,dict),'NATIVE_LONG_PDF_PROGRESS_MISMATCH')
+  prior=active_progress.get(str(paper))
+  if (long_pair and 'extract_progress' in job and job.get('work_kind')=='homework' and not timeout_continuation
+      and job.get('homework_path') and job.get('answer_path') and hs.startswith(b'%PDF-') and gv.startswith(b'%PDF-')):
+   work={'manifest':page_manifest,'folder':folder,'prior':prior,'class_metadata_sha256':class_context_hash,
+         'hs_pages':hs_pages,'gv_pages':gv_pages,'valid_receipt':bridge.valid_receipt}
+  else:need(prior is None,'NATIVE_LONG_PDF_PROGRESS_MISMATCH')
+  extracted=extract_source(ai,p,job,identity,hs_text,gv_text,hs_pages,gv_pages,manifest,inventory=inventory,
+                           page_texts=text_view,work=work)
+  if extracted.get('status')=='yielded_extract':return extracted
   check_extracted_class_grade(extracted,class_context)
   receipt=ai.last_receipt;need(bridge.valid_receipt(receipt),'NATIVE_RECEIPT_REQUIRED');atomic(folder/'extract-receipt.json',receipt)
   from btvn_native.errata import display_text,restore_source_notation
@@ -904,11 +1051,14 @@ PUBLIC_NATIVE_ERRORS=frozenset({'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURC
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT','NATIVE_CLASS_GRADE_MISMATCH','NATIVE_CLASS_METADATA_CHANGED'})
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'CACHED_DRAFT_EXTRACTION_FORBIDDEN','OPERATOR_CACHED_DRAFT_BINDING_REQUIRED','OPERATOR_CACHED_DRAFT_BINDING_CHANGED'})
 PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_PDF_PAGE_LIMIT','NATIVE_PDF_RENDER_INCOMPLETE','OPERATOR_TIMEOUT_CONTINUATION_CHANGED'})
+PUBLIC_NATIVE_ERRORS=PUBLIC_NATIVE_ERRORS | frozenset({'NATIVE_LONG_PDF_PROGRESS_MISMATCH','NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN','NATIVE_LONG_PDF_BRANDING_REVIEW_REQUIRED','NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED'})
 
 def public_error(error):
  try:value=str(error)
  except Exception:return type(error).__name__
  if value in PUBLIC_NATIVE_ERRORS:return value
+ if type(error).__name__=='ServiceError' and value=='Lỗi dịch vụ tạm thời; host=structured-responses; HTTP=network; code=step_timeout':
+  return 'NATIVE_DRIVER_TIMEOUT'
  if value=='Extract câu nằm ngoài inventory':return 'NATIVE_EXTRACT_INVENTORY_MISMATCH'
  return type(error).__name__
 
