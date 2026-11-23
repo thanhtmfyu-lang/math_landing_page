@@ -127,14 +127,35 @@ await test('native adapter always provides hook and decorates cached/fallback dr
  let dbCalls=0;const db={sourceOrigin:'https://synthetic.invalid',async rpc(){dbCalls++;return {data:{data_base64:Buffer.from('SYNTHETIC_ONLY').toString('base64')},error:null};}};
  const record:any={class_context_contract:CLASS_CONTEXT_CONTRACT,class_metadata_sha256:classContextHash(h.job,sourceVersion),sourceVersion,extractor:{provider:'chatgpt-oauth',model:'synthetic'},draft:{exam:h.fixture.exam,assets:h.fixture.assets}};
  const file=join(tmp,'fake-native.mjs'),calls=join(tmp,'calls.txt');
- function child(){writeFileSync(file,"import {appendFileSync} from 'node:fs'; let s=''; for await(const c of process.stdin)s+=c; const input=JSON.parse(s); appendFileSync("+JSON.stringify(calls)+",input.stage+'\\n'); process.stdout.write("+JSON.stringify(JSON.stringify(record))+");");}
+ function child(response:unknown=record){writeFileSync(file,"import {appendFileSync} from 'node:fs'; let s=''; for await(const c of process.stdin)s+=c; const input=JSON.parse(s); appendFileSync("+JSON.stringify(calls)+",input.stage+'\\n'); process.stdout.write("+JSON.stringify(JSON.stringify(response))+");");}
  try{
   child();process.env.BTVN_PYTHON=process.execPath;process.env.MTM_LESSON_NATIVE_DRIVER=file;process.env.MTM_LESSON_LOCK_FD=String(fd);
-  const pipeline=await createLessonUploadPipeline({db});assert.equal(typeof pipeline.validateContext,'function');const s=await pipeline.read(h.job),d=await pipeline.build(h.job,s);await pipeline.validateContext!(h.job,s,d);assert.deepEqual(s.contextReceipt,d.contextReceipt);assert.equal(readFileSync(calls,'utf8'),'prepare\n');assert.equal(dbCalls,2);
+  const pipeline=await createLessonUploadPipeline({db});assert.equal(typeof pipeline.validateContext,'function');const s=await pipeline.read(h.job);assert.ok(!('status' in s));const d=await pipeline.build(h.job,s);await pipeline.validateContext!(h.job,s,d);assert.deepEqual(s.contextReceipt,d.contextReceipt);assert.equal(readFileSync(calls,'utf8'),'prepare\n');assert.equal(dbCalls,2);
   const cold=await createLessonUploadPipeline({db}),fallback=await cold.build(h.job,s);assert.deepEqual(fallback.contextReceipt,s.contextReceipt);assert.equal(readFileSync(calls,'utf8'),'prepare\ndraft\n');assert.equal(dbCalls,2);
   record.class_metadata_sha256='a'.repeat(64);child();await assert.rejects((await createLessonUploadPipeline({db})).read(h.job),/NATIVE_CLASS_METADATA_CHANGED/);
   record.class_metadata_sha256=classContextHash(h.job,sourceVersion);record.draft.exam.grade=11;child();await assert.rejects((await createLessonUploadPipeline({db})).read(h.job),/NATIVE_CLASS_GRADE_MISMATCH/);
   assert.throws(()=>contextReceiptFromNative(h.job,{...record,sourceVersion:'wrong'}),/NATIVE_CLASS_METADATA_REQUIRED/);
+  const actualSource=createHash('sha256').update('SYNTHETIC_ONLY').update('SYNTHETIC_ONLY').digest('hex');
+  const yieldResult={status:'yielded_extract',sourceVersion:actualSource,plan_hash:'a'.repeat(64),progress_count:1,progress_hash:'b'.repeat(64)};
+  child(yieldResult);
+  await assert.rejects(pipeline.read(h.job),/NATIVE_EXTRACT_YIELD_INVALID/);
+  h.job.extract_progress={};
+  assert.deepEqual(await pipeline.read(h.job),yieldResult);
+  child({...yieldResult,sourceVersion:'c'.repeat(64)});
+  await assert.rejects(pipeline.read(h.job),/NATIVE_EXTRACT_YIELD_INVALID/);
+  child(yieldResult);
+  h.job.extract_progress={1:{sourceVersion:actualSource,plan_hash:yieldResult.plan_hash,progress_count:1,progress_hash:yieldResult.progress_hash}};
+  await assert.rejects(pipeline.read(h.job),/NATIVE_EXTRACT_YIELD_INVALID/);
+  child({...yieldResult,progress_count:2,progress_hash:'d'.repeat(64)});
+  assert.equal((await pipeline.read(h.job) as typeof yieldResult).progress_count,2);
+  for(const [error,code] of [
+   ['NATIVE_DRIVER_TIMEOUT','NATIVE_DRIVER_TIMEOUT'],
+   ['NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN','NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN'],
+   ['NATIVE_DRIVER_TIMEOUT '+'.'.repeat(256),'NATIVE_DRIVER_FAILED'],
+  ]){
+   writeFileSync(file,'process.stdin.resume();process.stderr.write('+JSON.stringify(error)+');process.exitCode=1;');
+   await assert.rejects(pipeline.read(h.job),{message:code});
+  }
  }finally{for(const key of envKeys){if(prior[key]===undefined)delete process.env[key];else process.env[key]=prior[key];}closeSync(fd);}
 });
 console.log(JSON.stringify({ok:true,passed,scope:'local synthetic, no provider/network/native runtime/cloud calls'}));

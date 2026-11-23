@@ -4,9 +4,12 @@ import {expectedSlots} from '../btvn/publish-handler';
 import {reviewQuestions,type Pipeline,type UploadJob,type Draft} from './worker';
 import {validateClassContext} from './class-context';
 import {prepareNativeDraft} from './native-draft';
+import {extractProgress,extractYield} from './extract-progress';
 const PUBLIC_NATIVE_INPUT_ERRORS=new Set([
  'NATIVE_SOURCE_INVENTORY_REQUIRED','NATIVE_SOURCE_INVENTORY_AMBIGUOUS','NATIVE_SOURCE_INVENTORY_PAGE_UNRESOLVED',
- 'NATIVE_PDF_PAGE_LIMIT','NATIVE_PDF_RENDER_INCOMPLETE',
+ 'NATIVE_PDF_PAGE_LIMIT','NATIVE_PDF_RENDER_INCOMPLETE','NATIVE_DRIVER_TIMEOUT',
+ 'NATIVE_LONG_PDF_BRANDING_REVIEW_REQUIRED','NATIVE_LONG_PDF_PROGRESS_MISMATCH',
+ 'NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN','NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED',
  'NATIVE_SCOPE_UNRESOLVED','NATIVE_SCOPE_REF_MISSING','NATIVE_SCOPE_AMBIGUOUS',
  'NATIVE_EXTRACT_INVENTORY_MISMATCH','NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED',
  'NATIVE_CLASS_METADATA_REQUIRED','NATIVE_CLASS_GRADE_AMBIGUOUS','NATIVE_CLASS_GRADE_CONFLICT',
@@ -40,7 +43,20 @@ export async function createLessonUploadPipeline({db}:{db:any}):Promise<Pipeline
    const hs=await source(job,job.paper===2?'homework2':'homework');
    const gv=job.answer_path?await source(job,job.paper===2?'answer2':'answer'):null;
    if(typeof db.sourceOrigin!=='string'||!db.sourceOrigin.startsWith('https://'))throw Error('PRIVATE_SOURCE_ORIGIN_REQUIRED');
+   const claimed=job.extract_progress?.[job.paper??1];
+   const previous=extractProgress(claimed);
+   if(claimed!==undefined&&!previous)throw Error('NATIVE_EXTRACT_YIELD_INVALID');
+   const sourceVersion=()=>createHash('sha256').update(Buffer.from(hs,'base64')).update(Buffer.from(gv??'','base64')).digest('hex');
+   if(previous && (!gv || previous.sourceVersion!==sourceVersion()))throw Error('NATIVE_EXTRACT_YIELD_INVALID');
    const value=await invoke({stage:'prepare',job,homework_base64:hs,answer_base64:gv,source_origin:db.sourceOrigin});
+   if(value?.status!==undefined){
+    const pending=extractYield(value);
+    if(!pending || !job.extract_progress || !gv || pending.sourceVersion!==sourceVersion() ||
+       (previous && (pending.plan_hash!==previous.plan_hash || pending.progress_count<=previous.progress_count ||
+                     pending.progress_hash===previous.progress_hash)))throw Error('NATIVE_EXTRACT_YIELD_INVALID');
+    return pending;
+   }
+   if(previous && value?.sourceVersion!==previous.sourceVersion)throw Error('NATIVE_EXTRACT_YIELD_INVALID');
    if(!['chatgpt-oauth','openai','codex'].includes(value.extractor?.provider)||!value.extractor?.model)throw Error('NATIVE_RECEIPT_REQUIRED');
    Object.assign(extractor,value.extractor);
    const draft=nativeDraft(job,value);drafts.set(key(job),draft);

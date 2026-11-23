@@ -68,6 +68,14 @@ export function createWorkerRepository(db:any,options:WorkerRepositoryOptions={}
   },
   async current(job){const data=await fenced(job,'worker_assert_current');if(data?.ok!==true)throw Error('CLAIM_LOST');},
   async step(job,step,status,detail,checkpoint,paper=1){await fenced(job,'worker_checkpoint',{step,status,detail,checkpoint,paper});},
+  async yieldExtract(job,progress){
+   if(operator)throw Error('EXTRACT_YIELD_SCOPE_REQUIRED');
+   const receipt=await fenced(job,'worker_yield_extract',{
+    version:job.version,paper:job.paper??1,source_version:progress.sourceVersion,
+    plan_hash:progress.plan_hash,progress_count:progress.progress_count,progress_hash:progress.progress_hash,
+   });
+   if(receipt?.ok!==true||receipt.status!=='yielded_extract')throw Error('EXTRACT_YIELD_NOT_CONFIRMED');
+  },
   async waitReview(job,request){return call({action:'worker_wait_review',upload_id:job.id,claim_token:job.claim_token,paper:job.paper??1,request_hash:request.request_hash,source_version:request.sourceVersion});},
   async recordFailure(job,step,code){await fenced(job,'worker_record_failure',{step,code,paper:job.paper??1});},
   async publishBundle(job,primary,second){const result=await fenced(job,'worker_publish',{payload:primary,variant_payload:second});if(!result?.publish_receipts)throw Error('PUBLISH_NOT_CONFIRMED');},

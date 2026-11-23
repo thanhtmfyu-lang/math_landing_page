@@ -7,10 +7,11 @@ import {validAssessmentDuration} from '../btvn/assessment-policy';
 import {MTM_SCORING_VERSION,normalizeMtmShort} from '../../src/native/exams/mtm-scoring';
 import type {ClassContextJob,ClassContextReceipt} from './class-context';
 import type {OperatorCachedDraftBinding} from './native-draft';
+import {extractYield,type ExtractionYield,type ExtractProgress} from './extract-progress';
 import {privateStateDigest as digest} from './native-draft';
 import {nativeCanonicalDigest,NATIVE_PDF_NORMALIZATION_CONTRACT} from './native-pdf-normalization';
 
-export type UploadJob=ClassContextJob&{is_test?:boolean;operator_cached_draft?:OperatorCachedDraftBinding;work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>};
+export type UploadJob=ClassContextJob&{is_test?:boolean;operator_cached_draft?:OperatorCachedDraftBinding;work_kind?:'homework'|'exam';assessment_id?:string|null;exam_type?:'monthly'|'custom'|null;exam_config?:{opens_at:string;closes_at:string;duration_minutes:number}|null;paper?:1|2;homework2_path?:string|null;answer2_path?:string|null;answer2_text?:string|null;task_scope2?:string|null;id:string;class_ids:string[];lesson_date:string;teacher_key:string;title:string;task_scope:string;homework_path:string|null;answer_path:string|null;answer_text:string|null;handout_path:string|null;video_url:string|null;version:number;claim_token:string;lesson_code:string;class_names:Record<string,string>;class_dates:Record<string,string>;start_times:Record<string,string>;end_times?:Record<string,string>;due_at_by_class:Record<string,string>;due_at_overrides?:Record<string,string>;checkpoint:Record<string,any>;extract_progress?:Partial<Record<1|2,ExtractProgress>>;extract_progress_invalid?:true};
 export type Extraction={sourceVersion:string;questions:unknown[];teacherSlots:AnswerSlot[];privateAnswerHashes?:string[];contextReceipt?:ClassContextReceipt};
 export type Draft={exam:PracticeExam;assets:PublishAsset[];contextReceipt?:ClassContextReceipt;nativeNormalization?:unknown};
 export type PreparedMaterials={handoutUrl:string|null;materialUrl:string|null;access?:'authenticated';studentSafe?:true;receipt_hash?:string;pending?:boolean};
@@ -19,7 +20,7 @@ export type IndependentReview={provider:'grok'|'agy';model:string;receipt_hash:s
 export interface Pipeline {
  extractor:{provider:'codex'|'chatgpt-oauth'|'openai';model:string};
  /** Input has private GV answers. Return statement-only questions separately. */
- read(job:UploadJob):Promise<Extraction>;
+ read(job:UploadJob):Promise<Extraction|ExtractionYield>;
  build(job:UploadJob,source:Extraction):Promise<Draft>;
  /** Native adapter binds both fresh and checkpointed values to server class facts. */
  validateContext?(job:UploadJob,source:Extraction,draft?:Draft|null):void|Promise<void>;
@@ -32,6 +33,7 @@ export interface WorkerRepository {
  claim(workerId:string):Promise<UploadJob|null>;
  current(job:UploadJob):Promise<void>;
  step(job:UploadJob,step:number,status:'dang'|'xong'|'loi'|'canh_bao',detail:string,checkpoint:Record<string,unknown>,paper?:1|2):Promise<void>;
+ yieldExtract?(job:UploadJob,progress:ExtractProgress):Promise<void>;
  waitReview?(job:UploadJob,request:PendingReview):Promise<{allowed:boolean}>;
  /** Persist only a safe code under the same claim; SQL owns retry eligibility. */
  recordFailure?(job:UploadJob,step:number,code:string):Promise<void>;
@@ -126,12 +128,23 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   // Validate the original job before projecting individual papers. A test may
   // never silently acquire the homework two-paper semantics.
   validateJob(job);
+  ensure(job.extract_progress_invalid===undefined,'EXTRACT_YIELD_BINDING_CHANGED');
   const cached=cachedRepair(job,cp);
   if(job.homework2_path)return await runUploadPair(repo,pipeline,state,workerId,job);
   ensure(['codex','chatgpt-oauth','openai'].includes(pipeline.extractor.provider)&&pipeline.extractor.model?.trim(),'EXTRACTOR_REQUIRED');
   await mark(2,'dang');
   if(pipeline.validateContext&&cp.draft&&!cp.source)throw Error('NATIVE_DRAFT_INVENTORY_REVALIDATION_REQUIRED');
-  const source:Extraction=cp.source?await state.load(cp.source):await pipeline.read(job);
+  const source:Extraction|ExtractionYield=cp.source?await state.load(cp.source):await pipeline.read(job);
+  if('status' in source){
+   const progress=extractYield(source);
+   ensure(progress && !cp.source && job.homework_path && job.answer_path &&
+          normalizeWorkKind(job.work_kind)==='homework' && !cached &&
+          !cp.operator_timeout_continuation_v1 && job.extract_progress && repo.yieldExtract,
+          'NATIVE_EXTRACT_YIELD_INVALID');
+   const {status,...receipt}=progress;
+   await repo.yieldExtract(job,receipt);
+   return {status,uploadId:job.id};
+  }
   verifyCachedSource(cached,source);
   await pipeline.validateContext?.(job,source);
   ensure(/^[a-f0-9]{64}$/.test(source.sourceVersion)&&Array.isArray(source.questions),'INVALID_EXTRACTION');
@@ -201,7 +214,12 @@ export async function runUploadOnce(repo:WorkerRepository,pipeline:Pipeline,stat
   const code=error instanceof Error&&/^[A-Z][A-Z0-9_]{2,70}$/.test(error.message)?error.message:'WORKER_FAILED';
   // Unknown commit outcome must remain resumable under the SAME identity; never error/re-publish a new job.
   const retryable=['WORKER_RPC_FAILED','PRIVATE_UPLOAD_FAILED','PUBLISH_NOT_CONFIRMED','NATIVE_DRIVER_TIMEOUT','GATEWAY_BUSY'].includes(code);
-  const detail:Record<string,string>={INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên; thầy kiểm tra và up lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ hoặc không khớp phiên bản đã gửi; quản lý kiểm tra.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
+  const detail:Record<string,string>={
+   NATIVE_LONG_PDF_BRANDING_REVIEW_REQUIRED:'Chưa đối chiếu được dấu nguồn trên toàn bộ PDF. Cần kiểm tra trước khi giao bài.',
+   NATIVE_LONG_PDF_PROGRESS_MISMATCH:'Tiến độ đã lưu của PDF chưa khớp phiên bản hiện tại. Cần kiểm tra trước khi tiếp tục.',
+   NATIVE_LONG_PDF_PROVIDER_OUTCOME_UNKNOWN:'Chưa xác minh được kết quả lần đọc PDF gần nhất. Cần đối soát trước khi tiếp tục.',
+   NATIVE_LONG_PDF_SEGMENT_REVIEW_REQUIRED:'Một phần PDF chưa đọc được chắc chắn. Cần đối chiếu thủ công trước khi giao bài.',
+   INDEPENDENT_REVIEW_REQUIRED:'Chưa có kết quả giải độc lập từ AI thứ hai.',INDEPENDENT_ANSWER_MISMATCH:'Kết quả giải độc lập chưa khớp đáp án giáo viên; thầy kiểm tra và up lại.',TEACHER_ANSWER_MISMATCH:'Bản dựng không khớp đáp án giáo viên; chưa giao bài.',SCHEDULE_UNAVAILABLE:'Chưa xác minh được lịch học đúng giáo viên và hạn nộp.',INVALID_HOMEWORK_DEADLINE:'Hạn nộp chưa hợp lệ hoặc không khớp phiên bản đã gửi; quản lý kiểm tra.',MATERIAL_LESSON_NOT_PUBLISHED:'Buổi này chưa có BTVN đã phát hành để gắn học liệu; quản lý kiểm tra.'};
   try{await mark(step,retryable?'dang':'loi',code==='INDEPENDENT_ANSWER_MISMATCH'&&mismatchDetail?mismatchDetail:detail[code]??(retryable?'Kết nối tạm gián đoạn; giữ tiến độ để đối soát và tiếp tục cùng phiên bản.':'Chưa xử lý xong bước này; quản lý kiểm tra biên nhận riêng.'));}catch{/* Claim lost/superseded: never mutate its replacement. */}
   try{await repo.recordFailure?.(job,step,code);}catch{/* An unknown recording outcome never creates a new version or resets attempts. */}
   return {status:retryable?'retry' as const:'blocked' as const,uploadId:job.id,code};
@@ -248,7 +266,8 @@ async function runUploadPair(repo:WorkerRepository,pipeline:Pipeline,state:Priva
     // Completion can only follow the real atomic commit, never the local capture.
     if(n===6&&status==='xong')return;
     await repo.step(job,n,status,detail,{['paper'+paper]:checkpoint},paper);
-   },waitReview:repo.waitReview?(_j,request)=>repo.waitReview!(projected,request):undefined,
+   },yieldExtract:repo.yieldExtract?(_j,progress)=>repo.yieldExtract!(projected,progress):undefined,
+   waitReview:repo.waitReview?(_j,request)=>repo.waitReview!(projected,request):undefined,
    recordFailure:repo.recordFailure?(_j,n,code)=>repo.recordFailure!(projected,n,code):undefined,
    async finish(){},publisher(){return {upload:port.upload.bind(port),async rpc(action,payload){if(action==='lookup')return {status:null};ensure(action==='publish','INVALID_BUNDLE_ACTION');payloads[paper-1]=payload;return {status:'da_dang'};}};}
   };

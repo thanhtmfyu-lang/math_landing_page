@@ -1,5 +1,6 @@
 import type {PublishPort} from '../btvn/publish-handler';
-const actions=new Set(['worker_claim','worker_assert_current','worker_checkpoint','worker_finish','worker_publish','worker_materials','worker_wait_review','worker_pending_review','worker_review_result','worker_record_failure','worker_automation_config','worker_heartbeat']);
+import {extractProgress} from './extract-progress';
+const actions=new Set(['worker_claim','worker_assert_current','worker_checkpoint','worker_finish','worker_publish','worker_materials','worker_wait_review','worker_pending_review','worker_review_result','worker_record_failure','worker_automation_config','worker_heartbeat','worker_yield_extract']);
 function need(value:unknown,code:string):asserts value{if(!value)throw Error(code);}
 const uuid=(v:unknown)=>typeof v==='string'&&/^[a-f0-9]{8}(?:-[a-f0-9]{4}){3}-[a-f0-9]{12}$/.test(v);
 /** Called only AFTER the existing Edge publisher has authenticated its secret. */
@@ -8,6 +9,12 @@ export async function handleLessonUploadGateway(port:PublishPort,body:any,valida
  need(['lesson_upload_worker','lesson_upload_source','lesson_upload_asset','lesson_upload_asset_read'].includes(action),'INVALID_LESSON_UPLOAD_ACTION');
  if(action==='lesson_upload_worker'){
   need(Object.keys(body).every(k=>['action','payload'].includes(k))&&body.payload&&actions.has(body.payload.action),'INVALID_LESSON_WORKER_ACTION');
+  if(body.payload.action==='worker_yield_extract'){
+   const {upload_id,claim_token,version,paper,source_version,plan_hash,progress_count,progress_hash}=body.payload;
+   need(Object.keys(body.payload).sort().join(',')==='action,claim_token,paper,plan_hash,progress_count,progress_hash,source_version,upload_id,version'&&
+        uuid(upload_id)&&uuid(claim_token)&&Number.isSafeInteger(version)&&version>0&&version<=999999999&&[1,2].includes(paper)&&
+        extractProgress({plan_hash,progress_count,progress_hash,sourceVersion:source_version}),'INVALID_EXTRACT_YIELD_PAYLOAD');
+  }
   if(body.payload.action==='worker_publish'){
    need(validate&&port.readPrivate,'WORKER_VALIDATOR_REQUIRED');
    await port.rpc('lesson_upload_gateway',{action:'worker_assert_current',upload_id:body.payload.upload_id,claim_token:body.payload.claim_token});
