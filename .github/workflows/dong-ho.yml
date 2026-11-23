@@ -1,0 +1,43 @@
+# Đồng hồ thay lịch: từ 08/11 GitHub không chạy "schedule" cho kho này (workflow vẫn bật, cài đặt Actions bình thường).
+# Workflow này tự gọi các workflow theo giờ, chạy ~5h50 rồi tự gọi lại chính nó. Kho công khai nên không tốn phút Actions.
+#   - Canh web 24/7: 10 phút một lần.   - Kiểm sau deploy: mỗi giờ phút 07.   - Số phễu hằng ngày: 21:00 giờ VN.
+# Khi GitHub chạy lại lịch thật (thấy Canh web có lượt "schedule" trong 30 phút gần nhất) thì đồng hồ tự dừng, không gọi lại.
+# Khởi động lần đầu: Actions > "Đồng hồ thay lịch" > Run workflow.
+name: Đồng hồ thay lịch
+
+on:
+  workflow_dispatch:
+
+permissions:
+  actions: write
+  contents: read
+
+concurrency:
+  group: dong-ho
+  cancel-in-progress: false
+
+jobs:
+  dong-ho:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 358
+    env:
+      GH_TOKEN: ${{ github.token }}
+      GH_REPO: ${{ github.repository }}
+    steps:
+      - name: Gọi các workflow theo giờ
+        run: |
+          bat_dau=$(date +%s); da_so_pheu=""; da_kiem=""
+          lich_that() { # GitHub chạy lại lịch thật chưa
+            t=$(gh run list --workflow canh-web.yml --event schedule --limit 1 --json createdAt --jq '.[0].createdAt // empty')
+            [ -n "$t" ] && [ $(( $(date +%s) - $(date -d "$t" +%s) )) -lt 1800 ]; }
+          while [ $(( $(date +%s) - bat_dau )) -lt 20700 ]; do
+            if lich_that; then echo "Lịch thật của GitHub đã chạy lại: đồng hồ dừng."; exit 0; fi
+            gh workflow run canh-web.yml >/dev/null && echo "$(TZ=Asia/Ho_Chi_Minh date +%H:%M) gọi Canh web"
+            gio=$(TZ=Asia/Ho_Chi_Minh date +%H); ngay=$(TZ=Asia/Ho_Chi_Minh date +%F)
+            if [ "$gio" = 21 ] && [ "$da_so_pheu" != "$ngay" ]; then gh workflow run so-pheu.yml >/dev/null && da_so_pheu=$ngay && echo "gọi Số phễu"; fi
+            mot_gio=$(date -u +%Y%m%d%H)
+            if [ "$(date -u +%M)" -ge 7 ] && [ "$da_kiem" != "$mot_gio" ]; then gh workflow run kiem-sau-deploy.yml >/dev/null && da_kiem=$mot_gio && echo "gọi Kiểm sau deploy"; fi
+            sleep 600
+          done
+          lich_that && { echo "Lịch thật đã chạy lại: không gọi tiếp đồng hồ."; exit 0; }
+          gh workflow run dong-ho.yml && echo "Đã gọi đồng hồ lượt mới"
