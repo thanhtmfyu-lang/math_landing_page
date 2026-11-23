@@ -35,6 +35,9 @@ async function chay() {
   // Phòng thi phải đang ghi lượt vào CSDL (MTM_PHONG_THI_DB=1): bảng vàng trả enabled:true. enabled:false = bài nộp không được lưu.
   { const r = await mo(GOC + '/api/phong-thi?xep-hang-dot=thpt-thu-2026-11'); let en = null; try { en = JSON.parse(r.body).enabled; } catch { /* không phải JSON */ }
     ghi('phòng thi ghi CSDL', r, r.status === 200 && en === true, en === false ? 'máy chủ đang tắt ghi CSDL, bài nộp không được lưu' : ''); }
+  // Bảng vàng HSA1 (công khai trên web): in số dòng để đối chiếu CSDL mà web đang ghi.
+  { const r = await mo(GOC + '/api/phong-thi?xep-hang-dot=hsa-thu-2026-11'); let n = '?'; try { n = String(JSON.parse(r.body).rows.length); } catch { /* bỏ qua */ }
+    ghi('bảng vàng HSA1', r, r.status === 200, n + ' dòng'); }
   return dong;
 }
 
