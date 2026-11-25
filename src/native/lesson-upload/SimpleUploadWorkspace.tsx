@@ -10,6 +10,7 @@ import {normalizeAssessmentIntake,defaultExamConfig} from './assessment-intake';
 import type {StaffHistoryQuery} from './staff-history';
 import type {StaffStudentWorkRequest} from './staff-student-work';
 import {QA_INTAKE,assertQaIntakeFiles,assertQaIntakeFreshLane,assertQaIntakeSession,qaIntakePayload} from './qa-intake';
+import {assertSelfQaLane,SELF_QA_PENDING} from './qa-self-intake';
 const StaffHistory=lazy(()=>import('./StaffHistory'));
 const PublishedLessonPreview=lazy(()=>import('./PublishedLessonPreview'));
 
@@ -49,8 +50,8 @@ function Status({upload,onPreview}:{upload:LessonUpload;onPreview?:()=>void}){
 }
 
 /** All writes use the authenticated staff adapter; this view also accepts synthetic dashboard fixtures for QA. */
-export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=false}:{data:UploadDashboard;owner:string;onRefresh:()=>Promise<void>;onSignOut:()=>void;qaMode?:boolean}){
-  const pendingScope=qaMode?QA_INTAKE.pendingScope:undefined;
+export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=false,selfQaMode=false}:{data:UploadDashboard;owner:string;onRefresh:()=>Promise<void>;onSignOut:()=>void;qaMode?:boolean;selfQaMode?:boolean}){
+  const pendingScope=selfQaMode?SELF_QA_PENDING:qaMode?QA_INTAKE.pendingScope:undefined;
   const first=nearestSession(data.sessions),[picked,setPicked]=useState(first?sessionKey(first):'');
   const [tab,setTab]=useState<'upload'|'history'>('upload'),[historyOpened,setHistoryOpened]=useState(false);
   const [previewId,setPreviewId]=useState<string|null>(null);
@@ -62,7 +63,7 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   const [deadlines,setDeadlines]=useState<Record<string,string>>({}),[busy,setBusy]=useState(false),[stage,setStage]=useState(''),[message,setMessage]=useState(''),[fileKey,setFileKey]=useState(0);
   const [restored]=useState(()=>{try{return {payload:typeof window==='undefined'?null:loadPending(window.sessionStorage,owner,pendingScope),error:''};}catch(e){return {payload:null,error:(e as Error).message};}});
   const [pending,setPending]=useState<Record<string,unknown>|null>(restored.payload),[retryBusy,setRetryBusy]=useState(false);
-  const [mode,setMode]=useState<'homework'|'exam'>(restored.payload?.work_kind==='exam'?'exam':'homework');
+  const [mode,setMode]=useState<'homework'|'exam'>(!selfQaMode&&restored.payload?.work_kind==='exam'?'exam':'homework');
   const [assessmentId,setAssessmentId]=useState<string|null>(typeof restored.payload?.assessment_id==='string'?restored.payload.assessment_id:null),[examType,setExamType]=useState<'monthly'|'custom'>('monthly'),[examOpen,setExamOpen]=useState(''),[examClose,setExamClose]=useState(''),[examDuration,setExamDuration]=useState<number|null>(null);
   const examMode=mode==='exam';
   const alive=useRef(true),submitting=useRef(false),formRef=useRef<HTMLElement>(null);
@@ -91,22 +92,25 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
   function editExam(u:LessonUpload){if(locked||!u.assessment_id)return;if(dirty&&!window.confirm('Mở đề đã có và bỏ phần chưa gửi?'))return;reset();setAssessmentId(u.assessment_id);setTitle(u.title);setExamType(u.exam_type??'monthly');if(u.exam_config){setExamOpen(vnInput(u.exam_config.opens_at));setExamClose(vnInput(u.exam_config.closes_at));setExamDuration(u.exam_config.duration_minutes);}setMessage('Đang sửa cùng đề. Gửi lại đủ đề và đáp án để tạo phiên bản mới.');}
   function changeFiles(kind:keyof Files,value:File[]){setFiles(old=>({...old,[kind]:value}));setMessage('');}
   async function refresh(){if(retryBusy)return;setRetryBusy(true);try{
-    let note='';if(!qaMode&&current?.retry?.can_retry&&!['needs_input','retry_exhausted','exhausted','published','complete'].includes(current.retry.status)&&!uploadProgress(current).published&&!busy&&!pending){const receipt=await retryLesson(owner,current.id);note=receipt.reason||(['queued','already_queued'].includes(receipt.status)?'AI đã nhận yêu cầu xử lý lại phần lỗi.':'Đã cập nhật trạng thái xử lý.');}
+    let note='';if(!qaMode&&!selfQaMode&&current?.retry?.can_retry&&!['needs_input','retry_exhausted','exhausted','published','complete'].includes(current.retry.status)&&!uploadProgress(current).published&&!busy&&!pending){const receipt=await retryLesson(owner,current.id);note=receipt.reason||(['queued','already_queued'].includes(receipt.status)?'AI đã nhận yêu cầu xử lý lại phần lỗi.':'Đã cập nhật trạng thái xử lý.');}
     await onRefresh();if(alive.current&&note)setMessage(note);
   }catch(e){if(alive.current)setMessage(e instanceof Error?e.message:'Chưa cập nhật được tiến độ.');}finally{if(alive.current)setRetryBusy(false);}}
   async function deliver(payload:Record<string,unknown>){
     if(qaMode)qaIntakePayload(payload);
     savePending(window.sessionStorage,owner,payload,pendingScope);setPending(payload);
     try{
-      const result=await submitLesson(owner,payload,{qa:qaMode});if(!alive.current)return;
+      const result=await submitLesson(owner,payload,{qa:qaMode,selfQa:selfQaMode});if(!alive.current)return;
       clearPending(window.sessionStorage,owner,pendingScope);setPending(null);reset();setMessage(`${result.already_received?'Đã xác nhận':'Đã nhận'} bản ${result.version}. Hệ thống tự nhận bài mới để AI xử lý và đăng; không cần bấm chạy thêm.`);
       try{await onRefresh();}catch{if(alive.current)setMessage(`Đã nhận bản ${result.version}. Bấm Cập nhật để xem tiến độ.`);}
     }catch(e){if(!qaMode&&e instanceof LessonSubmitError&&e.outcome==='rejected')clearPending(window.sessionStorage,owner,pendingScope);if(alive.current)setPending(current=>qaMode?payload:pendingAfterFailure(current,payload,e));throw e;}
   }
   async function retry(){if(qaMode||!pending||submitting.current)return;submitting.current=true;setBusy(true);setMessage('Đang kiểm tra lại cùng yêu cầu…');try{await deliver(pending);}catch(e){if(alive.current)setMessage((e as Error).message);}finally{if(alive.current){submitting.current=false;setBusy(false);}}}
   async function send(event:FormEvent){
-    event.preventDefault();if(submitting.current||pending||restored.error||!session)return;
+    event.preventDefault();if(submitting.current||pending||restored.error||!session||selfQaMode&&!!current)return;
     if(qaMode)try{assertQaIntakeSession(session);if(!['ql','admin'].includes(data.staff.role))throw Error('Chế độ QA cần tài khoản quản lý.');if(data.uploads.some(u=>(u.work_kind??'homework')===mode))throw Error('Ca QA đã nhận loại bài này; đối soát bản đang có trước khi gửi thêm.');}catch(e){setMessage((e as Error).message);return;}
+    if(selfQaMode&&(files.homework.length!==1||files.answer.length!==1)){
+      setMessage('Chọn một PDF đề và một PDF đáp án cho ca thử.');return;
+    }
     const finalTitle=examMode?title:uploadTitle(title,[...files.homework,...files.handout].map(f=>f.name),session),finalScope=examMode?'Toàn bộ đề':scope;
     let metadata:ReturnType<typeof normalizeAssessmentIntake>;
     try{const id=assessmentId??(examMode?crypto.randomUUID():'');if(examMode&&!assessmentId)setAssessmentId(id);metadata=normalizeAssessmentIntake({work_kind:mode,title:finalTitle,task_scope:finalScope,class_ids:examMode?[session.class_id]:session.class_ids??[session.class_id],has_answer:files.answer.length>0||!!answer.trim(),has_second_paper:files.homework2.length>0, ...(examMode?{assessment_id:id,exam_type:examType,exam_config:{opens_at:dueLocalToIso(examOpen||(defaults?vnInput(defaults.opens_at):'')),closes_at:dueLocalToIso(examClose||(defaults?vnInput(defaults.closes_at):'')),duration_minutes:examDuration??defaults?.duration_minutes}}:{})});if(examMode&&!files.homework.length)throw Error('Thêm tệp đề kiểm tra.');}catch(e){setMessage((e as Error).message);return;}
@@ -122,38 +126,51 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
     submitting.current=true;setBusy(true);setMessage('');const captured={session,files,metadata,mode,scope:metadata.task_scope,scope2:scope2.trim(),title:finalTitle,answer:answer.trim(),answer2:answer2.trim(),video:video.trim(),dueAt};
     try{
       if(qaMode){const fresh=await lessonDashboard(owner,{qa:true});if(!alive.current)return;assertQaIntakeFreshLane(fresh,captured.session,captured.mode);if(captured.files.homework2.length||captured.files.answer2.length||captured.files.handout.length||captured.answer||captured.answer2||captured.video||captured.scope2)throw Error('Phiếu QA này chỉ dùng một đề PDF và một đáp án PDF đã kiểm.');await assertQaIntakeFiles(captured.mode,captured.files);if(!alive.current)return;}
+      const selfQaFiles=selfQaMode
+        ?{homework:await privatePdf(captured.files.homework,false),answer:await privatePdf(captured.files.answer,false)}
+        :null;
+      if(selfQaMode){
+        const fresh=await lessonDashboard(owner,{selfQa:true});if(!alive.current)return;
+        assertSelfQaLane(fresh,captured.session);
+      }
       const batch=crypto.randomUUID(),paths:Record<string,string|null>={homework_path:null,answer_path:null,handout_path:null};
       if(qaMode){const assetPending={is_test:true,client_request_id:batch,class_ids:[captured.session.class_id],lesson_date:captured.session.lesson_date,teacher_key:captured.session.teacher_key,...captured.metadata,on_behalf_of:captured.session.teacher_key,__qa_asset_state:'unconfirmed',homework_path:`${owner}/${batch}/homework.pdf`,answer_path:`${owner}/${batch}/answer.pdf`};savePending(window.sessionStorage,owner,assetPending,pendingScope);setPending(assetPending);}
       const labels={homework:'đề BTVN',answer:'đáp án',homework2:'Đề 2',answer2:'đáp án Đề 2',handout:'tài liệu'};
-      for(const kind of ['homework','answer','homework2','answer2','handout'] as const){if(!captured.files[kind].length)continue;setStage(`Đang tải ${labels[kind]}…`);const pdf=await privatePdf(captured.files[kind],kind!=='handout');if(!alive.current)return;paths[`${kind}_path`]=await uploadLessonFile(owner,batch,kind,pdf);if(!alive.current)return;}
+      for(const kind of ['homework','answer','homework2','answer2','handout'] as const){if(!captured.files[kind].length)continue;setStage(`Đang tải ${labels[kind]}…`);const pdf=selfQaFiles&&(kind==='homework'||kind==='answer')?selfQaFiles[kind]:await privatePdf(captured.files[kind],kind!=='handout');if(!alive.current)return;paths[`${kind}_path`]=await uploadLessonFile(owner,batch,kind,pdf);if(!alive.current)return;}
       setStage('Đang gửi cho AI…');
-      await deliver({...(qaMode?{is_test:true}:{}),client_request_id:batch,class_ids:captured.mode==='exam'?[captured.session.class_id]:captured.session.class_ids??[captured.session.class_id],lesson_date:captured.session.lesson_date,teacher_key:captured.session.teacher_key,...captured.metadata,...paths,answer_text:captured.answer||null,answer2_text:captured.answer2||null,task_scope2:captured.scope2||null,video_url:captured.video?normalizedVideoUrl(captured.video):null,on_behalf_of:manager?captured.session.teacher_key:null,...(captured.mode==='homework'&&captured.files.homework.length?{due_at_by_class:captured.dueAt}:{})});
+      if(selfQaMode){
+        await deliver({client_request_id:batch,class_ids:[captured.session.class_id],lesson_date:captured.session.lesson_date,teacher_key:captured.session.teacher_key,
+          title:captured.metadata.title,task_scope:captured.metadata.task_scope,homework_path:paths.homework_path,answer_path:paths.answer_path,due_at_by_class:captured.dueAt});
+      }else{
+        await deliver({...(qaMode?{is_test:true}:{}),client_request_id:batch,class_ids:captured.mode==='exam'?[captured.session.class_id]:captured.session.class_ids??[captured.session.class_id],lesson_date:captured.session.lesson_date,teacher_key:captured.session.teacher_key,...captured.metadata,...paths,answer_text:captured.answer||null,answer2_text:captured.answer2||null,task_scope2:captured.scope2||null,video_url:captured.video?normalizedVideoUrl(captured.video):null,on_behalf_of:manager?captured.session.teacher_key:null,...(captured.mode==='homework'&&captured.files.homework.length?{due_at_by_class:captured.dueAt}:{})});
+      }
     }catch(e){if(alive.current)setMessage(e instanceof Error?e.message:'Chưa gửi được bài. Tệp đã chọn vẫn được giữ để thử lại.');}
     finally{if(alive.current){submitting.current=false;setBusy(false);setStage('');}}
   }
   return <>
+    {selfQaMode&&<section className="lu-panel lu-message" role="status"><h2>Thử đăng BTVN</h2><p>Bài chỉ giao cho lớp thử. Mỗi ca nhận một bài.</p></section>}
     {qaMode&&<section className="lu-panel lu-message" role="status"><h2>QA cách ly · không giao học sinh thật</h2><p>Chỉ {QA_INTAKE.classLabel} · ca17/11 00:10–00:11. BTVN và Đề kiểm tra đều ghi vào vùng thử. Giữ nguyên phiếu16/11 và kết quả cũ.</p><p>Nếu gửi tệp hoặc lưu bài chưa có xác nhận, dừng để đối soát biên nhận; không gửi lại hay tạo yêu cầu mới.</p></section>}
     <div className="lu-account"><span><b>{data.staff.display_name}</b><span className="lu-badge">{manager?'Quản lý':'Giáo viên'}</span></span><button type="button" onClick={onSignOut} disabled={busy||!!pending}>Đăng xuất</button></div>
-    <nav className="lu-workspace-tabs" aria-label="Công việc giáo viên"><button type="button" aria-current={tab==='upload'&&!examMode?'page':undefined} disabled={busy||!!pending&&mode!=='homework'} onClick={()=>changeMode('homework')}>BTVN</button><button type="button" aria-current={tab==='upload'&&examMode?'page':undefined} disabled={busy||!!pending&&mode!=='exam'} onClick={()=>changeMode('exam')}>Đề kiểm tra</button><button type="button" hidden={qaMode} aria-current={tab==='history'?'page':undefined} onClick={()=>{closePreview();setHistoryOpened(true);setTab('history');}}>Điểm &amp; điểm danh</button></nav>
+    <nav className="lu-workspace-tabs" aria-label="Công việc giáo viên"><button type="button" aria-current={tab==='upload'&&!examMode?'page':undefined} disabled={busy||!!pending&&mode!=='homework'} onClick={()=>changeMode('homework')}>BTVN</button><button type="button" hidden={selfQaMode} aria-current={tab==='upload'&&examMode?'page':undefined} disabled={busy||!!pending&&mode!=='exam'} onClick={()=>changeMode('exam')}>Đề kiểm tra</button><button type="button" hidden={qaMode||selfQaMode} aria-current={tab==='history'?'page':undefined} onClick={()=>{closePreview();setHistoryOpened(true);setTab('history');}}>Điểm &amp; điểm danh</button></nav>
     <div hidden={tab!=='upload'}>
-    {!examMode&&<section className="lu-delivery-summary" aria-label="Tiến độ giao bài trong tuần"><div><strong>{overview.publishedPercent}%</strong><span>Đã giao · {overview.publishedCount}/{overview.total} buổi</span></div><div><strong>{overview.unpublishedPercent}%</strong><span>Chưa giao · {overview.unpublishedCount} buổi</span></div><p>Tính trên các buổi đã kết thúc trong tuần; một buổi chỉ tính một lần.</p>{data.automation&&<p className="lu-automation-status">AI tự nhận bài: {!data.automation.enabled?'đang tạm dừng':data.automation.last_seen_at?`đã kết nối lúc ${new Date(data.automation.last_seen_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}`:'đang chờ kết nối'}</p>}</section>}
+    {!examMode&&!selfQaMode&&<section className="lu-delivery-summary" aria-label="Tiến độ giao bài trong tuần"><div><strong>{overview.publishedPercent}%</strong><span>Đã giao · {overview.publishedCount}/{overview.total} buổi</span></div><div><strong>{overview.unpublishedPercent}%</strong><span>Chưa giao · {overview.unpublishedCount} buổi</span></div><p>Tính trên các buổi đã kết thúc trong tuần; một buổi chỉ tính một lần.</p>{data.automation&&<p className="lu-automation-status">AI tự nhận bài: {!data.automation.enabled?'đang tạm dừng':data.automation.last_seen_at?`đã kết nối lúc ${new Date(data.automation.last_seen_at).toLocaleTimeString('vi-VN',{timeZone:'Asia/Ho_Chi_Minh',hour:'2-digit',minute:'2-digit'})}`:'đang chờ kết nối'}</p>}</section>}
     <div className="lu-columns lu-simple-columns">
       <section className="lu-panel lu-form-panel" ref={formRef}><h2>{examMode?'Giao đề kiểm tra':'Giao bài tập về nhà'}</h2><p className="lu-muted">{examMode?'Đặt tên, chọn loại và tải đề cùng đáp án. AI dựng đề kiểm tra cho đúng lớp.':'Tải đề và đáp án, ghi phần cần làm. AI xử lý phần còn lại.'}</p>
-        {!data.sessions.length?<p role="status">Chưa có lịch lớp được cấp cho tài khoản. Quản lý cần kiểm tra lịch đồng bộ.</p>:<form onSubmit={event=>void send(event)}><fieldset disabled={locked}>
+        {!data.sessions.length?<p role="status">{selfQaMode?'Chưa có ca thử riêng đang mở.':'Chưa có lịch lớp được cấp cho tài khoản. Quản lý cần kiểm tra lịch đồng bộ.'}</p>:<form onSubmit={event=>void send(event)}><fieldset disabled={locked||selfQaMode&&!!current}>
           <div className="lu-field-row"><label>Lớp<select required value={session?.class_id??''} onChange={e=>{const s=nearestSession(data.sessions.filter(s=>s.class_id===e.target.value));if(s)selectSession(s);}}>{classes.map(s=><option key={s.class_id} value={s.class_id}>{s.class_name}</option>)}</select></label>
             <label>Buổi học<select required value={picked} onChange={e=>{const s=data.sessions.find(s=>sessionKey(s)===e.target.value);if(s)selectSession(s);}}>{sessions.map(s=><option key={sessionKey(s)} value={sessionKey(s)}>{dateLabel(s.lesson_date)} · {s.start_time.slice(0,5)}</option>)}</select></label></div>
           {targets.length>1&&<p className="lu-pair">Cùng bài cho: {targets.map(t=>t.name).join(' · ')}. Hạn nộp riêng theo lịch từng lớp.</p>}
-          <div className="lu-assets" key={fileKey}><FilePicker label={examMode?'Đề kiểm tra':'Đề BTVN'} required files={files.homework} onChange={value=>changeFiles('homework',value)}/><FilePicker label={examMode?'Đáp án đề kiểm tra':'Đáp án BTVN'} required files={files.answer} onChange={value=>changeFiles('answer',value)}/></div>
+          <div className="lu-assets" key={fileKey}><FilePicker label={examMode?'Đề kiểm tra':'Đề BTVN'} images={!selfQaMode} required files={files.homework} onChange={value=>changeFiles('homework',value)}/><FilePicker label={examMode?'Đáp án đề kiểm tra':'Đáp án BTVN'} images={!selfQaMode} required files={files.answer} onChange={value=>changeFiles('answer',value)}/></div>
           {examMode?<div className="lu-exam-fields"><label>Loại đề kiểm tra<select value={examType} onChange={e=>setExamType(e.target.value as 'monthly'|'custom')}><option value="monthly">Kiểm tra kết thúc tháng</option><option value="custom">Kiểm tra khác</option></select></label><label>Tên đề kiểm tra<input required maxLength={200} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Ví dụ: Kiểm tra tháng 11 · Hàm số"/></label><details className="lu-extra"><summary>Lịch mở bài và thời lượng</summary><div className="lu-exam-timing"><label>Mở bài (giờ Việt Nam)<input type="datetime-local" value={examOpen||(defaults?vnInput(defaults.opens_at):'')} onChange={e=>setExamOpen(e.target.value)}/></label><label>Đóng bài (giờ Việt Nam)<input type="datetime-local" value={examClose||(defaults?vnInput(defaults.closes_at):'')} onChange={e=>setExamClose(e.target.value)}/></label><label>Thời lượng (phút)<input type="number" min={1} max={240} value={examDuration??defaults?.duration_minutes??''} onChange={e=>setExamDuration(e.target.value?Number(e.target.value):null)}/></label></div><p className="lu-muted">Điền theo ca đã chọn; có thể chỉnh. Mỗi học sinh một lượt, điểm và lời giải do máy chủ công bố.</p></details><p className="lu-muted">AI đọc toàn bộ đề. Đề kiểm tra này chỉ giao cho lớp đã chọn.</p></div>:<><label>Phạm vi bài tập<textarea required={files.homework.length>0} maxLength={300} rows={2} value={scope} onChange={e=>setScope(e.target.value)} placeholder="Ví dụ: Câu 5–15 trang 3, bỏ câu 6; hoặc toàn bộ phiếu"/></label>
           <div className="lu-deadlines">{targets.map(target=>target.session?<label key={target.id}>{targets.length>1?`Hạn nộp · ${target.name}`:'Hạn nộp'}<input type="datetime-local" value={deadlines[target.id]??defaultDueLocal(target.session)} onChange={e=>setDeadlines(old=>({...old,[target.id]:e.target.value}))}/></label>:<p key={target.id} className="lu-muted">{target.name}: máy chủ lấy hạn theo lịch đã đồng bộ.</p>)}</div>
           <p className="lu-muted lu-deadline-note">Giờ Việt Nam. Hạn được điền theo lịch và quy tắc của lớp; thầy cô có thể chỉnh.</p>{session?.deadline_policy_error&&<p role="alert" className="lu-message">{session.deadline_policy_error}</p>}</>}
-          {!examMode&&<details className="lu-extra"><summary>Thêm tài liệu, Đề 2 hoặc tùy chọn khác</summary>
+          {!examMode&&!selfQaMode&&<details className="lu-extra"><summary>Thêm tài liệu, Đề 2 hoặc tùy chọn khác</summary>
             <label>Tên bài (không bắt buộc)<input maxLength={200} value={title} onChange={e=>setTitle(e.target.value)} placeholder="Để trống để dùng tên tệp đề"/></label>
             <label>Hoặc gõ đáp án Đề 1<textarea maxLength={16000} rows={2} value={answer} onChange={e=>setAnswer(e.target.value)} placeholder="1A 2B 3C · Chỉ gõ khi không tải tệp đáp án"/></label>
             <div className="lu-assets" key={`extra-${fileKey}`}><FilePicker label="Tài liệu buổi học" images={false} files={files.handout} onChange={value=>changeFiles('handout',value)}/><div className="lu-file-card"><label>Video buổi học<input type="url" value={video} onChange={e=>setVideo(e.target.value)} placeholder="Link YouTube hoặc Zoom record"/></label></div><FilePicker label="Đề 2 (nếu có)" files={files.homework2} onChange={value=>changeFiles('homework2',value)}/><FilePicker label="Đáp án Đề 2" files={files.answer2} onChange={value=>changeFiles('answer2',value)}/></div>
             <label>Hoặc gõ đáp án Đề 2<textarea maxLength={16000} rows={2} value={answer2} onChange={e=>setAnswer2(e.target.value)}/></label><label>Phạm vi riêng của Đề 2<textarea maxLength={300} rows={2} value={scope2} onChange={e=>setScope2(e.target.value)} placeholder="Để trống nếu giống Đề 1"/></label>
           </details>}
-          <button className="lu-primary lu-submit" type="submit" disabled={busy||!session}>{busy?stage||'Đang gửi…':current?(examMode?'Gửi bản sửa của đề này':'Gửi bản mới cho AI'):(examMode?'Gửi cho AI tạo đề kiểm tra':'Gửi cho AI lên bài')}</button>
+          <button className="lu-primary lu-submit" type="submit" disabled={busy||!session||selfQaMode&&!!current}>{busy?stage||'Đang gửi…':current?(examMode?'Gửi bản sửa của đề này':'Gửi bản mới cho AI'):(examMode?'Gửi cho AI tạo đề kiểm tra':selfQaMode?'Gửi BTVN thử':'Gửi cho AI lên bài')}</button>
           <p className="lu-muted">Đáp án được lưu riêng tư. AI đọc đề, chuẩn hóa theo mẫu, đối chiếu rồi giao đúng lớp và hạn nộp.</p>
         </fieldset></form>}
         {restored.error&&<p className="lu-message" role="alert">{restored.error}</p>}{message&&<p className="lu-message" role="status">{message}</p>}{pending&&<div className="lu-pending" role="alert"><p>Yêu cầu chưa có xác nhận cuối. Biên nhận được giữ trên thẻ trình duyệt này để kiểm tra lại, kể cả khi tải lại trang.</p><button type="button" className="lu-primary" disabled={busy||qaMode} onClick={()=>void retry()}>{busy?'Đang kiểm tra…':'Kiểm tra lại cùng yêu cầu'}</button></div>}
@@ -177,7 +194,7 @@ export function SimpleUploadWorkspace({data,owner,onRefresh,onSignOut,qaMode=fal
     </div><div hidden={tab!=='history'}>{!qaMode&&historyOpened&&<Suspense fallback={<p role="status">Đang mở điểm và điểm danh…</p>}><StaffHistory owner={owner} classes={classes} loadPage={loadHistory} loadStudentWork={loadStudentWork} active={tab==='history'}/></Suspense>}</div>
     {preview&&session&&<Suspense fallback={<p role="status">Đang mở bài đã đăng…</p>}>
       <PublishedLessonPreview key={`${picked}|${preview.id}`} owner={owner} uploadId={preview.id}
-        classId={session.class_id} className={session.class_name} title={preview.title} isTest={qaMode}
+        classId={session.class_id} className={session.class_name} title={preview.title} isTest={qaMode||selfQaMode}
         hasSecondPaper={!examMode&&preview.homework2_uploaded===true} onClose={closePreview}/>
     </Suspense>}
   </>;

@@ -1,6 +1,6 @@
 type Store=Pick<Storage,'getItem'|'setItem'|'removeItem'>;
 const KEY='mtm-lesson-pending-v1';
-export type PendingScope='qa-intake-1811';
+export type PendingScope='qa-intake-1811'|'self-qa-btvn';
 const ownerKey=(owner:string,scope?:PendingScope)=>`${KEY}${scope?':'+scope:''}:${encodeURIComponent(owner)}`;
 export type PendingRecord={owner:string;payload:Record<string,unknown>};
 export function loadPending(store:Store,owner:string,scope?:PendingScope):Record<string,unknown>|null{

@@ -6,6 +6,7 @@ import {cleanHistoryQuery,validateHistoryPage,validateHistoryQuery,type StaffHis
 import {validateStaffStudentWork,type StaffStudentWorkRequest} from './staff-student-work';
 import {LessonSubmitError} from './submission-receipt';
 import {lessonDashboardRequest,qaIntakePayload,scopeQaIntakeDashboard} from './qa-intake';
+import {selfQaDashboard} from './qa-self-intake';
 export {LessonSubmitError} from './submission-receipt';
 export async function staffHistory(owner:string,query:StaffHistoryQuery):Promise<StaffHistoryPage>{
  const issue=validateHistoryQuery(query);if(issue)throw Error(issue);
@@ -43,7 +44,20 @@ async function staffRequest(expectedOwner:string){
  await assertOwner();return {client,assertOwner,accessToken:session.access_token};
 }
 export async function staffSignIn(name:string,password:string){const {error}=await requireBackend().auth.signInWithPassword({email:loginEmail(name),password});if(error)throw Error(error.status===429?'Đăng nhập đang bị giới hạn. Vui lòng thử lại sau.':'Tên đăng nhập hoặc mật khẩu chưa đúng, hoặc chưa kết nối được máy chủ.');}
-export async function lessonDashboard(owner:string,options:{qa?:boolean}={}):Promise<UploadDashboard>{const {client,assertOwner}=await staffRequest(owner),r=await client.rpc('mtm_lesson_upload_api',{p:lessonDashboardRequest(options.qa)});await assertOwner();if(r.error){if(r.error.code==='42501'||r.error.code==='PGRST301')throw new StaffAccessError('Tài khoản chưa được cấp quyền hoặc phiên đăng nhập đã hết hạn.');throw Error('Chưa tải được lịch và tiến độ. Kiểm tra tài khoản được cấp quyền hoặc thử lại.');}if(!r.data?.staff||!['gv','ql','admin'].includes(r.data.staff.role)||r.data.staff.user_id!==owner)throw new StaffAccessError('Tài khoản chưa được cấp quyền giáo viên/quản lý.');return options.qa?scopeQaIntakeDashboard(r.data as UploadDashboard):r.data as UploadDashboard;}
+export async function lessonDashboard(owner:string,options:{qa?:boolean;selfQa?:boolean}={}):Promise<UploadDashboard>{
+ const {client,assertOwner}=await staffRequest(owner);
+ const r=options.selfQa
+   ?await client.rpc('mtm_lesson_upload_self_qa',{p:{action:'dashboard'}})
+   :await client.rpc('mtm_lesson_upload_api',{p:lessonDashboardRequest(options.qa)});
+ await assertOwner();
+ if(r.error){
+  if(r.error.code==='42501'||r.error.code==='PGRST301')throw new StaffAccessError('Tài khoản chưa được cấp quyền hoặc phiên đăng nhập đã hết hạn.');
+  throw Error(options.selfQa?'Chưa mở được ca thử riêng.':'Chưa tải được lịch và tiến độ. Kiểm tra tài khoản được cấp quyền hoặc thử lại.');
+ }
+ if(!r.data?.staff||!['gv','ql','admin'].includes(r.data.staff.role)||r.data.staff.user_id!==owner)throw new StaffAccessError('Tài khoản chưa được cấp quyền giáo viên/quản lý.');
+ if(options.selfQa)return selfQaDashboard(r.data);
+ return options.qa?scopeQaIntakeDashboard(r.data as UploadDashboard):r.data as UploadDashboard;
+}
 export async function loadPublishedLessonPreview(owner:string,request:PublishedLessonPreviewRequest,signal?:AbortSignal):Promise<PublishedLessonPreviewData>{
  const {accessToken,assertOwner}=await staffRequest(owner);
  const result=await fetch('/api/btvn',{
@@ -63,11 +77,12 @@ export async function loadPublishedLessonPreview(owner:string,request:PublishedL
  return preview;
 }
 export async function uploadLessonFile(owner:string,batch:string,kind:string,file:File){const {client,assertOwner}=await staffRequest(owner),path=`${owner}/${batch}/${kind}.pdf`;const r=await client.storage.from('mtm-lesson-private').upload(path,file,{contentType:'application/pdf',upsert:false});await assertOwner();if(r.error)throw Error('Chưa tải được tệp riêng tư. Các tệp đã chọn vẫn được giữ để thử lại.');return path;}
-export async function submitLesson(owner:string,payload:Record<string,unknown>,options:{qa?:boolean}={}){
+export async function submitLesson(owner:string,payload:Record<string,unknown>,options:{qa?:boolean;selfQa?:boolean}={}){
  const prepared=options.qa?qaIntakePayload(payload):payload;
  const {client,assertOwner}=await staffRequest(owner);
  let r;
- try{r=await client.rpc('mtm_lesson_upload_api',{p:{action:'create',...prepared}});}
+ try{r=await client.rpc(options.selfQa?'mtm_lesson_upload_self_qa':'mtm_lesson_upload_api',
+   {p:options.selfQa?{...prepared,action:'create'}:{action:'create',...prepared}});}
  catch{throw new LessonSubmitError('Chưa nhận được xác nhận của máy chủ. Gửi lại cùng yêu cầu để kiểm tra, không tạo bản khác.','unknown');}
  try{await assertOwner();}catch{throw new LessonSubmitError('Tài khoản đã thay đổi trong lúc gửi. Đăng nhập lại đúng tài khoản để kiểm tra bản vừa gửi.','unknown');}
  if(r.error){
@@ -94,6 +109,10 @@ export async function submitLesson(owner:string,payload:Record<string,unknown>,o
    CLASS_SCOPE_MISMATCH:'Lớp hoặc hạn nộp chưa khớp lịch được phân quyền. Tải lại lịch để kiểm tra.',
    CLIENT_REQUEST_CONFLICT:'Yêu cầu này đã được lưu với nội dung khác. Cần kiểm tra lịch sử trước khi gửi bản mới.',
    INVALID_CLIENT_REQUEST_ID:'Mã yêu cầu chưa hợp lệ. Cần tải lại và kiểm tra lịch sử trước khi gửi.',
+   SELF_QA_UNAVAILABLE:'Ca thử này chưa mở hoặc đã hết thời gian gửi bài.',
+   SELF_QA_TAKEN:'Ca thử đã có BTVN. Tải lại để xem bài đang có.',
+   SELF_QA_SCOPE:'Dữ liệu không khớp lớp, buổi hoặc hai tệp của ca thử.',
+   SELF_QA_WORKER_UNAVAILABLE:'Bộ xử lý chưa sẵn sàng. Tệp vẫn được giữ để thử lại.',
   };
   throw new LessonSubmitError(messages[r.error.message]??'Chưa lưu được buổi học. Kiểm tra lớp, buổi, giáo viên và phần cần làm rồi thử lại.',r.error.message==='CLIENT_REQUEST_CONFLICT'?'unknown':'rejected');
  }

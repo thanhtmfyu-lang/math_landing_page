@@ -3,6 +3,12 @@ import assert from 'node:assert/strict';
 import {readFileSync} from 'node:fs';
 import {createHash} from 'node:crypto';
 import {baselineDatabase} from '../scripts/is-test-db.mjs';
+import {assertSelfQaLane,selfQaDashboard,selfQaRequested} from '../src/native/lesson-upload/qa-self-intake';
+import {pipelineFixture} from './btvn-pipeline-fixture';
+import {expectedSlots} from '../server/btvn/publish-handler';
+import {createWorkerRepository} from '../server/lesson-upload/supabase-worker';
+import {reviewQuestions,runUploadOnce,type Pipeline} from '../server/lesson-upload/worker';
+import {uploadProgress} from '../src/native/lesson-upload/upload-progress';
 process.on('uncaughtException',(error:any)=>{console.error(JSON.stringify({status:'FAIL',message:error.message,code:error.code,where:error.where,position:error.position,stack:error.stack?.split('\n').slice(-3)}));process.exitCode=1;});
 
 // Exact metadata-only source readback from 16/11, provided by the root owner.
@@ -83,7 +89,8 @@ const hash=(s:string)=>createHash('sha256').update(s).digest('hex');
 assert.equal(hash(botSource),'30ff2bd96cfcb723540dbd37777a248bc008f2be27eac307a9f64a9a62b77c71');
 assert.equal(hash(dueSource),'e7a6d123d52f3b5e8258713d3f2362b41d35aa4be44e8c1cb491d72972b60ca9');
 const sqlPath='supabase/migrations-pending/202611160116_qa_classrooms.sql';
-const productionSql=readFileSync(sqlPath,'utf8').replaceAll('\r\n','\n');
+const readSql=(path:string)=>readFileSync(path,'utf8').replaceAll('\r\n','\n');
+const productionSql=readSql(sqlPath);
 const {db}=await baselineDatabase();
 const value=async(q:string,p:any[]=[])=>((await db.query(q,p)).rows[0] as any)?.v;
 const source=(name:string)=>value('select pg_get_functiondef($1::regprocedure) v',[name]);
@@ -104,10 +111,10 @@ const args=()=>[runRef,label,11,foreign,day,'17:30','19:30',JSON.stringify(learn
 const provision=(a=args())=>value(provisionSql,a);
 const realFrozen=()=>value(`select jsonb_build_object('class',(select to_jsonb(c)-'is_test' from mtm_hw_private.classes c where c.id=$1),'students',(select jsonb_agg(to_jsonb(s) order by id) from mtm_hw_private.students s where s.class_id=$1),'timetable',(select jsonb_agg(to_jsonb(t)-'is_test' order by weekday,start_hm) from mtm_hw_private.timetable t where t.class_label='2K10 9+'),'work',(select jsonb_agg(to_jsonb(w) order by student_id,lesson_code) from mtm_hw_private.btvn_work w)) v`,[realClass]);
 try{
- await db.exec(readFileSync('supabase/migrations-pending/202610270100_is_test.sql','utf8'));
- await db.exec(readFileSync('supabase/migrations-pending/20261029_1530_is_test_sync_capture.sql','utf8'));
+ await db.exec(readSql('supabase/migrations-pending/202610270100_is_test.sql'));
+ await db.exec(readSql('supabase/migrations-pending/20261029_1530_is_test_sync_capture.sql'));
  await db.exec("create or replace function auth.role() returns text language sql stable as $$select nullif(current_setting('request.jwt.claim.role',true),'')$$;alter role service_role bypassrls");
- for(const n of ['202611080106_btvn_han_tu_ghi.sql','202611020101_cong_up_btvn_gv.sql','202611020102_btvn_two_papers.sql','202611020103_lesson_upload_gateway.sql','202611120107_lesson_upload_deadline.sql','202611130108_lesson_upload_retry.sql','202611130109_lesson_staff_history.sql','202611130110_lesson_assessment.sql'])await db.exec(readFileSync('supabase/migrations-pending/'+n,'utf8'));
+ for(const n of ['202611080106_btvn_han_tu_ghi.sql','202611020101_cong_up_btvn_gv.sql','202611020102_btvn_two_papers.sql','202611020103_lesson_upload_gateway.sql','202611120107_lesson_upload_deadline.sql','202611130108_lesson_upload_retry.sql','202611130109_lesson_staff_history.sql','202611130110_lesson_assessment.sql'])await db.exec(readSql('supabase/migrations-pending/'+n));
  // Only read-only projection bodies are copied; their ACL is synthetic and must
  // remain exactly unchanged. Legacy data and all writes below are invented.
  await db.exec(botSource+';'+dueSource+';');
@@ -275,5 +282,148 @@ try{
   assert.deepEqual(await value('select to_jsonb(r) v from mtm_hw_private.btvn_roster_scope r'),roster);
   assert.deepEqual(await value('select class_ids v from mtm_hw_private.btvn_publish_scope'),[realClass,qaClass]);
  });
- console.log(`QA116 local: ${checks} groups PASS; no physical-browser or live-publication claim.`);
+ await test('Self-serve QA binds one ready manager and one exact private BTVN before allowing the idle worker',async()=>{
+  const sql135=readSql('supabase/migrations-pending/202611250135_lesson_self_qa.sql');
+  const claimSignature='public.mtm_lesson_upload_api_before_continuation142(jsonb)';
+  const nativeFixture='public.mtm_lesson_upload_api_before_qa116(jsonb)';
+  // QA116 above started from SQL110, without the production aliases 111–113.
+  // Give its same stock inner claim the production name, and install SQL125.
+  const publicProjection=await source('public.mtm_lesson_upload_api(jsonb)');
+  await db.exec(`alter function ${nativeFixture} rename to mtm_lesson_upload_api_before_continuation142`);
+  await db.exec(publicProjection.replace('public.mtm_lesson_upload_api_before_qa116(p)','public.mtm_lesson_upload_api_before_continuation142(p)'));
+  await db.exec((await source(claimSignature)).replaceAll('\r\n','\n'));
+  await db.exec(readSql('supabase/migrations-pending/202611230125_lesson_extract_yield.sql'));
+  const pinnedAcl=await acl(claimSignature);
+  const exactLocal=hash(await source(claimSignature));
+  await db.exec('alter default privileges in schema public grant execute on functions to authenticator;alter default privileges in schema mtm_test100 grant select on tables to authenticator;');
+  const pin='df3f1699ed9c5564bf3d63868d3a97f6c247c2046779ae4aca64386ec7f92b68';
+  assert.equal(sql135.split(pin).length,2);
+  assert.equal(exactLocal,pin);
+  await assert.rejects(()=>db.exec(sql135.replace(pin,'a'.repeat(64))),/SELF_QA_STOCK_CLAIM_CHANGED/);
+  await db.exec('rollback');
+  assert.equal(await value("select to_regclass('mtm_test100.lesson_self_qa135') is null v"),true);
+  await db.exec(sql135);
+  assert.deepEqual(await acl(claimSignature),pinnedAcl);
+  assert.equal(await value("select has_table_privilege('authenticator','mtm_test100.lesson_self_qa135','select') v"),false);
+  for(const role of ['anon','authenticator','service_role']){
+   assert.equal(await value("select has_function_privilege($1,'public.mtm_lesson_upload_self_qa(jsonb)','execute') v",[role]),false);
+  }
+
+  const selfCall=(p:object)=>roleCall('authenticated','select public.mtm_lesson_upload_self_qa($1) v',[JSON.stringify(p)]);
+  const stockCall=(p:object)=>roleCall('authenticated','select public.mtm_lesson_upload_api($1) v',[JSON.stringify(p)]);
+  const gateway=(p:object)=>roleCall('service_role','select public.mtm_lesson_upload_gateway($1) v',[JSON.stringify(p)]);
+  const dash={action:'dashboard'};
+  const workerId='vps-web-upload-footer-v14';
+  const claimBase={action:'worker_claim',worker_protocol:110,worker_id:workerId,auto:true,is_test:false};
+  assert.equal(selfQaRequested('?thu-btvn=1'),true);
+  assert.equal(selfQaRequested('?thu-btvn=&qa=1'),true);
+  assert.equal(selfQaRequested('?qa=1'),false);
+  assert.deepEqual(selfQaDashboard(await selfCall(dash)).sessions,[]);
+  assert.equal((await gateway(claimBase)).job,null);
+
+  const laneRun='qa116:self-btvn:local-20261125', laneLabel='2K10 QA Self Upload';
+  const laneArgs=[laneRun,laneLabel,11,foreign,day,'08:30','10:00',
+    JSON.stringify([{name:'QA Self A',phone:'0000000703'},{name:'QA Self B',phone:'0000000704'}])];
+  const armLane=()=>db.query("insert into mtm_test100.lesson_self_qa135(run_ref,actor_user_id,intake_until) values($1,$2,clock_timestamp()+interval '2 hours')",[laneRun,owner]);
+  const counts=()=>value(`select jsonb_build_array((select count(*) from mtm_hw_private.classes),
+    (select count(*) from mtm_hw_private.lesson_uploads),(select count(*) from mtm_hw_private.btvn_lessons),
+    (select count(*) from storage.objects),(select count(*) from mtm_hw_private.sync_events)) v`);
+  const beforeProvision=await counts();
+  await db.exec('begin');
+  try{
+   const rehearsal=await provision(laneArgs);await armLane();
+   const defaultDue=await value("select (mtm_hw_private.lesson_default_due108($1,$2,'thaythanh') at time zone 'Asia/Ho_Chi_Minh')=($2::date+7+time '08:30') v",
+    [rehearsal.classId,day]);
+   assert.equal(defaultDue,true);
+   assert.equal(await value('select upload_id v from mtm_test100.lesson_self_qa135'),null);
+  }finally{await db.exec('rollback');}
+  assert.deepEqual(await counts(),beforeProvision);
+  const lane=await provision(laneArgs);
+  await armLane();
+  const laneDashboard=selfQaDashboard(await selfCall(dash));
+  assert.deepEqual(laneDashboard.sessions.map(s=>[s.class_id,s.class_name,s.lesson_date]),[[lane.classId,laneLabel,day]]);
+  assertSelfQaLane(laneDashboard,laneDashboard.sessions[0]);
+  const regular=await stockCall({action:'dashboard',from:day,to:day});
+  assert.ok(!regular.sessions.some((s:any)=>s.class_id===lane.classId));
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[foreign]);
+  await assert.rejects(()=>selfCall(dash),/SELF_QA_ACCESS/);
+  await db.query("select set_config('request.jwt.claim.sub',$1,false)",[owner]);
+  await assert.rejects(()=>selfCall({...dash,class_ids:[realClass]}),/SELF_QA_SCOPE/);
+
+  const request='61677777-7777-4777-8777-777777777776';
+  const basePath=`${owner}/${request}/`;
+  const due=new Date(Date.now()+2*24*60*60*1000).toISOString();
+  const payload={action:'create',client_request_id:request,class_ids:[lane.classId],lesson_date:day,
+   teacher_key:'thaythanh',title:'QA Self PDF',task_scope:'Toàn bộ phiếu',
+   homework_path:basePath+'homework.pdf',answer_path:basePath+'answer.pdf',
+   due_at_by_class:{[lane.classId]:due}};
+  for(const name of [payload.homework_path,payload.answer_path])
+   await db.query("insert into storage.objects(bucket_id,name,metadata) values('mtm-lesson-private',$1,'{\"mimetype\":\"application/pdf\",\"size\":100}')",[name]);
+  await assert.rejects(()=>selfCall({...payload,work_kind:'exam'}),/SELF_QA_SCOPE/);
+  await assert.rejects(()=>selfCall({...payload,class_ids:[lane.classId,realClass]}),/SELF_QA_SCOPE/);
+  await assert.rejects(()=>selfCall({...payload,answer_path:basePath+'foreign.pdf'}),/SELF_QA_SCOPE/);
+  await assert.rejects(()=>stockCall({...payload,work_kind:'homework',is_test:true,on_behalf_of:'thaythanh'}),/SELF_QA_SCOPE/);
+  await assert.rejects(()=>selfCall(payload),/SELF_QA_WORKER_UNAVAILABLE/);
+  await gateway({action:'worker_automation_config',enabled:true});
+  assert.equal((await gateway(claimBase)).job,null);
+  const result=await selfCall(payload);
+  assert.equal(result.ok,true);assert.equal(result.version,1);
+  assert.equal((await selfCall(payload)).upload_id,result.upload_id);
+  await assert.rejects(()=>selfCall({...payload,title:'Changed same request'}),/CLIENT_REQUEST_CONFLICT/);
+  const request2='61677777-7777-4777-8777-777777777778';
+  await assert.rejects(()=>selfCall({...payload,client_request_id:request2,
+   homework_path:payload.homework_path.replace(request,request2),answer_path:payload.answer_path.replace(request,request2)}),/SELF_QA_TAKEN/);
+  assert.equal(await value('select count(*)::int v from mtm_hw_private.lesson_uploads where $1::uuid=any(class_ids)',[lane.classId]),1);
+  const onlyUpload=selfQaDashboard(await selfCall(dash));
+  assert.deepEqual(onlyUpload.uploads.map(u=>u.id),[result.upload_id]);
+  assert.throws(()=>assertSelfQaLane(onlyUpload,laneDashboard.sessions[0]),/đã nhận/);
+
+  const testClaim=await gateway({...claimBase,is_test:true,auto:false,worker_id:'manual-fixture'});
+  assert.notEqual(testClaim.job?.id,result.upload_id);
+  assert.equal((await gateway({...claimBase,worker_id:'foreign-worker'})).job,null);
+  assert.equal((await gateway({...claimBase,is_test:true,auto:false,worker_id:'manual-fixture',self_qa135_upload:result.upload_id})).job,null);
+  const realControl=await stockCall({...payload,class_ids:[realClass],due_at_by_class:{[realClass]:due},
+   client_request_id:'61677777-7777-4777-8777-777777777779',title:'Production queue synthetic control',
+   work_kind:'homework',is_test:false,on_behalf_of:'thaythanh'});
+  const firstClaim=(await gateway(claimBase)).job;
+  assert.equal(firstClaim.id,realControl.upload_id);assert.equal(firstClaim.is_test,false);
+  const fixture=pipelineFixture(),files=new Map<string,Uint8Array>(),stateByRef=new Map<string,unknown>();
+  const workerClient={
+   async rpc(_name:string,args:{p:object}){return {data:await gateway(args.p),error:null};},
+   storage:{from(bucket:string){return {
+    async upload(path:string,bytes:Uint8Array,opts:{contentType:string}){
+     await db.query('insert into storage.objects(bucket_id,name,metadata) values($1,$2,$3)',
+      [bucket,path,JSON.stringify({mimetype:opts.contentType,size:bytes.length})]);
+     files.set(path,bytes);return {error:null};
+    },
+    async download(path:string){const bytes=files.get(path);return bytes?{data:new Blob([bytes]),error:null}:{data:null,error:{message:'missing'}};},
+   };}},
+  };
+  const pipeline:Pipeline={
+   extractor:{provider:'codex',model:'synthetic-codex'},
+   async read(job){
+    assert.equal(job.id,result.upload_id);assert.equal(job.is_test,true);
+    assert.deepEqual(job.class_ids,[lane.classId]);
+    return {sourceVersion:'e'.repeat(64),questions:reviewQuestions(fixture.exam),teacherSlots:expectedSlots(fixture.exam),
+     privateAnswerHashes:[hash(readFileSync('tests/fixtures/lesson-upload-three-questions.synthetic.pdf'))]};
+   },
+   async build(){return {exam:fixture.exam,assets:fixture.assets};},
+   async review(){return {provider:'grok',model:'synthetic-review',receipt_hash:'f'.repeat(64),slots:fixture.verification.slots};},
+   async materials(){return {handoutUrl:null,materialUrl:null};},
+  };
+  const publication=await runUploadOnce(createWorkerRepository(workerClient,{auto:true}),pipeline,{
+   async save(id,stage,data){const ref=id+'/'+stage;stateByRef.set(ref,structuredClone(data));return ref;},
+   async load(ref){return structuredClone(stateByRef.get(ref));},
+  },workerId);
+  assert.equal(publication.status,'complete',JSON.stringify(publication));
+  const publishedCode='web-'+result.upload_id.replaceAll('-','');
+  assert.deepEqual(await value("select jsonb_build_array(class_ids,is_test,publish_status) v from mtm_hw_private.btvn_lessons where code=$1",[publishedCode]),
+   [[lane.classId],true,'da_dang']);
+  const checkpoint=selfQaDashboard(await selfCall(dash)).uploads[0];
+  assert.equal(uploadProgress(checkpoint).published,true);
+  assert.equal(await value("select count(*)::int v from mtm_hw_private.btvn_lessons where active and $1::uuid=any(class_ids)",[lane.classId]),1);
+  assert.equal(await value('select attempt_count v from mtm_hw_private.lesson_uploads where id=$1',[result.upload_id]),1);
+  assert.equal((await gateway(claimBase)).job,null);
+ });
+ console.log(`QA116/135 local: ${checks} groups PASS; no physical-browser or live-publication claim.`);
 }finally{await db.close();}
